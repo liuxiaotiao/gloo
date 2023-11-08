@@ -1,0 +1,19 @@
+[package]
+name = "dmludp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+octets = "0.2.0"
+ranges = "0.3.3"
+rand = "0.8.5"
+libc = "0.2"
+
+[features]
+# Build and expose the FFI API.
+ffi = []
+
+[lib]
+crate-type = ["lib", "staticlib", "cdylib"]
