@@ -9,11 +9,6 @@ use crate::Config;
 use std::collections::BTreeSet;
 
 
-// use crate::frame;
-// use crate::packet;
-// use crate::minmax;
-
-
 #[cfg(feature = "qlog")]
 use qlog::events::EventData;
 
@@ -340,39 +335,6 @@ impl Recovery {
         self.congestion_window.saturating_sub(self.bytes_in_flight)
     }
 
-    // fn update_rtt(
-    //     &mut self, latest_rtt: Duration,  now: Instant,
-    // ) {
-    //     self.latest_rtt = latest_rtt;
-
-    //     match self.smoothed_rtt {
-    //         // First RTT sample.
-    //         None => {
-    //             self.min_rtt = self.minmax_filter.reset(now, latest_rtt);
-
-    //             self.smoothed_rtt = Some(latest_rtt);
-
-    //             self.rttvar = latest_rtt / 2;
-    //         },
-
-    //         Some(srtt) => {
-    //             self.min_rtt =
-    //                 self.minmax_filter.running_min(RTT_WINDOW, now, latest_rtt);
-
-
-    //             // Adjust for ack delay if plausible.
-    //             let adjusted_rtt = latest_rtt;
-
-    //             self.rttvar = self.rttvar.mul_f64(3.0 / 4.0) +
-    //                 sub_abs(srtt, adjusted_rtt).mul_f64(1.0 / 4.0);
-
-    //             self.smoothed_rtt = Some(
-    //                 srtt.mul_f64(7.0 / 8.0) + adjusted_rtt.mul_f64(1.0 / 8.0),
-    //             );
-    //         },
-    //     }
-    // }
-
     pub fn collapse_cwnd(&mut self) {
         (self.cc_ops.collapse_cwnd)(self);
     }
@@ -394,9 +356,6 @@ impl Recovery {
         
         self.congestion_window
     }
-    // pub fn delivery_rate_update_app_limited(&mut self, v: bool) {
-    //     self.delivery_rate.update_app_limited(v);
-    // }
 
 }
 
@@ -496,15 +455,6 @@ pub struct Acked {
     pub priority_loss: usize,
 }
 
-
-
-// fn sub_abs(lhs: Duration, rhs: Duration) -> Duration {
-//     if lhs > rhs {
-//         lhs - rhs
-//     } else {
-//         rhs - lhs
-//     }
-// }
 
 mod NewCubic;
 

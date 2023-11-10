@@ -206,8 +206,8 @@ impl Config {
     /// ## Examples:
     ///
     /// ```
-    /// let config = quiche::Config::new()?;
-    /// # Ok::<(), quiche::Error>(())
+    /// let config = dmludp::Config::new()?;
+    /// # Ok::<(), dmludp::Error>(())
     /// ```
     pub fn new() -> Result<Config> {
         Ok(Config {
@@ -236,9 +236,9 @@ impl Config {
     /// ## Examples:
     ///
     /// ```
-    // # let mut config = quiche::Config::new(0xbabababa)?;
+    // # let mut config = dmludp::Config::new()?;
     /// config.set_cc_algorithm_name("NEWCUBIC");
-    /// # Ok::<(), quiche::Error>(())
+    /// # Ok::<(), dmludp::Error>(())
     /// ```
     pub fn set_cc_algorithm_name(&mut self, name: &str) -> Result<()> {
         self.cc_algorithm = CongestionControlAlgorithm::from_str(name)?;
@@ -372,11 +372,11 @@ pub struct Connection {
 impl Connection {
     /// Sets the congestion control algorithm used by string.
     /// Examples:
-    /// let mut config = quiche::Config::new()?;
+    /// let mut config = dmludp::Config::new()?;
     /// let local = "127.0.0.1:0".parse().unwrap();
     /// let peer = "127.0.0.1:1234".parse().unwrap();
-    /// let conn = quiche::new(local, peer, &mut config, true)?
-    /// # Ok::<(), quiche::Error>(())
+    /// let conn = dmludp::new(local, peer, &mut config, true)?
+    /// # Ok::<(), dmludp::Error>(())
     /// ```
     fn new(
         local: SocketAddr,
