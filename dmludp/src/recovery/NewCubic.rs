@@ -120,6 +120,23 @@ fn reset(r: &mut Recovery) {
     r.cubic_state = State::default();
 }
 
+
+// pub fn on_packet_acked(
+//     r: &mut Recovery, priority_loss: f64, 
+// )->f64 {
+//     // if priority_loss == 0{
+//         r.cubic_state.prior.congestion_window = r.congestion_window;
+//     // }
+//     // else{
+//     //     if r.congestion_window == OVER_WINGOW*r.cubic_state.PriorState.congestion_window{
+//     //         r.congestion_window = r.cubic_state.PriorState.congestion_window;
+//     //     }
+        
+//     // }
+//     let target = r.cubic_state.w_cubic(priority_loss, r.max_datagram_size);
+//     target  
+// }
+
 ///modified
 fn collapse_cwnd(r: &mut Recovery) {
     let newcubic = &mut r.cubic_state;
@@ -133,6 +150,23 @@ fn collapse_cwnd(r: &mut Recovery) {
     r.congestion_window = r.max_datagram_size * recovery::MINIMUM_WINDOW_PACKETS;
 
 }
+
+//modified
+// pub fn on_packet_sent(r: &mut Recovery, pkt_num:u64, pkt_priority:u8, sent_bytes: usize, now: Instant) {
+//     // See https://github.com/torvalds/linux/commit/30927520dbae297182990bb21d08762bcc35ce1d
+//     // First transmit when no packets in flight
+//     // let Newcubic = &mut r.newcubic_state;
+
+//     if r.pkt_priority[pkt_num as usize] != 0{
+ 
+//         r.priority_record[pkt_num as usize] -= 1
+  
+//     }else{
+//         r.pkt_priority[pkt_num as usize] = pkt_priority;
+//         r.priority_record[pkt_num as usize] = pkt_priority;
+//     }
+//     r.bytes_in_flight += sent_bytes;
+// }
 
 
 
