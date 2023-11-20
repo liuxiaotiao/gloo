@@ -26,8 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <dmludp.h>
-
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
 #include "gloo/transport/dmludp/buffer.h"
@@ -162,9 +160,6 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   // this class works directly with file descriptor directly.
   fd_ = socket->release();
 
-  // Take over ownership of the dmludp_conn;
-  dmludp_conn = socket->getConnection();
-
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);
 
@@ -233,7 +228,6 @@ ssize_t Pair::prepareWrite(
   if (op.nwritten < sizeof(op.preamble)) {
     iov[ioc].iov_base = ((char*)&op.preamble) + op.nwritten;
     iov[ioc].iov_len = sizeof(op.preamble) - op.nwritten;
-    dmludp_data_send(dmludp_connection, iov[ioc].iov_base);
     len += iov[ioc].iov_len;
     ioc++;
   }
@@ -252,7 +246,6 @@ ssize_t Pair::prepareWrite(
     iov[ioc].iov_base = ptr + offset;
     iov[ioc].iov_len = nbytes;
     len += iov[ioc].iov_len;
-    dmludp_data_send(dmludp_connection, iov[ioc].iov_base);
     ioc++;
     return len;
   }
@@ -270,7 +263,6 @@ ssize_t Pair::prepareWrite(
     iov[ioc].iov_len = nbytes;
     len += iov[ioc].iov_len;
     ioc++;
-    dmludp_data_send(dmludp_connection.get(), iov[ioc].iov_base);
     return len;
   }
 

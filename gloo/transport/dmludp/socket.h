@@ -45,7 +45,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   // UDP doesn't have NO_DELAY option.
   // Enable or disable TCP_NODELAY socket option.
-  // void noDelay(bool on);
+  void noDelay(bool on);
 
   // Configure if the socket is blocking or not.
   void block(bool on);
