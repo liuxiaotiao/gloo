@@ -21,7 +21,7 @@ namespace transport {
 namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
-  auto rv = socket(ai_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }
@@ -40,12 +40,12 @@ void Socket::reuseAddr(bool on) {
   GLOO_ENFORCE_NE(rv, -1, "setsockopt: ", strerror(errno));
 }
 
-void Socket::noDelay(bool on) {
-  int value = on ? 1 : 0;
-  ///TCP to UDP
-  auto rv = ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
-  GLOO_ENFORCE_NE(rv, -1, "setsockopt: ", strerror(errno));
-}
+// void Socket::noDelay(bool on) {
+//   int value = on ? 1 : 0;
+//   ///TCP to UDP
+//   auto rv = ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
+//   GLOO_ENFORCE_NE(rv, -1, "setsockopt: ", strerror(errno));
+// }
 
 void Socket::block(bool on) {
   auto rv = fcntl(fd_, F_GETFL);
