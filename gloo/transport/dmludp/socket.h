@@ -96,7 +96,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   std::shared_ptr<dmludp_conn> dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
 
   std::shared_ptr<dmludp_conn> create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
-                          boolean is_server);
+                          bool is_server);
 
     // Maybe become unique_ptr
   std::shared_ptr<dmludp_conn> dmludp_connection;

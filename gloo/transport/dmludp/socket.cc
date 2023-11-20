@@ -114,7 +114,7 @@ std::shared_ptr<Socket> Socket::accept() {
   struct sockaddr_storage addr;
   socklen_t addrlen = sizeof(addr);
   if(new_socket == true){
-    auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
+    auto rv = socket(local.ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     auto connection = create_dmludp_connection(local, peer, true);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;

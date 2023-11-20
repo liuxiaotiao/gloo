@@ -148,7 +148,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
 
   // Finalize setup.
   socket->block(false);
-  socket->noDelay(true);
+  // socket->noDelay(true);
   socket->sendTimeout(timeout_);
   socket->recvTimeout(timeout_);
 
