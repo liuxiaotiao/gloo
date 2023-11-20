@@ -24,6 +24,7 @@
 
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <dmludp.h>
 
 #include "gloo/common/error.h"
 #include "gloo/common/memory.h"
@@ -220,6 +221,8 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   friend class Context;
 
+  dmludp_recv_info recv_info;
+
  protected:
   // Maintain state of a single operation for receiving operations
   // from the remote side of the pair.
@@ -329,6 +332,8 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   // Cache exception such that it can be rethrown if any function on
   // this instance is called again when it is in an error state.
   std::exception_ptr ex_;
+
+  std::shared_ptr<dmludp_conn> dmludp_connection;
 };
 
 } // namespace dmludp

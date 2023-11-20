@@ -130,6 +130,21 @@ class WriteValueOperation final
     // destroys itself once this function returns.
     auto leak = std::move(this->leak_);
 
+    // write T.
+    // auto dmludp_rv = socket_->dmludp_write(&t_, sizeof(t_));
+    // auto rv = socket_->write(dmludp_rv, sizeof(dmludp_rv));
+    // for(;;){
+    //    if(timer.out < 0){
+    //    auto recv = socket_->recv(dmludp_rv);
+    //    auto dmludp_recv = socket_->dmludp_recv();
+    //    }
+    //    else{
+    //     break;
+    //    }
+    // }
+    // fn_(socket_, Error::KSuccess);
+    
+
     // Write T.
     auto rv = socket_->write(&t_, sizeof(t_));
     if (rv == -1) {

@@ -15,6 +15,7 @@
 #include <memory>
 
 #include <gloo/transport/dmludp/address.h>
+#include <dmludp.h>
 
 namespace gloo {
 namespace transport {
@@ -45,7 +46,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   // UDP doesn't have NO_DELAY option.
   // Enable or disable TCP_NODELAY socket option.
-  void noDelay(bool on);
+  // void noDelay(bool on);
 
   // Configure if the socket is blocking or not.
   void block(bool on);
@@ -68,8 +69,10 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   // Accept new socket connecting to listening socket.
   std::shared_ptr<Socket> accept();
 
-  // Connect to address.
   void connect(const sockaddr_storage& ss);
+
+  // Connect to address.
+  void connect_dmludp(const sockaddr_storage& ss);
 
   // Connect to address.
   void connect(const struct sockaddr* addr, socklen_t addrlen);
@@ -86,6 +89,23 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   // Return address for getpeername(2).
   Address peerName() const;
 
+  std::shared_ptr<dmludp_conn> getConnection();
+
+  std::shared_ptr<dmludp_conn> dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
+
+  std::shared_ptr<dmludp_conn> dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
+
+  std::shared_ptr<dmludp_conn> create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
+                          boolean is_server);
+
+    // Maybe become unique_ptr
+  std::shared_ptr<dmludp_conn> dmludp_connection;
+
+  struct sockaddr_storage peer;
+
+  struct sockaddr_storage local;
+
+  bool new_socket;
  private:
   int fd_;
 
