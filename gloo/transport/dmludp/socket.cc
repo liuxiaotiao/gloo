@@ -142,10 +142,10 @@ std::shared_ptr<Socket> Socket::accept() {
     struct sockaddr_storage *local_addr = &local;
     dmludp_recv_info recv_info = {
         (struct sockaddr *)&tmp_peer_addr,
-        local_addr.ai_addrlen,
+        local_addr->ai_addrlen,
 
         tmp_local,
-        local_addr.ai_addrlen,
+        local_addr->ai_addrlen,
     };
     for (;;){
       ssize_t received = accept_socket.recv(static_cast<char*>(buffer), 1500);
@@ -185,7 +185,7 @@ std::shared_ptr<dmludp_conn> Socket::dmludp_conn_accept(struct sockaddr_storage 
   return create_dmludp_connection(local, peer, true);
 }
 
-std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, boolean is_server){
+std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, bool is_server){
   auto dmludp_config = dmludp_config_new();
   if( is_server ){
     struct sockaddr_storage *peer_addr = &peer;
@@ -220,7 +220,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   uint8_t buffer[1500];
   dmludp_send_info send_info;
   ssize_t written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
-  ssize_t sent = accept_socket.write(static_cast<char*>(out), written);
+  ssize_t sent = write(static_cast<char*>(out), written);
   struct sockaddr *tmp_local;
   // struct sockaddr *local_addr tmp_peer;
   struct sockaddr_storage tmp_peer_addr;
@@ -235,7 +235,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   for (;;){
     ssize_t received = accept_socket.recv(static_cast<char*>(buffer), 1500);
     if(received <1){
-      continue
+      continue;
     }
     ssize_t dmludp_recv = dmludp_conn_recv(connection.get(), buffer, received, &recv_info);
     written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
@@ -293,7 +293,7 @@ Address Socket::peerName() const {
 }
 
 dmludp_conn* getConnection(){
-  return dmludp_connection;
+  return this->dmludp_connection;
 }
 
 } // namespace dmludp
