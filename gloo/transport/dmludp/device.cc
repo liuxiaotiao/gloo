@@ -76,7 +76,7 @@ static void lookupAddrForIface(struct attr& attr) {
         break;
     }
 
-    attr.ai_socktype = SOCK_STREAM;
+    attr.ai_socktype = SOCK_DGRAM;
     attr.ai_protocol = 0;
     break;
   }
@@ -92,7 +92,7 @@ static void lookupAddrForHostname(struct attr& attr) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = attr.ai_family;
-  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_socktype = SOCK_DGRAM;
   struct addrinfo* result;
   int bind_rv = 0;
   int bind_errno = 0;
@@ -349,8 +349,8 @@ void Device::connectAsInitiator(
   // Create new socket to connect to peer.
   auto socket = Socket::createForFamily(sockaddr.ss_family);
   socket->reuseAddr(true);
-  socket->noDelay(true);
-  socket->connect(sockaddr);
+  // socket->noDelay(true);
+  socket->connect_dmludp(sockaddr);
 
   // Write sequence number for peer to new socket.
   // TODO(pietern): Use timeout.
