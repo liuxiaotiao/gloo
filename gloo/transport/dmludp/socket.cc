@@ -126,22 +126,22 @@ std::shared_ptr<Socket> Socket::accept() {
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = htonl(INADDR_ANY);
     addr->sin_port = htons(0); 
-    accept_socket.bind(storage);
+    accept_socket->bind(storage);
 
-    accept_socket.connect_dmludp(peer);
+    accept_socket->connect_dmludp(peer);
 
     uint8_t out[1500];
     uint8_t buffer[1500];
     dmludp_send_info send_info;
     ssize_t written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
-    ssize_t sent = accept_socket.write(out, written);
+    ssize_t sent = accept_socket->write(out, written);
 
     struct sockaddr *tmp_local;
     // struct sockaddr *local_addr tmp_peer;
     struct sockaddr_storage tmp_peer_addr;
     struct sockaddr_storage *local_addr = &local;
     for (;;){
-      ssize_t received = accept_socket.recv(buffer, 1500);
+      ssize_t received = accept_socket->recv(buffer, 1500);
       if(received <1){
         continue;
       }
