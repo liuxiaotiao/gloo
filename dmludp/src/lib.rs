@@ -445,7 +445,7 @@ impl Connection {
 
             send_data:Vec::<u8>::new(),
             // norm2_vec:Vec::<f32>::new(),
-            norm2_vec::<u8>::new(),
+            norm2_vec:Vec::<u8>::new(),
 
             record_win: 0,
 
@@ -1142,7 +1142,7 @@ impl Connection {
 
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
-    pub fn data_write(&mut self, buf: &[] u8){
+    pub fn data_write(&mut self, buf: &[u8]){
         let len = buf.len();
         let mut counter = 0;
         self.send_data.extend(buf.to_vec());
