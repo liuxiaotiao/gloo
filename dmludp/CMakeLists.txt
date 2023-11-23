@@ -53,3 +53,14 @@ if(COPY_RESULT EQUAL "0")
 else()
 	message(FATAL_ERROR "failed.")
 endif()
+
+execute_process(
+   COMMAND cp ${RUST_PROJECT_DIR}/include/dmludp.h ../gloo
+   WORKING_DIRECTORY ${RUST_PROJECT_DIR}
+   RESULT_VARIABLE COPY_RESULT_HEADER
+)
+if(COPY_RESULT_HEADER EQUAL "0")
+	message(STATUS "succeeded.")
+else()
+	message(FATAL_ERROR "failed.")
+endif()
