@@ -115,7 +115,7 @@ std::shared_ptr<Socket> Socket::accept() {
   socklen_t addrlen = sizeof(addr);
   if(new_socket == true){
     auto rv = socket(local.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-    auto connection = dmludp_conn_connect(local, peer, true);
+    auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;
 
@@ -185,13 +185,13 @@ std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr_st
     struct sockaddr_storage *local_addr = &local;
     auto connection = dmludp_accept((struct sockaddr *)local_addr, sizeof(local), (struct sockaddr *)peer_addr, sizeof(peer), dmludp_config);
     std::shared_ptr<dmludp_conn> sharedPtr(connection);
-    return connection;
+    return sharedPtr;
   }else{
     struct sockaddr_storage *peer_addr = &peer;
     struct sockaddr_storage *local_addr = &local;
     auto connection = dmludp_connect((struct sockaddr *)local_addr, sizeof(local), (struct sockaddr *)peer_addr, sizeof(peer), dmludp_config);
     std::shared_ptr<dmludp_conn> sharedPtr(connection);
-    return connection;
+    return sharedPtr;
   }
 }
 
@@ -210,7 +210,7 @@ void Socket::connect(const sockaddr_storage& ss) {
 void Socket::connect_dmludp(const sockaddr_storage& ss) {
   peer = ss;
   connect(ss);
-  auto connection = dmludp_conn_connect(local, peer, false);
+  auto connection = dmludp_conn_connect(local, peer);
   uint8_t out[1500];
   uint8_t buffer[1500];
   dmludp_send_info send_info;
@@ -280,7 +280,7 @@ Address Socket::peerName() const {
   return Address::fromPeerName(fd_);
 }
 
-dmludp_conn* getConnection(){
+std::shared_ptr<dmludp_conn> getConnection(){
   return dmludp_connection;
 }
 
