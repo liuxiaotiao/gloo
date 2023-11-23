@@ -73,7 +73,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   void connect(const sockaddr_storage& ss);
 
   // Connect to address.
-  void connect_dmludp(const sockaddr_storage& ss);
+  std::shared_ptr<Socket> connect_dmludp(const sockaddr_storage& ss);
 
   // Connect to address.
   void connect(const struct sockaddr* addr, socklen_t addrlen);
@@ -99,7 +99,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   std::shared_ptr<dmludp_conn> create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
                           bool is_server);
 
-    // Maybe become unique_ptr
+  // Maybe become unique_ptr
   std::shared_ptr<dmludp_conn> dmludp_connection;
 
   struct sockaddr_storage peer;
