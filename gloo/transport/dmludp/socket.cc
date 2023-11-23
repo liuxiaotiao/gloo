@@ -215,19 +215,19 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   uint8_t buffer[1500];
   dmludp_send_info send_info;
   ssize_t written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
-  ssize_t sent = write(static_cast<char*>(out), written);
+  ssize_t sent = write(out, written);
   struct sockaddr *tmp_local;
   // struct sockaddr *local_addr tmp_peer;
   struct sockaddr_storage tmp_peer_addr;
   struct sockaddr_storage *local_addr = &local;
   for (;;){
-    ssize_t received = accept_socket.recv(buffer, 1500);
+    ssize_t received = accept_socket->recv(buffer, 1500);
     if(received <1){
       continue;
     }
     ssize_t dmludp_recv = dmludp_conn_recv(connection.get(), buffer, received);
     written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
-    sent = accept_socket.write(static_cast<char*>(out), written);
+    sent = accept_socket->write(out, written);
     new_socket = false;
     break;
   }
@@ -281,7 +281,7 @@ Address Socket::peerName() const {
 }
 
 dmludp_conn* getConnection(){
-  return this->dmludp_connection;
+  return dmludp_connection;
 }
 
 } // namespace dmludp
