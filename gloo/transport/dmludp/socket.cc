@@ -121,7 +121,7 @@ std::shared_ptr<Socket> Socket::accept() {
 
     // Bind random port in local and remote node.
     sockaddr_storage storage;
-    std::memset(&storage, 0, sizeof(storage));
+    memset(&storage, 0, sizeof(storage));
     sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&storage);
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = htonl(INADDR_ANY);
@@ -140,15 +140,8 @@ std::shared_ptr<Socket> Socket::accept() {
     // struct sockaddr *local_addr tmp_peer;
     struct sockaddr_storage tmp_peer_addr;
     struct sockaddr_storage *local_addr = &local;
-    dmludp_recv_info recv_info = {
-        (struct sockaddr *)&tmp_peer_addr,
-        local_addr->ai_addrlen,
-
-        tmp_local,
-        local_addr->ai_addrlen,
-    };
     for (;;){
-      ssize_t received = accept_socket.recv(static_cast<char*>(buffer), 1500);
+      ssize_t received = accept_socket.recv(buffer, 1500);
       if(received <1){
         continue;
       }
@@ -228,7 +221,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr_storage tmp_peer_addr;
   struct sockaddr_storage *local_addr = &local;
   for (;;){
-    ssize_t received = accept_socket.recv(static_cast<char*>(buffer), 1500);
+    ssize_t received = accept_socket.recv(buffer, 1500);
     if(received <1){
       continue;
     }
