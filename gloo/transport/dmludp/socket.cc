@@ -24,7 +24,7 @@ namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(struct sockaddr_storage ai_addr) {
   auto rv = socket(ai_addr.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-  local = &ai_addr;
+  memcpy(&local, &ai_addr, sizeof(struct sockaddr_storage));
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }
@@ -280,7 +280,7 @@ Address Socket::peerName() const {
   return Address::fromPeerName(fd_);
 }
 
-std::shared_ptr<dmludp_conn> getConnection(){
+std::shared_ptr<dmludp_conn> Socket::getConnection(){
   return dmludp_connection;
 }
 

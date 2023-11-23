@@ -73,7 +73,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   void connect(const sockaddr_storage& ss);
 
   // Connect to address.
-  std::shared_ptr<Socket> connect_dmludp(const sockaddr_storage& ss);
+  void connect_dmludp(const sockaddr_storage& ss);
 
   // Connect to address.
   void connect(const struct sockaddr* addr, socklen_t addrlen);
