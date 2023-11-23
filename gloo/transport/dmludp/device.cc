@@ -347,7 +347,7 @@ void Device::connectAsInitiator(
   const auto& sockaddr = remote.getSockaddr();
 
   // Create new socket to connect to peer.
-  auto socket = Socket::createForFamily(sockaddr.ss_family);
+  auto socket = Socket::createForFamily(sockaddr);
   socket->reuseAddr(true);
   // socket->noDelay(true);
   socket->connect_dmludp(sockaddr);

@@ -118,6 +118,7 @@ dmludp_conn *dmludp_connect(const struct sockaddr *local, size_t local_len,
                             const struct sockaddr *peer, size_t peer_len,
                             dmludp_config *config);
 
+void dmludp_data_write(dmludp_conn *conn, const uint8_t *buf, size_t buf_len);
 
 typedef struct {
     // The remote address the packet was received from.
@@ -130,8 +131,9 @@ typedef struct {
 } dmludp_recv_info;
 
 // Processes QUIC packets received from the peer.
-ssize_t dmludp_conn_recv(dmludp_conn *conn, uint8_t *buf, size_t buf_len,
-                         const dmludp_recv_info *info);
+// ssize_t dmludp_conn_recv(dmludp_conn *conn, uint8_t *buf, size_t buf_len,
+//                          const dmludp_recv_info *info);
+ssize_t dmludp_conn_recv(dmludp_conn *conn, uint8_t *buf, size_t buf_len);
 
 typedef struct {
     // The local address the packet should be sent from.

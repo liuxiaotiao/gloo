@@ -181,6 +181,14 @@ pub extern "C" fn dmludp_data_send(conn:&mut Connection, buf:* const c_char){
     conn.data_send(&mut str_buf);
 }
 
+#pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const c_char, len: size_t){
+    if len > <ssize_t>::max_value() as usize {
+        panic!("The provided buffer is too large");
+    }
+
+    let data_slice = unsafe { std::slice::from_raw_parts(buf, len) };
+    conn.data_write(data_slice);
+}
 
 #[no_mangle]
 pub extern "C" fn dmludp_conn_send_all(
@@ -207,10 +215,26 @@ impl<'a> From<&RecvInfo<'a>> for crate::RecvInfo {
     }
 }
 
+// #[no_mangle]
+// pub extern "C" fn dmludp_conn_recv(
+//     conn: &mut Connection, buf: *mut u8, buf_len: size_t, info: &RecvInfo,
+// ) -> ssize_t {
+//     if buf_len > <ssize_t>::max_value() as usize {
+//         panic!("The provided buffer is too large");
+//     }
+
+//     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
+
+//     match conn.recv_slice(buf) {
+//         Ok(v) => v as ssize_t,
+
+//         Err(e) => e.to_c(),
+
+//     }
+// }
 #[no_mangle]
 pub extern "C" fn dmludp_conn_recv(
-    conn: &mut Connection, buf: *mut u8, buf_len: size_t, info: &RecvInfo,
-) -> ssize_t {
+    conn: &mut Connection, buf: *mut u8, buf_len: size_t) -> ssize_t {
     if buf_len > <ssize_t>::max_value() as usize {
         panic!("The provided buffer is too large");
     }

@@ -344,7 +344,11 @@ pub struct Connection {
     send_data:Vec<u8>,
 
     //store norm2 for every 256 bits float
-    norm2_vec:Vec<f32>,
+    // norm2_vec:Vec<f32>,
+    // Note: It refers to the priorty of each packet.
+    norm2_vec:Vec<u8>,
+
+    record_win: usize,
 
     total_offset:u64,
 
@@ -440,13 +444,16 @@ impl Connection {
             high_split_point:0.0,
 
             send_data:Vec::<u8>::new(),
-            norm2_vec:Vec::<f32>::new(),
+            // norm2_vec:Vec::<f32>::new(),
+            norm2_vec::<u8>::new(),
 
-            total_offset:0,
+            record_win: 0,
+
+            total_offset: 0,
 
             recv_flag: false,
 
-            recv_hashmap:HashMap::new(),
+            recv_hashmap: HashMap::new(),
 
             feed_back: false,
 
@@ -609,8 +616,25 @@ impl Connection {
         /// need to change!!!!!!!!!
         self.set_handshake();
         ///
-        if self.send_data.len() > self.written_data{
+        // if self.send_data.len() > self.written_data{
+        //     let write = self.write();
+        //     self.written_data += write.unwrap();
+        //     self.total_offset += write.unwrap() as u64;
+
+        //     return true
+        // }else {
+        //     if self.send_buffer.data.is_empty(){
+        //         return false
+        //     }else{
+        //     let write = self.write();
+        //     self.written_data += write.unwrap();
+        //     self.total_offset += write.unwrap() as u64;
+        //     return true}
+        // }
+
+        if self.send_data.len() > 0{
             let write = self.write();
+            self.send_data.drain(0..write);
             self.written_data += write.unwrap();
             self.total_offset += write.unwrap() as u64;
 
@@ -619,10 +643,13 @@ impl Connection {
             if self.send_buffer.data.is_empty(){
                 return false
             }else{
-            let write = self.write();
-            self.written_data += write.unwrap();
-            self.total_offset += write.unwrap() as u64;
-            return true}
+                // continue send
+                let write = self.write();
+                self.send_data.drain(0..write);
+                self.written_data += write.unwrap();
+                self.total_offset += write.unwrap() as u64;
+                return true
+            }
         }
         
     }
@@ -912,39 +939,48 @@ impl Connection {
     //Writing data to send buffer.
     pub fn write(&mut self) -> Result<usize> {
         //?/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        let toffset = self.total_offset % 1024;
-        let mut off_len: usize = 0;
-        if toffset % 1024 != 0{
-            off_len = 1024 - (self.total_offset % 1024) as usize;
-        }
-        let high_ratio = self.high_priority as f64 / self.sent_number as f64;
-        // println!("hight_ratio: {:?}", high_ratio);
-        self.high_priority = 0;
-        self.sent_number = 0;
-        // let off_len = 1024 - (self.total_offset % 1024) as usize;
-        //Note: written_data refers to the non-retransmitted data.
-        let mut congestion_window = 0;
-        if high_ratio > CONGESTION_THREAHOLD{
-            congestion_window = self.recovery.rollback();
+        if self.send_buffer.data.is_empty(){
+            let toffset = self.total_offset % 1024;
+            let mut off_len: usize = 0;
+            if toffset % 1024 != 0{
+                off_len = 1024 - (self.total_offset % 1024) as usize;
+            }
+            let high_ratio = self.high_priority as f64 / self.sent_number as f64;
+            self.high_priority = 0;
+            self.sent_number = 0;
+            // let off_len = 1024 - (self.total_offset % 1024) as usize;
+            // Note: written_data refers to the non-retransmitted data.
+            let mut congestion_window = 0;
+            if high_ratio > CONGESTION_THREAHOLD{
+                congestion_window = self.recovery.rollback();
+            }else{
+                congestion_window = self.recovery.cwnd();
+            }
+            self.record_win = congestion_window;
+            println!("cwnd: {:?}", congestion_window);
+            self.send_buffer.write(&self.send_data, congestion_window, off_len, self.max_off)
         }else{
-            congestion_window = self.recovery.cwnd();
+            let mut congestion_window = self.record_win;
+            let off_len: usize = 0;
+
+            println!("cwnd: {:?}", congestion_window);
+            self.send_buffer.write(&self.send_data, congestion_window, off_len, self.max_off)
         }
-        println!("cwnd: {:?}", congestion_window);
-        self.send_buffer.write(&self.send_data[self.written_data..], congestion_window, off_len, self.max_off)
+
     }
 
     pub fn  priority_calculation(&self, off: u64) -> u8{
         let real_index = off/1024;
-        if self.norm2_vec[real_index as usize] < self.low_split_point{
-            1
-        }
-        else if self.norm2_vec[real_index as usize] < self.high_split_point {
-            2
-        }
-        else {
-            3
-        }
-
+        // if self.norm2_vec[real_index as usize] < self.low_split_point{
+        //     1
+        // }
+        // else if self.norm2_vec[real_index as usize] < self.high_split_point {
+        //     2
+        // }
+        // else {
+        //     3
+        // }
+        self.norm2_vec[real_index]
     }
 
     pub fn reset(& mut self){
@@ -1102,6 +1138,15 @@ impl Connection {
 
     pub fn data_is_empty(& mut self)->bool{
         self.send_buffer.data.is_empty()
+    }
+
+    // Application can send data through this function, 
+    // It can dynamically add the new coming data to the buffer.
+    pub fn data_write(&mut self, buf: &[] u8){
+        let len = buf.len();
+        let mut counter = 0;
+        self.send_data.extend(buf.to_vec());
+        self.norm2_vec.extend([3; len % 1024 +1]); 
     }
 
     //read data from application
@@ -1437,8 +1482,6 @@ impl RecvBuf {
 
         self.data.clear();
 
-       
-
         Ok(max_data_delta as usize)
     }
 
@@ -1446,14 +1489,12 @@ impl RecvBuf {
     /// Shuts down receiving data.
     pub fn shutdown(&mut self)  {
         self.data.clear();
-
     }
 
     /// Returns the lowest offset of data buffered.
     pub fn off_front(&self) -> u64 {
         self.off
     }
-
 
     /// Returns true if the stream has data to be read.
     fn ready(&self) -> bool {
@@ -1487,10 +1528,6 @@ impl RecvBuf {
 pub struct SendBuf {
     /// Chunks of data to be sent, ordered by offset.
     data: VecDeque<RangeBuf>,
-
-    // data:BTreeMap<u64, RangeBuf>,
-    //retransmission buffer.
-    // retran_data: VecDeque<RangeBuf>,
 
     /// The index of the buffer that needs to be sent next.
     pos: usize,
@@ -1547,91 +1584,139 @@ impl SendBuf {
     /// write function is used to write new data into sendbuf, one congestion window 
     /// will run once.
     pub fn write(&mut self, mut data: &[u8], window_size: usize, off_len: usize, max_ack: u64) -> Result<usize> {
-        self.recv_and_drop(max_ack);
-        self.max_data = window_size as u64;
-        self.removed = 0;
-        self.sent = 0;
-        // Get the stream send capacity. This will return an error if the stream
-        // was stopped.
-        self.len = self.len() as u64;
-        self.used_length = self.len();
-        //Addressing left data is greater than the window size
-        if self.len >= window_size.try_into().unwrap(){
-            return Ok(0);
-        }
-
-        if data.len() == 0{
-            return  Ok(0);
-        }
-    
-        let capacity = self.cap()?;
-        // self.used_length = window_size;
-        // self.used_length = 0;
-        
-        if data.len() > capacity {
-            // Truncate the input buffer according to the stream's capacity.
-            let len = capacity;
-            data = &data[..len];
-
-        }
-
-        // We already recorded the final offset, so we can just discard the
-        // empty buffer now.
-        if data.is_empty() {
-            return Ok(data.len());
-        }
-
-        let mut len = 0;
-
-        /////
-        if off_len > 0 {
-            if data.len() > off_len{
-            println!("data.len >> off_len");
-            let first_buf: RangeBuf = RangeBuf::from(&data[..off_len], self.off);
-
-            self.offset_recv.insert(self.off, true);
-
-            self.data.push_back(first_buf);
-            self.off += off_len as u64;
-            self.len += off_len as u64;
-            self.used_length += off_len;
-            len += off_len;
-            }else{
-                println!("data.len << off_len");
-                let first_buf: RangeBuf = RangeBuf::from(&data[..], self.off);
-                self.offset_recv.insert(self.off, true);
-
-                self.data.push_back(first_buf);
-                self.off += data.len() as u64;
-                self.len += data.len() as u64;
-                self.used_length += data.len();
-                len += data.len();
-                return Ok(len);
+        if self.is_empty(){
+            self.recv_and_drop(max_ack);
+            self.max_data = window_size as u64;
+            self.removed = 0;
+            self.sent = 0;
+            // Get the stream send capacity. This will return an error if the stream
+            // was stopped.
+            self.len = self.len() as u64;
+            self.used_length = self.len();
+            //Addressing left data is greater than the window size
+            if self.len >= window_size.try_into().unwrap(){
+                return Ok(0);
             }
-
-        }
-        for chunk in data[off_len..].chunks(SEND_BUFFER_SIZE){
-
-        // Split the remaining input data into consistently-sized buffers to
-        // avoid fragmentation.
-        //for chunk in data.chunks(SEND_BUFFER_SIZE) {
+    
+            if data.len() == 0{
+                return  Ok(0);
+            }
+        
+            let capacity = self.cap()?;
             
-            len += chunk.len();          
-
-            let buf = RangeBuf::from(chunk, self.off);
-            
-            // self.offset_index.insert( self.off,self.index);
-
-            self.offset_recv.insert(self.off, true);
-
-            // The new data can simply be appended at the end of the send buffer.
-            self.data.push_back(buf);
-
-            self.off += chunk.len() as u64;
-            self.len += chunk.len() as u64;
-            self.used_length += chunk.len();
+            if data.len() > capacity {
+                // Truncate the input buffer according to the stream's capacity.
+                let len = capacity;
+                data = &data[..len];
+    
+            }
+    
+            // We already recorded the final offset, so we can just discard the
+            // empty buffer now.
+            if data.is_empty() {
+                return Ok(data.len());
+            }
+    
+            let mut len = 0;
+    
+            /////
+            if off_len > 0 {
+                if data.len() > off_len{
+                println!("data.len >> off_len");
+                let first_buf: RangeBuf = RangeBuf::from(&data[..off_len], self.off);
+    
+                self.offset_recv.insert(self.off, true);
+    
+                self.data.push_back(first_buf);
+                self.off += off_len as u64;
+                self.len += off_len as u64;
+                self.used_length += off_len;
+                len += off_len;
+                }else{
+                    println!("data.len << off_len");
+                    let first_buf: RangeBuf = RangeBuf::from(&data[..], self.off);
+                    self.offset_recv.insert(self.off, true);
+    
+                    self.data.push_back(first_buf);
+                    self.off += data.len() as u64;
+                    self.len += data.len() as u64;
+                    self.used_length += data.len();
+                    len += data.len();
+                    return Ok(len);
+                }
+    
+            }
+            for chunk in data[off_len..].chunks(SEND_BUFFER_SIZE){
+    
+            // Split the remaining input data into consistently-sized buffers to
+            // avoid fragmentation.
+            //for chunk in data.chunks(SEND_BUFFER_SIZE) {
+                
+                len += chunk.len();          
+    
+                let buf = RangeBuf::from(chunk, self.off);
+                
+                // self.offset_index.insert( self.off,self.index);
+    
+                self.offset_recv.insert(self.off, true);
+    
+                // The new data can simply be appended at the end of the send buffer.
+                self.data.push_back(buf);
+    
+                self.off += chunk.len() as u64;
+                self.len += chunk.len() as u64;
+                self.used_length += chunk.len();
+            }
+            Ok(len)
         }
-        Ok(len)
+        else{
+            // Get the stream send capacity. This will return an error if the stream
+            // was stopped.
+            self.len = self.len() as u64;
+            self.used_length = self.len();
+            //Addressing left data is greater than the window size
+            if self.len >= window_size.try_into().unwrap(){
+                return Ok(0);
+            }
+    
+            if data.len() == 0{
+                return  Ok(0);
+            }
+        
+            let capacity = self.cap()?;
+            
+            if data.len() > capacity {
+                // Truncate the input buffer according to the stream's capacity.
+                let len = capacity;
+                data = &data[..len];
+    
+            }
+    
+            // We already recorded the final offset, so we can just discard the
+            // empty buffer now.
+            if data.is_empty() {
+                return Ok(data.len());
+            }
+    
+            let mut len = 0;
+    
+            for chunk in data[off_len..].chunks(SEND_BUFFER_SIZE){                
+                len += chunk.len();          
+    
+                let buf = RangeBuf::from(chunk, self.off);
+                    
+                self.offset_recv.insert(self.off, true);
+    
+                // The new data can simply be appended at the end of the send buffer.
+                self.data.push_back(buf);
+    
+                self.off += chunk.len() as u64;
+                self.len += chunk.len() as u64;
+                self.used_length += chunk.len();
+            }
+            Ok(len)
+        }
+ 
     }
 
     /// Returns the lowest offset of data buffered.
@@ -1802,5 +1887,3 @@ pub use crate::packet::Header;
 pub use crate::packet::Type;
 #[cfg(feature = "ffi")]
 mod ffi;
-
-
