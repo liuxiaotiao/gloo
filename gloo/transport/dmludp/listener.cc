@@ -55,7 +55,7 @@ void Listener::handleEvents(int /* unused */) {
     }
 
     sock->reuseAddr(true);
-    sock->noDelay(true);
+    // sock->noDelay(true);
 
     // Read sequence number.
     read<sequence_number_t>(
