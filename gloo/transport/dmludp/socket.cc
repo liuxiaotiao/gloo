@@ -16,7 +16,7 @@
 
 #include <gloo/common/logging.h>
 
-#include <dmludp.h>
+#include <gloo/dmludp.h>
 
 namespace gloo {
 namespace transport {

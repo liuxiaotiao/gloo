@@ -49,6 +49,7 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/scatter.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/types.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dmludp.h"
   )
 
 if(USE_CUDA)
@@ -175,25 +176,48 @@ endif()
 
 # USE LIBDMLUDP
 if(USE_LIBDMLUDP)
-	find_path(RUST_Includes dmludp.h PATHS ${PROJECT_SOURCE_DIR}/dmludp/include)
-	if(NOT RUST_Includes)
-  		message(FATAL_ERROR "Can't find folder containing dmludp.h")
-	endif()
-	include_directories(${PROJECT_SOURCE_DIR}/dmludp/include)
-	find_library(RUST_LIBRARY
-		NAMES dmludp libdmludp dmludplib
-		HINTS ${PROJECT_SOURCE_DIR}/gloo
-	)
-	message(STATUS "MY_LIBRARY: ${RUST_LIBRARY}") 
+  find_path(RUST_Includes dmludp.h PATHS ${PROJECT_SOURCE_DIR}/dmludp/include)
+  if(NOT RUST_Includes)
+          message(FATAL_ERROR "Can't find folder containing dmludp.h")
+  endif()
+  include_directories(${PROJECT_SOURCE_DIR}/dmludp/include)
+  add_library(dmludp INTERFACE)
+  target_include_directories(dmludp INTERFACE ${PROJECT_SOURCE_DIR}/dmludp/include)
+  #add_library(dmludp INTERFACE)
+  find_library(RUST_LIBRARY
+          NAMES dmludp libdmludp dmludplib
+          HINTS ${PROJECT_SOURCE_DIR}/gloo
+  )
+  message(STATUS "MY_LIBRARY: ${RUST_LIBRARY}")
+
+  #find_path(LIB_Includes libdmludp.so PATHS ${PROJECT_SOURCE_DIR}/lib)
+
+  if(NOT RUST_LIBRARY)
+          message(FATAL_ERROR ${PROJECT_SOURCE_DIR})
+          message(FATAL_ERROR "Could not find dmludplib")
+  endif()
+  #find_library(RUST_LIBRARY NAMES dmludp PATHS ${PROJECT_SOURCE_DIR}/dmludp/target/release NO_DEFAULT_PATH)
+  target_link_libraries(gloo PRIVATE ${RUST_LIBRARY})
+  
+	#find_path(RUST_Includes dmludp.h PATHS ${PROJECT_SOURCE_DIR}/dmludp/include)
+	#if(NOT RUST_Includes)
+  		#message(FATAL_ERROR "Can't find folder containing dmludp.h")
+	#endif()
+	#include_directories(${PROJECT_SOURCE_DIR}/dmludp/include)
+	#find_library(RUST_LIBRARY
+		#NAMES dmludp libdmludp dmludplib
+		#HINTS ${PROJECT_SOURCE_DIR}/gloo
+	#)
+	#message(STATUS "MY_LIBRARY: ${RUST_LIBRARY}") 
 	
-	#find_path(LIB_Includes libdmludp.so PATHS ${PROJECT_SOURCE_DIR}/lib)
+	##find_path(LIB_Includes libdmludp.so PATHS ${PROJECT_SOURCE_DIR}/lib)
 	
-	if(NOT RUST_LIBRARY)
-		message(FATAL_ERROR ${PROJECT_SOURCE_DIR})
-		message(FATAL_ERROR "Could not find dmludplib")
-	endif()
-	#find_library(RUST_LIBRARY NAMES dmludp PATHS ${PROJECT_SOURCE_DIR}/dmludp/target/release NO_DEFAULT_PATH)
-	target_link_libraries(gloo PRIVATE ${RUST_LIBRARY})
+	#if(NOT RUST_LIBRARY)
+		#message(FATAL_ERROR ${PROJECT_SOURCE_DIR})
+		#message(FATAL_ERROR "Could not find dmludplib")
+	#endif()
+	##find_library(RUST_LIBRARY NAMES dmludp PATHS ${PROJECT_SOURCE_DIR}/dmludp/target/release NO_DEFAULT_PATH)
+	#target_link_libraries(gloo PRIVATE ${RUST_LIBRARY})
 endif()
 
 target_link_libraries(gloo PRIVATE ${gloo_DEPENDENCY_LIBS})

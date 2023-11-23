@@ -15,7 +15,7 @@
 #include <memory>
 
 #include <gloo/transport/dmludp/address.h>
-#include <dmludp.h>
+#include <gloo/dmludp.h>
 
 namespace gloo {
 namespace transport {

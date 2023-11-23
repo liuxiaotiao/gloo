@@ -24,7 +24,7 @@
 
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <dmludp.h>
+#include <gloo/dmludp.h>
 
 #include "gloo/common/error.h"
 #include "gloo/common/memory.h"
