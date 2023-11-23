@@ -182,7 +182,7 @@ pub extern "C" fn dmludp_connect(
 // }
 
 #[no_mangle]
-pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const c_char, len: size_t){
+pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const u8, len: size_t){
     if len > <ssize_t>::max_value() as usize {
         panic!("The provided buffer is too large");
     }
