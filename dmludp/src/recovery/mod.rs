@@ -103,7 +103,7 @@ pub struct Recovery {
     bytes_in_flight: usize,
 
     max_datagram_size: usize,
-    k:f64,
+    // k:f64,
     incre_win: usize,
 
     decre_win: usize,
@@ -114,7 +114,7 @@ pub struct Recovery {
 
     function_change: bool,
 
-    congestion_window_copy: usize,
+    // congestion_window_copy: usize,
 
     incre_win_copy: usize,
 
@@ -196,7 +196,7 @@ impl Recovery {
             max_datagram_size:PACKET_SIZE,
             // ack_pkts: [0;8],
 
-            k: 1.0,
+            // k: 1.0,
             incre_win: 0,
             decre_win: 0,
 
@@ -206,7 +206,7 @@ impl Recovery {
 
             function_change: false,
 
-            congestion_window_copy: 0,
+            // congestion_window_copy: 0,
 
             incre_win_copy: 0,
 
@@ -243,22 +243,34 @@ impl Recovery {
     // let winadd = (-C * (weights as f64- (self.k*num)/8.0).powi(3)/self.k.powi(3)) * self.max_datagram_size as f64;
         // let winadd: f64 = (-num * (weights as f64 - (self.k*num)/8.0).powi(3)/((self.k*num)/8.0).powi(3)) * self.max_datagram_size as f64;
        
-        let mut winadd = 0.0;
+        // let mut winadd = 0.0;
+        // let mut winadd_copy = 0.0;
+        // if self.function_change{
+        //     // winadd = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
+        //     winadd = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
+        // }else {
+        //     winadd = num*self.max_datagram_size as f64;
+        //     if weights > 0.0{
+        //         self.function_change = true;
+        //         self.incre_win = self.incre_win_copy;
+        //         self.decre_win = self.decre_win_copy;
+        //     }
+        //     // winadd_copy = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0)*self.max_datagram_size as f64; 
+        //     winadd_copy = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
+        // }
+
         let mut winadd_copy = 0.0;
-        if self.function_change{
-            // winadd = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
-            winadd = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
+        let winadd =  if self.function_change{
+            (3.0 * (weights as f64).powi(2) - 12.0 * (weights as f64) + 4.0) * self.max_datagram_size as f64 
         }else {
-            winadd = num*self.max_datagram_size as f64;
             if weights > 0.0{
                 self.function_change = true;
                 self.incre_win = self.incre_win_copy;
                 self.decre_win = self.decre_win_copy;
             }
-            // winadd_copy = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0)*self.max_datagram_size as f64; 
             winadd_copy = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
-
-        }
+            num * self.max_datagram_size as f64
+        };
        
         
         // let mut winadd = 0.0;
@@ -305,12 +317,11 @@ impl Recovery {
     }
     ///modified
     pub fn cwnd(&mut self) -> usize {
-        let mut tmp_win:usize=0;
-        if 2*self.incre_win > self.decre_win{
-            tmp_win = 2*self.incre_win - self.decre_win;
+        let tmp_win:usize = if 2*self.incre_win > self.decre_win{
+            2*self.incre_win - self.decre_win
         }else{
-            tmp_win = 0;
-        }
+            0
+        };
         if !self.roll_back_flag {
             self.former_win_vecter.insert(tmp_win);
         }

@@ -336,9 +336,9 @@ pub struct Connection {
     recv_dic: HashMap<u64,u8>,
 
     //used to compute priority
-    low_split_point: f32,
+    // low_split_point: f32,
 
-    high_split_point: f32,
+    // high_split_point: f32,
 
     //store data
     send_data:Vec<u8>,
@@ -368,7 +368,7 @@ pub struct Connection {
 
     sent_number: usize,
 
-    recv_pkt_sent_num: Vec<usize>,
+    // recv_pkt_sent_num: Vec<usize>,
 
     sent_dic: HashMap<u64, u64>,
 }
@@ -440,8 +440,8 @@ impl Connection {
 
             sent_pkt:Vec::<u64>::new(),
             
-            low_split_point:0.0,
-            high_split_point:0.0,
+            // low_split_point:0.0,
+            // high_split_point:0.0,
 
             send_data:Vec::<u8>::new(),
             // norm2_vec:Vec::<f32>::new(),
@@ -467,7 +467,7 @@ impl Connection {
 
             sent_number: 0,
 
-            recv_pkt_sent_num:Vec::<usize>::new(),
+            // recv_pkt_sent_num:Vec::<usize>::new(),
 
             sent_dic:HashMap::new(),
         };
@@ -613,9 +613,9 @@ impl Connection {
         self.stop_flag = false;
         self.stop_ack = false;
         
-        /// need to change!!!!!!!!!
+        // need to change!!!!!!!!!
         self.set_handshake();
-        ///
+        //
         // if self.send_data.len() > self.written_data{
         //     let write = self.write();
         //     self.written_data += write.unwrap();
@@ -634,7 +634,7 @@ impl Connection {
 
         if self.send_data.len() > 0{
             let write = self.write();
-            self.send_data.drain(0..write);
+            self.send_data.drain(0..write.unwrap());
             self.written_data += write.unwrap();
             self.total_offset += write.unwrap() as u64;
 
@@ -645,7 +645,7 @@ impl Connection {
             }else{
                 // continue send
                 let write = self.write();
-                self.send_data.drain(0..write);
+                self.send_data.drain(0..write.unwrap());
                 self.written_data += write.unwrap();
                 self.total_offset += write.unwrap() as u64;
                 return true
@@ -877,17 +877,16 @@ impl Connection {
             return Err(Error::BufferTooShort);
         }
         
-        let done = 0;
-        let mut total_len:usize = HEADER_LENGTH;
+        let total_len:usize = HEADER_LENGTH;
 
         // Limit output packet size to respect the sender and receiver's
         // maximum UDP payload size limit.
         let mut _left = cmp::min(out.len(), self.max_send_udp_payload_size());
 
-        let mut pn:u64 = 0;
-        let mut offset:u64 = 0;
-        let mut priority:u8 = 0;
-        let mut psize:u64 = 0;
+        let pn:u64 = 0;
+        let offset:u64 = 0;
+        let priority:u8 = 0;
+        let psize:u64 = 0;
 
         let ty = packet::Type::Fin; 
 
@@ -950,17 +949,16 @@ impl Connection {
             self.sent_number = 0;
             // let off_len = 1024 - (self.total_offset % 1024) as usize;
             // Note: written_data refers to the non-retransmitted data.
-            let mut congestion_window = 0;
-            if high_ratio > CONGESTION_THREAHOLD{
-                congestion_window = self.recovery.rollback();
+            let congestion_window = if high_ratio > CONGESTION_THREAHOLD{
+                self.recovery.rollback()
             }else{
-                congestion_window = self.recovery.cwnd();
-            }
+                self.recovery.cwnd()
+            };
             self.record_win = congestion_window;
             println!("cwnd: {:?}", congestion_window);
             self.send_buffer.write(&self.send_data, congestion_window, off_len, self.max_off)
         }else{
-            let mut congestion_window = self.record_win;
+            let congestion_window = self.record_win;
             let off_len: usize = 0;
 
             println!("cwnd: {:?}", congestion_window);
@@ -970,7 +968,7 @@ impl Connection {
     }
 
     pub fn  priority_calculation(&self, off: u64) -> u8{
-        let real_index = off/1024;
+        let real_index = (off/1024) as usize;
         // if self.norm2_vec[real_index as usize] < self.low_split_point{
         //     1
         // }
@@ -1143,64 +1141,63 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
-        let len = buf.len();
-        let mut counter = 0;
+        let len = buf.len() % 1024 + 1;
         self.send_data.extend(buf.to_vec());
-        self.norm2_vec.extend([3; len % 1024 +1]); 
+        self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
     }
 
-    //read data from application
-    pub fn data_send(& mut self, str_buf: & mut String){
-        let mut output = str_buf.replace("\n", "");
-        output = output.replace("\"", "");
-        output = output.replace("\r","");
-        let new_parts = output.split(">");
-        self.norm2_vec.clear();
-        self.send_data.clear();
-        // let mut send_data:Vec<f32> = Vec::new();
-        self.low_split_point = 0.0;
-        self.high_split_point = 0.0;
+    // //read data from application
+    // pub fn data_send(& mut self, str_buf: & mut String){
+    //     let mut output = str_buf.replace("\n", "");
+    //     output = output.replace("\"", "");
+    //     output = output.replace("\r","");
+    //     let new_parts = output.split(">");
+    //     self.norm2_vec.clear();
+    //     self.send_data.clear();
+    //     // let mut send_data:Vec<f32> = Vec::new();
+    //     self.low_split_point = 0.0;
+    //     self.high_split_point = 0.0;
 
-        let mut norm2_tmp:Vec<f32>=Vec::new();
-        for part in new_parts{
-            if part == "" {
-                break;
-            }
-            self.process_string(part.to_string(),&mut norm2_tmp);
-        }
-        norm2_tmp.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        self.low_split_point = norm2_tmp[norm2_tmp.len()*3/10 as usize];
-        self.high_split_point = norm2_tmp[norm2_tmp.len()*7/10 as usize];
-    }
+    //     let mut norm2_tmp:Vec<f32>=Vec::new();
+    //     for part in new_parts{
+    //         if part == "" {
+    //             break;
+    //         }
+    //         self.process_string(part.to_string(),&mut norm2_tmp);
+    //     }
+    //     norm2_tmp.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    //     self.low_split_point = norm2_tmp[norm2_tmp.len()*3/10 as usize];
+    //     self.high_split_point = norm2_tmp[norm2_tmp.len()*7/10 as usize];
+    // }
 
-    //store data and compute priority in advance
-    pub fn process_string(& mut self, test_data: String, norm2_tmp: &mut Vec<f32>){
-        let new_parts = test_data.split("[");
-        let collection: Vec<&str> = new_parts.collect();
-        let data = collection[1].to_string();
-        let new_data = data.split("]");
-        let collection: Vec<&str> = new_data.collect();
-        let array_string = collection[0].to_string();
-        let mut single_data: Vec<&str> = array_string.split(" ").collect();
-        let white_space = "";
-        single_data.retain(|&x| x != white_space);
+    // //store data and compute priority in advance
+    // pub fn process_string(& mut self, test_data: String, norm2_tmp: &mut Vec<f32>){
+    //     let new_parts = test_data.split("[");
+    //     let collection: Vec<&str> = new_parts.collect();
+    //     let data = collection[1].to_string();
+    //     let new_data = data.split("]");
+    //     let collection: Vec<&str> = new_data.collect();
+    //     let array_string = collection[0].to_string();
+    //     let mut single_data: Vec<&str> = array_string.split(" ").collect();
+    //     let white_space = "";
+    //     single_data.retain(|&x| x != white_space);
     
-        let mut norm2:f32 = 0.0;
-        let mut it = 0;
-        for item in single_data{
-            it +=1;
-            let my_float:f32 = FromStr::from_str(&item.to_string()).unwrap();
-            norm2 +=my_float*my_float;
-            let float_array = my_float.to_ne_bytes();
-            self.send_data.extend(float_array);
-            if it%256 == 255 {
-                norm2_tmp.push(norm2);
-                self.norm2_vec.push(norm2);
-                norm2 = 0.0;
-            }
-        }
+    //     let mut norm2:f32 = 0.0;
+    //     let mut it = 0;
+    //     for item in single_data{
+    //         it +=1;
+    //         let my_float:f32 = FromStr::from_str(&item.to_string()).unwrap();
+    //         norm2 +=my_float*my_float;
+    //         let float_array = my_float.to_ne_bytes();
+    //         self.send_data.extend(float_array);
+    //         if it%256 == 255 {
+    //             norm2_tmp.push(norm2);
+    //             self.norm2_vec.push(norm2);
+    //             norm2 = 0.0;
+    //         }
+    //     }
     
-    }
+    // }
 
 }
 

@@ -157,7 +157,7 @@ ssize_t dmludp_send_data_fin(dmludp_conn *conn, uint8_t *out, size_t out_len,
 
 bool dmludp_conn_send_all(dmludp_conn *conn);
 
-void dmludp_data_send(dmludp_conn *conn, const char* buf);
+// void dmludp_data_send(dmludp_conn *conn, const char* buf);
 // Get rtt
 double dmludp_get_rtt(dmludp_conn *conn);
 

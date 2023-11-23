@@ -173,15 +173,16 @@ pub extern "C" fn dmludp_connect(
 }
 
 
-#[no_mangle]
-pub extern "C" fn dmludp_data_send(conn:&mut Connection, buf:* const c_char){
-    let c_str:&CStr = unsafe{CStr::from_ptr(buf)};
-    let str_slice: &str = c_str.to_str().unwrap();
-    let mut str_buf: String = str_slice.to_owned();
-    conn.data_send(&mut str_buf);
-}
+// #[no_mangle]
+// pub extern "C" fn dmludp_data_send(conn:&mut Connection, buf:* const c_char){
+//     let c_str:&CStr = unsafe{CStr::from_ptr(buf)};
+//     let str_slice: &str = c_str.to_str().unwrap();
+//     let mut str_buf: String = str_slice.to_owned();
+//     conn.data_send(&mut str_buf);
+// }
 
-#pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const c_char, len: size_t){
+#[no_mangle]
+pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const c_char, len: size_t){
     if len > <ssize_t>::max_value() as usize {
         panic!("The provided buffer is too large");
     }
