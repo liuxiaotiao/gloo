@@ -24,7 +24,8 @@ namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(struct sockaddr_storage ai_addr) {
   auto rv = socket(ai_addr.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-  memcpy(&local, &ai_addr, sizeof(&ai_addr));
+  // memcpy(&local, &ai_addr, sizeof(&ai_addr));
+  sockaddr = (struct sockaddr *)&ai_addr;
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }
@@ -169,27 +170,26 @@ std::shared_ptr<Socket> Socket::accept() {
   // return std::make_shared<Socket>(rv);
 }
 
-std::shared_ptr<dmludp_conn> Socket::dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer){
+std::shared_ptr<dmludp_conn> Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, false);
 }
 
 // Call dmludp_conn_accept after accpect called
-std::shared_ptr<dmludp_conn> Socket::dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer){
+std::shared_ptr<dmludp_conn> Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, true);
 }
 
-std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, bool is_server){
+std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
   auto dmludp_config = dmludp_config_new();
+  struct sockaddr_in addr;
+  // 初始化 addr
+  socklen_t len = sizeof(addr);
   if( is_server ){
-    struct sockaddr_storage *peer_addr = &peer;
-    struct sockaddr_storage *local_addr = &local;
-    auto connection = dmludp_accept((struct sockaddr *)local_addr, sizeof(local), (struct sockaddr *)peer_addr, sizeof(peer), dmludp_config);
+    auto connection = dmludp_accept(local, len, (struct sockaddr *)peer, len, dmludp_config);
     std::shared_ptr<dmludp_conn> sharedPtr(connection);
     return sharedPtr;
   }else{
-    struct sockaddr_storage *peer_addr = &peer;
-    struct sockaddr_storage *local_addr = &local;
-    auto connection = dmludp_connect((struct sockaddr *)local_addr, sizeof(local), (struct sockaddr *)peer_addr, sizeof(peer), dmludp_config);
+    auto connection = dmludp_connect(local, len, (struct sockaddr *)peer, len, dmludp_config);
     std::shared_ptr<dmludp_conn> sharedPtr(connection);
     return sharedPtr;
   }

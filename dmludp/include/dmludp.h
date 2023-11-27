@@ -240,7 +240,11 @@ typedef struct {
     uint64_t delivery_rate;
 } dmludp_path_stats;
 
+bool dmludp_conn_is_empty(dmludp_conn *conn);
 
+bool dmludp_buffer_is_empty(dmludp_conn *conn);
+
+ssize_t dmludp_data_read(dmludp_conn *conn, uint8_t *out, size_t out_len);
 
 // Returns whether or not this is a server-side connection.
 // bool dmludp_conn_is_server(const dmludp_conn *conn);

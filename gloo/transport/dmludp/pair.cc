@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/timerfd.h>
 
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
@@ -63,7 +64,10 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr) {}
+      ex_(nullptr),
+      innertimer(this) {
+        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+      }
 
 // Destructor performs a "soft" close.
 Pair::~Pair() {
@@ -663,25 +667,171 @@ void Pair::handleEvents(int events) {
   GLOO_ENFORCE(false, "Unexpected state: ", state_);
 }
 
+void Pair::handlewrite(){
+  uint8_t out[1500];
+
+  dmludp_conn_send_all(dmludp_connection.get());
+
+  dmludp_send_info send_info;
+
+  ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
+  ssize_t socket_write = send(fd_, out, dmludpwrite, 0);
+
+  ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+  if(type == 4){
+    std::shared_ptr<retry_message> timer_message = std::make_shared<retry_message>();
+    memcpy(timer_message->data, out, dmludpwrite);
+    timer_message->len = dmludpwrite;
+    timer_message->retry_time = dmludp_get_rtt(dmludp_connection.get());
+    messages.insert(std::make_pair(pkt_num, timer_message));
+  }
+}
+
+bool Pair::write2dmludp(Op& op){
+  if (state_ == CLOSED) {
+    return false;
+  }
+  NonOwningPtr<UnboundBuffer> buf;
+  std::array<struct iovec, 2> iov;
+  int ioc;
+  ssize_t rv;
+
+  const auto opcode = op.getOpcode();
+
+  // Acquire pointer to unbound buffer if applicable.
+  if (opcode == Op::SEND_UNBOUND_BUFFER) {
+    buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+    if (!buf) {
+      return false;
+    }
+  }
+
+  for (;;) {
+    const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
+
+    // Write
+    dmludp_data_write(dmludp_connection.get(), (const uint8_t*)iov.data(), (size_t)ioc);
+
+    // From write(2) man page (NOTES section):
+    //
+    //  If a write() is interrupted by a signal handler before any
+    //  bytes are written, then the call fails with the error EINTR;
+    //  if it is interrupted after at least one byte has been written,
+    //  the call succeeds, and returns the number of bytes written.
+    //
+    // If rv < nbytes we ALWAYS retry, regardless of sync/async mode,
+    // since an EINTR may or may not have happened. If this was not
+    // the case, and the kernel buffer is full, the next call to
+    // write(2) will return EAGAIN, which is handled appropriately.
+    op.nwritten += ioc;
+    // if (rv < nbytes) {
+    //   continue;
+    // }
+    if (rv == 0) {
+    // GLOO_ENFORCE_EQ(rv, nbytes);
+    // GLOO_ENFORCE_EQ(op.nwritten, op.preamble.nbytes);
+    break;
+    }
+  }
+
+  writeComplete(op, buf, opcode);
+  return true;
+}
+
+void Pair::handleread(){
+    uint8_t buffer[1500];
+    ssize_t read = recv(fd_, buffer, sizeof(buffer) , 0);
+    ssize_t dmludpread = 0;
+    if(read > 0){
+      dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, read);
+      uint8_t type;
+      ssize_t pkt_num;
+      ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+      if(type == 5)
+        messages.erase(pkt_num);
+      if(type == 4){
+        uint8_t out[1500];
+        dmludp_send_info send_info;
+        ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
+        ssize_t socketwrite = send(fd_, out, dmludpwrite, 0);
+      }
+    }
+}
+
+bool Pair::dmludp2read(){
+  if (state_ == CLOSED) {
+    return false;
+  }
+  NonOwningPtr<UnboundBuffer> buf;
+  auto start = std::chrono::steady_clock::now();
+
+  for (;;) {
+    struct iovec iov = {
+        .iov_base = nullptr,
+        .iov_len = 0,
+    };
+    const auto nbytes = prepareRead(rx_, buf, iov);
+    if (nbytes < 0) {
+      return false;
+    }
+
+    // Break from loop if the op is complete.
+    // Note that this means that the buffer pointer has been
+    // set, per the call to prepareRead.
+    if (nbytes == 0) {
+      break;
+    }
+
+    // If busy-poll has been requested AND sync mode has been enabled for pair
+    // we'll keep spinning calling recv() on socket by supplying MSG_DONTWAIT
+    // flag. This is more efficient in terms of latency than allowing the kernel
+    // to de-schedule this thread waiting for IO event to happen. The tradeoff
+    // is stealing the CPU core just for busy polling.
+    ssize_t rv = 0;
+    for (;;) {
+      // Alas, readv does not support flags, so we need to use recv
+      rv = ::recv(fd_, iov.iov_base, iov.iov_len, busyPoll_ ? MSG_DONTWAIT : 0);
+      break;
+    }
+
+    // Transition to CLOSED on EOF
+    if (rv == 0) {
+      signalException(
+          GLOO_ERROR_MSG("Connection closed by peer ", peer_.str()));
+      return false;
+    }
+
+    rx_.nread += rv;
+  }
+
+  readComplete(buf);
+  return true;
+}
+
 void Pair::handleReadWrite(int events) {
   if (events & EPOLLOUT) {
     GLOO_ENFORCE(
         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     while (!tx_.empty()) {
       auto& op = tx_.front();
-      if (!write(op)) {
-        // Write did not complete; wait for epoll.
+      if(!write2dmludp(op)){
         break;
       }
       // Write completed; remove from queue.
       tx_.pop_front();
     }
+    handlewrite();
+
     // If there is nothing to transmit; remove EPOLLOUT.
-    if (tx_.empty()) {
+    if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection.get()) && dmludp_buffer_is_empty(dmludp_connection.get())) {
       device_->registerDescriptor(fd_, EPOLLIN, this);
     }
   }
   if (events & EPOLLIN) {
+    handleread();
+    if (!(events && EPOLLOUT)){
+
+    }
     while (read()) {
       // Keep going
     }

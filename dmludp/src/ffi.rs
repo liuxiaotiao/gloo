@@ -191,6 +191,17 @@ pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const u8, len: 
     conn.data_write(data_slice);
 }
 
+// data from dmludp to application
+#[no_mangle]
+pub extern "C" fn dmludp_data_read(conn: &mut Connection, buf:* mut u8, len: size_t)->ssize_t{
+    if len > <ssize_t>::max_value() as usize {
+        panic!("The provided buffer is too large");
+    }
+
+    let data_slice = unsafe { std::slice::from_raw_parts_mut(buf, len) };
+    conn.read(data_slice).try_into().unwrap()
+}
+
 #[no_mangle]
 pub extern "C" fn dmludp_conn_send_all(
     conn: &mut Connection,
@@ -248,6 +259,16 @@ pub extern "C" fn dmludp_conn_recv(
         Err(e) => e.to_c(),
 
     }
+}
+
+#[no_mangle]
+pub extern "C" fn dmludp_conn_is_empty(conn: &mut Connection) -> bool{
+    conn.data_is_empty()
+}
+
+#[no_mangle]
+pub extern "C" fn dmludp_buffer_is_empty(conn: &mut Connection) -> bool{
+    conn.is_empty()
 }
 
 #[no_mangle]

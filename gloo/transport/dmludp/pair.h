@@ -50,6 +50,14 @@ class UnboundBuffer;
 // Sufficiently large timeout (of 100 hours) to prevent overflow
 constexpr auto kLargeTimeDuration = std::chrono::hours(100);
 
+struct retry_message{
+    uint8_t data[1500];
+
+    ssize_t len;
+
+    double retry_time;
+};
+
 struct Op {
   enum Opcode {
     SEND_BUFFER = 0,
@@ -221,7 +229,51 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   friend class Context;
 
-  dmludp_recv_info recv_info;
+  std::map<ssize_t, std::shared_ptr<retry_message>> messages;
+
+  int timer_fd;
+
+  class dmludptimer: public Handler{
+    Pair* outerPtr;
+
+    InnerClass(Pair* outer) : outerPtr(outer) {
+      outerPtr->device_->registerDescriptor(outerPtr->timerfd, EPOLLIN, this);
+    }
+
+    void handleEvents(int events){
+      uint64_t expirations;
+      read(outerPtr->timer_fd, &expirations, sizeof(expirations));
+
+      auto it = (outerPtr->messages).begin();
+      while(it != (outerPtr->messages).end()){
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        double now = tv.tv_sec*1000000 + tv.tv_usec;
+
+        auto pkt_num = it->first;
+        auto temp = it->second;
+
+        double record = (temp->retry_time);
+        if(record - now > 0){
+            auto newone = std::make_shared<retry_message>();
+            std::copy(std::begin(temp->data), std::end(temp->data), std::begin(newone->data));
+            newone->retry_time = record;
+
+            // Get the rtt from dmludp
+            struct timeval result;
+            gettimeofday(&result, NULL);
+            double rtt = dmludp_get_rtt((outerPtr->dmludp_connection).get());
+            newone->retry_time = record + rtt;
+            (outerPtr->messages).insert(std::make_pair(pkt_num, newone));
+            send(outerPtr->fd_, temp->data, temp->len, 0);
+        }
+        it++;
+      }
+    }
+  }
+  
+  dmludptimer innertimer;
 
  protected:
   // Maintain state of a single operation for receiving operations
@@ -278,6 +330,12 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   // The pair mutex is expected to be held when called.
   //
   virtual void handleReadWrite(int events);
+
+  void handlewrite();
+
+  void handleread();
+
+  bool Pair::write2dmludp(Op& op);
 
   // Advances this pair's state. See the `Pair::state` enum for
   // possible states. State can only move forward, i.e. from

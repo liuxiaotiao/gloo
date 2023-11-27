@@ -104,7 +104,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   struct sockaddr_storage peer;
 
-  struct sockaddr_storage local;
+  struct sockaddr *addr;
 
   bool new_socket;
  private:

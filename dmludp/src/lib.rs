@@ -494,6 +494,10 @@ impl Connection {
         self.rtt = self.rtt/4 + 3*last/4;
     }
 
+    pub fn data_recv(&self, buf: &mut [u8]){
+
+    }
+
     pub fn recv_slice(&mut self, buf: &mut [u8]) ->Result<usize>{
         let len = buf.len();
 
@@ -536,7 +540,7 @@ impl Connection {
         if hdr.ty == packet::Type::Application{
             self.recv_count += 1;
             read = hdr.pkt_length as usize;
-            self.rec_buffer.write(&mut buf[26..],hdr.offset).unwrap();
+            self.rec_buffer.write(&mut buf[26..], hdr.offset).unwrap();
             // self.prioritydic.insert(hdr.offset, hdr.priority);
             self.recv_dic.insert(hdr.offset, hdr.priority);
             println!("offset: {:?}, length: {:?}", hdr.offset, hdr.pkt_length);
@@ -910,8 +914,6 @@ impl Connection {
         Ok((total_len, info))
     }
 
-
-
     pub fn is_stopped(&self)->bool{
         self.stop_flag && self.stop_ack
     }
@@ -926,9 +928,8 @@ impl Connection {
         false
     }
 
-    pub fn read(&mut self, out:&mut [u8]) -> Result<usize>{
-        self.rec_buffer.emit(out)
-
+    pub fn read(&mut self, out:&mut [u8]) -> usize{
+        self.rec_buffer.emit(out).unwrap()
     }
 
     pub fn max_ack(&mut self) -> u64{
@@ -1012,10 +1013,6 @@ impl Connection {
     //     hdr
     // }
 
-    // fn record_reset(&mut self){
-    
-    // }
-
     pub fn check_loss(&mut self, recv_buf: &mut [u8]){
         let mut b = octets::OctetsMut::with_slice(recv_buf);
         // let result:Vec<u64> = Vec::new();
@@ -1095,7 +1092,6 @@ impl Connection {
     pub fn is_timed_out(&self) -> bool {
         self.timed_out
     }
-
     
     /// Selects the packet type for the next outgoing packet.
     fn write_pkt_type(& mut self) -> Result<packet::Type> {
@@ -1134,8 +1130,13 @@ impl Connection {
         Err(Error::Done)
     }
 
-    pub fn data_is_empty(& mut self)->bool{
+    // Send buffer is empty or not. If it is empty, send_all() will try to fill it with new data.
+    pub fn data_is_empty(&self)->bool{
         self.send_buffer.data.is_empty()
+    }
+
+    pub fn is_empty(& self) -> bool{
+        self.send_data.is_empty()
     }
 
     // Application can send data through this function, 
@@ -1315,9 +1316,9 @@ impl PartialEq for RangeBuf {
     }
 }
 
-/// Receive-side stream buffer.
+/// Receive-side buffer.
 ///
-/// Stream data received by the peer is buffered in a list of data chunks
+/// Data received by the peer is buffered in a list of data chunks
 /// ordered by offset in ascending order. Contiguous data can then be read
 /// into a slice.
 #[derive(Debug, Default)]
@@ -1391,7 +1392,58 @@ impl RecvBuf {
         // if let Some(e) = self.error {
         //     return Err(Error::StreamReset(e));
         // }
+        let mut startoff = 0;
+        let mut fixed = 0;
+        // while cap > 0 && self.ready() {
+        //     let mut entry = match self.data.first_entry() {
+        //         Some(entry) => entry,
+        //         None => break,
+        //     };
 
+        //     let buf = entry.get_mut();
+
+        //     if fixed == 0{
+        //         startoff = buf.off();
+        //     }
+        //     let max_off = buf.max_off();
+        //     let data_len = buf.len();
+            
+        //     let mut zero_len = 0;
+        //     if max_off - self.last_maxoff != data_len.try_into().unwrap(){
+        //         zero_len = max_off - self.last_maxoff - (data_len as u64);
+        //     }
+            
+        //     fixed += 1;
+
+        //     // 1. 0 can fill out the rest out buffer
+        //     if zero_len < (cap as u64){
+        //         cap -= zero_len as usize;
+        //         len += zero_len as usize;
+
+        //         cap -= as usize;
+        //         len += as usize;
+
+        //         self.last_maxoff += zero_len;
+        //         let buf_len = cmp::min(buf.len(), cap); 
+        //         out[len..len + buf_len].copy_from_slice(&buf.data[..buf_len]);
+        //         self.last_maxoff += buf_len as u64;
+        //         if buf_len < buf.len(){
+        //             buf.consume(buf_len);
+
+        //             // We reached the maximum capacity, so end here.
+        //             break;
+        //         }
+        //         entry.remove();
+        //     }else if zero_len == cap as u64 {
+        //         self.last_maxoff += zero_len;
+        //         // cap -= zero_len as usize;
+        //         len += zero_len as usize;
+
+        //         break;
+        //     }else {
+        //         self.last_maxoff += cap as u64;
+        //         break;
+        //     }
         while cap > 0 && self.ready() {
             let mut entry = match self.data.first_entry() {
                 Some(entry) => entry,
@@ -1400,45 +1452,25 @@ impl RecvBuf {
 
             let buf = entry.get_mut();
 
-            // let mut zero_vec = Vec::<u8>::new();
-
+            if fixed == 0{
+                startoff = buf.off();
+            }
             let max_off = buf.max_off();
             let data_len = buf.len();
-            let mut zero_len = 0;
-            if max_off - self.last_maxoff != data_len.try_into().unwrap(){
-                zero_len = max_off - self.last_maxoff - (data_len as u64);
-                // let value = 0;
-                // zero_vec.extend(std::iter::repeat(value).take(zero_len.try_into().unwrap()));
-            }
             
+            fixed += 1;
 
             // 1. 0 can fill out the rest out buffer
-            // 2. 
-            if zero_len < (cap as u64){
-                cap -= zero_len as usize;
-                len += zero_len as usize;
-                self.last_maxoff += zero_len;
-                let buf_len = cmp::min(buf.len(), cap); 
-                out[len..len + buf_len].copy_from_slice(&buf.data[..buf_len]);
-                self.last_maxoff += buf_len as u64;
-                if buf_len < buf.len(){
-                    buf.consume(buf_len);
+            let buf_len = cmp::min(buf.len(), cap); 
+            out[(buf.off()-startoff) as usize..(buf.max_off()-startoff) as usize].copy_from_slice(&buf.data[..buf_len]);
+            if buf_len < buf.len(){
+                buf.consume(buf_len);
 
-                    // We reached the maximum capacity, so end here.
-                    break;
-                }
-                entry.remove();
-            }else if zero_len == cap as u64 {
-                self.last_maxoff += zero_len;
-                // cap -= zero_len as usize;
-                len += zero_len as usize;
-
-                break;
-            }else {
-                self.last_maxoff += cap as u64;
+                // We reached the maximum capacity, so end here.
                 break;
             }
-            
+            entry.remove();
+
             // let buf_len = cmp::min(buf.len(), cap);
 
             // out[len..len + buf_len].copy_from_slice(&buf.data[..buf_len]);
@@ -1495,13 +1527,6 @@ impl RecvBuf {
 
     /// Returns true if the stream has data to be read.
     fn ready(&self) -> bool {
-        // let (_, buf) = match self.data.first_key_value() {
-        //     Some(v) => v,
-        //     None => return false,
-        // };
-
-        // buf.off() == self.off
-
         if self.data.is_empty(){
             return false
         }else {
@@ -1512,9 +1537,9 @@ impl RecvBuf {
     
 }
 
-/// Send-side stream buffer.
+/// Send-side buffer.
 ///
-/// Stream data scheduled to be sent to the peer is buffered in a list of data
+/// Data scheduled to be sent to the peer is buffered in a list of data
 /// chunks ordered by offset in ascending order. Contiguous data can then be
 /// read into a slice.
 ///
@@ -1580,13 +1605,22 @@ impl SendBuf {
     /// writes).
     /// write function is used to write new data into sendbuf, one congestion window 
     /// will run once.
-    pub fn write(&mut self, mut data: &[u8], window_size: usize, off_len: usize, max_ack: u64) -> Result<usize> {
+    pub fn write(&mut self, mut data: &[u8], window_size: usize, off_len: usize, _max_ack: u64) -> Result<usize> {
+        // All data in the buffer has been sent out, remove received data from the buffer.
+        if self.pos == 0 {
+            self.recv_and_drop();
+        }
+
+        let capacity = self.cap()?;
+        if capacity == 0 {
+            return Ok(0);
+        }
+
         if self.is_empty(){
-            self.recv_and_drop(max_ack);
             self.max_data = window_size as u64;
             self.removed = 0;
             self.sent = 0;
-            // Get the stream send capacity. This will return an error if the stream
+            // Get the send capacity. This will return an error if the stream
             // was stopped.
             self.len = self.len() as u64;
             self.used_length = self.len();
@@ -1599,7 +1633,7 @@ impl SendBuf {
                 return  Ok(0);
             }
         
-            let capacity = self.cap()?;
+            // let capacity = self.cap()?;
             
             if data.len() > capacity {
                 // Truncate the input buffer according to the stream's capacity.
@@ -1616,7 +1650,6 @@ impl SendBuf {
     
             let mut len = 0;
     
-            /////
             if off_len > 0 {
                 if data.len() > off_len{
                 println!("data.len >> off_len");
@@ -1677,10 +1710,10 @@ impl SendBuf {
             }
     
             if data.len() == 0{
-                return  Ok(0);
+                return Ok(0);
             }
         
-            let capacity = self.cap()?;
+            // let capacity = self.cap()?;
             
             if data.len() > capacity {
                 // Truncate the input buffer according to the stream's capacity.
@@ -1733,17 +1766,16 @@ impl SendBuf {
 
     /// Returns true if there is data to be written.
     fn ready(&self) -> bool {
-        // !self.data.is_empty() && self.off_front() < self.off
         !self.data.is_empty()
     }
 
     /// Writes data from the send buffer into the given output buffer.
-    pub fn emit(&mut self, out: &mut [u8]) -> Result<(usize,u64,bool)> {
+    pub fn emit(&mut self, out: &mut [u8]) -> Result<(usize, u64, bool)> {
         let mut stop = false;
         let mut out_len = out.len();
-        if self.data.is_empty(){
-            println!("no data");
-        }
+        // if self.data.is_empty(){
+        //     println!("no data");
+        // }
 
         let out_off = self.off_front();
      
@@ -1801,7 +1833,8 @@ impl SendBuf {
     }
 
     // pub fn recv_and_drop(&mut self, ack_set: &[u64], unack_set: &[u64],len: usize) {
-    pub fn recv_and_drop(&mut self, _max_ack: u64) {
+    // Remove received data from send buffer.
+    pub fn recv_and_drop(&mut self) {
         if self.data.is_empty() {
             return;
         }
@@ -1812,7 +1845,7 @@ impl SendBuf {
         self.offset_recv.retain(|_, & mut v| v == true);
     }
 
-
+    // Mark received data as false.
     pub fn ack_and_drop(&mut self, offset:u64){
         if let Some(x) = self.offset_recv.get_mut(&offset) {
             *x = false;
@@ -1871,8 +1904,6 @@ impl SendBuf {
     }
 
 }
-
-
 
 mod recovery;
 mod packet;
