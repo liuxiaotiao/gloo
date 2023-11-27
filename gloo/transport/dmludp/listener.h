@@ -67,8 +67,6 @@ class Listener final : public Handler {
 
   // Sockets by sequence number (while waiting for a pair to call).
   std::unordered_map<sequence_number_t, std::shared_ptr<Socket>> seqToSocket_;
-
-  const attr& local_attr;
 };
 
 } // namespace dmludp

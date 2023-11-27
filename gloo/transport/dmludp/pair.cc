@@ -64,8 +64,8 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr),
-      innertimer(this) {
+      ex_(nullptr) {
+        this->dmludptimer o = new this->dmludptimer dmludptimer(this);
         timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
       }
 

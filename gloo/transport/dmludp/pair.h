@@ -237,12 +237,12 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     Pair* outerPtr;
 
     InnerClass(Pair* outer) : outerPtr(outer) {
-      outerPtr->device_->registerDescriptor(outerPtr->timerfd, EPOLLIN, this);
+      outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
     }
 
     void handleEvents(int events){
-      uint64_t expirations;
-      read(outerPtr->timer_fd, &expirations, sizeof(expirations));
+      // uint64_t expirations;
+      // read(outerPtr->timer_fd, &expirations, sizeof(expirations));
 
       auto it = (outerPtr->messages).begin();
       while(it != (outerPtr->messages).end()){
@@ -266,14 +266,14 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             double rtt = dmludp_get_rtt((outerPtr->dmludp_connection).get());
             newone->retry_time = record + rtt;
             (outerPtr->messages).insert(std::make_pair(pkt_num, newone));
-            send(outerPtr->fd_, temp->data, temp->len, 0);
+            ::send(outerPtr->fd_, temp->data, temp->len, 0);
         }
         it++;
       }
     }
   }
   
-  dmludptimer innertimer;
+  // dmludptimer innertimer;
 
  protected:
   // Maintain state of a single operation for receiving operations
@@ -335,7 +335,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   void handleread();
 
-  bool Pair::write2dmludp(Op& op);
+  bool write2dmludp(Op& op);
 
   // Advances this pair's state. See the `Pair::state` enum for
   // possible states. State can only move forward, i.e. from
