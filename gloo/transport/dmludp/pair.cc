@@ -837,7 +837,7 @@ void Pair::handleReadWrite(int events) {
         }
       }
     }
-    whie(handleread()){
+    while(handleread()){
 
     }
   }
