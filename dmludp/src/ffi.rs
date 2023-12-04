@@ -135,7 +135,7 @@ pub extern "C" fn dmludp_header_info(
             Type::StartAck =>8,
         };
 
-        pn = (&mut hdr.pkt_numas *mut u64) as *mut i32;
+        pn = &mut (hdr.pkt_numa as i32);
 
     }
 
