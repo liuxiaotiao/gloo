@@ -209,19 +209,19 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       ::read(outerPtr->timer_fd, &expirations, sizeof(expirations));
       for (auto it = (outerPtr->message).begin(); it != (outerPtr->message).end(); it++){
         auto now = std::chrono::steady_clock::now();
-        if (it->retry_time > now){
+        if (it->seconed.retry_time > now){
           break;
         }else{
           struct retry_message retry;
-          retry.pkt_num = it->pkt_num;
+          retry.pkt_num = it->seconed.pkt_num;
           double rtt = dmludp_get_rtt(outerPtr->dmludp_connection.get());
           std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
           std::chrono::steady_clock::time_point futureTimePoint = now + duration;
           retry.retry_time = futureTimePoint;
-          retry.data = it->data;
+          retry.data = it->seconed.data;
           // std::copy(std::begin(it.data), std::end(it.data), std::begin(retry.data));
-          retry.len = it->len;
-          ::send(outerPtr->fd_, it->data.data(), it->len, 0);
+          retry.len = it->seconed.len;
+          ::send(outerPtr->fd_, it->seconed.data.data(), it->seconed.len, 0);
           outerPtr->add_message(futureTimePoint, retry);
         }
       }
@@ -370,6 +370,8 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   void handlewrite();
 
   bool handleread();
+
+  bool dmludp2read(struct iovec iov)
 
   bool write2dmludp(Op& op);
 

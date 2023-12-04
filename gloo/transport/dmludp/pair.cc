@@ -676,7 +676,7 @@ void Pair::handlewrite(){
 
   while (1){
     uint8_t out[1500];
-    dmludp_send_info *send_info;
+    dmludp_send_info send_info;
 
     uint8_t buffer[1500];
     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
@@ -690,7 +690,7 @@ void Pair::handlewrite(){
       }
     }
 
-    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
+    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), &send_info);
     if (dmludpwrite < 0){
       if (dmludp_conn_is_stop(dmludp_connection.get())){
         dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
@@ -790,13 +790,13 @@ bool Pair::handleread(){
         if(type == 4){
           uint8_t out[1500];
           dmludp_send_info send_info;
-          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
-          ssize_t socketwrite = send(fd_, out, dmludpwrite, 0);
+          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), &send_info);
+          ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
         }
         else if(type == 6){
           uint8_t out[1500];
-          dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
-          ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
+          auto stopsize = dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
+          ssize_t socket_write = ::send(fd_, out, stopsize, 0);
           break;
         }
         else if(type = 3){
@@ -831,7 +831,7 @@ void Pair::handleReadWrite(int events) {
       if (socketread > 0){
         auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, socketread);
         uint8_t type;
-        ssize_t pkt_num;
+        int pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
         if (type == 5 || type == 6){
           remove_retrymessage_by_pktnum(pkt_num);

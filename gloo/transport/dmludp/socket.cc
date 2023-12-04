@@ -25,7 +25,9 @@ namespace dmludp {
 std::shared_ptr<Socket> Socket::createForFamily(struct sockaddr_storage ai_addr) {
   auto rv = socket(ai_addr.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
   // memcpy(&local, &ai_addr, sizeof(&ai_addr));
-  addr = (struct sockaddr *)&ai_addr;
+  struct sockaddr_storage new_addr;
+  std::memcpy(&new_addr, &ai_addr, sizeof(sockaddr_storage));  
+  local_addr = std::move(new_addr);
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }
@@ -114,7 +116,7 @@ void Socket::listen(int backlog) {
 std::shared_ptr<Socket> Socket::accept() {
   struct sockaddr_storage addr;
   socklen_t addrlen = sizeof(addr);
-  if(new_socket == true){
+  if(new_socket){
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
