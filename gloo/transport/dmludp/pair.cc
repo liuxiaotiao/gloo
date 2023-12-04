@@ -792,7 +792,7 @@ bool Pair::handleread(){
           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
           ssize_t socketwrite = send(fd_, out, dmludpwrite, 0);
         }
-        else if(type = 6){
+        else if(type == 6){
           uint8_t out[1500];
           dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
           ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
@@ -832,7 +832,7 @@ void Pair::handleReadWrite(int events) {
         uint8_t type;
         ssize_t pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-        if (type = 5 || type = 6){
+        if (type == 5 || type == 6){
           update_timerfd(pkt_num);
         }
       }

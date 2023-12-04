@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <gloo/dmludp.h>
+#include <sys/timerfd.h>
 
 #include "gloo/common/error.h"
 #include "gloo/common/memory.h"
@@ -166,13 +167,13 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   void remove_retrymessage_by_pktnum(int pkt_num) {
     if (message_time.count(pkt_num) > 0 ) {
       auto time = message_time[pkt_num];
-        message.erase(task_time);
-        message_time.erase(id);
+      message.erase(time);
+      message_time.erase(pkt_num);
       if (!message.empty()) {
-        update_timerfd(fd, message.begin()->first);
+        update_timerfd(message.begin()->first);
       }else{
         struct itimerspec new_value = {};
-        timerfd_settime(fd, 0, &new_value, NULL);
+        timerfd_settime(fd_, 0, &new_value, NULL);
       }
     }
   }
@@ -184,13 +185,13 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     itimerspec new_value{};
     new_value.it_value.tv_sec = duration.count() / 1000000000;
     new_value.it_value.tv_nsec = duration.count() % 1000000000;
-    timerfd_settime(fd, 0, &new_value, nullptr);
+    timerfd_settime(fd_, 0, &new_value, nullptr);
 }
 
   void add_message(std::chrono::steady_clock::time_point time, retry_message&& new_task) {
     message[timeout] = std::move(new_task);
     message_time[new_task.pkt_num] = timeout;
-    update_timerfd(fd, message.begin()->first);
+    update_timerfd(message.begin()->first);
   }
 
 
