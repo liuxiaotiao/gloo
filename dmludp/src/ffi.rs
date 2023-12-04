@@ -114,7 +114,7 @@ pub extern "C" fn dmludp_config_free(config: *mut Config) {
 
 #[no_mangle]
 pub extern "C" fn dmludp_header_info(
-    buf: *mut u8, buf_len: size_t, ty: *mut u8, 
+    buf: *mut u8, buf_len: size_t, ty: *mut u8, pn: *mut i32
 ) -> c_int {
     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
     let hdr = match Header::from_slice(buf) {
@@ -135,6 +135,7 @@ pub extern "C" fn dmludp_header_info(
             Type::StartAck =>8,
         };
     }
+    pn = hdr.pkt_num as i32;
 
     0
 }

@@ -676,12 +676,12 @@ void Pair::handlewrite(){
 
   while (1){
     uint8_t out[1500];
-    dmludp_send_info send_info;
+    dmludp_send_info *send_info;
 
     uint8_t buffer[1500];
-    ssize_t socketread = recv(fd_, buffer, sizeof(buffer) , 0);
+    ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
     if (socketread > 0){
-      auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, read);
+      auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, socketread);
       uint8_t type;
       ssize_t pkt_num;
       ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
@@ -739,7 +739,7 @@ bool Pair::write2dmludp(Op& op){
 
   // Include preamble if necessary
   for (auto i : iov){
-    dmludp_data_write(dmludp_connection.get(), (const uint8_t*)i.data(), (size_t)i.iov_len);
+    dmludp_data_write(dmludp_connection.get(), (const uint8_t*)i.iov_base, (size_t)i.iov_len);
     if (i.iov_len == nbytes){
       break;
     }
@@ -779,7 +779,7 @@ bool Pair::handleread(){
 
     while(1){
       uint8_t buffer[1500];
-      ssize_t read = recv(fd_, buffer, sizeof(buffer) , 0);
+      ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
       ssize_t dmludpread = 0;
       if(read > 0){
         dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, read);
@@ -826,7 +826,7 @@ void Pair::handleReadWrite(int events) {
     // timer for retransimission.
     if (!message.empty() && dmludp_conn_is_stop(dmludp_connection.get())){
       uint8_t buffer[1500];
-      ssize_t socketread = recv(fd_, buffer, sizeof(buffer) , 0);
+      ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
       if (socketread > 0){
         auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, read);
         uint8_t type;

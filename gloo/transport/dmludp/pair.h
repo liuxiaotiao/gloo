@@ -188,9 +188,9 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     timerfd_settime(fd_, 0, &new_value, nullptr);
 }
 
-  void add_message(std::chrono::steady_clock::time_point time, retry_message&& new_task) {
-    message[timeout] = std::move(new_task);
-    message_time[new_task.pkt_num] = timeout;
+  void add_message(std::chrono::steady_clock::time_point time, retry_message& new_task) {
+    message[time] = std::move(new_task);
+    message_time[new_task.pkt_num] = time;
     update_timerfd(message.begin()->first);
   }
 
@@ -199,15 +199,15 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     Pair* outerPtr;
 
     void setOuter(Pair* outer) {
-        outerPtr = outer;
-        outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
+      outerPtr = outer;
+      outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
     }
 
 
     void handleEvents(int events){
       uint64_t expirations;
-      read(timer_fd, &expirations, sizeof(expirations));
-      for (auto it = (outerPtr->messages).begin(); it != (outerPtr->messages).end(); it++){
+      ::read(timer_fd, &expirations, sizeof(expirations));
+      for (auto it = (outerPtr->message).begin(); it != (outerPtr->message).end(); it++){
         auto now = std::chrono::steady_clock::now();
         if (it.retry_time > now){
           break;
@@ -226,16 +226,16 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         }
       }
 
-      if (!message.empty()) {
-        update_timerfd(timer_fd, message.begin()->first);
+      if (!outerPtr->message.empty()) {
+        update_timerfd(outerPtr->timer_fd, outerPtr->message.begin()->first);
       }else{
         struct itimerspec new_value = {};
-        timerfd_settime(fd, 0, &new_value, NULL);
+        timerfd_settime(outerPtr->timer_fd, 0, &new_value, NULL);
       }
     }
   }
   
-  dmludptimer innertimer;
+  struct dmludptimer innertimer;
 
  protected:
   // Refer to parent context using raw pointer. This could be a
