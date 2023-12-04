@@ -26,8 +26,8 @@ std::shared_ptr<Socket> Socket::createForFamily(struct sockaddr_storage ai_addr)
   auto rv = socket(ai_addr.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
   // memcpy(&local, &ai_addr, sizeof(&ai_addr));
   struct sockaddr_storage new_addr;
-  std::memcpy(&new_addr, &ai_addr, sizeof(sockaddr_storage));  
-  local_addr = std::move(new_addr);
+  memcpy(&new_addr, &ai_addr, sizeof(sockaddr_storage));  
+  local = std::move(new_addr);
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }
