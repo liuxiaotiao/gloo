@@ -52,26 +52,13 @@ constexpr auto kLargeTimeDuration = std::chrono::hours(100);
 
 struct retry_message{
     // uint8_t data[1500];
+    int pkt_num;
 
     std::array<uint8_t, 1500> data;
 
     ssize_t len;
 
-    time_t retry_time;
-
-    bool is_deleted;
-
-    retry_message(time_t timeout, ssize_t len, const std::array<uint8_t, 1500>& data) 
-    : retry_time(timeout), data(data), len(len), is_deleted(false) {}
-
-    bool operator<(const Task& other) const {
-      return retry_time > other.retry_time;
-    }
-
-    Task(Task&& other) noexcept 
-        : id(other.id), timeout(other.timeout), data(std::move(other.data)), is_deleted(other.is_deleted) {
-        other.is_deleted = true;  
-    }
+    std::chrono::steady_clock::time_point retry_time;
 };
 
 struct Op {
@@ -171,29 +158,41 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   void close() override;
 
-  std::map<ssize_t, std::shared_ptr<retry_message>> messages;
-
-  std::priority_queue<retry_message> messages;
+  std::map<std::chrono::steady_clock::time_point, retry_message> message;
+  std::map<int, std::chrono::steady_clock::time_point> message_time;
 
   int timer_fd;
 
-  // Update timerfd.
-  void update_timerfd(time_t next_timeout) {
-    struct itimerspec new_time;
-    memset(&new_time, 0, sizeof(new_time));
-    new_time.it_value.tv_sec = next_timeout;
-    timerfd_settime(timer_fd, TFD_TIMER_ABSTIME, &new_time, NULL);
-  }
-
-  // Add new entry to the priority queue.
-  void add_task(const Task& new_task) {
-    bool should_update_timer = task_queue.empty() || new_task < task_queue.top();
-    task_queue.push(new_task);
-
-    if (should_update_timer) {
-        update_timerfd(fd, new_task.timeout);
+  void remove_retrymessage_by_pktnum(int pkt_num) {
+    if (message_time.count(pkt_num) > 0 ) {
+      auto time = message_time[pkt_num];
+        message.erase(task_time);
+        message_time.erase(id);
+      if (!message.empty()) {
+        update_timerfd(fd, message.begin()->first);
+      }else{
+        struct itimerspec new_value = {};
+        timerfd_settime(fd, 0, &new_value, NULL);
+      }
     }
   }
+
+  void update_timerfd(std::chrono::steady_clock::time_point time_point) {
+    auto now = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_point - now);
+
+    itimerspec new_value{};
+    new_value.it_value.tv_sec = duration.count() / 1000000000;
+    new_value.it_value.tv_nsec = duration.count() % 1000000000;
+    timerfd_settime(fd, 0, &new_value, nullptr);
+}
+
+  void add_message(std::chrono::steady_clock::time_point time, retry_message&& new_task) {
+    message[timeout] = std::move(new_task);
+    message_time[new_task.pkt_num] = timeout;
+    update_timerfd(fd, message.begin()->first);
+  }
+
 
   class dmludptimer: public Handler{
     Pair* outerPtr;
@@ -203,51 +202,34 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
     }
 
-    void handle_timeout(int fd) {
-      uint64_t num_expired;
-      ::read(fd, &num_expired, sizeof(num_expired));
-
-      time_t current_time = time(NULL);
-
-      while (!outerPtr->task_queue.empty() && outerPtr->task_queue.top().timeout <= current_time) {
-          Task task = outerPtr->task_queue.top();
-          outerPtr->task_queue.pop();
-      }
-
-      if (!outerPtr->task_queue.empty()) {
-          outerPtr->update_timerfd(outerPtr->task_queue.top().timeout);
-      }
-    }
 
     void handleEvents(int events){
       uint64_t expirations;
-      ::read(outerPtr->timer_fd, &expirations, sizeof(expirations));
-
-      auto it = (outerPtr->messages).begin();
-      while(it != (outerPtr->messages).end()){
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-
-        double now = tv.tv_sec*1000000 + tv.tv_usec;
-
-        auto pkt_num = it->first;
-        auto temp = it->second;
-
-        double record = (temp->retry_time);
-        if(record - now > 0){
-            auto newone = std::make_shared<retry_message>();
-            std::copy(std::begin(temp->data), std::end(temp->data), std::begin(newone->data));
-            newone->retry_time = record;
-
-            // Get the rtt from dmludp
-            struct timeval result;
-            gettimeofday(&result, NULL);
-            double rtt = dmludp_get_rtt((outerPtr->dmludp_connection).get());
-            newone->retry_time = record + rtt;
-            (outerPtr->messages).insert(std::make_pair(pkt_num, newone));
-            ::send(outerPtr->fd_, temp->data, temp->len, 0);
+      read(timer_fd, &expirations, sizeof(expirations));
+      for (auto it = (outerPtr->messages).begin(); it != (outerPtr->messages).end(); it++){
+        auto now = std::chrono::steady_clock::now();
+        if (it.retry_time > now){
+          break;
+        }else{
+          struct retry_message retry;
+          retry.pkt_num = it.pkt_num;
+          double rtt = dmludp_get_rtt(outerPtr->dmludp_connection.get());
+          std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
+          std::chrono::steady_clock::time_point futureTimePoint = now + duration;
+          retry.retry_time = futureTimePoint;
+          retry.data = it.data;
+          // std::copy(std::begin(it.data), std::end(it.data), std::begin(retry.data));
+          retry.len = it.len;
+          ::send(outerPtr->fd_, it.data.data(), it.len, 0);
+          outerPtr->add_message(futureTimePoint, retry);
         }
-        it++;
+      }
+
+      if (!message.empty()) {
+        update_timerfd(timer_fd, message.begin()->first);
+      }else{
+        struct itimerspec new_value = {};
+        timerfd_settime(fd, 0, &new_value, NULL);
       }
     }
   }

@@ -686,16 +686,14 @@ void Pair::handlewrite(){
       ssize_t pkt_num;
       ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
       if (type = 5){
-        update_timerfd(pkt_num);
+        remove_retrymessage_by_pktnum(pkt_num);
       }
     }
 
     ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), send_info);
     if (dmludpwrite < 0){
       if (dmludp_conn_is_stop(dmludp_connection.get())){
-        // Add this function
         dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
-        //
         ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
       }
       break;
@@ -703,14 +701,18 @@ void Pair::handlewrite(){
     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
 
     ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-    if(type == 4){
-      // std::shared_ptr<retry_message> timer_message = std::make_shared<retry_message>();
-      // memcpy(timer_message->data, out, dmludpwrite);
-      // timer_message->len = dmludpwrite;
-      // timer_message->retry_time = dmludp_get_rtt(dmludp_connection.get());
-      // messages.insert(std::make_pair(pkt_num, timer_message));
-
+    if(type == 4 || type == 6){
       /// add timer
+      struct retry_message retry;
+      retry.pkt_num = pkt_num;
+      retry.len = dmludpwrite;
+      double rtt = dmludp_get_rtt(dmludp_connection.get());
+      auto now = std::chrono::steady_clock::now();
+      std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
+      std::chrono::steady_clock::time_point futureTimePoint = now + duration;
+      retry.retry_time = futureTimePoint;
+      std::copy(std::begin(out), std::end(out), retry.data.begin());
+      add_message(futureTimePoint, retry);
     }
     break;
   }
