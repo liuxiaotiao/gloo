@@ -308,19 +308,33 @@ pub extern "C" fn dmludp_conn_send(
 }
 
 #[no_mangle]
-pub extern "C" fn dmludp_send_data_fin(conn: &mut Connection,out: *mut u8, out_len: size_t,
-    out_info: &mut SendInfo,
+pub extern "C" fn dmludp_send_data_stop(conn: &mut Connection,out: *mut u8, out_len: size_t,
 )->ssize_t{
     if out_len > <ssize_t>::max_value() as usize {
         panic!("The provided buffer is too large");
     }
 
     let out = unsafe { slice::from_raw_parts_mut(out, out_len) };
-    match conn.send_data_fin(out) {
-        Ok((v, info)) => {
-            out_info.from_len = std_addr_to_c(&info.from, &mut out_info.from);
-            out_info.to_len = std_addr_to_c(&info.to, &mut out_info.to);
+    match conn.send_data_stop(out) {
+        Ok((v)) => {
 
+
+            v as ssize_t
+        },
+
+        Err(e) => e.to_c(),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn dmludp_send_data_handshake(conn: &mut Connection,out: *mut u8, out_len: size_t)->ssize_t{
+    if out_len > <ssize_t>::max_value() as usize {
+        panic!("The provided buffer is too large");
+    }
+
+    let out = unsafe { slice::from_raw_parts_mut(out, out_len) };
+    match conn.send_data_stop(out) {
+        Ok((v)) => {
             v as ssize_t
         },
 

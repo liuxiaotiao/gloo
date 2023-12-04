@@ -494,10 +494,6 @@ impl Connection {
         self.rtt = self.rtt/4 + 3*last/4;
     }
 
-    pub fn data_recv(&self, buf: &mut [u8]){
-
-    }
-
     pub fn recv_slice(&mut self, buf: &mut [u8]) ->Result<usize>{
         let len = buf.len();
 
@@ -737,6 +733,9 @@ impl Connection {
 
         }
 
+        //
+        // chekc is_ack condition is correct or not.
+        //
         //send the 
         if ty == packet::Type::ElictAck{
             pn =  self.pkt_num_spaces[1].next_pkt_num;
@@ -876,42 +875,61 @@ impl Connection {
         Ok((total_len, info))
     }
 
-    pub fn send_data_fin(&mut self, out: &mut [u8])-> Result<(usize, SendInfo)>{
+    pub fn send_data_stop(&mut self, out: &mut [u8])-> Result<usize>{
         if out.is_empty(){
             return Err(Error::BufferTooShort);
         }
         
         let total_len:usize = HEADER_LENGTH;
 
-        // Limit output packet size to respect the sender and receiver's
-        // maximum UDP payload size limit.
-        let mut _left = cmp::min(out.len(), self.max_send_udp_payload_size());
+        let pn =  self.pkt_num_spaces[1].next_pkt_num;
+        self.pkt_num_spaces[1].next_pkt_num += 1;
+
+        let offset:u64 = 0;
+        let priority:u8 = 0;
+        let psize:u64 = 0;
+
+        let ty = packet::Type::Stop; 
+
+        let hdr = Header {
+            ty,
+            pkt_num: pn,
+            offset: offset,
+            priority: priority,
+            pkt_length: psize,
+        };
+        let mut b = octets::OctetsMut::with_slice(out);
+        hdr.to_bytes(&mut b)?;
+
+
+        Ok(total_len)
+    }
+
+    pub fn send_data_handshake(&mut self, out: &mut [u8])-> Result<usize>{
+        if out.is_empty(){
+            return Err(Error::BufferTooShort);
+        }
+        
+        let total_len:usize = HEADER_LENGTH;
 
         let pn:u64 = 0;
         let offset:u64 = 0;
         let priority:u8 = 0;
         let psize:u64 = 0;
 
-        let ty = packet::Type::Fin; 
+        let ty = packet::Type::Handshake; 
 
-        let info = SendInfo {
-            from: self.localaddr,
-            to: self.peeraddr,
+        let hdr = Header {
+            ty,
+            pkt_num: pn,
+            offset: offset,
+            priority: priority,
+            pkt_length: psize,
         };
-        if ty == packet::Type::Handshake && self.server{
-            let hdr = Header {
-                ty,
-                pkt_num: pn,
-                offset: offset,
-                priority: priority,
-                pkt_length: psize,
-            };
-            let mut b = octets::OctetsMut::with_slice(out);
-            hdr.to_bytes(&mut b)?;
-        }
+        let mut b = octets::OctetsMut::with_slice(out);
+        hdr.to_bytes(&mut b)?;
 
-        // total_len += offset as usize;
-        Ok((total_len, info))
+        Ok(total_len)
     }
 
     pub fn is_stopped(&self)->bool{
@@ -1142,9 +1160,13 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
-        let len = buf.len() % 1024 + 1;
+        let len = match buf.len() / 1024 {
+            0 => buf.len() / 1024,
+            _ => buf.len()/1024 + 1,
+        };
         self.send_data.extend(buf.to_vec());
         self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+        self.send_buffer.clear();
     }
 
     // //read data from application
@@ -1455,21 +1477,22 @@ impl RecvBuf {
             if fixed == 0{
                 startoff = buf.off();
             }
-            let max_off = buf.max_off();
-            let data_len = buf.len();
+            // let max_off = buf.max_off();
+            // let data_len = buf.len();
             
             fixed += 1;
 
             // 1. 0 can fill out the rest out buffer
             let buf_len = cmp::min(buf.len(), cap); 
-            out[(buf.off()-startoff) as usize..(buf.max_off()-startoff) as usize].copy_from_slice(&buf.data[..buf_len]);
+            out[buf.off() as usize..buf.max_off() as usize].copy_from_slice(&buf.data[..buf_len]);
             if buf_len < buf.len(){
                 buf.consume(buf_len);
-
                 // We reached the maximum capacity, so end here.
                 break;
             }
+            
             entry.remove();
+            len += buf_len;
 
             // let buf_len = cmp::min(buf.len(), cap);
 
@@ -1770,6 +1793,9 @@ impl SendBuf {
     }
 
     /// Writes data from the send buffer into the given output buffer.
+    //
+    // Check stop condition is correct or not.
+    //
     pub fn emit(&mut self, out: &mut [u8]) -> Result<(usize, u64, bool)> {
         let mut stop = false;
         let mut out_len = out.len();
@@ -1872,6 +1898,7 @@ impl SendBuf {
         self.data.clear();
         self.pos = 0;
         self.off = 0;
+        self.len = 0;
     }
 
     /// Returns the largest offset of data buffered.

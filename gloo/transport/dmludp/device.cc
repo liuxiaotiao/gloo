@@ -7,7 +7,7 @@
  */
 
 #include "gloo/transport/dmludp/device.h"
-
+#include <arpa/inet.h>
 #include <array>
 #include <ifaddrs.h>
 #include <netdb.h>
@@ -89,56 +89,89 @@ static void lookupAddrForIface(struct attr& attr) {
 }
 
 static void lookupAddrForHostname(struct attr& attr) {
-  struct addrinfo hints;
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = attr.ai_family;
-  hints.ai_socktype = SOCK_DGRAM;
-  struct addrinfo* result;
-  int bind_rv = 0;
-  int bind_errno = 0;
-  std::string bind_addr;
-  auto rv = getaddrinfo(attr.hostname.data(), nullptr, &hints, &result);
-  GLOO_ENFORCE_NE(rv, -1);
-  struct addrinfo* rp;
-  for (rp = result; rp != nullptr; rp = rp->ai_next) {
-    auto fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (fd == -1) {
-      continue;
+  // struct addrinfo hints;
+  // memset(&hints, 0, sizeof(hints));
+  // hints.ai_family = attr.ai_family;
+  // hints.ai_socktype = SOCK_DGRAM;
+  // struct addrinfo* result;
+  // int bind_rv = 0;
+  // int bind_errno = 0;
+  // std::string bind_addr;
+  // auto rv = getaddrinfo(attr.hostname.data(), nullptr, &hints, &result);
+  // GLOO_ENFORCE_NE(rv, -1);
+  // struct addrinfo* rp;
+  // for (rp = result; rp != nullptr; rp = rp->ai_next) {
+  //   auto fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+  //   if (fd == -1) {
+  //     continue;
+  //   }
+
+  //   bind_rv = bind(fd, rp->ai_addr, rp->ai_addrlen);
+  //   if (bind_rv == -1) {
+  //     bind_errno = errno;
+  //     bind_addr = Address(rp->ai_addr, rp->ai_addrlen).str();
+  //     close(fd);
+  //     continue;
+  //   }
+
+  //   attr.ai_family = rp->ai_family;
+  //   attr.ai_socktype = rp->ai_socktype;
+  //   attr.ai_protocol = rp->ai_protocol;
+  //   memcpy(&attr.ai_addr, rp->ai_addr, rp->ai_addrlen);
+  //   attr.ai_addrlen = rp->ai_addrlen;
+  //   close(fd);
+  //   break;
+  // }
+
+  // // If the final call to bind(2) failed, raise error saying so.
+  // GLOO_ENFORCE(
+  //   bind_rv == 0,
+  //   "Unable to find address for ",
+  //   attr.hostname,
+  //   "; bind(2) for ",
+  //   bind_addr,
+  //   " failed with: ",
+  //   strerror(bind_errno));
+
+  // // Verify that we were able to find an address in the first place.
+  // GLOO_ENFORCE(
+  //   rp != nullptr,
+  //   "Unable to find address for: ",
+  //   attr.hostname);
+  // freeaddrinfo(result);
+  struct ifaddrs *addrs, *tmp;
+  getifaddrs(&addrs);
+  tmp = addrs;
+
+  while (tmp) {
+    if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET) {
+      struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
+      char* IP = inet_ntoa(pAddr->sin_addr);
+      char* pch = strstr (IP,"10.10.1");
+      if (pch == NULL){
+        tmp = tmp->ifa_next;
+        continue;
+      }
+
+      attr.ai_addrlen = sizeof(struct sockaddr_in);
+      memcpy(&attr.ai_addr, tmp->ifa_addr, attr.ai_addrlen);
+      ////////////////
+      // attr.ai_socktype = SOCK_STREAM;
+      attr.ai_socktype = SOCK_DGRAM;
+      attr.ai_protocol = 0;
+    } 
+    else if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET6) { // IPv6
+      break;
     }
 
-    bind_rv = bind(fd, rp->ai_addr, rp->ai_addrlen);
-    if (bind_rv == -1) {
-      bind_errno = errno;
-      bind_addr = Address(rp->ai_addr, rp->ai_addrlen).str();
-      close(fd);
-      continue;
-    }
-
-    attr.ai_family = rp->ai_family;
-    attr.ai_socktype = rp->ai_socktype;
-    attr.ai_protocol = rp->ai_protocol;
-    memcpy(&attr.ai_addr, rp->ai_addr, rp->ai_addrlen);
-    attr.ai_addrlen = rp->ai_addrlen;
-    close(fd);
-    break;
+    tmp = tmp->ifa_next;
   }
 
-  // If the final call to bind(2) failed, raise error saying so.
+  freeifaddrs(addrs);
   GLOO_ENFORCE(
-    bind_rv == 0,
-    "Unable to find address for ",
-    attr.hostname,
-    "; bind(2) for ",
-    bind_addr,
-    " failed with: ",
-    strerror(bind_errno));
-
-  // Verify that we were able to find an address in the first place.
-  GLOO_ENFORCE(
-    rp != nullptr,
+    tmp != nullptr,
     "Unable to find address for: ",
     attr.hostname);
-  freeaddrinfo(result);
   return;
 }
 

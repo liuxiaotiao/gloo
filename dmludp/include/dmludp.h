@@ -150,8 +150,9 @@ typedef struct {
 ssize_t dmludp_conn_send(dmludp_conn *conn, uint8_t *out, size_t out_len,
                          dmludp_send_info *out_info);
 
-ssize_t dmludp_send_data_fin(dmludp_conn *conn, uint8_t *out, size_t out_len,
-                         dmludp_send_info *out_info);
+ssize_t dmludp_send_data_stop(dmludp_conn *conn, uint8_t *out, size_t out_len);
+
+ssize_t dmludp_send_data_handshake(dmludp_conn *conn, uint8_t *out, size_t out_len);
 
 // Store application into dmludp
 

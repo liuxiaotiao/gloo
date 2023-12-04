@@ -51,11 +51,27 @@ class UnboundBuffer;
 constexpr auto kLargeTimeDuration = std::chrono::hours(100);
 
 struct retry_message{
-    uint8_t data[1500];
+    // uint8_t data[1500];
+
+    std::array<uint8_t, 1500> data;
 
     ssize_t len;
 
-    double retry_time;
+    time_t retry_time;
+
+    bool is_deleted;
+
+    retry_message(time_t timeout, ssize_t len, const std::array<uint8_t, 1500>& data) 
+    : retry_time(timeout), data(data), len(len), is_deleted(false) {}
+
+    bool operator<(const Task& other) const {
+      return retry_time > other.retry_time;
+    }
+
+    Task(Task&& other) noexcept 
+        : id(other.id), timeout(other.timeout), data(std::move(other.data)), is_deleted(other.is_deleted) {
+        other.is_deleted = true;  
+    }
 };
 
 struct Op {
@@ -155,6 +171,89 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   void close() override;
 
+  std::map<ssize_t, std::shared_ptr<retry_message>> messages;
+
+  std::priority_queue<retry_message> messages;
+
+  int timer_fd;
+
+  // Update timerfd.
+  void update_timerfd(time_t next_timeout) {
+    struct itimerspec new_time;
+    memset(&new_time, 0, sizeof(new_time));
+    new_time.it_value.tv_sec = next_timeout;
+    timerfd_settime(timer_fd, TFD_TIMER_ABSTIME, &new_time, NULL);
+  }
+
+  // Add new entry to the priority queue.
+  void add_task(const Task& new_task) {
+    bool should_update_timer = task_queue.empty() || new_task < task_queue.top();
+    task_queue.push(new_task);
+
+    if (should_update_timer) {
+        update_timerfd(fd, new_task.timeout);
+    }
+  }
+
+  class dmludptimer: public Handler{
+    Pair* outerPtr;
+
+    void setOuter(Pair* outer) {
+        outerPtr = outer;
+        outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
+    }
+
+    void handle_timeout(int fd) {
+      uint64_t num_expired;
+      ::read(fd, &num_expired, sizeof(num_expired));
+
+      time_t current_time = time(NULL);
+
+      while (!outerPtr->task_queue.empty() && outerPtr->task_queue.top().timeout <= current_time) {
+          Task task = outerPtr->task_queue.top();
+          outerPtr->task_queue.pop();
+      }
+
+      if (!outerPtr->task_queue.empty()) {
+          outerPtr->update_timerfd(outerPtr->task_queue.top().timeout);
+      }
+    }
+
+    void handleEvents(int events){
+      uint64_t expirations;
+      ::read(outerPtr->timer_fd, &expirations, sizeof(expirations));
+
+      auto it = (outerPtr->messages).begin();
+      while(it != (outerPtr->messages).end()){
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        double now = tv.tv_sec*1000000 + tv.tv_usec;
+
+        auto pkt_num = it->first;
+        auto temp = it->second;
+
+        double record = (temp->retry_time);
+        if(record - now > 0){
+            auto newone = std::make_shared<retry_message>();
+            std::copy(std::begin(temp->data), std::end(temp->data), std::begin(newone->data));
+            newone->retry_time = record;
+
+            // Get the rtt from dmludp
+            struct timeval result;
+            gettimeofday(&result, NULL);
+            double rtt = dmludp_get_rtt((outerPtr->dmludp_connection).get());
+            newone->retry_time = record + rtt;
+            (outerPtr->messages).insert(std::make_pair(pkt_num, newone));
+            ::send(outerPtr->fd_, temp->data, temp->len, 0);
+        }
+        it++;
+      }
+    }
+  }
+  
+  dmludptimer innertimer;
+
  protected:
   // Refer to parent context using raw pointer. This could be a
   // weak_ptr, seeing as the context class is a shared_ptr, but:
@@ -228,52 +327,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   friend class Buffer;
 
   friend class Context;
-
-  std::map<ssize_t, std::shared_ptr<retry_message>> messages;
-
-  int timer_fd;
-
-  class dmludptimer: public Handler{
-    Pair* outerPtr;
-
-    InnerClass(Pair* outer) : outerPtr(outer) {
-      outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
-    }
-
-    void handleEvents(int events){
-      // uint64_t expirations;
-      // read(outerPtr->timer_fd, &expirations, sizeof(expirations));
-
-      auto it = (outerPtr->messages).begin();
-      while(it != (outerPtr->messages).end()){
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-
-        double now = tv.tv_sec*1000000 + tv.tv_usec;
-
-        auto pkt_num = it->first;
-        auto temp = it->second;
-
-        double record = (temp->retry_time);
-        if(record - now > 0){
-            auto newone = std::make_shared<retry_message>();
-            std::copy(std::begin(temp->data), std::end(temp->data), std::begin(newone->data));
-            newone->retry_time = record;
-
-            // Get the rtt from dmludp
-            struct timeval result;
-            gettimeofday(&result, NULL);
-            double rtt = dmludp_get_rtt((outerPtr->dmludp_connection).get());
-            newone->retry_time = record + rtt;
-            (outerPtr->messages).insert(std::make_pair(pkt_num, newone));
-            ::send(outerPtr->fd_, temp->data, temp->len, 0);
-        }
-        it++;
-      }
-    }
-  }
-  
-  // dmludptimer innertimer;
 
  protected:
   // Maintain state of a single operation for receiving operations
