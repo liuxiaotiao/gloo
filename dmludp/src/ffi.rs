@@ -135,7 +135,7 @@ pub extern "C" fn dmludp_header_info(
             Type::StartAck =>8,
         };
     }
-    pn = hdr.pkt_num as i32;
+    pn = &mut hdr.pkt_num as *mut i32;
 
     0
 }
@@ -317,9 +317,7 @@ pub extern "C" fn dmludp_send_data_stop(conn: &mut Connection,out: *mut u8, out_
 
     let out = unsafe { slice::from_raw_parts_mut(out, out_len) };
     match conn.send_data_stop(out) {
-        Ok((v)) => {
-
-
+        Ok(v) => {
             v as ssize_t
         },
 
@@ -335,7 +333,7 @@ pub extern "C" fn dmludp_send_data_handshake(conn: &mut Connection,out: *mut u8,
 
     let out = unsafe { slice::from_raw_parts_mut(out, out_len) };
     match conn.send_data_stop(out) {
-        Ok((v)) => {
+        Ok(v) => {
             v as ssize_t
         },
 
@@ -347,8 +345,6 @@ pub extern "C" fn dmludp_send_data_handshake(conn: &mut Connection,out: *mut u8,
 pub extern "C" fn dmludp_get_rtt(conn: &mut Connection) -> f64{
     conn.get_rtt()
 }
-
-
 
 struct AppData(*mut c_void);
 unsafe impl Send for AppData {}
