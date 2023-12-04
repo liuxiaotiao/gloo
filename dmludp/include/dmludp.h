@@ -103,7 +103,7 @@ void dmludp_config_free(dmludp_config *config);
 ////////////////////////////////////////
 // Extracts version, type, source / destination connection ID and address
 // verification token from the packet in |buf|.
-int dmludp_header_info(const uint8_t *buf, size_t buf_len, uint8_t *type, ssize_t *pkt_num);
+int dmludp_header_info(const uint8_t *buf, size_t buf_len, uint8_t *type, int *pkt_num);
 
 
 typedef struct dmludp_conn dmludp_conn;
