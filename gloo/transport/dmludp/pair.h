@@ -233,7 +233,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     }
   };
   
-  struct dmludptimer innertimer;
+  dmludptimer innertimer;
 
  protected:
   // Refer to parent context using raw pointer. This could be a
@@ -369,7 +369,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   bool handleread();
 
-  bool dmludp2read(struct iovec iov);
+  void dmludp2read(struct iovec iov);
 
   bool write2dmludp(Op& op);
 
