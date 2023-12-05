@@ -210,6 +210,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       for (auto it = (outerPtr->message).begin(); it != (outerPtr->message).end(); it++){
         auto now = std::chrono::steady_clock::now();
         if (it->second.retry_time > now){
+          update_timerfd(it->first);
           break;
         }else{
           struct retry_message retry;
@@ -226,9 +227,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         }
       }
 
-      if (!outerPtr->message.empty()) {
-        update_timerfd(outerPtr->message.begin()->first);
-      }else{
+      if (outerPtr->message.empty()) {
         struct itimerspec new_value = {};
         timerfd_settime(outerPtr->timer_fd, 0, &new_value, NULL);
       }
