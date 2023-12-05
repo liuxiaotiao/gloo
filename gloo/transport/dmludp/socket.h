@@ -90,6 +90,8 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   // Return address for getpeername(2).
   Address peerName() const;
 
+  void createNewSockAddrStorage(const sockaddr_storage& ai_addr);
+
   std::shared_ptr<dmludp_conn> getConnection();
 
   std::shared_ptr<dmludp_conn> dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
