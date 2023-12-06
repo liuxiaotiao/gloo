@@ -29,8 +29,8 @@ std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
   return std::make_shared<Socket>(rv);
 }
 
-void Socket::localSockAddrStorage(const sockaddr_storage ai_addr){
-  local = ai_addr;
+void Socket::localSockAddrStorage(const sockaddr_storage& ss){
+  local = ss;
 }
  
 Socket::Socket(int fd) : fd_(fd) {
@@ -82,6 +82,7 @@ void Socket::sendTimeout(std::chrono::milliseconds timeout) {
 }
 
 void Socket::bind(const sockaddr_storage& ss) {
+  local = ss;
   if (ss.ss_family == AF_INET) {
     const struct sockaddr_in* sa = (const struct sockaddr_in*)&ss;
     bind((const struct sockaddr*)sa, sizeof(*sa));
