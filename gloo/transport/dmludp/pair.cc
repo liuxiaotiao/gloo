@@ -669,7 +669,7 @@ void Pair::handleEvents(int events) {
 }
 
 void Pair::handlewrite(){
-  bool done = dmludp_conn_send_all(dmludp_connection.get());
+  bool done = dmludp_conn_send_all(dmludp_connection);
 
   if (!done){
     return;
@@ -682,7 +682,7 @@ void Pair::handlewrite(){
     uint8_t buffer[1500];
     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
     if (socketread > 0){
-      auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, socketread);
+      auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
       uint8_t type;
       int pkt_num;
       ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
@@ -691,10 +691,10 @@ void Pair::handlewrite(){
       }
     }
 
-    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), &send_info);
+    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out), &send_info);
     if (dmludpwrite < 0){
-      if (dmludp_conn_is_stop(dmludp_connection.get())){
-        dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
+      if (dmludp_conn_is_stop(dmludp_connection)){
+        dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
         ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
       }
       break;
@@ -708,7 +708,7 @@ void Pair::handlewrite(){
       struct retry_message retry;
       retry.pkt_num = pkt_num;
       retry.len = dmludpwrite;
-      double rtt = dmludp_get_rtt(dmludp_connection.get());
+      double rtt = dmludp_get_rtt(dmludp_connection);
       auto now = std::chrono::steady_clock::now();
       std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
       std::chrono::steady_clock::time_point futureTimePoint = now + duration;
@@ -741,7 +741,7 @@ bool Pair::write2dmludp(Op& op){
 
   // Include preamble if necessary
   for (auto i : iov){
-    dmludp_data_write(dmludp_connection.get(), (const uint8_t*)i.iov_base, (size_t)i.iov_len);
+    dmludp_data_write(dmludp_connection, (const uint8_t*)i.iov_base, (size_t)i.iov_len);
     if (i.iov_len == nbytes){
       break;
     }
@@ -784,19 +784,19 @@ bool Pair::handleread(){
       ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
       ssize_t dmludpread = 0;
       if(read > 0){
-        dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, read);
+        dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
         uint8_t type;
         int pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
         if(type == 4){
           uint8_t out[1500];
           dmludp_send_info send_info;
-          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection.get(), out, sizeof(out), &send_info);
+          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out), &send_info);
           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
         }
         else if(type == 6){
           uint8_t out[1500];
-          auto stopsize = dmludp_send_data_stop(dmludp_connection.get(), out, sizeof(out));
+          auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
           ssize_t socket_write = ::send(fd_, out, stopsize, 0);
           break;
         }
@@ -818,7 +818,7 @@ bool Pair::handleread(){
 void Pair::dmludp2read(struct iovec iov){
   std::vector<uint8_t> dmludpdata(iov.iov_len, {});
   uint8_t* data = dmludpdata.data();
-  dmludp_data_write(dmludp_connection.get(), data, iov.iov_len);
+  dmludp_data_write(dmludp_connection, data, iov.iov_len);
   iov.iov_base = new uint8_t[iov.iov_len]; 
   memcpy(iov.iov_base, data, iov.iov_len);
 }
@@ -826,11 +826,11 @@ void Pair::dmludp2read(struct iovec iov){
 void Pair::handleReadWrite(int events) {
   if (events & EPOLLIN) {
     // timer for retransimission.
-    if (!message.empty() && dmludp_conn_is_stop(dmludp_connection.get())){
+    if (!message.empty() && dmludp_conn_is_stop(dmludp_connection)){
       uint8_t buffer[1500];
       ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
       if (socketread > 0){
-        auto dmludpread = dmludp_conn_recv(dmludp_connection.get(), buffer, socketread);
+        auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
         uint8_t type;
         int pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
@@ -855,12 +855,12 @@ void Pair::handleReadWrite(int events) {
     handlewrite();
     
     // Timer_fd will be responsible for whether the stop control message is received
-    if (dmludp_conn_is_stop(dmludp_connection.get())){
+    if (dmludp_conn_is_stop(dmludp_connection)){
       tx_.pop_front();
     }
 
     // If there is nothing to transmit; remove EPOLLOUT.
-    if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection.get()) && dmludp_buffer_is_empty(dmludp_connection.get())) {
+    if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection) && dmludp_buffer_is_empty(dmludp_connection)) {
       device_->registerDescriptor(fd_, EPOLLIN, this);
     }
   }
