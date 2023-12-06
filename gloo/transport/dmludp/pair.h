@@ -219,7 +219,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         }else{
           struct retry_message retry;
           retry.pkt_num = it->second.pkt_num;
-          double rtt = dmludp_get_rtt(outerPtr.dmludp_connection.get());
+          double rtt = dmludp_get_rtt(outerPtr.dmludp_connection);
           std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
           std::chrono::steady_clock::time_point futureTimePoint = now + duration;
           retry.retry_time = futureTimePoint;
@@ -432,7 +432,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   // this instance is called again when it is in an error state.
   std::exception_ptr ex_;
 
-  std::shared_ptr<dmludp_conn> dmludp_connection;
+  dmludp_conn* dmludp_connection;
 };
 
 } // namespace dmludp
