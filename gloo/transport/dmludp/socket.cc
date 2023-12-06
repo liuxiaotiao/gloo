@@ -119,14 +119,14 @@ std::shared_ptr<Socket> Socket::accept() {
   socklen_t addrlen = sizeof(addr);
   if(new_socket){
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-    auto connection = dmludp_conn_accept(local, peer);
+    auto connection = dmludp_conn_accept((struct sockaddr *)&local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;
 
     // Bind random port in local and remote node.
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
-    sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&storage);
+    sockaddr_in* addr = (struct sockaddr_in*)&storage;
     addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = htonl(INADDR_ANY);
     addr->sin_port = htons(0); 
@@ -137,7 +137,7 @@ std::shared_ptr<Socket> Socket::accept() {
     uint8_t out[1500];
     uint8_t buffer[1500];
     dmludp_send_info send_info;
-    ssize_t written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
+    ssize_t written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
     ssize_t sent = accept_socket->write(out, written);
 
     struct sockaddr *tmp_local;
@@ -149,7 +149,7 @@ std::shared_ptr<Socket> Socket::accept() {
       if(received <1){
         continue;
       }
-      ssize_t dmludp_recv = dmludp_conn_recv(connection.get(), buffer, received);
+      ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
       new_socket = false;
       break;
     }
@@ -173,28 +173,25 @@ std::shared_ptr<Socket> Socket::accept() {
   // return std::make_shared<Socket>(rv);
 }
 
-std::shared_ptr<dmludp_conn> Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
+dmludp_conn* Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, false);
 }
 
 // Call dmludp_conn_accept after accpect called
-std::shared_ptr<dmludp_conn> Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
+dmludp_conn* Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, true);
 }
 
-std::shared_ptr<dmludp_conn> Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
+dmludp_conn* Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
   auto dmludp_config = dmludp_config_new();
   struct sockaddr_in addr;
-  // 初始化 addr
   socklen_t len = sizeof(addr);
   if( is_server ){
     auto connection = dmludp_accept(local, len, (struct sockaddr *)&peer, len, dmludp_config);
-    std::shared_ptr<dmludp_conn> sharedPtr(connection);
-    return sharedPtr;
+    return connection;
   }else{
     auto connection = dmludp_connect(local, len, (struct sockaddr *)&peer, len, dmludp_config);
-    std::shared_ptr<dmludp_conn> sharedPtr(connection);
-    return sharedPtr;
+    return connection;
   }
 }
 
