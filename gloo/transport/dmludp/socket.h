@@ -108,6 +108,8 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   struct sockaddr_storage local;
 
+  sa_family_t local_family;
+
   bool new_socket;
  private:
   int fd_;
