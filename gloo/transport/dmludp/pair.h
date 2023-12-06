@@ -196,39 +196,42 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
 
   class dmludptimer: public Handler{
-    Pair* outerPtr;
+    Pair& outerPtr;
 
-    void setOuter(Pair* outer) {
-      outerPtr = outer;
-      outerPtr->device_->registerDescriptor(outerPtr->timer_fd, EPOLLIN, this);
+    // void setOuter(Pair* outer) {
+    //   outerPtr = outer;
+    //   outerPtr.device_->registerDescriptor(outerPtr.timer_fd, EPOLLIN, this);
+    // }
+
+    dmludptimer(Pair& outer) : outerPtr(outer) {
+      outerPtr.device_->registerDescriptor(outerPtr.timer_fd, EPOLLIN, this);
     }
-
 
     void handleEvents(int events){
       uint64_t expirations;
-      ::read(outerPtr->timer_fd, &expirations, sizeof(expirations));
-      for (auto it = (outerPtr->message).begin(); it != (outerPtr->message).end(); it++){
+      ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
+      for (auto it = (outerPtr.message).begin(); it != (outerPtr.message).end(); it++){
         auto now = std::chrono::steady_clock::now();
         if (it->second.retry_time > now){
-          outerPtr->update_timerfd(it->first);
+          outerPtr.update_timerfd(it->first);
           break;
         }else{
           struct retry_message retry;
           retry.pkt_num = it->second.pkt_num;
-          double rtt = dmludp_get_rtt(outerPtr->dmludp_connection.get());
+          double rtt = dmludp_get_rtt(outerPtr.dmludp_connection.get());
           std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
           std::chrono::steady_clock::time_point futureTimePoint = now + duration;
           retry.retry_time = futureTimePoint;
           retry.data = it->second.data;
           retry.len = it->second.len;
-          ::send(outerPtr->fd_, it->second.data.data(), it->second.len, 0);
-          outerPtr->add_message(futureTimePoint, retry);
+          ::send(outerPtr.fd_, it->second.data.data(), it->second.len, 0);
+          outerPtr.add_message(futureTimePoint, retry);
         }
       }
 
-      if (outerPtr->message.empty()){
+      if (outerPtr.message.empty()){
         struct itimerspec new_value = {};
-        timerfd_settime(outerPtr->timer_fd, 0, &new_value, NULL);
+        timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
       }
     }
   };

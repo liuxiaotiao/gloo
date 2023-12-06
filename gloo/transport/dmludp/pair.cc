@@ -64,9 +64,10 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr) {
+      ex_(nullptr),
+      innertimer(*this) {
         timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-        this->innertimer.setOuter(this);
+        // this->innertimer.setOuter(this);
       }
 
 // Destructor performs a "soft" close.
