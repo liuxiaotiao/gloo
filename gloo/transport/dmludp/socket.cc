@@ -259,7 +259,7 @@ ssize_t Socket::read(void* buf, size_t count) {
   }
   return rv;
 }
-ßß
+
 ssize_t Socket::write(const void* buf, size_t count) {
   ssize_t rv = -1;
   for (;;) {
