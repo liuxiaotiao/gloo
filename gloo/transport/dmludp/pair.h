@@ -196,6 +196,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   public: 
   class dmludptimer: public Handler{
+    public:
     Pair& outerPtr;
 
     // void setOuter(Pair* outer) {
