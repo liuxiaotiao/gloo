@@ -23,8 +23,8 @@ namespace dmludp {
 
 class Socket final : public std::enable_shared_from_this<Socket> {
  public:
-  // static std::shared_ptr<Socket> createForFamily(sa_family_t ai_family);
-  static std::shared_ptr<Socket> createForFamily(struct sockaddr_storage ai_addr);
+  static std::shared_ptr<Socket> createForFamily(sa_family_t ai_family);
+  // static std::shared_ptr<Socket> createForFamily(struct sockaddr_storage ai_addr);
 
   explicit Socket(int fd);
 
@@ -90,7 +90,7 @@ class Socket final : public std::enable_shared_from_this<Socket> {
   // Return address for getpeername(2).
   Address peerName() const;
 
-  void createNewSockAddrStorage(const sockaddr_storage& ai_addr);
+  void localSockAddrStorage(const sockaddr_storage ai_addr);
 
   std::shared_ptr<dmludp_conn> getConnection();
 

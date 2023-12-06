@@ -22,20 +22,15 @@ namespace gloo {
 namespace transport {
 namespace dmludp {
 
-void Socket::createNewSockAddrStorage(const sockaddr_storage ai_addr) {
-    local = ai_addr;  
-}
 
-std::shared_ptr<Socket> Socket::createForFamily(struct sockaddr_storage ai_addr) {
-  auto rv = socket(ai_addr.ss_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-  // memcpy(&local, &ai_addr, sizeof(&ai_addr));
-
-  createNewSockAddrStorage(ai_addr);
-  // struct sockaddr_storage new_addr;
-  // memcpy(&new_addr, &ai_addr, sizeof(sockaddr_storage));  
-  // local = std::move(new_addr);
+std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
+  auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
+}
+
+void Socket::localSockAddrStorage(const sockaddr_storage ai_addr){
+  local = ai_addr;
 }
  
 Socket::Socket(int fd) : fd_(fd) {
@@ -132,7 +127,7 @@ std::shared_ptr<Socket> Socket::accept() {
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
     sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&storage);
-    addr->sin_family = AF_INET;
+    addr->sin_family = local_family;
     addr->sin_addr.s_addr = htonl(INADDR_ANY);
     addr->sin_port = htons(0); 
     accept_socket->bind(storage);
