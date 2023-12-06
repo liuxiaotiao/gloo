@@ -235,7 +235,8 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       }
     }
   };
-  
+  friend class dmludptimer;
+
   dmludptimer innertimer;
 
  protected:
