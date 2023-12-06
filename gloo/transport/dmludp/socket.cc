@@ -214,7 +214,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   uint8_t out[1500];
   uint8_t buffer[1500];
   dmludp_send_info send_info;
-  ssize_t written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
+  ssize_t written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
   ssize_t sent = write(out, written);
   struct sockaddr *tmp_local;
   // struct sockaddr *local_addr tmp_peer;
@@ -225,8 +225,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     if(received <1){
       continue;
     }
-    ssize_t dmludp_recv = dmludp_conn_recv(connection.get(), buffer, received);
-    written = dmludp_conn_send(connection.get(), out, sizeof(out), &send_info);
+    ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
+    written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
     sent = write(out, written);
     new_socket = false;
     break;
@@ -259,7 +259,7 @@ ssize_t Socket::read(void* buf, size_t count) {
   }
   return rv;
 }
-
+ßß
 ssize_t Socket::write(const void* buf, size_t count) {
   ssize_t rv = -1;
   for (;;) {
