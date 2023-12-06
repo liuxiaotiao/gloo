@@ -127,7 +127,7 @@ std::shared_ptr<Socket> Socket::accept() {
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
     sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(&storage);
-    addr->sin_family = local_family;
+    addr->sin_family = AF_INET;
     addr->sin_addr.s_addr = htonl(INADDR_ANY);
     addr->sin_port = htons(0); 
     accept_socket->bind(storage);
