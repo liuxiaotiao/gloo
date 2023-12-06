@@ -280,7 +280,7 @@ Address Socket::peerName() const {
   return Address::fromPeerName(fd_);
 }
 
-std::shared_ptr<dmludp_conn> Socket::getConnection(){
+dmludp_conn* Socket::getConnection(){
   return dmludp_connection;
 }
 
