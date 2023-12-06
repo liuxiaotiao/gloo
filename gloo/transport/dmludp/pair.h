@@ -194,7 +194,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     update_timerfd(message.begin()->first);
   }
 
-
+  public: 
   class dmludptimer: public Handler{
     Pair& outerPtr;
 
