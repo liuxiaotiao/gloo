@@ -119,7 +119,7 @@ std::shared_ptr<Socket> Socket::accept() {
   socklen_t addrlen = sizeof(addr);
   if(new_socket){
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-    auto connection = dmludp_conn_accept(local, peer);
+    auto connection = dmludp_conn_accept(reinterpret_cast<sockaddr *>(&local), peer);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;
 
@@ -213,7 +213,7 @@ void Socket::connect(const sockaddr_storage& ss) {
 void Socket::connect_dmludp(const sockaddr_storage& ss) {
   peer = ss;
   connect(ss);
-  auto connection = dmludp_conn_connect(local, peer);
+  auto connection = dmludp_conn_connect(reinterpret_cast<sockaddr *>(&local), peer);
   uint8_t out[1500];
   uint8_t buffer[1500];
   dmludp_send_info send_info;
