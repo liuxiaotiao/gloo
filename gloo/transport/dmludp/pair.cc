@@ -818,7 +818,7 @@ bool Pair::handleread(){
 void Pair::dmludp2read(struct iovec iov){
   std::vector<uint8_t> dmludpdata(iov.iov_len, {});
   uint8_t* data = dmludpdata.data();
-  dmludp_data_write(dmludp_connection.get(), &data, iov.iov_len);
+  dmludp_data_write(dmludp_connection.get(), data, iov.iov_len);
   iov.iov_base = new uint8_t[iov.iov_len]; 
   memcpy(iov.iov_base, data, iov.iov_len);
 }
