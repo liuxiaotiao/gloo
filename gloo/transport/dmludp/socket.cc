@@ -22,7 +22,7 @@ namespace gloo {
 namespace transport {
 namespace dmludp {
 
-void Socket::createNewSockAddrStorage(const sockaddr_storage& ai_addr) {
+void Socket::createNewSockAddrStorage(const sockaddr_storage ai_addr) {
     local = ai_addr;  
 }
 
