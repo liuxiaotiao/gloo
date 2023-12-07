@@ -105,13 +105,19 @@ void Socket::listen(int backlog) {
   static uint8_t buf[65535];
   struct sockaddr_storage peer_addr;
   socklen_t peer_addr_len = sizeof(peer_addr);
+  new_socket = false;
   int rv = 0;
-  // rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
-  // if(rv > -1){
-  //   peer = std::move(peer_addr);
-  //   new_socket = true;
-  // }
-  GLOO_ENFORCE_NE(rv, -1, "listen: ", strerror(errno));
+  rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
+  if(rv > -1){
+    uint8_t type;
+    int pkt_num;
+    auto header = dmludp_header_info(buffer, 26, &type, &pkt_num);
+    if (type == 2){
+      peer = std::move(peer_addr);
+      new_socket = true;
+    }
+  }
+  // GLOO_ENFORCE_NE(rv, -1, "listen: ", strerror(errno));
 }
 
 std::shared_ptr<Socket> Socket::accept() {
