@@ -253,4 +253,6 @@ ssize_t dmludp_data_read(dmludp_conn *conn, uint8_t *out, size_t out_len);
 // Frees the connection object.
 void dmludp_conn_free(dmludp_conn *conn);
 
+void dmludp_set_rtt(dmludp_conn *conn, long interval);
+
 }

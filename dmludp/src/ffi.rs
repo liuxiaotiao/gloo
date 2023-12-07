@@ -175,6 +175,10 @@ pub extern "C" fn dmludp_connect(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn dmludp_set_rtt(conn: &mut Connection, interval: i64){
+    conn.set_rtt(interval);
+}
 
 // #[no_mangle]
 // pub extern "C" fn dmludp_data_send(conn:&mut Connection, buf:* const c_char){
@@ -334,7 +338,7 @@ pub extern "C" fn dmludp_send_data_handshake(conn: &mut Connection,out: *mut u8,
     }
 
     let out = unsafe { slice::from_raw_parts_mut(out, out_len) };
-    match conn.send_data_stop(out) {
+    match conn.send_data_handshake(out) {
         Ok(v) => {
             v as ssize_t
         },

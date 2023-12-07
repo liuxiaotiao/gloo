@@ -105,12 +105,12 @@ void Socket::listen(int backlog) {
   static uint8_t buf[65535];
   struct sockaddr_storage peer_addr;
   socklen_t peer_addr_len = sizeof(peer_addr);
-  int rv = -1;
-  rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
-  if(rv > -1){
-    peer = std::move(peer_addr);
-    new_socket = true;
-  }
+  int rv = 0;
+  // rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
+  // if(rv > -1){
+  //   peer = std::move(peer_addr);
+  //   new_socket = true;
+  // }
   GLOO_ENFORCE_NE(rv, -1, "listen: ", strerror(errno));
 }
 
@@ -138,6 +138,7 @@ std::shared_ptr<Socket> Socket::accept() {
     uint8_t buffer[1500];
     dmludp_send_info send_info;
     ssize_t written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
+    auto start = std::chrono::high_resolution_clock::now();
     ssize_t sent = accept_socket->write(out, written);
 
     struct sockaddr *tmp_local;
@@ -150,6 +151,9 @@ std::shared_ptr<Socket> Socket::accept() {
         continue;
       }
       ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
+      auto end = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+      dmludp_set_rtt(connection, duration.count());
       new_socket = false;
       break;
     }
@@ -210,11 +214,11 @@ void Socket::connect(const sockaddr_storage& ss) {
 void Socket::connect_dmludp(const sockaddr_storage& ss) {
   peer = ss;
   connect(ss);
-  auto connection = dmludp_conn_connect(reinterpret_cast<sockaddr *>(&local), peer);
+  auto connection = dmludp_conn_connect((struct sockaddr *)&local, peer);
   uint8_t out[1500];
   uint8_t buffer[1500];
   dmludp_send_info send_info;
-  ssize_t written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
+  ssize_t written = dmludp_send_data_handshake(connection, out, sizeof(out));
   ssize_t sent = write(out, written);
   struct sockaddr *tmp_local;
   // struct sockaddr *local_addr tmp_peer;

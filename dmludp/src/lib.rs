@@ -489,6 +489,10 @@ impl Connection {
         
     }
 
+    pub fn set_rtt(& mut self, inter: i64){
+        self.rtt = Duration::from_nanos(inter as u64);
+    }
+
     pub fn new_rtt(& mut self, last: Duration){
         // println!("Pre rtt: {:?}, last: {:?}",self.rtt, last);
         self.rtt = self.rtt/4 + 3*last/4;
@@ -520,11 +524,17 @@ impl Connection {
         }
         
         //receiver send back the sent info to sender
-        if hdr.ty == packet::Type::ACK && self.is_server{
-            //println!("{:?}",self.send_buffer.offset_index);
+        // if hdr.ty == packet::Type::ACK && self.is_server{
+        //     //println!("{:?}",self.send_buffer.offset_index);
+        //     self.process_ack(buf);
+        //     //self.update_rtt();
+        // }
+        
+        // All side can send data.
+        if hdr.ty == packet::Type::ACK{
             self.process_ack(buf);
-            //self.update_rtt();
         }
+
 
         if hdr.ty == packet::Type::ElictAck{
             self.recv_flag = true;

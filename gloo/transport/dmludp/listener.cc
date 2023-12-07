@@ -45,7 +45,9 @@ void Listener::handleEvents(int /* unused */) {
   std::lock_guard<std::mutex> guard(mutex_);
 
   for (;;) {
-    auto sock = listener_->accept();
+    struct sockaddr_storage peer_addr;
+    socklen_t peer_addr_len = sizeof(peer_addr);
+    int rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
     if (!sock) {
       // Let the loop try again on the next tick.
       if (errno == EAGAIN) {
@@ -54,6 +56,14 @@ void Listener::handleEvents(int /* unused */) {
       // Actual error.
       GLOO_ENFORCE(false, "accept: ", strerror(errno));
     }
+    uint8_t type;
+    int pkt_num;
+    ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+    if (type != 2){
+      new_socket = true;
+      return;
+    }
+    auto sock = listener_->accept();
 
     sock->reuseAddr(true);
     // sock->noDelay(true);
