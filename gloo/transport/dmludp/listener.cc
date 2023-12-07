@@ -45,7 +45,7 @@ void Listener::handleEvents(int /* unused */) {
   std::lock_guard<std::mutex> guard(mutex_);
 
   for (;;) {
-    listener_->listen();
+    listener_->listen(kBacklog);
     if (!listener_->new_socket) {
       // Let the loop try again on the next tick.
       // if (errno == EAGAIN) {
