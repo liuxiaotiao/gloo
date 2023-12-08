@@ -204,9 +204,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     //   outerPtr.device_->registerDescriptor(outerPtr.timer_fd, EPOLLIN, this);
     // }
 
-    dmludptimer(Pair& outer) : outerPtr(outer) {
-      outerPtr.device_->registerDescriptor(outerPtr.timer_fd, EPOLLIN, this);
-    }
+    dmludptimer(Pair& outer) : outerPtr(outer) {}
 
     void handleEvents(int events){
       uint64_t expirations;

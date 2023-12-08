@@ -112,7 +112,7 @@ void Socket::listen(int backlog) {
     int type;
     int pkt_num;
     auto header = dmludp_header_info(buf, 26, &type, &pkt_num);
-    if (type == 2){
+    if (header == 2){
       peer = std::move(peer_addr);
       new_socket = true;
     }

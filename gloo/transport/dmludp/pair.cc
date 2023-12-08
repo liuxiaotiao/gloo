@@ -67,6 +67,7 @@ Pair::Pair(
       ex_(nullptr),
       innertimer(*this) {
         timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
 
         // this->innertimer.setOuter(this);
       }
@@ -686,8 +687,8 @@ void Pair::handlewrite(){
       auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
       int type;
       int pkt_num;
-      ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-      if (type = 5){
+      auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+      if (rv = 5){
         remove_retrymessage_by_pktnum(pkt_num);
       }
     }
@@ -703,8 +704,8 @@ void Pair::handlewrite(){
     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
     int type;
     int pkt_num;
-    ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-    if(type == 4 || type == 6){
+    auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+    if(rv == 4 || type == 6){
       /// add timer
       struct retry_message retry;
       retry.pkt_num = pkt_num;
@@ -788,20 +789,20 @@ bool Pair::handleread(){
         dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
         int type;
         int pkt_num;
-        ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-        if(type == 4){
+        auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+        if(rv == 4){
           uint8_t out[1500];
           dmludp_send_info send_info;
           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out), &send_info);
           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
         }
-        else if(type == 6){
+        else if(rv == 6){
           uint8_t out[1500];
           auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
           ssize_t socket_write = ::send(fd_, out, stopsize, 0);
           break;
         }
-        else if(type = 3){
+        else if(rv = 3){
           rx_.nread += dmludpread;
         }
       }
@@ -834,8 +835,8 @@ void Pair::handleReadWrite(int events) {
         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
         int type;
         int pkt_num;
-        ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
-        if (type == 5 || type == 6){
+        auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+        if (rv == 5 || rv == 6){
           remove_retrymessage_by_pktnum(pkt_num);
         }
       }

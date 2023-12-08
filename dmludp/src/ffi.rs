@@ -124,23 +124,72 @@ pub extern "C" fn dmludp_header_info(
     };
 
     unsafe {
-        let tmp = match hdr.ty {
-            Type::Retry => 1,
-            Type::Handshake => 2,
-            Type::Application => 3,
-            Type::ElictAck => 4,
-            Type::ACK => 5,
-            Type::Stop =>6,
-            Type::Fin =>7,
-            Type::StartAck =>8,
-        } as u8;
+        // let tmp = match hdr.ty {
+        //     Type::Retry => 1,
+        //     Type::Handshake => 2,
+        //     Type::Application => 3,
+        //     Type::ElictAck => 4,
+        //     Type::ACK => 5,
+        //     Type::Stop =>6,
+        //     Type::Fin =>7,
+        //     Type::StartAck =>8,
+        // } as u8;
 
-        *ty = tmp as i32;
+        // if hdr.ty == Type::Retry{
+        //     *ty = 1 as i32;
+        // }
+        // if hdr.ty == Type::Handshake{
+        //     *ty = 2 as i32;
+        // }
+        // if hdr.ty == Type::Application{
+        //     *ty = 3 as i32;
+        // }
+        // if hdr.ty == Type::ElictAck{
+        //     *ty = 4 as i32;
+        // }
+        // if hdr.ty == Type::ACK{
+        //     *ty = 5 as i32;
+        // }
+        // if hdr.ty == Type::Stop{
+        //     *ty = 6 as i32;
+        // }
+        // if hdr.ty == Type::Fin{
+        //     *ty = 7 as i32;
+        // }
+        // if hdr.ty == Type::StartAck{
+        //     *ty = 8 as i32;
+        // }
+        // *ty = hdr.ty as i32;
+
+        // *ty = tmp as i32;
         *pn = hdr.pkt_num as i32;
 
     }
-
-    0
+    if hdr.ty == Type::Retry{
+        return 1;
+    }
+    if hdr.ty == Type::Handshake{
+        return 2;
+    }
+    if hdr.ty == Type::Application{
+        return 3;
+    }
+    if hdr.ty == Type::ElictAck{
+        return 4;
+    }
+    if hdr.ty == Type::ACK{
+        return 5;
+    }
+    if hdr.ty == Type::Stop{
+        return 6;
+    }
+    if hdr.ty == Type::Fin{
+        return 7;
+    }
+    if hdr.ty == Type::StartAck{
+        return 8;
+    }
+    // 0
 }
 
 
