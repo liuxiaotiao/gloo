@@ -165,30 +165,32 @@ pub extern "C" fn dmludp_header_info(
         *pn = hdr.pkt_num as i32;
 
     }
+    let mut result = 0;
     if hdr.ty == Type::Retry{
-        return 1;
+        result = 1;
     }
     if hdr.ty == Type::Handshake{
-        return 2;
+        result = 2;
     }
     if hdr.ty == Type::Application{
-        return 3;
+        result = 3;
     }
     if hdr.ty == Type::ElictAck{
-        return 4;
+        result = 4;
     }
     if hdr.ty == Type::ACK{
-        return 5;
+        result = 5;
     }
     if hdr.ty == Type::Stop{
-        return 6;
+        result = 6;
     }
     if hdr.ty == Type::Fin{
-        return 7;
+        result = 7;
     }
     if hdr.ty == Type::StartAck{
-        return 8;
+        result = 8;
     }
+    result
     // 0
 }
 
