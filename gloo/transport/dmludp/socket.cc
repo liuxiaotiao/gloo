@@ -109,7 +109,7 @@ void Socket::listen(int backlog) {
   int rv = 0;
   rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
   if(rv > -1){
-    uint8_t type;
+    int type;
     int pkt_num;
     auto header = dmludp_header_info(buf, 26, &type, &pkt_num);
     if (type == 2){

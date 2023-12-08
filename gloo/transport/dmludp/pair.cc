@@ -67,6 +67,7 @@ Pair::Pair(
       ex_(nullptr),
       innertimer(*this) {
         timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+
         // this->innertimer.setOuter(this);
       }
 
@@ -683,7 +684,7 @@ void Pair::handlewrite(){
     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
     if (socketread > 0){
       auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-      uint8_t type;
+      int type;
       int pkt_num;
       ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
       if (type = 5){
@@ -700,7 +701,7 @@ void Pair::handlewrite(){
       break;
     }
     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
-    uint8_t type;
+    int type;
     int pkt_num;
     ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
     if(type == 4 || type == 6){
@@ -785,7 +786,7 @@ bool Pair::handleread(){
       ssize_t dmludpread = 0;
       if(read > 0){
         dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
-        uint8_t type;
+        int type;
         int pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
         if(type == 4){
@@ -831,7 +832,7 @@ void Pair::handleReadWrite(int events) {
       ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
       if (socketread > 0){
         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-        uint8_t type;
+        int type;
         int pkt_num;
         ssize_t rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
         if (type == 5 || type == 6){

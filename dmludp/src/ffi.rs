@@ -114,7 +114,7 @@ pub extern "C" fn dmludp_config_free(config: *mut Config) {
 
 #[no_mangle]
 pub extern "C" fn dmludp_header_info(
-    buf: *mut u8, buf_len: size_t, ty: *mut u8, pn: *mut i32
+    buf: *mut u8, buf_len: size_t, ty: *mut i32, pn: *mut i32
 ) -> c_int {
     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
     let hdr = match Header::from_slice(buf) {
@@ -124,7 +124,7 @@ pub extern "C" fn dmludp_header_info(
     };
 
     unsafe {
-        *ty = match hdr.ty {
+        let tmp = match hdr.ty {
             Type::Retry => 1,
             Type::Handshake => 2,
             Type::Application => 3,
@@ -133,8 +133,9 @@ pub extern "C" fn dmludp_header_info(
             Type::Stop =>6,
             Type::Fin =>7,
             Type::StartAck =>8,
-        };
+        } as u8;
 
+        *ty = tmp as i32;
         *pn = hdr.pkt_num as i32;
 
     }
@@ -143,7 +144,7 @@ pub extern "C" fn dmludp_header_info(
 }
 
 
-#[no_mangle]
+#[no_mangle] 
 pub extern "C" fn dmludp_accept(
     local: &sockaddr, local_len: socklen_t, peer: &sockaddr, peer_len: socklen_t,
     config: &mut Config,
