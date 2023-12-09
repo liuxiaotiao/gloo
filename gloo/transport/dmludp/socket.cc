@@ -251,12 +251,15 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
           continue;
         }
     }
+    int type = 0;
+    int pktnum = 0;
+    auto header = dmludp_header_info(buufer, 26, &type, &pktnum);
+    if(header != 2){
+      continue;
+    }
     peer = tmp_peer_addr;
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect((struct sockaddr *)&local, peer);
-    int type = 0;
-    int pktnum = 0;
-    auto type = dmludp_header_info(buufer, 26, &type, &pktnum);
     ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
     written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
     sent = write(out, written);
