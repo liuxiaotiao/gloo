@@ -229,8 +229,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   auto temp_connection = dmludp_conn_connect((struct sockaddr *)&local, ss);
 
   dmludp_send_info send_info;
-  ssize_t written = dmludp_send_data_handshake(connection, out, sizeof(out));
-  ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
+  ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
+  ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &tmp_peer_addr, peer_addr_len);
 
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
@@ -262,7 +262,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     }
     int type = 0;
     int pktnum = 0;
-    auto header = dmludp_header_info(buufer, 26, &type, &pktnum);
+    auto header = dmludp_header_info(buffer, 26, &type, &pktnum);
     if(header != 2){
       continue;
     }
