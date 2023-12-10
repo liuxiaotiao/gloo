@@ -1170,13 +1170,21 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
-        let len = match buf.len() / 1024 {
-            0 => buf.len() / 1024,
-            _ => buf.len()/1024 + 1,
-        };
-        self.send_data.extend(buf.to_vec());
-        self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
-        self.send_buffer.clear();
+        if buf.len() < 1024{
+            let len = 1;
+            self.send_data.extend(buf.to_vec());
+            self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+            self.send_buffer.clear();
+        }else{
+            let len = match buf.len() / 1024 {
+                0 => buf.len() / 1024,
+                _ => buf.len()/1024 + 1,
+            };
+            self.send_data.extend(buf.to_vec());
+            self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+            self.send_buffer.clear();
+        }
+
     }
 
     // //read data from application
