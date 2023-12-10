@@ -1,5 +1,3 @@
-// use std::cmp;
-
 use std::str::FromStr;
 
 use std::time::Duration;
@@ -12,25 +10,9 @@ use std::collections::BTreeSet;
 #[cfg(feature = "qlog")]
 use qlog::events::EventData;
 
-// use self::NewCubic::State;
-
-// Loss Recovery
-// const C: f64 = 8.0;
-
-// const INITIAL_TIME_THRESHOLD: f64 = 9.0 / 8.0;
-
-// const GRANULARITY: Duration = Duration::from_millis(1);
-
 const INITIAL_RTT: Duration = Duration::from_millis(333);
 
-// const PERSISTENT_CONGESTION_THRESHOLD: u32 = 3;
-
-// const RTT_WINDOW: Duration = Duration::from_secs(300);
-
-// const MAX_PTO_PROBES_COUNT: usize = 2;
-
 // Congestion Control
-// const INITIAL_WINDOW_PACKETS: usize = 10;
 const INITIAL_WINDOW_PACKETS: usize = 8;
 
 const ELICT_ACK_CONSTANT: usize = 8;
@@ -39,30 +21,10 @@ const MINIMUM_WINDOW_PACKETS: usize = 2;
 
 const INI_WIN: usize = 1200 * 8;
 
-// const LOSS_REDUCTION_FACTOR: f64 = 0.5;
-
-// const PACING_MULTIPLIER: f64 = 1.25;
-
-// How many non ACK eliciting packets we send before including a PING to solicit
-// an ACK.
-// const MAX_OUTSTANDING_NON_ACK_ELICITING: usize = 24;
-
-// const RECORD_LEN:usize = u16::MAX as usize;
-
 const PACKET_SIZE: usize = 1200;
 // #[derive(Copy, Clone)]
 #[derive(Clone)]
 pub struct Recovery {
-    ///befre min_acked_pkt number, all packetes are processed, received or timeout
-    // min_acked_pkt: u64,
-
-    // max_acked_pkt: u64,
-    //All packets has default priority is 3, and this priority recording will be retained untill one iteration training data is transmitted.
-    // pkt_priority: [u8;RECORD_LEN],
-    
-    // priority_record: [u8;RECORD_LEN],
-    /// ask last 8 sent packets
-    // ack_pkts: [u64;8],
 
     loss_detection_timer: Option<Instant>,
 
@@ -74,19 +36,9 @@ pub struct Recovery {
 
     rttvar: Duration,
 
-    // time_of_last_sent_ack_eliciting_pkt:
-    //     [Option<Instant>; 3],
-
-    // largest_acked_pkt: [u64; 3],
-
-    // largest_sent_pkt: [u64; 3],
-  
-    // minmax_filter: minmax::Minmax<Duration>,
-
     min_rtt: Duration,
 
     loss_time: [Option<Instant>; 3],
-
 
     pub lost_count: usize,
 
@@ -113,8 +65,6 @@ pub struct Recovery {
     roll_back_flag: bool,
 
     function_change: bool,
-
-    // congestion_window_copy: usize,
 
     incre_win_copy: usize,
 
@@ -148,12 +98,6 @@ impl Recovery {
         Recovery {
             loss_detection_timer: None,
 
-            // time_of_last_sent_ack_eliciting_pkt: [None; 3],
-
-            // largest_acked_pkt: [std::u64::MAX; 3],
-
-            // largest_sent_pkt: [0; 3],
-
             latest_rtt: Duration::ZERO,
 
             // This field should be initialized to `INITIAL_RTT` for the initial
@@ -161,8 +105,6 @@ impl Recovery {
             // whether any RTT sample was received, so the initial value is
             // handled by the `rtt()` method instead.
             smoothed_rtt: None,
-
-            // minmax_filter: minmax::Minmax::new(Duration::ZERO),
 
             min_rtt: Duration::ZERO,
 
@@ -187,16 +129,8 @@ impl Recovery {
 
             app_limited: false,
 
-            // min_acked_pkt:0,
-            // max_acked_pkt:0,
-
-            // pkt_priority: [0; RECORD_LEN],
-            // priority_record: [0; RECORD_LEN],
-
             max_datagram_size:PACKET_SIZE,
-            // ack_pkts: [0;8],
 
-            // k: 1.0,
             incre_win: 0,
             decre_win: 0,
 
@@ -205,8 +139,6 @@ impl Recovery {
             roll_back_flag: false,
 
             function_change: false,
-
-            // congestion_window_copy: 0,
 
             incre_win_copy: 0,
 
@@ -226,8 +158,7 @@ impl Recovery {
     pub fn reset(&mut self) {
         self.congestion_window = self.max_datagram_size * INITIAL_WINDOW_PACKETS;
         self.in_flight_count = [0; 3];
-        // self.congestion_recovery_start_time = None;
-        // self.ssthresh = std::usize::MAX;
+
         (self.cc_ops.reset)(self);
 
     }
@@ -236,29 +167,6 @@ impl Recovery {
     //x = [0:0.1:3.6];
     //y = -8*(x-1.8).^3/1.8^3;
     pub fn update_win(&mut self,weights:f32, num: f64){
-    //    let test1 = (weights as f64- (self.k*num)/8.0).powi(3);
-    //    let test2 = (weights as f64- (self.k*num)/8.0).powi(3)/self.k.powi(3);
-    //    let test3 = -C * (weights as f64- (self.k*num)/8.0).powi(3)/self.k.powi(3);
-    //    println!("weights: {:?}, num: {:?},smallwin: {:?}", weights, num,test3);
-    // let winadd = (-C * (weights as f64- (self.k*num)/8.0).powi(3)/self.k.powi(3)) * self.max_datagram_size as f64;
-        // let winadd: f64 = (-num * (weights as f64 - (self.k*num)/8.0).powi(3)/((self.k*num)/8.0).powi(3)) * self.max_datagram_size as f64;
-       
-        // let mut winadd = 0.0;
-        // let mut winadd_copy = 0.0;
-        // if self.function_change{
-        //     // winadd = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
-        //     winadd = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
-        // }else {
-        //     winadd = num*self.max_datagram_size as f64;
-        //     if weights > 0.0{
-        //         self.function_change = true;
-        //         self.incre_win = self.incre_win_copy;
-        //         self.decre_win = self.decre_win_copy;
-        //     }
-        //     // winadd_copy = (1.333*(weights as f64).powi(3) - 6.0*(weights as f64).powi(2) + 0.667*(weights as f64) + 4.0)*self.max_datagram_size as f64; 
-        //     winadd_copy = (3.0*(weights as f64).powi(2) -12.0*(weights as f64) + 4.0) * self.max_datagram_size as f64; 
-        // }
-
         let mut winadd_copy = 0.0;
         let winadd =  if self.function_change{
             (3.0 * (weights as f64).powi(2) - 12.0 * (weights as f64) + 4.0) * self.max_datagram_size as f64 
@@ -272,20 +180,10 @@ impl Recovery {
             num * self.max_datagram_size as f64
         };
        
-        
-        // let mut winadd = 0.0;
-        // if weights < 0.2 || weights > 1.8{
-        //     winadd = (-22.94 * (weights as f64).powi(3) + 65.83 * (weights as f64).powi(2) - 51.89 * (weights as f64) + 8.0) * self.max_datagram_size as f64;
-        // }else {
-        //     winadd = (-0.1587 * (weights as f64).powi(3) - 0.4658 * (weights as f64).powi(2) - 0.4538 * (weights as f64) + 0.1535) * self.max_datagram_size as f64;
-        // }
-
-        // let winadd = (4.0*(weights as f64).powi(2) - 16.0 * (weights as f64) + 8.0)* self.max_datagram_size as f64;
         if winadd != num{
             self.roll_back_flag = true;
         }
 
-        //self.congestion_window += ((winadd/4.0)*4.0) as usize;
         if winadd > 0.0{
             self.incre_win += winadd as usize;
         }else {
@@ -327,7 +225,6 @@ impl Recovery {
         }
 
         self.congestion_window = tmp_win;
-        println!("add: {:?}, minus: {:?}, tmp_win: {:?}", self.incre_win, self.decre_win, tmp_win);
         self.incre_win = 0;
         self.decre_win = 0;
         self.incre_win_copy = 0;

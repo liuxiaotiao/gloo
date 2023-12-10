@@ -371,7 +371,7 @@ pub struct Connection {
 
     // recv_pkt_sent_num: Vec<usize>,
 
-    pub : HashMap<u64, u64>,
+    pub sent_dic: HashMap<u64, u64>,
 }
 
 impl Connection {
@@ -444,9 +444,8 @@ impl Connection {
             // low_split_point:0.0,
             // high_split_point:0.0,
 
-            // send_data_buf:Some(Vec::<u8>::new()),
-            send_data_buf:Some(vec![25]),
-            // norm2_vec:Vec::<f32>::new(),
+            send_data_buf:Some(Vec::<u8>::new()),
+
             norm2_vec:Vec::<u8>::new(),
 
             record_win: 0,

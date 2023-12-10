@@ -1,8 +1,6 @@
 use std::ffi;
 use std::ptr;
 use std::slice;
-use std::sync::atomic;
-use std::ffi::CStr;
 
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
@@ -10,16 +8,12 @@ use std::net::SocketAddr;
 use std::net::SocketAddrV4;
 use std::net::SocketAddrV6;
 
-#[cfg(unix)]
-use std::os::unix::io::FromRawFd;
-
 use libc::c_char;
 use libc::c_int;
 use libc::c_void;
 use libc::size_t;
 use libc::sockaddr;
 use libc::ssize_t;
-use libc::timespec;
 
 #[cfg(not(windows))]
 use libc::AF_INET;
@@ -109,12 +103,12 @@ pub extern "C" fn dmludp_config_set_cc_algorithm(
 
 #[no_mangle]
 pub extern "C" fn dmludp_config_free(config: *mut Config) {
-    unsafe { Box::from_raw(config) };
+    unsafe { let _ = Box::from_raw(config); };
 }
 
 #[no_mangle]
 pub extern "C" fn dmludp_header_info(
-    buf: *mut u8, buf_len: size_t, ty: *mut i32, pn: *mut i32
+    buf: *mut u8, buf_len: size_t, _ty: *mut i32, pn: *mut i32
 ) -> c_int {
     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
     let hdr = match Header::from_slice(buf) {
@@ -124,44 +118,6 @@ pub extern "C" fn dmludp_header_info(
     };
 
     unsafe {
-        // let tmp = match hdr.ty {
-        //     Type::Retry => 1,
-        //     Type::Handshake => 2,
-        //     Type::Application => 3,
-        //     Type::ElictAck => 4,
-        //     Type::ACK => 5,
-        //     Type::Stop =>6,
-        //     Type::Fin =>7,
-        //     Type::StartAck =>8,
-        // } as u8;
-
-        // if hdr.ty == Type::Retry{
-        //     *ty = 1 as i32;
-        // }
-        // if hdr.ty == Type::Handshake{
-        //     *ty = 2 as i32;
-        // }
-        // if hdr.ty == Type::Application{
-        //     *ty = 3 as i32;
-        // }
-        // if hdr.ty == Type::ElictAck{
-        //     *ty = 4 as i32;
-        // }
-        // if hdr.ty == Type::ACK{
-        //     *ty = 5 as i32;
-        // }
-        // if hdr.ty == Type::Stop{
-        //     *ty = 6 as i32;
-        // }
-        // if hdr.ty == Type::Fin{
-        //     *ty = 7 as i32;
-        // }
-        // if hdr.ty == Type::StartAck{
-        //     *ty = 8 as i32;
-        // }
-        // *ty = hdr.ty as i32;
-
-        // *ty = tmp as i32;
         *pn = hdr.pkt_num as i32;
 
     }
@@ -232,13 +188,6 @@ pub extern "C" fn dmludp_set_rtt(conn: &mut Connection, interval: i64){
     conn.set_rtt(interval);
 }
 
-// #[no_mangle]
-// pub extern "C" fn dmludp_data_send(conn:&mut Connection, buf:* const c_char){
-//     let c_str:&CStr = unsafe{CStr::from_ptr(buf)};
-//     let str_slice: &str = c_str.to_str().unwrap();
-//     let mut str_buf: String = str_slice.to_owned();
-//     conn.data_send(&mut str_buf);
-// }
 
 #[no_mangle]
 pub extern "C" fn dmludp_data_write(conn: &mut Connection, buf:* const u8, len: size_t){
@@ -286,23 +235,6 @@ impl<'a> From<&RecvInfo<'a>> for crate::RecvInfo {
     }
 }
 
-// #[no_mangle]
-// pub extern "C" fn dmludp_conn_recv(
-//     conn: &mut Connection, buf: *mut u8, buf_len: size_t, info: &RecvInfo,
-// ) -> ssize_t {
-//     if buf_len > <ssize_t>::max_value() as usize {
-//         panic!("The provided buffer is too large");
-//     }
-
-//     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
-
-//     match conn.recv_slice(buf) {
-//         Ok(v) => v as ssize_t,
-
-//         Err(e) => e.to_c(),
-
-//     }
-// }
 #[no_mangle]
 pub extern "C" fn dmludp_conn_recv(
     conn: &mut Connection, buf: *mut u8, buf_len: size_t) -> ssize_t {
@@ -414,58 +346,10 @@ pub extern "C" fn dmludp_conn_is_closed(conn: &Connection) -> bool {
     conn.is_closed()
 }
 
-#[repr(C)]
-pub struct Stats {
-    recv: usize,
-    sent: usize,
-    lost: usize,
-    retrans: usize,
-    sent_bytes: u64,
-    recv_bytes: u64,
-    lost_bytes: u64,
-    stream_retrans_bytes: u64,
-    paths_count: usize,
-    peer_max_idle_timeout: u64,
-    peer_max_udp_payload_size: u64,
-    peer_initial_max_data: u64,
-    peer_initial_max_stream_data_bidi_local: u64,
-    peer_initial_max_stream_data_bidi_remote: u64,
-    peer_initial_max_stream_data_uni: u64,
-    peer_initial_max_streams_bidi: u64,
-    peer_initial_max_streams_uni: u64,
-    peer_ack_delay_exponent: u64,
-    peer_max_ack_delay: u64,
-    peer_disable_active_migration: bool,
-    peer_active_conn_id_limit: u64,
-    peer_max_datagram_frame_size: ssize_t,
-    paths: [PathStats; 8],
-}
-
-#[repr(C)]
-pub struct PathStats {
-    local_addr: sockaddr_storage,
-    local_addr_len: socklen_t,
-    peer_addr: sockaddr_storage,
-    peer_addr_len: socklen_t,
-    validation_state: ssize_t,
-    active: bool,
-    recv: usize,
-    sent: usize,
-    lost: usize,
-    retrans: usize,
-    rtt: u64,
-    cwnd: usize,
-    sent_bytes: u64,
-    recv_bytes: u64,
-    lost_bytes: u64,
-    stream_retrans_bytes: u64,
-    pmtu: usize,
-    delivery_rate: u64,
-}
 
 #[no_mangle]
 pub extern "C" fn dmludp_conn_free(conn: *mut Connection) {
-    unsafe { Box::from_raw(conn) };
+    unsafe { let _ = Box::from_raw(conn); };
 }
 
 
@@ -628,11 +512,3 @@ fn std_time_to_c(time: &std::time::Instant, out: &mut timespec) {
         ptr::copy_nonoverlapping(time as *const _ as *const timespec, out, 1)
     }
 }
-
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "windows"))]
-fn std_time_to_c(_time: &std::time::Instant, out: &mut timespec) {
-    // TODO: implement Instant conversion for systems that don't use timespec.
-    out.tv_sec = 0;
-    out.tv_nsec = 0;
-}
-

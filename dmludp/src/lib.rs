@@ -1,8 +1,5 @@
 use std::cmp;
-// use std::cmp::min;
-// use std::collections::btree_map::Range;
 use std::convert::TryInto;
-// use std::result;
 use std::time;
 use std::time::Duration;
 use std::time::Instant;
@@ -10,15 +7,10 @@ use std::net::SocketAddr;
 
 use std::str::FromStr;
 
-// use std::collections::HashSet;
 use std::collections::VecDeque;
-// use std::collections::hash_map;
 use std::collections::BTreeMap;
-// use std::collections::BinaryHeap;
 use std::collections::HashMap;
 // use std::vec;
-// use rand::Rng;
-// use std::ops::Bound::Included;
 
 const HEADER_LENGTH: usize = 26;
 
@@ -28,9 +20,6 @@ const CONGESTION_THREAHOLD: f64 = 0.01;
 
 /// The minimum length of Initial packets sent by a client.
 pub const MIN_CLIENT_INITIAL_LEN: usize = 1350;
-
-// #[cfg(not(feature = "fuzzing"))]
-// const PAYLOAD_MIN_LEN: usize = 4;
 
 // The default max_datagram_size used in congestion control.
 const MAX_SEND_UDP_PAYLOAD_SIZE: usize = 1350;
@@ -336,16 +325,10 @@ pub struct Connection {
 
     recv_dic: HashMap<u64,u8>,
 
-    //used to compute priority
-    // low_split_point: f32,
-
-    // high_split_point: f32,
-
     //store data
-    pub send_data_buf:Option<Vec<u8>>,
+    pub send_data_buf:Vec<u8>,
 
     //store norm2 for every 256 bits float
-    // norm2_vec:Vec<f32>,
     // Note: It refers to the priorty of each packet.
     pub norm2_vec:Vec<u8>,
 
@@ -369,9 +352,7 @@ pub struct Connection {
 
     sent_number: usize,
 
-    // recv_pkt_sent_num: Vec<usize>,
-
-    pub : HashMap<u64, u64>,
+    pub sent_dic: HashMap<u64, u64>,
 }
 
 impl Connection {
@@ -387,7 +368,6 @@ impl Connection {
         local: SocketAddr,
         peer: SocketAddr, config: &mut Config, is_server: bool,
     ) ->  Result<Connection> {
-
 
         let mut conn = Connection {
 
@@ -441,12 +421,8 @@ impl Connection {
 
             sent_pkt:Vec::<u64>::new(),
             
-            // low_split_point:0.0,
-            // high_split_point:0.0,
+            send_data_buf:Vec::<u8>::new(),
 
-            // send_data_buf:Some(Vec::<u8>::new()),
-            send_data_buf:Some(vec![25]),
-            // norm2_vec:Vec::<f32>::new(),
             norm2_vec:Vec::<u8>::new(),
 
             record_win: 0,
@@ -468,8 +444,6 @@ impl Connection {
             high_priority: 0,
 
             sent_number: 0,
-
-            // recv_pkt_sent_num:Vec::<usize>::new(),
 
             sent_dic:HashMap::new(),
         };
@@ -496,7 +470,6 @@ impl Connection {
     }
 
     pub fn new_rtt(& mut self, last: Duration){
-        // println!("Pre rtt: {:?}, last: {:?}",self.rtt, last);
         self.rtt = self.rtt/4 + 3*last/4;
     }
 
@@ -525,18 +498,10 @@ impl Connection {
             self.feed_back = true;
         }
         
-        //receiver send back the sent info to sender
-        // if hdr.ty == packet::Type::ACK && self.is_server{
-        //     //println!("{:?}",self.send_buffer.offset_index);
-        //     self.process_ack(buf);
-        //     //self.update_rtt();
-        // }
-        
         // All side can send data.
         if hdr.ty == packet::Type::ACK{
             self.process_ack(buf);
         }
-
 
         if hdr.ty == packet::Type::ElictAck{
             self.recv_flag = true;
@@ -579,7 +544,6 @@ impl Connection {
         let len = unackbuf.len();
         let mut start = 8;
         let mut weights:f32 = 0.0;
-        // let mut b = octets::OctetsMut::with_slice(buf);
         let mut _ack_set:u64 = 0 ;
         while start < len{
             let unack = u64::from_be_bytes(unackbuf[start..start+8].try_into().unwrap());
@@ -601,12 +565,9 @@ impl Connection {
             }else if priority == 3 {
                 weights += 0.25;
             }else{
-                // println!("offset: {:?}, received",unack);
                 self.send_buffer.ack_and_drop(unack);
             }
             let real_priority = self.priority_calculation(unack);
-            // println!("offset: {:?}, priority: {:?}",unack,priority);
-            // println!("offset: {:?}, real priority: {:?}",unack,self.priority_calculation(unack));
             if priority != 0 && real_priority == 3{
                 self.high_priority += 1;
             }
@@ -627,22 +588,6 @@ impl Connection {
         
         // need to change!!!!!!!!!
         self.set_handshake();
-        //
-        // if self.send_data.len() > self.written_data{
-        //     let write = self.write();
-        //     self.written_data += write.unwrap();
-        //     self.total_offset += write.unwrap() as u64;
-
-        //     return true
-        // }else {
-        //     if self.send_buffer.data.is_empty(){
-        //         return false
-        //     }else{
-        //     let write = self.write();
-        //     self.written_data += write.unwrap();
-        //     self.total_offset += write.unwrap() as u64;
-        //     return true}
-        // }
 
         if self.send_data_buf.len() > 0{
             let write = self.write();
@@ -736,7 +681,6 @@ impl Connection {
 
             // pkt_length may not be 8
             for (key, val) in self.recv_hashmap.iter() {
-                // let mut retrans = self.
                 b.put_u64(*key)?;
                 b.put_u64(*val)?;
             }
@@ -745,14 +689,10 @@ impl Connection {
 
         }
 
-        //
         // chekc is_ack condition is correct or not.
-        //
-        //send the 
         if ty == packet::Type::ElictAck{
             pn =  self.pkt_num_spaces[1].next_pkt_num;
             self.pkt_num_spaces[1].next_pkt_num += 1;
-            println!("ElickAck num: {:?}", pn);
             let mut b = octets::OctetsMut::with_slice(out);
             if self.stop_flag == true{
                 let res = &self.sent_pkt[self.ack_point..];
@@ -767,7 +707,6 @@ impl Connection {
                 hdr.to_bytes(&mut b).unwrap();
                 for i in 0..res.len() as usize{
                     b.put_u64(res[i])?;
-                    println!("ElictAck: {:?}",res[i]);
                 }
                 psize = (pkt_counter*8) as u64;
                 self.ack_point = self.sent_pkt.len();
@@ -785,7 +724,6 @@ impl Connection {
                 hdr.to_bytes(&mut b).unwrap();
                 for i in 0..res.len() as usize{
                     b.put_u64(res[i])?;
-                    println!("ElictAck: {:?}",res[i]);
                 }
                 self.ack_point = self.sent_pkt.len();
                 psize = 64;
@@ -793,31 +731,6 @@ impl Connection {
             total_len += psize as usize;
             return Ok((total_len, info))
         }
-
-        // Test later
-        // if ty == packet::Type::ElictAck{
-        //     let mut b = octets::OctetsMut::with_slice(out);
-        //     //When send_buf send out all data
-        //     let res = &self.sent_pkt[self.ack_point..];
-        //     let pkt_counter = self.sent_pkt.len() - self.ack_point;
-        //     let hdr = Header{
-        //         ty,
-        //         pkt_num: pn,
-        //         offset: offset,
-        //         priority: priority,
-        //         pkt_length: (pkt_counter*8) as u64,
-        //     };
-        //     hdr.to_bytes(&mut b).unwrap();
-        //     for i in 0..res.len() as usize{
-        //         b.put_u64(res[i])?;
-        //     }
-        //     self.ack_point = self.sent_pkt.len();
-
-        //     if self.stop_flag{
-        //         self.stop_ack = true;
-        //     }
-                
-        // }
         
         if ty == packet::Type::Application{
             if let Ok((result_len, off, stop)) = self.send_buffer.emit(&mut out[26..]){
@@ -846,9 +759,6 @@ impl Connection {
                 offset = result_len as u64;
                 psize = result_len as u64;
                 hdr.to_bytes(&mut b)?;
-
-                //Recording offset of each data.
-                // self.total_offset = std::cmp::max(off, self.total_offset);
     
                 if stop == true{
                     self.stop_flag = true;
@@ -870,7 +780,6 @@ impl Connection {
 
             hdr.to_bytes(&mut b)?;
             
-            // total_len += offset as usize;
             total_len += psize as usize;
             return Ok((total_len, info));
         }
@@ -882,7 +791,6 @@ impl Connection {
         
         self.handshake = time::Instant::now();
 
-        // total_len += offset as usize;
         total_len += psize as usize;
         Ok((total_len, info))
     }
@@ -968,7 +876,6 @@ impl Connection {
   
     //Writing data to send buffer.
     pub fn write(&mut self) -> Result<usize> {
-        //?/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if self.send_buffer.data.is_empty(){
             let toffset = self.total_offset % 1024;
             let mut off_len: usize = 0;
@@ -978,7 +885,6 @@ impl Connection {
             let high_ratio = self.high_priority as f64 / self.sent_number as f64;
             self.high_priority = 0;
             self.sent_number = 0;
-            // let off_len = 1024 - (self.total_offset % 1024) as usize;
             // Note: written_data refers to the non-retransmitted data.
             let congestion_window = if high_ratio > CONGESTION_THREAHOLD{
                 self.recovery.rollback()
@@ -986,13 +892,11 @@ impl Connection {
                 self.recovery.cwnd()
             };
             self.record_win = congestion_window;
-            println!("cwnd: {:?}", congestion_window);
             self.send_buffer.write(&self.send_data_buf, congestion_window, off_len, self.max_off)
         }else{
             let congestion_window = self.record_win;
             let off_len: usize = 0;
 
-            println!("cwnd: {:?}", congestion_window);
             self.send_buffer.write(&self.send_data_buf, congestion_window, off_len, self.max_off)
         }
 
@@ -1016,32 +920,6 @@ impl Connection {
         self.norm2_vec.clear();
         self.send_buffer.clear();
     }
-
-    ///responce packet used to tell sender which packet loss
-    // fn send_ack(&mut self, recv_buf: &mut [u8],out:&mut [u8]) -> Header{
-    //     let mut res:Vec<u64> = Vec::new(); 
-    //     res = self.check_loss(recv_buf);  
-    //     let pn:u64 = 0;
-    //     let offset:u64 = 0;
-    //     let priority:u8 = 0;
-    //     let plen:u64 = res.len().try_into().unwrap();
-    //     let psize:u64 = plen*4;
-    //     let ty = packet::Type::ACK;
-    //     let mut b = octets::OctetsMut::with_slice(out);
-    //     //let pkt_type = packet::Type::ElictAck;
-    //     let hdr= Header{
-    //         ty: ty,
-    //         pkt_num: pn,
-    //         offset: offset,
-    //         priority: priority,
-    //         pkt_length: psize,
-    //     };
-    //     hdr.to_bytes(&mut b).unwrap();
-    //     for i in 0..plen as usize{
-    //         b.put_u64(res[i]).unwrap();
-    //     } 
-    //     hdr
-    // }
 
     pub fn check_loss(&mut self, recv_buf: &mut [u8]){
         let mut b = octets::OctetsMut::with_slice(recv_buf);
@@ -1172,20 +1050,6 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
-        // if buf.len() < 1024{
-        //     let len = 1;
-        //     self.send_data.extend(buf.to_vec());
-        //     self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
-        //     self.send_buffer.clear();
-        // }else{
-        //     let len = match buf.len() / 1024 {
-        //         0 => buf.len() / 1024,
-        //         _ => buf.len()/1024 + 1,
-        //     };
-        //     self.send_data.extend(buf.to_vec());
-        //     self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
-        //     self.send_buffer.clear();
-        // }
         if !self.norm2_vec.is_empty(){
             self.norm2_vec.clear();
         }
@@ -1200,59 +1064,6 @@ impl Connection {
         self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
         self.send_buffer.clear();
     }
-
-    // //read data from application
-    // pub fn data_send(& mut self, str_buf: & mut String){
-    //     let mut output = str_buf.replace("\n", "");
-    //     output = output.replace("\"", "");
-    //     output = output.replace("\r","");
-    //     let new_parts = output.split(">");
-    //     self.norm2_vec.clear();
-    //     self.send_data.clear();
-    //     // let mut send_data:Vec<f32> = Vec::new();
-    //     self.low_split_point = 0.0;
-    //     self.high_split_point = 0.0;
-
-    //     let mut norm2_tmp:Vec<f32>=Vec::new();
-    //     for part in new_parts{
-    //         if part == "" {
-    //             break;
-    //         }
-    //         self.process_string(part.to_string(),&mut norm2_tmp);
-    //     }
-    //     norm2_tmp.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    //     self.low_split_point = norm2_tmp[norm2_tmp.len()*3/10 as usize];
-    //     self.high_split_point = norm2_tmp[norm2_tmp.len()*7/10 as usize];
-    // }
-
-    // //store data and compute priority in advance
-    // pub fn process_string(& mut self, test_data: String, norm2_tmp: &mut Vec<f32>){
-    //     let new_parts = test_data.split("[");
-    //     let collection: Vec<&str> = new_parts.collect();
-    //     let data = collection[1].to_string();
-    //     let new_data = data.split("]");
-    //     let collection: Vec<&str> = new_data.collect();
-    //     let array_string = collection[0].to_string();
-    //     let mut single_data: Vec<&str> = array_string.split(" ").collect();
-    //     let white_space = "";
-    //     single_data.retain(|&x| x != white_space);
-    
-    //     let mut norm2:f32 = 0.0;
-    //     let mut it = 0;
-    //     for item in single_data{
-    //         it +=1;
-    //         let my_float:f32 = FromStr::from_str(&item.to_string()).unwrap();
-    //         norm2 +=my_float*my_float;
-    //         let float_array = my_float.to_ne_bytes();
-    //         self.send_data.extend(float_array);
-    //         if it%256 == 255 {
-    //             norm2_tmp.push(norm2);
-    //             self.norm2_vec.push(norm2);
-    //             norm2 = 0.0;
-    //         }
-    //     }
-    
-    // }
 
 }
 
@@ -1436,68 +1247,12 @@ impl RecvBuf {
     /// out should be initialed as 0
     pub fn emit(&mut self, out: &mut [u8]) -> Result<usize> {
         let mut len:usize = 0;
-        let mut cap = out.len();
+        let cap = out.len();
 
         if !self.ready() {
             return Err(Error::Done);
         }
 
-        // The stream was reset, so return the error code instead.
-        // if let Some(e) = self.error {
-        //     return Err(Error::StreamReset(e));
-        // }
-        let mut startoff = 0;
-        let mut fixed = 0;
-        // while cap > 0 && self.ready() {
-        //     let mut entry = match self.data.first_entry() {
-        //         Some(entry) => entry,
-        //         None => break,
-        //     };
-
-        //     let buf = entry.get_mut();
-
-        //     if fixed == 0{
-        //         startoff = buf.off();
-        //     }
-        //     let max_off = buf.max_off();
-        //     let data_len = buf.len();
-            
-        //     let mut zero_len = 0;
-        //     if max_off - self.last_maxoff != data_len.try_into().unwrap(){
-        //         zero_len = max_off - self.last_maxoff - (data_len as u64);
-        //     }
-            
-        //     fixed += 1;
-
-        //     // 1. 0 can fill out the rest out buffer
-        //     if zero_len < (cap as u64){
-        //         cap -= zero_len as usize;
-        //         len += zero_len as usize;
-
-        //         cap -= as usize;
-        //         len += as usize;
-
-        //         self.last_maxoff += zero_len;
-        //         let buf_len = cmp::min(buf.len(), cap); 
-        //         out[len..len + buf_len].copy_from_slice(&buf.data[..buf_len]);
-        //         self.last_maxoff += buf_len as u64;
-        //         if buf_len < buf.len(){
-        //             buf.consume(buf_len);
-
-        //             // We reached the maximum capacity, so end here.
-        //             break;
-        //         }
-        //         entry.remove();
-        //     }else if zero_len == cap as u64 {
-        //         self.last_maxoff += zero_len;
-        //         // cap -= zero_len as usize;
-        //         len += zero_len as usize;
-
-        //         break;
-        //     }else {
-        //         self.last_maxoff += cap as u64;
-        //         break;
-        //     }
         while cap > 0 && self.ready() {
             let mut entry = match self.data.first_entry() {
                 Some(entry) => entry,
@@ -1505,15 +1260,7 @@ impl RecvBuf {
             };
 
             let buf = entry.get_mut();
-
-            if fixed == 0{
-                startoff = buf.off();
-            }
-            // let max_off = buf.max_off();
-            // let data_len = buf.len();
             
-            fixed += 1;
-
             // 1. 0 can fill out the rest out buffer
             let buf_len = cmp::min(buf.len(), cap); 
             out[buf.off() as usize..buf.max_off() as usize].copy_from_slice(&buf.data[..buf_len]);
@@ -1526,23 +1273,6 @@ impl RecvBuf {
             entry.remove();
             len += buf_len;
 
-            // let buf_len = cmp::min(buf.len(), cap);
-
-            // out[len..len + buf_len].copy_from_slice(&buf.data[..buf_len]);
-
-            // self.off += buf_len as u64;
-
-            // len += buf_len;
-            // cap -= buf_len;
-
-            // if buf_len < buf.len() {
-            //     buf.consume(buf_len);
-
-            //     // We reached the maximum capacity, so end here.
-            //     break;
-            // }
-
-            // entry.remove();
         }
 
 
@@ -1687,9 +1417,7 @@ impl SendBuf {
             if data.len() == 0{
                 return  Ok(0);
             }
-        
-            // let capacity = self.cap()?;
-            
+                    
             if data.len() > capacity {
                 // Truncate the input buffer according to the stream's capacity.
                 let len = capacity;
@@ -1735,7 +1463,6 @@ impl SendBuf {
     
             // Split the remaining input data into consistently-sized buffers to
             // avoid fragmentation.
-            //for chunk in data.chunks(SEND_BUFFER_SIZE) {
                 
                 len += chunk.len();          
     
