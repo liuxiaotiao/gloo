@@ -132,10 +132,26 @@ std::shared_ptr<Socket> Socket::accept() {
     // Bind random port in local and remote node.
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
-    sockaddr_in* addr = (struct sockaddr_in*)&storage;
-    addr->sin_family = AF_INET;
-    addr->sin_addr.s_addr = htonl(INADDR_ANY);
-    addr->sin_port = htons(0); 
+    // sockaddr_in* addr = (struct sockaddr_in*)&storage;
+    // addr->sin_family = AF_INET;
+    // addr->sin_addr.s_addr = htonl(INADDR_ANY);
+    // addr->sin_port = htons(0); 
+    if ((&local)->ss_family == AF_INET) {
+      // IPv4
+      const sockaddr_in* src_addr = reinterpret_cast<const sockaddr_in*>(&local);
+      sockaddr_in* dest_addr = reinterpret_cast<sockaddr_in*>(&storage);
+      dest_addr->sin_family = AF_INET;
+      memcpy(&dest_addr->sin_addr, &src_addr->sin_addr, sizeof(in_addr));
+      dest_addr->sin_port = htons(0); 
+    } else if ((&local)->ss_family == AF_INET6) {
+      // IPv6
+      const sockaddr_in6* src_addr = reinterpret_cast<const sockaddr_in6*>(&local);
+      sockaddr_in6* dest_addr = reinterpret_cast<sockaddr_in6*>(&storage);
+      dest_addr->sin6_family = AF_INET6;
+      memcpy(&dest_addr->sin6_addr, &src_addr->sin6_addr, sizeof(in6_addr));
+      dest_addr->sin6_port = htons(0); 
+    }
+
     accept_socket->bind(storage);
 
     accept_socket->connect(peer);
@@ -230,13 +246,13 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
 
   dmludp_send_info send_info;
   ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
-  ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &tmp_peer_addr, peer_addr_len);
+  ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &ss, peer_addr_len);
 
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
 
-  connect((struct sockaddr *)&tmp_addr, sizeof(tmp_addr));
+  // connect((struct sockaddr *)&tmp_addr, sizeof(tmp_addr));
   // ssize_t sent = write(out, written);
   for (;;){
     ssize_t received = recvfrom(fd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
