@@ -276,6 +276,7 @@ pub fn connect(
     Ok(conn)
 }
 
+#[repr(C)]
 pub struct Connection {
 
     /// Total number of received packets.
@@ -1170,21 +1171,33 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
-        if buf.len() < 1024{
-            let len = 1;
-            self.send_data.extend(buf.to_vec());
-            self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
-            self.send_buffer.clear();
-        }else{
-            let len = match buf.len() / 1024 {
-                0 => buf.len() / 1024,
-                _ => buf.len()/1024 + 1,
-            };
-            self.send_data.extend(buf.to_vec());
-            self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
-            self.send_buffer.clear();
+        // if buf.len() < 1024{
+        //     let len = 1;
+        //     self.send_data.extend(buf.to_vec());
+        //     self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+        //     self.send_buffer.clear();
+        // }else{
+        //     let len = match buf.len() / 1024 {
+        //         0 => buf.len() / 1024,
+        //         _ => buf.len()/1024 + 1,
+        //     };
+        //     self.send_data.extend(buf.to_vec());
+        //     self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+        //     self.send_buffer.clear();
+        // }
+        if !self.norm2_vec.is_empty(){
+            self.norm2_vec.clear();
         }
-
+        if !self.send_data.is_empty(){
+            self.send_data.clear();
+        }
+        let len = match buf.len() % 1024 {
+            0 => buf.len() / 1024,
+            _ => buf.len()/1024 + 1,
+        };
+        self.send_data.extend_from_slice(buf);
+        self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
+        self.send_buffer.clear();
     }
 
     // //read data from application

@@ -214,9 +214,11 @@ dmludp_conn* Socket::create_dmludp_connection(struct sockaddr *local, struct soc
   socklen_t len = sizeof(addr);
   if( is_server ){
     auto connection = dmludp_accept(local, len, (struct sockaddr *)&peer, len, dmludp_config);
+    dmludp_config_free(dmludp_config);
     return connection;
   }else{
     auto connection = dmludp_connect(local, len, (struct sockaddr *)&peer, len, dmludp_config);
+    dmludp_config_free(dmludp_config);
     return connection;
   }
 }
@@ -251,7 +253,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
-
+  dmludp_conn_free(temp_connection);
   // connect((struct sockaddr *)&tmp_addr, sizeof(tmp_addr));
   // ssize_t sent = write(out, written);
   for (;;){
