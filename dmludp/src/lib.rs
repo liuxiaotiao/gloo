@@ -342,7 +342,7 @@ pub struct Connection {
     // high_split_point: f32,
 
     //store data
-    send_data:Vec<u8>,
+    send_data_buf:Vec<u8>,
 
     //store norm2 for every 256 bits float
     // norm2_vec:Vec<f32>,
@@ -444,7 +444,7 @@ impl Connection {
             // low_split_point:0.0,
             // high_split_point:0.0,
 
-            send_data:Vec::<u8>::new(),
+            send_data_buf:Vec::<u8>::new(),
             // norm2_vec:Vec::<f32>::new(),
             norm2_vec:Vec::<u8>::new(),
 
@@ -643,9 +643,9 @@ impl Connection {
         //     return true}
         // }
 
-        if self.send_data.len() > 0{
+        if self.send_data_buf.len() > 0{
             let write = self.write();
-            self.send_data.drain(0..write.unwrap());
+            self.send_data_buf.drain(0..write.unwrap());
             self.written_data += write.unwrap();
             self.total_offset += write.unwrap() as u64;
 
@@ -656,7 +656,7 @@ impl Connection {
             }else{
                 // continue send
                 let write = self.write();
-                self.send_data.drain(0..write.unwrap());
+                self.send_data_buf.drain(0..write.unwrap());
                 self.written_data += write.unwrap();
                 self.total_offset += write.unwrap() as u64;
                 return true
@@ -986,13 +986,13 @@ impl Connection {
             };
             self.record_win = congestion_window;
             println!("cwnd: {:?}", congestion_window);
-            self.send_buffer.write(&self.send_data, congestion_window, off_len, self.max_off)
+            self.send_buffer.write(&self.send_data_buf, congestion_window, off_len, self.max_off)
         }else{
             let congestion_window = self.record_win;
             let off_len: usize = 0;
 
             println!("cwnd: {:?}", congestion_window);
-            self.send_buffer.write(&self.send_data, congestion_window, off_len, self.max_off)
+            self.send_buffer.write(&self.send_data_buf, congestion_window, off_len, self.max_off)
         }
 
     }
@@ -1165,7 +1165,7 @@ impl Connection {
     }
 
     pub fn is_empty(& self) -> bool{
-        self.send_data.is_empty()
+        self.send_data_buf.is_empty()
     }
 
     // Application can send data through this function, 
@@ -1188,14 +1188,14 @@ impl Connection {
         if !self.norm2_vec.is_empty(){
             self.norm2_vec.clear();
         }
-        if !self.send_data.is_empty(){
-            self.send_data.clear();
+        if !self.send_data_buf.is_empty(){
+            self.send_data_buf.clear();
         }
         let len = match buf.len() % 1024 {
             0 => buf.len() / 1024,
             _ => buf.len()/1024 + 1,
         };
-        self.send_data.extend_from_slice(buf);
+        self.send_data_buf.extend_from_slice(buf);
         self.norm2_vec.extend(std::iter::repeat(3).take(len)); 
         self.send_buffer.clear();
     }
