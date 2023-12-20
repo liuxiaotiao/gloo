@@ -274,9 +274,6 @@ pub struct Connection {
     /// Total number of sent packets.
     sent_count: usize,
 
-    /// Draining timeout expiration time.
-    draining_timer: Option<time::Instant>,
-
     /// Whether this is a server-side connection.
     is_server: bool,
 
@@ -332,6 +329,8 @@ pub struct Connection {
     // Note: It refers to the priorty of each packet.
     pub norm2_vec:Vec<u8>,
 
+    pub nore2_vec_copy: Option<Vec<u8>>,
+
     record_win: usize,
 
     total_offset:u64,
@@ -380,8 +379,6 @@ impl Connection {
 
             sent_count: 0,
 
-            draining_timer: None,
-
             is_server,
 
             // Assume clients validate the server's address implicitly.
@@ -413,6 +410,7 @@ impl Connection {
 
             //All buffer data have been sent, waiting for the ack responce.
             stop_flag: false,
+            
             stop_ack: false,
 
             prioritydic:HashMap::new(),
@@ -424,7 +422,7 @@ impl Connection {
             send_data_buf:Vec::<u8>::new(),
 
             norm2_vec:Vec::<u8>::new(),
-
+            nore2_vec_copy:Some(Vec::<u8>::new()),
             record_win: 0,
 
             total_offset: 0,
@@ -967,26 +965,6 @@ impl Connection {
     }
 
 
-    /// Returns true if the connection is draining.
-    ///
-    /// If this returns `true`, the connection object cannot yet be dropped, but
-    /// no new application data can be sent or received. An application should
-    /// continue calling the [`recv()`], [`timeout()`], and [`on_timeout()`]
-    /// methods as normal, until the [`is_closed()`] method returns `true`.
-    ///
-    /// In contrast, once `is_draining()` returns `true`, calling [`send()`]
-    /// is not required because no new outgoing packets will be generated.
-    ///
-    /// [`recv()`]: struct.Connection.html#method.recv
-    /// [`send()`]: struct.Connection.html#method.send
-    /// [`timeout()`]: struct.Connection.html#method.timeout
-    /// [`on_timeout()`]: struct.Connection.html#method.on_timeout
-    /// [`is_closed()`]: struct.Connection.html#method.is_closed
-    #[inline]
-    pub fn is_draining(&self) -> bool {
-        self.draining_timer.is_some()
-    }
-
     /// Returns true if the connection is closed.
     ///
     /// If this returns true, the connection object can be dropped.
@@ -1050,6 +1028,10 @@ impl Connection {
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
+        match &self.nore2_vec_copy{
+            Some(_)=>println!("Some"),
+            None=>println!("Null"),
+        }
         if !self.norm2_vec.is_empty(){
             self.norm2_vec.clear();
         }
@@ -1067,7 +1049,9 @@ impl Connection {
 
 }
 
+unsafe impl Send for Connection {}
 
+unsafe impl Sync for Connection {}
 
 #[derive(Clone, Debug, Eq, Default)]
 pub struct RangeBuf {

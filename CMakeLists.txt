@@ -134,11 +134,10 @@ endif()
     #else()
     #	message(FATAL_ERROR "LIB FOLDER is not created.")
     #endif()
-if(EXISTS "${PROJECT_SOURCE_DIR}/dmludp")
-        set(USE_LIBDMLUDP_DEFAULT ON)
-        set(USE_LIBDMLUDP ON)
-        add_subdirectory(dmludp)
-endif()
+
+set(USE_LIBDMLUDP_DEFAULT ON)
+set(USE_LIBDMLUDP ON)
+
 # Recurse into main project directory
 add_subdirectory(gloo)
 

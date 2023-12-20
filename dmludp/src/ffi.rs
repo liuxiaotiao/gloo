@@ -8,12 +8,16 @@ use std::net::SocketAddr;
 use std::net::SocketAddrV4;
 use std::net::SocketAddrV6;
 
+#[cfg(unix)]
+use std::os::unix::io::FromRawFd;
+
 use libc::c_char;
 use libc::c_int;
 use libc::c_void;
 use libc::size_t;
 use libc::sockaddr;
 use libc::ssize_t;
+use libc::timespec;
 
 #[cfg(not(windows))]
 use libc::AF_INET;

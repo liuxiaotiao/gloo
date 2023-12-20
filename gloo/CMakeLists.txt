@@ -50,6 +50,12 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/scatter.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/types.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/dmludp.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/connection.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RangeBuf.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Recovery.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
   )
 
 if(USE_CUDA)
