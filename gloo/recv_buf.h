@@ -29,7 +29,7 @@ namespace dmludp{
             size_t buf_len = buf->len();
             uint64_t tmp_off = buf->max_off()-(uint64_t)buf_len;
 
-            if (!data.empty()){
+            if (!(data.empty())){
                 auto entry = --data.end();
                 if (entry -> first == tmp_off){
                     max_recv_off = tmp_off;
