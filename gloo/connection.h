@@ -33,19 +33,19 @@ const size_t SEND_BUFFER_SIZE = 1024;
 
 struct SendInfo {
     /// The local address the packet should be sent from.
-    sockaddr_storage from,
+    sockaddr_storage from;
 
     /// The remote address the packet should be sent to.
-    sockaddr_storage to,
+    sockaddr_storage to;
 
 }
 
 struct RecvInfo {
     /// The remote address the packet was received from.
-    sockaddr_storage from,
+    sockaddr_storage from;
 
     /// The local address the packet was received on.
-    sockaddr_storage to,
+    sockaddr_storage to;
 }
 
 class Config {
@@ -56,18 +56,18 @@ class Config {
 
     Config::Config():
     max_send_udp_payload_size(MAX_SEND_UDP_PAYLOAD_SIZE),
-    max_idle_timeout(5000){}
+    max_idle_timeout(5000){};
 
     Config::~Config(){
 
-    }
+    };
 
     /// Sets the `max_idle_timeout` transport parameter, in milliseconds.
     /// same with tcp max idle timeout
     /// The default value is infinite, that is, no timeout is used.
     void set_max_idle_timeout(uint64_t v) {
         max_idle_timeout = v;
-    }
+    };
 }
 
 
@@ -157,13 +157,13 @@ class Connection{
     static Connection* connect(local: SocketAddr, peer: SocketAddr, config: &mut Config) {
         auto conn = Connection::new(local, peer, config, false);
         return conn;
-    }
+    };
 
     static Connecition* accept(local: SocketAddr, peer: SocketAddr, config: &mut Config)  {
         auto conn = Connection::new(local, peer, config, true);
 
         return conn;
-    }
+    };
 
     Connecition::Connecition(sockaddr_storage local, 
     sockaddr_storage peer, 
@@ -205,11 +205,11 @@ class Connection{
     SendBuf send_buffer;
     RecvBuf recv_buffer;
     {
-    }
+    };
 
     Connection::~Connection(){
 
-    }
+    };
 
     void update_rtt(){
         auto arrive_time = std::chrono::high_resolution_clock::now();
@@ -218,17 +218,17 @@ class Connection{
         }else{
             rtt = 17 * ( arrive_time - handshake ) / 16;
         }
-    }
+    };
 
     void set_rtt(uint64_t inter){
         if (bidirect){
             rtt = std::chrono::nanoseconds(inter);
         }
-    }
+    };
 
     void new_rtt(uint64_t last){
         rtt = rtt / 4 + 3 * std::chrono::nanoseconds(last)/4;
-    }
+    };
 
     uint64_t convertToUint64(const std::vector<uint8_t>& v){
         uint64_t result = 0;
@@ -240,7 +240,7 @@ class Connection{
         #endif
         }
         return result;
-    }
+    };
 
     size_t recv_slice(std::vector<uint8_t> buf){
         auto len = buf.size();
@@ -299,11 +299,11 @@ class Connection{
         // }
 
         return read;
-    }
+    };
 
     bool send_ack(){
         return feed_back;
-    }
+    };
 
 
     
@@ -361,11 +361,11 @@ class Connection{
 
         recovery.update_win(weights, (len/(8*2)) as f64);
         
-    }
+    };
 
     uint8_t findweight(uint64_t unack){
         return prioritydic.at(unack);
-    }
+    };
 
     bool send_all(){
         stop_flag = false;
@@ -393,7 +393,7 @@ class Connection{
             }
         }
         
-    }
+    };
 
     void addUint64 (const std::vector<uint8_t>& v, uint64_t input){
         #if  IS_BIG_ENDIAN
@@ -405,7 +405,7 @@ class Connection{
             v.push_back(static_cast<uint8_t>(input >> (i * 8)));
         }
         #endif
-    }
+    };
 
     //Send single packet
     ///////
@@ -568,7 +568,7 @@ class Connection{
         delete hdr; 
         hdr = nullptr; 
         return total_len;
-    }
+    };
 
     size_t send_data_stop(std::vector<uint8_t> out){ 
         size_t total_len = HEADER_LENGTH;
@@ -591,7 +591,7 @@ class Connection{
         hdr = nullptr; 
 
         return total_len;
-    }
+    };
 
     size_t send_data_handshake(out: &mut [u8]){
         if (out.is_empty()){
@@ -615,11 +615,11 @@ class Connection{
         hdr = nullptr; 
 
         return total_len;
-    }
+    };
 
     bool is_stopped(){
         return stop_flag && stop_ack;
-    }
+    };
 
     //Start updating congestion control window and sending new data.
     bool is_ack(){
@@ -629,16 +629,16 @@ class Connection{
             return true;
         }
         return false;
-    }
+    };
 
 ///////////////////
     size_t read(std::vector<uint8_t> out){
         return rec_buffer.emit(out);
-    }
+    };
 
     uint64_t max_ack() {
         return rec_buffer.max_ack();
-    }
+    };
   
     //Writing data to send buffer.
     size_t write() {
@@ -670,17 +670,17 @@ class Connection{
             return result;
         }
 
-    }
+    };
 
     uint8_t priority_calculation(uint64_t off){
         auto real_index = (uint64_t)(off/1024);
         return norm2_vec[real_index];
-    }
+    };
 
     void reset(){
         norm2_vec.clear();
         send_buffer.clear();
-    }
+    };
 
 //////////////////////////
     void check_loss(recv_buf: &mut [u8]){
@@ -694,15 +694,15 @@ class Connection{
                 recv_hashmap.insert(offset, 1);
             }
         }
-    }
+    };
 
     void set_handshake(){
         handshake = std::chrono::high_resolution_clock::now();
-    }
+    };
 
     double get_rtt() {
         return rtt.count();
-    }
+    };
 
     /// Returns the maximum possible size of egress UDP payloads.
     ///
@@ -719,13 +719,13 @@ class Connection{
     /// [`send()`]: struct.Connection.html#method.send
     size_t max_send_udp_payload_size() {
         return MIN_CLIENT_INITIAL_LEN;
-    }
+    };
     
 
     /// Returns true if the connection handshake is complete.
     bool is_established(){
         return handshake_completed;
-    }
+    };
 
 
     /// Returns true if the connection is closed.
@@ -733,12 +733,12 @@ class Connection{
     /// If this returns true, the connection object can be dropped.
     bool is_closed() {
         return closed;
-    }
+    };
 
     /// Returns true if the connection was closed due to the idle timeout.
     bool is_timed_out() {
         return timed_out;
-    }
+    };
     
     packet::Type write_pkt_type(){
         // let now = Instant::now();
@@ -773,16 +773,16 @@ class Connection{
         return packet::Type::Unknown;
 
         // Err(Error::Done)
-    }
+    };
 
     // Send buffer is empty or not. If it is empty, send_all() will try to fill it with new data.
     bool data_is_empty(){
         return send_buffer.data.is_empty();
-    }
+    };
 
     bool is_empty(){
         return send_data_buf.is_empty();
-    }
+    };
 
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
@@ -808,7 +808,7 @@ class Connection{
 
         norm2_vec.extend(std::iter::repeat(3).take(len)); 
         send_buffer.clear();
-    }
+    };
 }
 
 }
