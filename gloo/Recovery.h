@@ -21,29 +21,22 @@ enum CongestionControlAlgorithm {
     /// CUBIC congestion control algorithm (default). `cubic` in a string form.
     NEWCUBIC = 1,
 
-}
+};
 
 class RecoveryConfig {
     public:
     max_send_udp_payload_size: usize,
     pub max_ack_delay: Duration,
 
-    RecoveryConfig::RecoveryConfig(){
+    RecoveryConfig(){
 
     }
 
-    RecoveryConfig::~RecoveryConfig(){
+    ~RecoveryConfig(){
 
     }
 
-    RecoveryConfig from_config(Config config){
-        Self {
-            max_send_udp_payload_size: config.max_send_udp_payload_size,
-            max_ack_delay: Duration::ZERO,
-        }
-    }
-
-}
+};
 
 class Recovery{
     public:
@@ -72,15 +65,18 @@ class Recovery{
 
     Recovery():
     app_limited(false),
-    congestion_window(INI_WIN),
+    // congestion_window(INI_WIN),
     bytes_in_flight(0);
-    max_datagram_size(PACKET_SIZE);
+    // max_datagram_size(PACKET_SIZE);
     incre_win(0),
     decre_win(0),
     roll_back_flag(false),
     function_change(false),
     incre_win_copy(0),
-    decre_win_copy(0){};
+    decre_win_copy(0){
+        max_datagram_size = PACKET_SIZE;
+        congestion_window = INI_WIN;
+    };
 
     ~Recovery(){};
 
@@ -165,7 +161,7 @@ class Recovery{
     };
     
 
-    size_t cwnd_available() -> usize {
+    size_t cwnd_available()  {
         return (congestion_window - bytes_in_flight);
     };
 
@@ -191,6 +187,6 @@ class Recovery{
         return congestion_window;
     };
 
-}
+};
 
 }

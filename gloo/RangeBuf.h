@@ -52,7 +52,7 @@ namespace dmludp{
 
         /// Returns true if `self` has a length of zero bytes.
         bool is_empty(){ 
-            return len() == 0;
+            return (len() == 0);
         };
 
         /// Consumes the starting `count` bytes of `self`.

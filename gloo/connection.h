@@ -260,23 +260,23 @@ class Connection{
 
         size_t read = 0;
 
-        if (hdr->ty == packet::Type::Handshake && is_server){
+        if (hdr->ty == Type::Handshake && is_server){
             update_rtt();
             handshake_completed = true;
         }
         
         //If receiver receives a Handshake packet, it will be papred to send a Handshank.
-        if (hdr->ty == packet::Type::Handshake && !is_server){
+        if (hdr->ty == Type::Handshake && !is_server){
             handshake_confirmed = false;
             feed_back = true;
         }
         
         // All side can send data.
-        if (hdr->ty == packet::Type::ACK){
+        if (hdr->ty == Type::ACK){
             process_ack(buf);
         }
 
-        if (hdr->ty == packet::Type::ElictAck){
+        if (hdr->ty == Type::ElictAck){
             recv_flag = true;
             std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
@@ -285,7 +285,7 @@ class Connection{
             feed_back = true;
         }
 
-        if (hdr->ty == packet::Type::Application){
+        if (hdr->ty == Type::Application){
             recv_count += 1;
             read = (size_t)(hdr->pkt_length);
             std::vector<uint8_t> writebuf(buf.begin() + 26, buf.end());
@@ -416,18 +416,18 @@ class Connection{
     size_t send_data(std::vector<uint8_t> out){
         
         size_t done = 0;
-        size_t total_len:usize = HEADER_LENGTH;
+        size_t total_len = HEADER_LENGTH;
 
         uint64_t pn = 0;
         uint64_t offset = 0;
         uint8_t priority = 0;
         uint64_t psize = 0;
 
-        auto ty = write_pkt_type()?; 
+        auto ty = write_pkt_type(); 
 
-        Header* hdr = new Header(packet::Type::Application, 0, 0, 0, 0);
+        Header* hdr = new Header(Type::Application, 0, 0, 0, 0);
 
-        if (ty == packet::Type::Handshake && server){
+        if (ty == Type::Handshake && server){
             hdr->ty = ty;
             hdr->pkt_num = pn;
             hdr->offset = offset;
@@ -437,7 +437,7 @@ class Connection{
             set_handshake();
         }
 
-        if (ty == packet::Type::Handshake && !server){
+        if (ty == Type::Handshake && !server){
             hdr->ty = ty;
             hdr->pkt_num = pn;
             hdr->offset = offset;
@@ -448,7 +448,7 @@ class Connection{
         }
     
         //send the received packet condtion
-        if (ty == packet::Type::ACK){
+        if (ty == Type::ACK){
             feed_back = false;
             psize = (uint64_t)(recv_hashmap.size()*8*2 + 8);
             hdr->ty = ty;
@@ -469,7 +469,7 @@ class Connection{
         }
 
         // chekc is_ack condition is correct or not.
-        if (ty == packet::Type::ElictAck){
+        if (ty == Type::ElictAck){
             // pn =  pkt_num_spaces[1].next_pkt_num;
             // pkt_num_spaces[1].next_pkt_num += 1;
             pn = pkt_num_spaces[1].updatepktnum();
@@ -512,7 +512,7 @@ class Connection{
         }
         
         ////////////////////////////
-        if (ty == packet::Type::Application){
+        if (ty == Type::Application){
             size_t out_len = 0; 
             uint64_t out_off = 0;
 
@@ -549,7 +549,7 @@ class Connection{
             sent_pkt.push(hdr->offset);
         }  
 
-        if (ty == packet::Type::Stop){
+        if (ty == Type::Stop){
             hdr->ty = ty;
             hdr->pkt_num = pn;
             hdr->offset = offset;
@@ -586,7 +586,7 @@ class Connection{
         uint8_t priority = 0;
         uint64_t psize = 0;
 
-        auto ty = packet::Type::Stop; 
+        auto ty = Type::Stop; 
 
         Header* hdr = new Header(ty, pn, offset, priority, psize);
 
@@ -609,7 +609,7 @@ class Connection{
         uint8_t priority = 0;
         uint64_t psize = 0;
 
-        auto ty = packet::Type::Handshake; 
+        auto ty = Type::Handshake; 
 
         Header* hdr = new Header(ty, pn, offset, priority, psize);
 
@@ -744,37 +744,37 @@ class Connection{
         return timed_out;
     };
     
-    packet::Type write_pkt_type(){
+    Type write_pkt_type(){
         // let now = Instant::now();
         if (rtt == 0 && is_server == true){
             handshake_completed = true;
-            return packet::Type::Handshake;
+            return Type::Handshake;
         }
 
         if (handshake_confirmed == false && is_server == false){
             handshake_confirmed = true;
-            return packet::Type::Handshake;
+            return Type::Handshake;
         }
 
         if ((sent_count % ELICT_FLAG == 0 && sent_count > 0) || stop_flag == true){
             sent_count = 0;
-            return packet::Type::ElictAck;
+            return Type::ElictAck;
         }
 
         if (recv_flag == true){
             recv_flag = false;
-            return packet::Type::ACK;
+            return Type::ACK;
         }
 
         if (rtt != 0){
-            return packet::Type::Application;
+            return Type::Application;
         }
 
         if (send_buffer.data.is_empty()){
-            return packet::Type::Stop;
+            return Type::Stop;
         }
 
-        return packet::Type::Unknown;
+        return Type::Unknown;
 
         // Err(Error::Done)
     };

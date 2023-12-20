@@ -41,7 +41,7 @@ namespace dmludp{
         StartAck = 0x08,
 
         Unknown = 0x09,
-    }
+    };
 
 
     class Header{
@@ -191,9 +191,9 @@ namespace dmludp{
 
         uint64_t next_pkt_num;
 
-        unordered_map<uint64_t, uint64_t > priority_record;
+        std::unordered_map<uint64_t, uint64_t > priority_record;
 
-        unordered_map<uint64_t, std::array<uint64_t, 2>> record;
+        std::unordered_map<uint64_t, std::array<uint64_t, 2>> record;
 
         PktNumSpace():next_pkt_num(0){};
 
