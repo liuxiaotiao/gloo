@@ -1,5 +1,5 @@
 #include <deque>
-#include <RangeBuf.h>
+#include "gloo/RangeBuf.h"
 #include <algorithm>
 
 namespace dmludp{
@@ -76,13 +76,14 @@ namespace dmludp{
 
         size_t len(){
             size_t length = 0;
-            if data.empty(){
+            if (data.empty()){
                 return 0;
             }
 
-            std::for_each(data.begin(), data.end(), [](int x) {
+            for (auto x : data) {
                 length += (x->data).size();
-            });
+            }
+
             return length;
         }
         /// Returns true if the stream was stopped before completion.
@@ -125,15 +126,18 @@ namespace dmludp{
             if data.empty() {
                 return;
             }
+
+            // Note: off defines the start offset of the buffer.
             size_t currentIndex = 0; 
             for (auto it = offset_recv.begin(); it != offset_recv.end(); /* no increment here */){
                 if (it->second == true){
                     data[currentIndex++] = data[it->first];
-                    it = myoffset_recvMap.erase(it);
+                    it = offset_recv.erase(it);
                 }else{
                     ++it;
                 }
             }
+            data.resize((currentIndex - 1));
         }
 
         size_t write(std::vector<uint8_t> data, size_t window_size, size_t off_len, uint64_t _max_ack) {
