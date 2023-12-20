@@ -1,18 +1,17 @@
 #pragma once
 
 #include <vector>
-
-namespace{
-
+#include <memory>
+namespace dmludp{
     class RangeBuf{
         std::vector<uint8_t> data,
-
+        // 
         size_t start,
-
+        // Used data position.
         size_t pos,
-
+        // Total length of the left data.
         size_t len,
-
+        // Start offset
         uint64_t off,
     }
 
@@ -22,15 +21,11 @@ namespace{
     pos(0),
     len(len),
     off(off)
-    {
+    {};
 
-    }
+    ~RangeBuf(){};
 
-    ~RangeBuf(){
-        
-    }
-
-    static std::shared_ptr<RangeBuf> from(std::vector<uint8_t> buf, uint64_t off){
+    static std::shared_ptr<RangeBuf> from(const std::vector<uint8_t> &buf, uint64_t off){
         return std::make_shared<RangeBuf>(buf, buf.size(), off);
     }
 
@@ -38,13 +33,13 @@ namespace{
     /// Returns the starting offset of `self`.
     /// Lowest offset of data, start == 0, pos == 0
     uint64_t off(){
-        return (off - (double)start ) + (double)pos ;
+        return ((off - (uint64_t)start ) + (uint64_t)pos );
     }
 
     /// Returns the final offset of `self`.
     /// Returns the largest offset of the data
     uint64_t max_off(){
-        return (double)off() + (double)len();
+        return (off() + (uint64_t)len());
     }
 
     /// Returns the length of `self`.

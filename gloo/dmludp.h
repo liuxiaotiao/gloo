@@ -5,7 +5,6 @@
 #include "gloo/send_buf.h"
 #include "gloo/packet.h"
 
-#include <s>
 
 using namespace dmludp;
 enum dmludp_error {

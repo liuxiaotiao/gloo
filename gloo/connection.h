@@ -3,10 +3,18 @@
 #include <cstdint>
 #include <sys/socket.h>
 #include <vector>
-#include <span>
 #include <algorithm>
 #include <chrono>
 #include <sys/socket.h>
+
+
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    #define IS_BIG_ENDIAN 1
+#else
+    #define IS_BIG_ENDIAN 0
+#endif
+
+namespace dmludp {
 
 
 const size_t HEADER_LENGTH = 26;
@@ -22,15 +30,6 @@ const size_t MIN_CLIENT_INITIAL_LEN = 1350;
 const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1350;
 
 const size_t SEND_BUFFER_SIZE = 1024;
-
-
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    #define IS_BIG_ENDIAN 1
-#else
-    #define IS_BIG_ENDIAN 0
-#endif
-
-namespace dmludp {
 
 struct SendInfo {
     /// The local address the packet should be sent from.
@@ -467,8 +466,9 @@ class Connection{
 
         // chekc is_ack condition is correct or not.
         if (ty == packet::Type::ElictAck){
-            pn =  pkt_num_spaces[1].next_pkt_num;
-            pkt_num_spaces[1].next_pkt_num += 1;
+            // pn =  pkt_num_spaces[1].next_pkt_num;
+            // pkt_num_spaces[1].next_pkt_num += 1;
+            pn = pkt_num_spaces[1].updatepktnum();
             if (stop_flag == true){
                 std::vector<uint64_t> res(sent_pkt.begin()+ack_point, unackbuf.end());
                 size_t pkt_counter = sent_pkt.size() - ack_point;
@@ -517,8 +517,9 @@ class Connection{
 
             sent_count += 1;
             sent_number += 1;
-            pn = pkt_num_spaces[0].next_pkt_num;
-            pkt_num_spaces[0].next_pkt_num += 1;
+            // pn = pkt_num_spaces[0].next_pkt_num;
+            // pkt_num_spaces[0].next_pkt_num += 1;
+            pn = pkt_num_spaces[0].updatepktnum();
             priority = priority_calculation(off);
 
             hdr->ty = ty;
@@ -572,8 +573,10 @@ class Connection{
     size_t send_data_stop(std::vector<uint8_t> out){ 
         size_t total_len = HEADER_LENGTH;
 
-        auto pn =  pkt_num_spaces[1].next_pkt_num;
-        pkt_num_spaces[1].next_pkt_num += 1;
+        // auto pn =  pkt_num_spaces[1].next_pkt_num;
+        // pkt_num_spaces[1].next_pkt_num += 1;
+
+        auto pn = pkt_num_spaces[1].updatepktnum();
 
         uint64_t offset = 0;
         uint8_t priority = 0;

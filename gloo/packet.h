@@ -201,9 +201,9 @@ class PktNumSpace{
     uint64_t updatepktnum(){
         next_pkt_num += 1;
         return (next_pkt_num - 1);
-    }
+    };
 
     void reset(){
         next_pkt_num = 0;
-    }
+    };
 }
