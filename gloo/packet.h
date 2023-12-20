@@ -44,6 +44,7 @@ namespace dmludp{
 
 
     class Header{
+        public:
         /// The type of the packet.
         Type ty;
 

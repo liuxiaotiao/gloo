@@ -4,6 +4,7 @@
 #include <memory>
 namespace dmludp{
     class RangeBuf final : public std::enable_shared_from_this<RangeBuf>{
+        public:
         std::vector<uint8_t> data;
         // 
         size_t start;

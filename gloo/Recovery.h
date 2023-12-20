@@ -24,6 +24,7 @@ enum CongestionControlAlgorithm {
 }
 
 class RecoveryConfig {
+    public:
     max_send_udp_payload_size: usize,
     pub max_ack_delay: Duration,
 
