@@ -131,7 +131,7 @@ namespace dmludp{
         bool ready() {
             return !data.is_empty();
         };
-    }
+    };
 
  
 
