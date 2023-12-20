@@ -9,7 +9,7 @@ namespace dmludp{
 
     class RecvBuf{
         public:
-        std::map<uint64_t, std::shared_ptr(RangeBuf)> data;
+        std::map<uint64_t, std::shared_ptr<RangeBuf>> data;
 
         uint64_t off;
 
@@ -115,7 +115,7 @@ namespace dmludp{
 
         size_t reset(double final_size) {
 
-        }
+        };
 
         void shutdown()  {
             data.clear();

@@ -7,33 +7,35 @@ namespace dmludp{
         public:
         std::vector<uint8_t> data;
         // 
+        private:
         size_t start;
         // Used data position.
         size_t pos;
         // Total length of the left data.
         size_t len;
         // Start offset
-        uint64_t off;
+        uint64_t offset;
 
+        public:
         RangeBuf(const std::vector<uint8_t> &buf, size_t len, uint64_t off):
         data(buf),
         start(0),
         pos(0),
         len(len),
-        off(off)
+        offset(off)
         {};
 
         ~RangeBuf(){};
 
         static std::shared_ptr<RangeBuf> from(const std::vector<uint8_t> &buf, uint64_t off){
-            return std::make_shared<RangeBuf>(buf, buf.size(), off);
+            return std::make_shared<RangeBuf>(buf, buf.size(), offset);
         };
 
         /// start refers to the start of all data.
         /// Returns the starting offset of `self`.
         /// Lowest offset of data, start == 0, pos == 0
         uint64_t off(){
-            return ((off - (uint64_t)start ) + (uint64_t)pos );
+            return ((offset - (uint64_t)start ) + (uint64_t)pos );
         };
 
         /// Returns the final offset of `self`.
