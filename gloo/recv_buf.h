@@ -129,7 +129,7 @@ namespace dmludp{
 
         /// Returns true if the stream has data to be read.
         bool ready() {
-            return !data.is_empty();
+            return !data.empty();
         };
     };
 

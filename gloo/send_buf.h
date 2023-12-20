@@ -13,8 +13,6 @@ namespace dmludp{
 
         uint64_t len;
 
-        uint64_t len;
-
         uint64_t max_data;
 
         // error
@@ -29,8 +27,8 @@ namespace dmludp{
 
         size_t cap(){
             used_length = len();
-            return (size_t)(max_data - (uint64_t)used_length as u64);
-        }
+            return (size_t)(max_data - (uint64_t)used_length);
+        };
 
         /// Returns the lowest offset of data buffered.
         // uint64_t off_front() {
@@ -50,7 +48,7 @@ namespace dmludp{
         /// Returns true if there is data to be written.
         bool ready(){
             return !data.empty();
-        }
+        };
 
 
         void clear(){
@@ -58,21 +56,21 @@ namespace dmludp{
             pos = 0;
             off = 0;
             len = 0;
-        }
+        };
 
         /// Returns the largest offset of data buffered.
         uint64_t off_back(){
             return off;
-        }
+        };
 
         /// The maximum offset we are allowed to send to the peer.
         uint64_t max_off() {
             return max_data;
-        }
+        };
 
         bool is_empty(){
             return data.empty();
-        }
+        };
 
         size_t len(){
             size_t length = 0;
@@ -85,7 +83,7 @@ namespace dmludp{
             }
 
             return length;
-        }
+        };
         /// Returns true if the stream was stopped before completion.
         // bool is_stopped(){
         //     self.error.is_some()
@@ -94,7 +92,7 @@ namespace dmludp{
         /// Updates the max_data limit to the given value.
         void update_max_data(uint64_t maxdata) {
             max_data = maxdata;
-        }
+        };
 
         ////rewritetv
         /// Resets the stream at the current offset and clears all buffered data.
@@ -110,7 +108,7 @@ namespace dmludp{
             off = unsent_off;
 
             return unsent_len;
-        }
+        };
 
         // Mark received data as false.
         void ack_and_drop(uint64_t offset){
@@ -118,12 +116,12 @@ namespace dmludp{
             if (it != offset_recv.end()) {
                 it->second = false;
             }
-        }
+        };
 
         // pub fn recv_and_drop(&mut self, ack_set: &[u64], unack_set: &[u64],len: usize) {
         // Remove received data from send buffer.
         void recv_and_drop() {
-            if data.empty() {
+            if (data.empty()) {
                 return;
             }
 
@@ -138,7 +136,7 @@ namespace dmludp{
                 }
             }
             data.resize((currentIndex - 1));
-        }
+        };
 
         size_t write(std::vector<uint8_t> data, size_t window_size, size_t off_len, uint64_t _max_ack) {
             // All data in the buffer has been sent out, remove received data from the buffer.
@@ -147,7 +145,7 @@ namespace dmludp{
             }
 
             auto capacity = cap();
-            if capacity == 0 {
+            if (capacity == 0) {
                 return 0;
             }
 
@@ -198,7 +196,7 @@ namespace dmludp{
                         off += (uint64_t)off_len;
                         len += (uint64_t)off_len;
                         used_length += off_len;
-                    l   en += off_len;
+                        len += off_len;
                     }else{
 
                         auto first_buf= RangeBuf::from(tmp_data, off);
@@ -269,7 +267,7 @@ namespace dmludp{
                 std::vector<uint8_t> tmp_data;
 
                 
-                if data.size() > capacity {
+                if (data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
                     auto len = capacity;
                     data = &data[..len];
@@ -313,7 +311,7 @@ namespace dmludp{
                 return write_len;
             }
     
-        }
+        };
 
         bool emit(std::vector<uint8_t> out, size_t& out_len, uint64_t& out_off){
             bool stop = false;
@@ -383,7 +381,7 @@ namespace dmludp{
                 pos = 0;
             }
             return stop;
-        }
+        };
 
     
 
