@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <functional>
+#include <unordered_map>
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     #define IS_BIG_ENDIAN 1
@@ -78,21 +79,21 @@ namespace dmludp{
             off += sizeof(uint8_t);
 
             Type ty;
-            if first == 0x01 {
+            if (first == 0x01) {
                 ty = Type::Retry;
-            }else if first == 0x02{
+            }else if (first == 0x02){
                 ty = Type::Handshake;
-            }else if first == 0x03{
+            }else if (first == 0x03){
                 ty = Type::Application;
-            }else if first == 0x04{
+            }else if (first == 0x04){
                 ty = Type::ElictAck;
-            }else if first == 0x05{
+            }else if (first == 0x05){
                 ty = Type::ACK;
-            }else if first == 0x06{
+            }else if (first == 0x06){
                 ty = Type::Stop;
-            }else if first == 0x07{
+            }else if (first == 0x07){
                 ty = Type::Fin;
-            }else if first = 0x08{
+            }else if (first = 0x08){
                 ty = Type::StartAck;
             }else{
                 ty = Type::Unknown;
@@ -109,22 +110,22 @@ namespace dmludp{
             return std::make_shared<Header>(ty, second, third, forth, fifth);
         };
 
-        static void to_bytes(std::vector<uint8_t> &out){
+        void to_bytes(std::vector<uint8_t> &out){
             uint8_t first = 0;
             int off = 0;
-            if ty == Type::Retry{
+            if (ty == Type::Retry){
                 first = 0x01;
-            }else if ty == Type::Handshake{
+            }else if (ty == Type::Handshake){
                 first = 0x02;
-            }else if ty == Type::Application{
+            }else if (ty == Type::Application){
                 first = 0x03;
-            }else if ty == Type::ElictAck{
+            }else if (ty == Type::ElictAck){
                 first = 0x04;
-            }else if ty == Type::ACK{
+            }else if (ty == Type::ACK){
                 first = 0x05;
-            }else if ty == Type::Stop{
+            }else if (ty == Type::Stop){
                 first = 0x06;
-            }else if ty == Type::StartAck{
+            }else if (ty == Type::StartAck){
                 first = 0x07;
             }else{
                 first = 0x08;
@@ -144,7 +145,7 @@ namespace dmludp{
 
         };
 
-        uint64_t get_u64(std::vector<uint8_t> vec, int start){
+        static uint64_t get_u64(std::vector<uint8_t> vec, int start){
             uint64_t value;
             #if IS_BIG_ENDIAN
                 for (int i = 0; i < 8; ++i) {
@@ -158,7 +159,7 @@ namespace dmludp{
             return value;
         };
 
-        uint8_t get_u8(std::vector<uint8_t> vec, int position){
+        static uint8_t get_u8(std::vector<uint8_t> vec, int position){
             return vec[position];
         };
 
@@ -183,28 +184,30 @@ namespace dmludp{
         size_t len(){
             return 26;
         };
-    }
-}
-
-class PktNumSpace{
-    public:
-
-    uint64_t next_pkt_num;
-
-    unordered_map<uint64_t, uint64_t > priority_record;
-
-    unordered_map<uint64_t, std::array<uint64_t, 2>> record;
-
-    PktNumSpace():next_pkt_num(0){};
-
-    ~PktNumSpace(){};
-
-    uint64_t updatepktnum(){
-        next_pkt_num += 1;
-        return (next_pkt_num - 1);
     };
 
-    void reset(){
-        next_pkt_num = 0;
+    class PktNumSpace{
+        public:
+
+        uint64_t next_pkt_num;
+
+        unordered_map<uint64_t, uint64_t > priority_record;
+
+        unordered_map<uint64_t, std::array<uint64_t, 2>> record;
+
+        PktNumSpace():next_pkt_num(0){};
+
+        ~PktNumSpace(){};
+
+        uint64_t updatepktnum(){
+            next_pkt_num += 1;
+            return (next_pkt_num - 1);
+        };
+
+        void reset(){
+            next_pkt_num = 0;
+        };
     };
 }
+
+
