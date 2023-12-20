@@ -7,6 +7,10 @@
 #include <chrono>
 #include <sys/socket.h>
 
+#include "gloo/packet.h"
+#include "gloo/Recovery.h"
+#include "gloo/recv_buf.h"
+#include "gloo/send_buf.h"
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     #define IS_BIG_ENDIAN 1
@@ -38,7 +42,7 @@ struct SendInfo {
     /// The remote address the packet should be sent to.
     sockaddr_storage to;
 
-}
+};
 
 struct RecvInfo {
     /// The remote address the packet was received from.
@@ -46,7 +50,7 @@ struct RecvInfo {
 
     /// The local address the packet was received on.
     sockaddr_storage to;
-}
+};
 
 class Config {
     public:
@@ -54,11 +58,11 @@ class Config {
 
     uint64_t max_idle_timeout;
 
-    Config::Config():
+    Config():
     max_send_udp_payload_size(MAX_SEND_UDP_PAYLOAD_SIZE),
     max_idle_timeout(5000){};
 
-    Config::~Config(){
+    ~Config(){
 
     };
 
@@ -68,7 +72,7 @@ class Config {
     void set_max_idle_timeout(uint64_t v) {
         max_idle_timeout = v;
     };
-}
+};
 
 
 class Connection{
@@ -93,7 +97,7 @@ class Connection{
     // Whether the connection was timed out
     bool timed_out;
 
-    bool server: bool;
+    bool server;
 
     struct sockaddr_storage localaddr;
 
@@ -154,60 +158,60 @@ class Connection{
 
     RecvBuf recv_buffer;
  
-    static Connection* connect(local: SocketAddr, peer: SocketAddr, config: &mut Config) {
+    static Connection* connect(SocketAddr local, SocketAddr peer, Config config ) {
         auto conn = Connection::new(local, peer, config, false);
         return conn;
     };
 
-    static Connecition* accept(local: SocketAddr, peer: SocketAddr, config: &mut Config)  {
+    static Connecition* accept(SocketAddr local, SocketAddr peer, Config config)  {
         auto conn = Connection::new(local, peer, config, true);
 
         return conn;
     };
 
-    Connecition::Connecition(sockaddr_storage local, 
+    Connecition(sockaddr_storage local, 
     sockaddr_storage peer, 
     Config config,
     bool server):    
-    recv_count(0);
-    sent_count(0);
-    is_server(server);
-    handshake_completed(false);
-    handshake_confirmed(false);
-    closed(false);
-    timed_out(false);
-    server(server);
-    localaddr(local);
-    peeraddr(peer);
-    written_data(0);
-    stop_flag(false);
-    stop_ack(false);
+    recv_count(0),
+    sent_count(0),
+    is_server(server),
+    handshake_completed(false),
+    handshake_confirmed(false),
+    closed(false),
+    timed_out(false),
+    server(server),
+    localaddr(local),
+    peeraddr(peer),
+    written_data(0),
+    stop_flag(false),
+    stop_ack(false),
     // std::unordered_map<uint64_t, uint8_t> prioritydic;
     // std::vector sent_pkt: Vec<u64>;
     // std::unordered_map<uint64_t, uint8_t> recv_dic;
     // std::vector send_data_buf:Vec<u8>;
     // std::vector norm2_vec:Vec<u8>;
-    record_win(0);
-    total_offset(0);
-    recv_flag(false);
+    record_win(0),
+    total_offset(0),
+    recv_flag(false),
     // std::unordered_map<uint64_t, uint64_t> recv_hashmap;
-    feed_back(false);
-    ack_point(0);
-    max_off(0);
-    send_num(0);
-    high_priority(0);
-    sent_number(0);
-    rtt(0);
-    handshake(std::chrono::high_resolution_clock::now());
+    feed_back(false),
+    ack_point(0),
+    max_off(0),
+    send_num(0),
+    high_priority(0),
+    sent_number(0),
+    rtt(0),
+    handshake(std::chrono::high_resolution_clock::now()),
     // std::unordered_map<uint64_t, uint64_t> sent_dic;
-    bidirect(true);
-    Recovery recovery;
-    SendBuf send_buffer;
-    RecvBuf recv_buffer;
+    bidirect(true),
+    Recovery recovery,
+    SendBuf send_buffer,
+    RecvBuf recv_buffer,
     {
     };
 
-    Connection::~Connection(){
+    ~Connection(){
 
     };
 
