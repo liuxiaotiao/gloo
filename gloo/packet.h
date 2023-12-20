@@ -68,7 +68,7 @@ namespace dmludp{
             offset(off), 
             pkt_length(len) {};
 
-        Header::~Header() {};
+        ~Header() {};
 
 
         static std::shared_ptr<Header> from_slice(std::vector<uint8_t> b){
