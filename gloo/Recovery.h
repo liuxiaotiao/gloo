@@ -29,11 +29,11 @@ class RecoveryConfig {
 
     RecoveryConfig(){
 
-    }
+    };
 
     ~RecoveryConfig(){
 
-    }
+    };
 
 };
 
