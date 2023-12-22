@@ -12,7 +12,7 @@ namespace dmludp{
         // Used data position.
         size_t pos;
         // Total length of the left data.
-        size_t len;
+        size_t length;
         // Start offset
         uint64_t offset;
 
@@ -21,14 +21,14 @@ namespace dmludp{
         data(buf),
         start(0),
         pos(0),
-        len(len),
+        length(len),
         offset(off)
         {};
 
         ~RangeBuf(){};
 
         static std::shared_ptr<RangeBuf> from(const std::vector<uint8_t> &buf, uint64_t off){
-            return std::make_shared<RangeBuf>(buf, buf.size(), offset);
+            return std::make_shared<RangeBuf>(buf, buf.size(), off);
         };
 
         /// start refers to the start of all data.
@@ -41,13 +41,13 @@ namespace dmludp{
         /// Returns the final offset of `self`.
         /// Returns the largest offset of the data
         uint64_t max_off(){
-            return (off() + (uint64_t)len());
+            return (off() + (uint64_t)(len()));
         };
 
         /// Returns the length of `self`.
         size_t len(){
             // self.len - (self.pos - self.start)
-            return (len - pos);
+            return (length - pos);
         };
 
         /// Returns true if `self` has a length of zero bytes.

@@ -25,8 +25,7 @@ enum CongestionControlAlgorithm {
 
 class RecoveryConfig {
     public:
-    max_send_udp_payload_size: usize,
-    pub max_ack_delay: Duration,
+    size_t max_send_udp_payload_size;
 
     RecoveryConfig(){
 
@@ -66,7 +65,7 @@ class Recovery{
     Recovery():
     app_limited(false),
     // congestion_window(INI_WIN),
-    bytes_in_flight(0);
+    bytes_in_flight(0),
     // max_datagram_size(PACKET_SIZE);
     incre_win(0),
     decre_win(0),
@@ -100,7 +99,7 @@ class Recovery{
             if (weights > 0){
                 function_change = true;
                 incre_win = incre_win_copy;
-                sdecre_win = decre_win_copy;
+                decre_win = decre_win_copy;
             }
             winadd_copy = (3 * pow((double)weights, 2)  - 12 *(double)weights + 4) * (double)max_datagram_size; 
             winadd = num * (double)max_datagram_size;
