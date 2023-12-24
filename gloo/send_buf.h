@@ -3,7 +3,7 @@
 #include <algorithm>
 
 namespace dmludp{
-const size_t SEND_BUFFER_SIZE = 1024;
+// const size_t SEND_BUFFER_SIZE = 1024;
 
     class SendBuf{
         public:
