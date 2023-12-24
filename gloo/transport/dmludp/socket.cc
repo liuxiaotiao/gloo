@@ -158,8 +158,7 @@ std::shared_ptr<Socket> Socket::accept() {
 
     uint8_t out[1500];
     uint8_t buffer[1500];
-    dmludp_send_info send_info;
-    ssize_t written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
+    ssize_t written = dmludp_conn_send(connection, out, sizeof(out));
     auto start = std::chrono::high_resolution_clock::now();
     ssize_t sent = accept_socket->write(out, written);
 
@@ -199,25 +198,25 @@ std::shared_ptr<Socket> Socket::accept() {
   // return std::make_shared<Socket>(rv);
 }
 
-Connection* Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
+Connection* Socket::dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, false);
 }
 
 // Call dmludp_conn_accept after accpect called
-Connection* Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
+Connection* Socket::dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, true);
 }
 
-Connection* Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
+Connection* Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, bool is_server){
   auto dmludp_config = dmludp_config_new();
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   if( is_server ){
-    auto connection = dmludp_accept(local, len, (struct sockaddr *)&peer, len, dmludp_config);
+    auto connection = dmludp_accept(local, len, peer, len, dmludp_config);
     dmludp_config_free(dmludp_config);
     return connection;
   }else{
-    auto connection = dmludp_connect(local, len, (struct sockaddr *)&peer, len, dmludp_config);
+    auto connection = dmludp_connect(local, len, peer, len, dmludp_config);
     dmludp_config_free(dmludp_config);
     return connection;
   }

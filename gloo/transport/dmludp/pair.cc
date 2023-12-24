@@ -792,8 +792,7 @@ bool Pair::handleread(){
         auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
         if(rv == 4){
           uint8_t out[1500];
-          dmludp_send_info send_info;
-          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out), &send_info);
+          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
         }
         else if(rv == 6){
