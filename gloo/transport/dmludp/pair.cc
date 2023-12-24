@@ -679,7 +679,6 @@ void Pair::handlewrite(){
 
   while (1){
     uint8_t out[1500];
-    dmludp_send_info send_info;
 
     uint8_t buffer[1500];
     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
@@ -693,7 +692,7 @@ void Pair::handlewrite(){
       }
     }
 
-    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out), &send_info);
+    ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     if (dmludpwrite < 0){
       if (dmludp_conn_is_stop(dmludp_connection)){
         dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
