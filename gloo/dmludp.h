@@ -35,14 +35,6 @@ enum dmludp_error {
     // The peer violated the local flow control limits.
     DMLUDP_ERR_FLOW_CONTROL = -11,
 
-    // The peer violated the local stream limits.
-    DMLUDP_ERR_STREAM_LIMIT = -12,
-
-    // The specified stream was stopped by the peer.
-    DMLUDP_ERR_STREAM_STOPPED = -15,
-
-    // The specified stream was reset by the peer.
-    DMLUDP_ERR_STREAM_RESET = -16,
 
     // The received data exceeds the stream's final size.
     DMLUDP_ERR_FINAL_SIZE = -13,
