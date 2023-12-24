@@ -111,7 +111,7 @@ void Socket::listen(int backlog) {
   if(rv > -1){
     int type;
     int pkt_num;
-    auto header = dmludp_header_info(buf, 26, &type, &pkt_num);
+    auto header = dmludp_header_info(buf, 26, type, pkt_num);
     if (header == 2){
       peer = std::move(peer_addr);
       new_socket = true;
@@ -125,7 +125,7 @@ std::shared_ptr<Socket> Socket::accept() {
   socklen_t addrlen = sizeof(addr);
   if(new_socket){
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-    auto connection = dmludp_conn_accept((struct sockaddr *)&local, peer);
+    auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;
 
@@ -212,11 +212,11 @@ Connection* Socket::create_dmludp_connection(struct sockaddr_storage local, stru
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   if( is_server ){
-    auto connection = dmludp_accept(local, len, peer, len, dmludp_config);
+    auto connection = dmludp_accept(local, peer, dmludp_config);
     dmludp_config_free(dmludp_config);
     return connection;
   }else{
-    auto connection = dmludp_connect(local, len, peer, len, dmludp_config);
+    auto connection = dmludp_connect(local, peer, dmludp_config);
     dmludp_config_free(dmludp_config);
     return connection;
   }
@@ -243,7 +243,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   uint8_t out[1500];
   uint8_t buffer[1500];
 
-  auto temp_connection = dmludp_conn_connect((struct sockaddr *)&local, ss);
+  auto temp_connection = dmludp_conn_connect(local, ss);
 
   ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
   ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &ss, peer_addr_len);
@@ -278,13 +278,13 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     }
     int type = 0;
     int pktnum = 0;
-    auto header = dmludp_header_info(buffer, 26, &type, &pktnum);
+    auto header = dmludp_header_info(buffer, 26, type, pktnum);
     if(header != 2){
       continue;
     }
     peer = tmp_peer_addr;
     connect(tmp_peer_addr);
-    auto connection = dmludp_conn_connect((struct sockaddr *)&local, peer);
+    auto connection = dmludp_conn_connect(local, peer);
     ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
     written = dmludp_conn_send(connection, out, sizeof(out));
     sent = write(out, written);

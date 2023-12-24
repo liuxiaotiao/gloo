@@ -687,7 +687,7 @@ void Pair::handlewrite(){
       auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
       int type;
       int pkt_num;
-      auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+      auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
       if (rv = 5){
         remove_retrymessage_by_pktnum(pkt_num);
       }
@@ -704,7 +704,7 @@ void Pair::handlewrite(){
     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
     int type;
     int pkt_num;
-    auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+    auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
     if(rv == 4 || type == 6){
       /// add timer
       struct retry_message retry;
@@ -789,7 +789,7 @@ bool Pair::handleread(){
         dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
         int type;
         int pkt_num;
-        auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+        auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
         if(rv == 4){
           uint8_t out[1500];
           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
@@ -834,7 +834,7 @@ void Pair::handleReadWrite(int events) {
         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
         int type;
         int pkt_num;
-        auto rv = dmludp_header_info(buffer, 26, &type, &pkt_num);
+        auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
         if (rv == 5 || rv == 6){
           remove_retrymessage_by_pktnum(pkt_num);
         }
