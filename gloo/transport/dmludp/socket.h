@@ -94,11 +94,11 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   Connection* getConnection();
 
-  Connection* dmludp_conn_connect(struct sockaddr * local, struct sockaddr_storage peer);
+  Connection* dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
 
-  Connection* dmludp_conn_accept(struct sockaddr * local, struct sockaddr_storage peer);
+  Connection* dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
 
-  Connection* create_dmludp_connection(struct sockaddr * local, struct sockaddr_storage peer, 
+  Connection* create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
                           bool is_server);
 
   // Maybe become unique_ptr
