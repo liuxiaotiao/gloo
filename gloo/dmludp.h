@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #include "gloo/connection.h"
 #include "gloo/RangeBuf.h"
 #include "gloo/recv_buf.h"
@@ -96,7 +97,7 @@ Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config 
 }
 
 Connection* dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
-    return dmldup::Connection::connect(local, peer, config);
+    return dmludp::Connection::connect(local, peer, config);
 }
 
 void dmludp_set_rtt(Connection* conn, long interval){
@@ -166,7 +167,7 @@ ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
-    if conn->is_stopped() {
+    if (conn->is_stopped()) {
         return dmludp_error::DMLUDP_ERR_DONE;
     }
 
@@ -179,7 +180,7 @@ ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
 }
 
 
-ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t buf_len){
+ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t out_len){
     if(out_len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
@@ -189,7 +190,7 @@ ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t buf_len){
     size_t received = conn->recv_slice(recv_buf);
     
     if (received == 0){
-        auto hdr = Header::from_slice(buf);
+        auto hdr = Header::from_slice(recv_buf);
         auto ty = hdr->ty;
         if (hdr->ty == Type::Stop){
             return dmludp_error::DMLUDP_ERR_STOP;
@@ -206,7 +207,7 @@ ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t buf_len){
 }
 
 ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
-    if(out_len <= 0){
+    if(len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 

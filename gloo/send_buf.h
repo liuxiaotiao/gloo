@@ -48,7 +48,7 @@ const size_t SEND_BUFFER_SIZE = 1024;
             auto tmp_pos = pos;
 
             while (tmp_pos <= (data.size() - 1)){
-                auto b = data.at[tmp_pos];
+                auto b = data.at(tmp_pos);
                 if(!(b->empyt())){
                     return b->off();
                 }
@@ -152,7 +152,7 @@ const size_t SEND_BUFFER_SIZE = 1024;
         };
         
         // From protocal to scoket
-        size_t write(std::vector<uint8_t> data, size_t window_size, size_t off_len, uint64_t _max_ack) {
+        size_t write(std::vector<uint8_t> wrtie_data, size_t window_size, size_t off_len, uint64_t _max_ack) {
             // All data in the buffer has been sent out, remove received data from the buffer.
             if (pos == 0) {
                 recv_and_drop();
@@ -176,19 +176,19 @@ const size_t SEND_BUFFER_SIZE = 1024;
                     return 0;
                 }
         
-                if (data.size() == 0){
+                if (wrtie_data.size() == 0){
                     return 0;
                 }
                 
                 std::vector<uint8_t> tmp_data;
 
-                if (data.size() > capacity) {
+                if (wrtie_data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
                     auto local_len = capacity;
-                    std::copy(data.begin(), data.begin()+local_len, tmp_data.begin());
+                    std::copy(wrtie_data.begin(), wrtie_data.begin()+local_len, tmp_data.begin());
                     // data = data.resize(len);
                 }else{
-                    std::copy(data.begin(), data.end(), tmp_data.begin());
+                    std::copy(wrtie_data.begin(), wrtie_data.end(), tmp_data.begin());
                 }
         
                 // We already recorded the final offset, so we can just discard the
@@ -217,10 +217,10 @@ const size_t SEND_BUFFER_SIZE = 1024;
                         offset_recv[off] = true;
         
                         data.push_back(first_buf);
-                        off += (uint64_t)data.size();
-                        length += (uint64_t)data.size();
-                        used_length += data.size();
-                        write_len += data.size();
+                        off += (uint64_t)wrtie_data.size();
+                        length += (uint64_t)wrtie_data.size();
+                        used_length += wrtie_data.size();
+                        write_len += wrtie_data.size();
                         return write_len;
                     }
         
@@ -272,7 +272,7 @@ const size_t SEND_BUFFER_SIZE = 1024;
                     return 0;
                 }
         
-                if (data.size() == 0){
+                if (wrtie_data.size() == 0){
                     return 0;
                 }
             
@@ -281,12 +281,12 @@ const size_t SEND_BUFFER_SIZE = 1024;
                 std::vector<uint8_t> tmp_data;
 
                 
-                if (data.size() > capacity) {
+                if (wrtie_data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
                     auto copy_len = capacity;
-                    std::copy(data.begin(), data.begin()+copy_len, tmp_data.begin());
+                    std::copy(wrtie_data.begin(), wrtie_data.begin()+copy_len, tmp_data.begin());
                 }else{
-                    std::copy(data.begin(), data.end(), tmp_data.begin());
+                    std::copy(wrtie_data.begin(), wrtie_data.end(), tmp_data.begin());
 
                 }
         
@@ -305,9 +305,9 @@ const size_t SEND_BUFFER_SIZE = 1024;
                         auto buf = RangeBuf::from(slice_data, off);
                         offset_recv[off] = true;
                         data.push_back(buf);
-                        off += (uint64_t) data.size();
-                        length += (uint64_t) data.size();
-                        used_length += data.size();
+                        off += (uint64_t) wrtie_data.size();
+                        length += (uint64_t) wrtie_data.size();
+                        used_length += wrtie_data.size();
                         it += SEND_BUFFER_SIZE;
                     }else{
                         std::vector<uint8_t> slice_data(tmp_data.begin()+it, tmp_data.end());
@@ -315,9 +315,9 @@ const size_t SEND_BUFFER_SIZE = 1024;
                         auto buf = RangeBuf::from(slice_data, off);
                         offset_recv[off] = true;
                         data.push_back(buf);
-                        off += (uint64_t) data.size();
-                        length += (uint64_t) data.size();
-                        used_length += data.size();
+                        off += (uint64_t) wrtie_data.size();
+                        length += (uint64_t) wrtie_data.size();
+                        used_length += wrtie_data.size();
                         it = tmp_data.size();
                     }
                 }

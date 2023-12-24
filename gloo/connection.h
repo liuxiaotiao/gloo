@@ -147,7 +147,7 @@ class Connection{
 
     Recovery recovery;
 
-    std::array<packet::PktNumSpace, 2> pkt_num_spaces;
+    std::array<Header::PktNumSpace, 2> pkt_num_spaces;
 
     std::chrono::nanoseconds rtt;
     
@@ -168,7 +168,7 @@ class Connection{
         return conn;
     };
 
-    Connecition(sockaddr_storage local, 
+    Connection(sockaddr_storage local, 
     sockaddr_storage peer, 
     Config config,
     bool server):    
@@ -521,7 +521,7 @@ class Connection{
             // pn = pkt_num_spaces[0].next_pkt_num;
             // pkt_num_spaces[0].next_pkt_num += 1;
             pn = pkt_num_spaces[0].updatepktnum();
-            priority = priority_calculation(off);
+            priority = priority_calculation(out_off);
 
             hdr->ty = ty;
             hdr->pkt_num = pn;
@@ -680,13 +680,13 @@ class Connection{
     };
 
 //////////////////////////
-    void check_loss(std::vector<uint8_t> recv_buf){
+    void check_loss(std::vector<uint8_t> b){
         // auto b = octets::OctetsMut::with_slice(recv_buf);
 
         // let result:Vec<u64> = Vec::new();
         int start = 0;
         while (b.size()>0) {
-            auto offset = packet::get_u64(recv_buf, start);
+            auto offset = Header::get_u64(b, start);
             start += sizeof(uint64_t);
             // let offset = b.get_u64().unwrap();
             if (recv_dic.find(offset)!= recv_dic.end()){
@@ -806,8 +806,6 @@ class Connection{
 
         norm2_vec.insert(norm2_vec.end(), len, 3);
 
-
-        norm2_vec.extend(std::iter::repeat(3).take(len)); 
         send_buffer.clear();
     };
 };
