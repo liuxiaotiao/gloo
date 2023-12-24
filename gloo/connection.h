@@ -147,7 +147,7 @@ class Connection{
 
     Recovery recovery;
 
-    std::array<Header::PktNumSpace, 2> pkt_num_spaces;
+    std::array<PktNumSpace, 2> pkt_num_spaces;
 
     std::chrono::nanoseconds rtt;
     
@@ -383,7 +383,7 @@ class Connection{
             total_offset += (uint64_t)written;
             return true;
         }else {
-            if (send_buffer.data.is_empty()){
+            if (send_buffer.data.empty()){
                 return false;
             }else{
                 // continue send
@@ -469,9 +469,9 @@ class Connection{
         if (ty == Type::ElictAck){
             // pn =  pkt_num_spaces[1].next_pkt_num;
             // pkt_num_spaces[1].next_pkt_num += 1;
-            pn = pkt_num_spaces[1].updatepktnum();
+            pn = pkt_num_spaces.at(1).updatepktnum();
             if (stop_flag == true){
-                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, unackbuf.end());
+                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
                 size_t pkt_counter = sent_pkt.size() - ack_point;
                 hdr->ty = ty;
                 hdr->pkt_num = pn;
@@ -481,14 +481,14 @@ class Connection{
                 hdr->to_bytes(out);
 
                 for (auto it = res.begin(); it != res.end(); ++it) {
-                    addUint64(out, it);
+                    addUint64(out, *it);
                 }
                 psize = (uint64_t)(pkt_counter*8);
                 ack_point = sent_pkt.size();
                 stop_ack = true;
             }
             else{
-                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, unackbuf.end());
+                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
                 hdr->ty = ty;
                 hdr->pkt_num = pn;
                 hdr->offset = offset;
@@ -496,12 +496,12 @@ class Connection{
                 hdr->pkt_length = 64;
                 hdr->to_bytes(out);
                 for (auto it = res.begin(); it != res.end(); ++it) {
-                    addUint64(out, it);
+                    addUint64(out, *it);
                 }
                 ack_point = sent_pkt.size();
                 psize = 64;
             }
-            total_len += psize as usize;
+            total_len += (size_t)psize;
             delete hdr; 
             hdr = nullptr; 
 
@@ -520,7 +520,7 @@ class Connection{
             sent_number += 1;
             // pn = pkt_num_spaces[0].next_pkt_num;
             // pkt_num_spaces[0].next_pkt_num += 1;
-            pn = pkt_num_spaces[0].updatepktnum();
+            pn = pkt_num_spaces.at(0).updatepktnum();
             priority = priority_calculation(out_off);
 
             hdr->ty = ty;
@@ -537,13 +537,13 @@ class Connection{
                 stop_flag = true;
             }
 
-            if (sent_dic.find(off)){
-                sent_dic[off] -= 1;
+            if (sent_dic.find(out_off)){
+                sent_dic[out_off] -= 1;
             }else{
-                sent_dic[off] = priority;
+                sent_dic[out_off] = priority;
             }
 
-            sent_pkt.push(hdr->offset);
+            sent_pkt.push_back(hdr->offset);
         }  
 
         if (ty == Type::Stop){
@@ -577,7 +577,7 @@ class Connection{
         // auto pn =  pkt_num_spaces[1].next_pkt_num;
         // pkt_num_spaces[1].next_pkt_num += 1;
 
-        auto pn = pkt_num_spaces[1].updatepktnum();
+        auto pn = pkt_num_spaces.at(1).updatepktnum();
 
         uint64_t offset = 0;
         uint8_t priority = 0;
@@ -690,9 +690,9 @@ class Connection{
             start += sizeof(uint64_t);
             // let offset = b.get_u64().unwrap();
             if (recv_dic.find(offset)!= recv_dic.end()){
-                recv_hashmap.insert(offset, 0);
+                recv_hashmap.insert(std::make_pair(offset, 0));
             }else{
-                recv_hashmap.insert(offset, 1);
+                recv_hashmap.insert(std::make_pair(offset, 1));
             }
         }
     };

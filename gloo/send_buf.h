@@ -49,7 +49,7 @@ const size_t SEND_BUFFER_SIZE = 1024;
 
             while (tmp_pos <= (data.size() - 1)){
                 auto b = data.at(tmp_pos);
-                if(!(b->empyt())){
+                if(!(b->empty())){
                     return b->off();
                 }
                 tmp_pos += 1;
