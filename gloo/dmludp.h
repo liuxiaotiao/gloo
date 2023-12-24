@@ -106,7 +106,7 @@ void dmludp_set_rtt(Connection* conn, long interval){
 
 // Write data from application to protocal
 void dmludp_data_write(Connection* conn, const uint8_t* buf, size_t len){
-    conn->data_write(data_slice, len);
+    conn->data_write(buf, len);
 }
 
 // Fill up congestion control window

@@ -254,7 +254,7 @@ class Connection{
 
         recv_count += 1;
 
-        auto hdr = Header::from_bytes(buf);
+        auto hdr = Header::from_slice(buf);
 
         size_t read = 0;
 
