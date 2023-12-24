@@ -15,7 +15,7 @@ enum dmludp_error {
     DMLUDP_ERR_BUFFER_TOO_SHORT = -2,
 
     // The provided buffer is transmitted.
-    DMLUDP_ERR_STOP = -3;
+    DMLUDP_ERR_STOP = -3,
 
 
     // The operation cannot be completed because the connection is in an
@@ -92,11 +92,11 @@ int dmludp_header_info(uint8_t* data, size_t buf_len, int ty, int pn) {
 }
 
 Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
-    return Connection::accept(local, peer, config);
+    return dmludp::Connection::accept(local, peer, config);
 }
 
 Connection* dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
-    return Connection::connect(local, peer, config);
+    return dmldup::Connection::connect(local, peer, config);
 }
 
 void dmludp_set_rtt(Connection* conn, long interval){

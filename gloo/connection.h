@@ -33,7 +33,6 @@ const size_t MIN_CLIENT_INITIAL_LEN = 1350;
 // The default max_datagram_size used in congestion control.
 const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1350;
 
-const size_t SEND_BUFFER_SIZE = 1024;
 
 struct SendInfo {
     /// The local address the packet should be sent from.
@@ -159,12 +158,12 @@ class Connection{
     RecvBuf rec_buffer;
  
     static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
-        auto conn = Connection::new(local, peer, config, false);
+        auto conn = new Connection(local, peer, config, false);
         return conn;
     };
 
-    static Connecition* accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
-        auto conn = Connection::new(local, peer, config, true);
+    static Connection* accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
+        auto conn = new Connection(local, peer, config, true);
 
         return conn;
     };
@@ -204,12 +203,11 @@ class Connection{
     rtt(0),
     handshake(std::chrono::high_resolution_clock::now()),
     // std::unordered_map<uint64_t, uint64_t> sent_dic;
-    bidirect(true),
+    bidirect(true)
     // Recovery recovery,
     // SendBuf send_buffer,
     // RecvBuf recv_buffer,
-    {
-    };
+    {};
 
     ~Connection(){
 
@@ -333,7 +331,7 @@ class Connection{
             std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
             uint64_t priority = convertToUint64(ackvector);
 
-            if ( sent_dic.find(unack) != myMap.end()){
+            if ( sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
                     send_buffer.ack_and_drop(unack);
                 }else{
@@ -378,28 +376,28 @@ class Connection{
         // need to change!!!!!!!!!
         set_handshake();
 
-        if (send_data_buf.len() > 0){
-            auto write = write();
-            send_data_buf.erase(send_data_buf.begin() , send_data_buf.begin() + write);
-            written_data += write;
-            total_offset += (uint64_t)write;
+        if (send_data_buf.size() > 0){
+            auto written = write();
+            send_data_buf.erase(send_data_buf.begin() , send_data_buf.begin() + written);
+            written_data += written;
+            total_offset += (uint64_t)written;
             return true;
         }else {
             if (send_buffer.data.is_empty()){
                 return false;
             }else{
                 // continue send
-                auto write = write();
-                send_data_buf.erase(send_data_buf.begin() , send_data_buf.begin() + write);
-                written_data += write;
-                total_offset += (uint64_t)write;
+                auto written = write();
+                send_data_buf.erase(send_data_buf.begin() , send_data_buf.begin() + written);
+                written_data += written;
+                total_offset += (uint64_t)written;
                 return true;
             }
         }
         
     };
 
-    void addUint64 (const std::vector<uint8_t>& v, uint64_t input){
+    void addUint64 (std::vector<uint8_t>& v, uint64_t input){
         #if  IS_BIG_ENDIAN
         for (size_t i = 0; i < sizeof(uint64_t); ++i) {
             v.push_back(static_cast<uint8_t>(input >> (i * 8)));
@@ -769,7 +767,7 @@ class Connection{
             return Type::Application;
         }
 
-        if (send_buffer.data.is_empty()){
+        if (send_buffer.data.empty()){
             return Type::Stop;
         }
 
@@ -780,28 +778,28 @@ class Connection{
 
     // Send buffer is empty or not. If it is empty, send_all() will try to fill it with new data.
     bool data_is_empty(){
-        return send_buffer.data.is_empty();
+        return send_buffer.data.empty();
     };
 
     bool is_empty(){
-        return send_data_buf.is_empty();
+        return send_data_buf.empty();
     };
 
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     void data_write(uint8_t* buf, size_t length){
-        if (!norm2_vec.is_empty()){
+        if (!norm2_vec.empty()){
             norm2_vec.clear();
         }
-        if (!send_data_buf.is_empty()){
+        if (!send_data_buf.empty()){
             send_data_buf.clear();
         }
 
         size_t len = 0;
-        if (buf.len % 1024 == 0){
-            len = buf.len() / 1024;
+        if (length % 1024 == 0){
+            len = length / 1024;
         }else{
-            len = buf.len()/1024 + 1;
+            len = length/1024 + 1;
         }
 
         send_data_buf.insert(send_data_buf.end(), buf, buf+length);

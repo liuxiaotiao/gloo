@@ -3,6 +3,8 @@
 #include <algorithm>
 
 namespace dmludp{
+const size_t SEND_BUFFER_SIZE = 1024;
+
     class SendBuf{
         public:
         std::deque<std::shared_ptr<RangeBuf>> data;
@@ -252,7 +254,7 @@ namespace dmludp{
                         data.push_back(buf);
             
                         off += (uint64_t)slice_data.size();
-                        len += (uint64_t)slice_data.size();
+                        length += (uint64_t)slice_data.size();
                         used_length += slice_data.size();
 
                         it = tmp_data.size();
@@ -304,7 +306,7 @@ namespace dmludp{
                         offset_recv[off] = true;
                         data.push_back(buf);
                         off += (uint64_t) data.size();
-                        len += (uint64_t) data.size();
+                        length += (uint64_t) data.size();
                         used_length += data.size();
                         it += SEND_BUFFER_SIZE;
                     }else{
@@ -314,7 +316,7 @@ namespace dmludp{
                         offset_recv[off] = true;
                         data.push_back(buf);
                         off += (uint64_t) data.size();
-                        len += (uint64_t) data.size();
+                        length += (uint64_t) data.size();
                         used_length += data.size();
                         it = tmp_data.size();
                     }
@@ -339,7 +341,7 @@ namespace dmludp{
 
                 auto buf = data.at(pos);
 
-                if (buf->empty()) {
+                if (buf->is_empty()) {
                     pos += 1;
                     continue;
                 }
