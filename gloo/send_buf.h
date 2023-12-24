@@ -1,3 +1,5 @@
+#pragma once
+
 #include <deque>
 #include "gloo/RangeBuf.h"
 #include <algorithm>
