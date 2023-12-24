@@ -430,7 +430,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   // this instance is called again when it is in an error state.
   std::exception_ptr ex_;
 
-  dmludp_conn* dmludp_connection;
+  Connection* dmludp_connection;
 };
 
 } // namespace dmludp

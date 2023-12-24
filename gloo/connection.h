@@ -288,7 +288,7 @@ class Connection{
             read = (size_t)(hdr->pkt_length);
             std::vector<uint8_t> writebuf(buf.begin() + 26, buf.end());
             rec_buffer.write(writebuf, hdr->offset);
-            recv_dic.insert(hdr->offset, hdr->priority);
+            recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
         }
 
         // In dmludp.h
@@ -537,7 +537,7 @@ class Connection{
                 stop_flag = true;
             }
 
-            if (sent_dic.find(out_off)){
+            if (sent_dic.find(out_off) != sent_dic.end()){
                 sent_dic[out_off] -= 1;
             }else{
                 sent_dic[out_off] = priority;
@@ -787,7 +787,7 @@ class Connection{
 
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
-    void data_write(uint8_t* buf, size_t length){
+    void data_write(const uint8_t* buf, size_t length){
         if (!norm2_vec.empty()){
             norm2_vec.clear();
         }

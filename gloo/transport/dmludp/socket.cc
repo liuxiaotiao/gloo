@@ -199,16 +199,16 @@ std::shared_ptr<Socket> Socket::accept() {
   // return std::make_shared<Socket>(rv);
 }
 
-dmludp_conn* Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
+Connection* Socket::dmludp_conn_connect(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, false);
 }
 
 // Call dmludp_conn_accept after accpect called
-dmludp_conn* Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
+Connection* Socket::dmludp_conn_accept(struct sockaddr *local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, true);
 }
 
-dmludp_conn* Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
+Connection* Socket::create_dmludp_connection(struct sockaddr *local, struct sockaddr_storage peer, bool is_server){
   auto dmludp_config = dmludp_config_new();
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
@@ -246,7 +246,6 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
 
   auto temp_connection = dmludp_conn_connect((struct sockaddr *)&local, ss);
 
-  dmludp_send_info send_info;
   ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
   ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &ss, peer_addr_len);
 
@@ -288,7 +287,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect((struct sockaddr *)&local, peer);
     ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
-    written = dmludp_conn_send(connection, out, sizeof(out), &send_info);
+    written = dmludp_conn_send(connection, out, sizeof(out));
     sent = write(out, written);
     new_socket = false;
     break;
@@ -342,7 +341,7 @@ Address Socket::peerName() const {
   return Address::fromPeerName(fd_);
 }
 
-dmludp_conn* Socket::getConnection(){
+Connection* Socket::getConnection(){
   return dmludp_connection;
 }
 

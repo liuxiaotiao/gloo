@@ -67,7 +67,7 @@ void dmludp_config_free(Config* config){
     delete config;
 }
 
-int dmludp_header_info(uint8_t* data, size_t buf_len, int ty, int pn) {
+int dmludp_header_info(uint8_t* data, size_t buf_len, int &type, int &pn) {
     std::vector<uint8_t> buf(data, data + buf_len);
     auto hdr = Header::from_slice(buf);
     pn = hdr->pkt_num;
