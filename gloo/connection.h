@@ -156,7 +156,7 @@ class Connection{
 
     SendBuf send_buffer;
 
-    RecvBuf recv_buffer;
+    RecvBuf rec_buffer;
  
     static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         auto conn = Connection::new(local, peer, config, false);
@@ -641,7 +641,7 @@ class Connection{
   
     //Writing data to send buffer.
     size_t write() {
-        if (send_buffer.data.is_empty()){
+        if (send_buffer.data.empty()){
             auto toffset = total_offset % 1024;
             size_t off_len = 0;
             if (toffset % 1024 != 0){
@@ -654,7 +654,7 @@ class Connection{
 
             size_t congestion_window = 0;
             if (high_ratio > CONGESTION_THREAHOLD){
-                congestion_window = recovery.rollback()
+                congestion_window = recovery.rollback();
             }else{
                 congestion_window = recovery.cwnd();
             };
@@ -682,12 +682,16 @@ class Connection{
     };
 
 //////////////////////////
-    void check_loss(recv_buf: &mut [u8]){
-        let mut b = octets::OctetsMut::with_slice(recv_buf);
+    void check_loss(std::vector<uint8_t> recv_buf){
+        // auto b = octets::OctetsMut::with_slice(recv_buf);
+
         // let result:Vec<u64> = Vec::new();
-        while (b.cap()>0) {
-            let offset = b.get_u64().unwrap();
-            if recv_dic.contains_key(&offset){
+        int start = 0;
+        while (b.size()>0) {
+            auto offset = packet::get_u64(recv_buf, start);
+            start += sizeof(uint64_t);
+            // let offset = b.get_u64().unwrap();
+            if (recv_dic.find(offset)!= recv_dic.end()){
                 recv_hashmap.insert(offset, 0);
             }else{
                 recv_hashmap.insert(offset, 1);
@@ -741,7 +745,7 @@ class Connection{
     
     Type write_pkt_type(){
         // let now = Instant::now();
-        if (rtt == 0 && is_server == true){
+        if (rtt.count() == 0 && is_server == true){
             handshake_completed = true;
             return Type::Handshake;
         }
@@ -761,7 +765,7 @@ class Connection{
             return Type::ACK;
         }
 
-        if (rtt != 0){
+        if (rtt.count() != 0){
             return Type::Application;
         }
 

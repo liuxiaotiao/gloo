@@ -35,7 +35,7 @@ namespace dmludp{
                     max_recv_off = tmp_off;
                 }
             }   
-            data.insert(buf->off(), buf);
+            data.insert((buf->off()), buf);
             len += buf_len;
         };
 

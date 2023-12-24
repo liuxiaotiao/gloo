@@ -60,8 +60,5 @@ namespace dmludp{
         void consume(size_t count) {
             pos += count;
         };
-    }
-
-    
-
+    };
 }
