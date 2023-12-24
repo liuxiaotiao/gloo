@@ -158,12 +158,12 @@ class Connection{
 
     RecvBuf recv_buffer;
  
-    static Connection* connect(SocketAddr local, SocketAddr peer, Config config ) {
+    static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         auto conn = Connection::new(local, peer, config, false);
         return conn;
     };
 
-    static Connecition* accept(SocketAddr local, SocketAddr peer, Config config)  {
+    static Connecition* accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
         auto conn = Connection::new(local, peer, config, true);
 
         return conn;
@@ -205,9 +205,9 @@ class Connection{
     handshake(std::chrono::high_resolution_clock::now()),
     // std::unordered_map<uint64_t, uint64_t> sent_dic;
     bidirect(true),
-    Recovery recovery,
-    SendBuf send_buffer,
-    RecvBuf recv_buffer,
+    // Recovery recovery,
+    // SendBuf send_buffer,
+    // RecvBuf recv_buffer,
     {
     };
 
@@ -249,7 +249,7 @@ class Connection{
     size_t recv_slice(std::vector<uint8_t> buf){
         auto len = buf.size();
 
-    /// see in dmludp.h
+        // see in dmludp.h
         // if (len == 0){
         //     return Err(Error::BufferTooShort);
         // }
@@ -363,7 +363,7 @@ class Connection{
             }
         }
 
-        recovery.update_win(weights, (len/(8*2)) as f64);
+        recovery.update_win(weights, (double)(len/(8*2)));
         
     };
 
@@ -457,7 +457,6 @@ class Connection{
             hdr->priority = 0;
             hdr->pkt_length = psize;
             hdr->to_bytes(out);
-            // auto max_off = max_ack();
 
             // pkt_length may not be 8
             size_t off = 26;
@@ -597,11 +596,7 @@ class Connection{
         return total_len;
     };
 
-    size_t send_data_handshake(out: &mut [u8]){
-        if (out.is_empty()){
-            return Err(Error::BufferTooShort);
-        }
-        
+    size_t send_data_handshake(std::vector<uint8_t> out){     
         size_t total_len = HEADER_LENGTH;
 
         uint64_t pn = 0;
@@ -813,6 +808,6 @@ class Connection{
         norm2_vec.extend(std::iter::repeat(3).take(len)); 
         send_buffer.clear();
     };
-}
+};
 
 }

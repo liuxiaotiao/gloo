@@ -187,6 +187,19 @@ ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t buf_len){
     std::vector<uint8_t> recv_buf(buf, buf + out_len);
 
     size_t received = conn->recv_slice(recv_buf);
+    
+    if (received == 0){
+        auto hdr = Header::from_slice(buf);
+        auto ty = hdr->ty;
+        if (hdr->ty == Type::Stop){
+            return dmludp_error::DMLUDP_ERR_STOP;
+        }
+
+        if (hdr->ty == Type::Fin){
+            return dmludp_error::DMLUDP_ERR_DONE;
+        }
+
+    }
 
     return static_cast<ssize_t>(received);
 

@@ -40,7 +40,7 @@ class RecoveryConfig {
 class Recovery{
     public:
 
-    bool app_limited;
+    bool app_limit;
 
     size_t congestion_window;
 
@@ -63,7 +63,7 @@ class Recovery{
     size_t decre_win_copy;
 
     Recovery():
-    app_limited(false),
+    app_limit(false),
     // congestion_window(INI_WIN),
     bytes_in_flight(0),
     // max_datagram_size(PACKET_SIZE);
@@ -169,11 +169,11 @@ class Recovery{
     };
 
     void update_app_limited(bool v) {
-        app_limited = v;
+        app_limit = v;
     };
 
     bool app_limited(){
-        return app_limited;
+        return app_limit;
     };
     
     size_t rollback(){

@@ -35,7 +35,7 @@ namespace dmludp{
                     max_recv_off = tmp_off;
                 }
             }   
-            data.insert(buf.off(), buf);
+            data.insert(buf->off(), buf);
             len += buf_len;
         };
 
@@ -80,10 +80,10 @@ namespace dmludp{
                         out.insert(out.begin(), (entry->second->data).begin(), (entry->second->data).begin()+left);
                         data_len += left;
                         left = 0;
-                        (entry->second).consume(left);
+                        (entry->second)->consume(left);
                     }
                 }else{
-                    size_t zero = entry->second()->off() - last_max_off;
+                    size_t zero = entry->second->off() - last_max_off;
                     if(zero < left){
                         out.insert(out.end(), zero, 0);
                         left -= zero;
@@ -100,7 +100,7 @@ namespace dmludp{
                             out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
                             data_len += left;
                             left = 0;
-                            (entry->second).consume(left);
+                            (entry->second)->consume(left);
                         }
                     }else{
                         out.insert(out.end(), zero, 0);
@@ -114,7 +114,7 @@ namespace dmludp{
         };
 
         size_t reset(double final_size) {
-
+            return 0;
         };
 
         void shutdown()  {

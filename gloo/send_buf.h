@@ -11,7 +11,7 @@ namespace dmludp{
 
         uint64_t off;
 
-        uint64_t len;
+        uint64_t length;
 
         uint64_t max_data;
 
@@ -25,25 +25,36 @@ namespace dmludp{
 
         size_t sent;
 
+        SendBuf():
+        pos(0),
+        off(0),
+        length(0),
+        max_data(0),
+        used_length(0),
+        removed(0),
+        sent(0){};
+
+        ~SendBuf(){};
+
         size_t cap(){
             used_length = len();
             return (size_t)(max_data - (uint64_t)used_length);
         };
 
         /// Returns the lowest offset of data buffered.
-        // uint64_t off_front() {
-        //     auto tmp_pos = pos;
+        uint64_t off_front() {
+            auto tmp_pos = pos;
 
-        //     // Skip empty buffers from the start of the queue.
-        //     while let Some(b) = self.data.get(pos) {
-        //         if !b.is_empty() {
-        //             return b.off();
-        //         }
-        //         pos += 1;
-        //     }
+            while (tmp_pos <= (data.size() - 1)){
+                auto b = data.at[tmp_pos];
+                if(!(b->empyt())){
+                    return b->off();
+                }
+                tmp_pos += 1;
+            }
 
-        //     self.off
-        // }
+            return off;
+        }
 
         /// Returns true if there is data to be written.
         bool ready(){
@@ -55,7 +66,7 @@ namespace dmludp{
             data.clear();
             pos = 0;
             off = 0;
-            len = 0;
+            length = 0;
         };
 
         /// Returns the largest offset of data buffered.
@@ -104,7 +115,7 @@ namespace dmludp{
             data.clear();
 
             pos = 0;
-            len = 0;
+            length = 0;
             off = unsent_off;
 
             return unsent_len;
@@ -137,7 +148,8 @@ namespace dmludp{
             }
             data.resize((currentIndex - 1));
         };
-
+        
+        // From protocal to scoket
         size_t write(std::vector<uint8_t> data, size_t window_size, size_t off_len, uint64_t _max_ack) {
             // All data in the buffer has been sent out, remove received data from the buffer.
             if (pos == 0) {
@@ -155,14 +167,14 @@ namespace dmludp{
                 sent = 0;
                 // Get the send capacity. This will return an error if the stream
                 // was stopped.
-                len = (uint64_t)len();
+                length = (uint64_t)len();
                 used_length = len();
                 //Addressing left data is greater than the window size
-                if (len >= window_size){
+                if (length >= window_size){
                     return 0;
                 }
         
-                if (data.len() == 0){
+                if (data.size() == 0){
                     return 0;
                 }
                 
@@ -170,8 +182,8 @@ namespace dmludp{
 
                 if (data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
-                    auto len = capacity;
-                    std::copy(data.begin(), data.begin()+len, tmp_data.begin());
+                    auto local_len = capacity;
+                    std::copy(data.begin(), data.begin()+local_len, tmp_data.begin());
                     // data = data.resize(len);
                 }else{
                     std::copy(data.begin(), data.end(), tmp_data.begin());
@@ -183,7 +195,7 @@ namespace dmludp{
                     return tmp_data.size();
                 }
         
-                size_t len = 0;
+                size_t write_len = 0;
         
                 if (off_len > 0) {
                     if (tmp_data.size() > off_len){
@@ -194,9 +206,9 @@ namespace dmludp{
         
                         data.push_back(first_buf);
                         off += (uint64_t)off_len;
-                        len += (uint64_t)off_len;
+                        length += (uint64_t)off_len;
                         used_length += off_len;
-                        len += off_len;
+                        write_len += off_len;
                     }else{
 
                         auto first_buf= RangeBuf::from(tmp_data, off);
@@ -204,10 +216,10 @@ namespace dmludp{
         
                         data.push_back(first_buf);
                         off += (uint64_t)data.size();
-                        len += (uint64_t)data.size();
+                        length += (uint64_t)data.size();
                         used_length += data.size();
-                        len += data.size();
-                        return len;
+                        write_len += data.size();
+                        return write_len;
                     }
         
                 }
@@ -225,7 +237,7 @@ namespace dmludp{
                         data.push_back(buf);
             
                         off += (uint64_t)slice_data.size();
-                        len += (uint64_t)slice_data.size();
+                        length += (uint64_t)slice_data.size();
                         used_length += slice_data.size();
                         it += SEND_BUFFER_SIZE;
                     }else{
@@ -251,10 +263,10 @@ namespace dmludp{
             else{
                 // Get the stream send capacity. This will return an error if the stream
                 // was stopped.
-                len = (uint64_t)len();
+                length = (uint64_t)len();
                 used_length = len();
                 //Addressing left data is greater than the window size
-                if (len >= window_size){
+                if (length >= window_size){
                     return 0;
                 }
         
@@ -269,9 +281,8 @@ namespace dmludp{
                 
                 if (data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
-                    auto len = capacity;
-                    data = &data[..len];
-                    std::copy(data.begin(), data.begin()+len, tmp_data.begin());
+                    auto copy_len = capacity;
+                    std::copy(data.begin(), data.begin()+copy_len, tmp_data.begin());
                 }else{
                     std::copy(data.begin(), data.end(), tmp_data.begin());
 
@@ -283,7 +294,7 @@ namespace dmludp{
                     return data.size();
                 }
         
-                size_t len = 0;
+                size_t write_len = 0;
 
                 for (auto it = off_len ; it < tmp_data.size();){
                     if (tmp_data.size() - it > SEND_BUFFER_SIZE){
@@ -313,20 +324,16 @@ namespace dmludp{
     
         };
 
+        // From application to protocal.
         bool emit(std::vector<uint8_t> out, size_t& out_len, uint64_t& out_off){
             bool stop = false;
-            size_t out_len = out.size();
+            out_len = out.size();
 
             out_off = off_front();
         
             while (out_len >= SEND_BUFFER_SIZE && ready())
             {
-                let buf = match self.data.get_mut(self.pos) {
-                    Some(v) => v,
-
-                    None => break,
-                };
-                if(pos > data.size()){
+                if(pos >= data.size()){
                     break;
                 }
 
@@ -355,7 +362,7 @@ namespace dmludp{
                 size_t out_pos = 0;
                 std::copy((buf->data).begin(), (buf->data).begin() + buf_len, out.begin() + out_pos);
 
-                len -= (uint64_t)buf_len;
+                length -= (uint64_t)buf_len;
                 used_length -= buf_len;
 
                 out_len = buf_len;
