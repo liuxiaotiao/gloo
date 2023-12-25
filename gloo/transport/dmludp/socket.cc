@@ -254,7 +254,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
-  dmludp_conn_free(temp_connection);
+  // dmludp_conn_free(temp_connection);
   // connect((struct sockaddr *)&tmp_addr, sizeof(tmp_addr));
   // ssize_t sent = write(out, written);
   for (;;){
