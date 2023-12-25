@@ -50,16 +50,16 @@ enum dmludp_error {
 
 };
 
-Config* dmludp_config_new(){
+inline Config* dmludp_config_new(){
     Config* config = new Config();
     return config;
 }
 
-void dmludp_config_free(Config* config){
+inline void dmludp_config_free(Config* config){
     delete config;
 }
 
-int dmludp_header_info(uint8_t* data, size_t buf_len, int &type, int &pn) {
+inline int dmludp_header_info(uint8_t* data, size_t buf_len, int &type, int &pn) {
     std::vector<uint8_t> buf(data, data + buf_len);
     auto hdr = Header::from_slice(buf);
     pn = hdr->pkt_num;
@@ -84,38 +84,38 @@ int dmludp_header_info(uint8_t* data, size_t buf_len, int &type, int &pn) {
     return result;
 }
 
-Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
+inline Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
     return dmludp::Connection::accept(local, peer, config);
 }
 
-Connection* dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
+inline Connection* dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
     return dmludp::Connection::connect(local, peer, config);
 }
 
-void dmludp_set_rtt(Connection* conn, long interval){
+inline void dmludp_set_rtt(Connection* conn, long interval){
     conn->set_rtt(interval);
 }
 
 // Write data from application to protocal
-void dmludp_data_write(Connection* conn, const uint8_t* buf, size_t len){
+inline void dmludp_data_write(Connection* conn, const uint8_t* buf, size_t len){
     conn->data_write(buf, len);
 }
 
 // Fill up congestion control window
-bool dmludp_conn_send_all(Connection* conn) {
+inline bool dmludp_conn_send_all(Connection* conn) {
     return conn->send_all();
 }
 
-bool dmludp_conn_is_empty(Connection* conn){
+inline bool dmludp_conn_is_empty(Connection* conn){
     return conn->data_is_empty();
 }
 
-long dmludp_get_rtt(Connection* conn){
+inline long dmludp_get_rtt(Connection* conn){
     return conn->get_rtt();
 }
 
 
-ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
+inline ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
     if (out_len <= 0 ){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
@@ -126,15 +126,15 @@ ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
     return static_cast<ssize_t>(written);
 }
 
-bool dmludp_buffer_is_empty(Connection* conn){
+inline bool dmludp_buffer_is_empty(Connection* conn){
     return conn->is_empty();
 }
 
-bool dmludp_conn_is_stop(Connection* conn){
+inline bool dmludp_conn_is_stop(Connection* conn){
     return conn->is_stopped();
 }
 
-ssize_t dmludp_send_data_handshake(Connection* conn, uint8_t* out, size_t out_len){
+inline ssize_t dmludp_send_data_handshake(Connection* conn, uint8_t* out, size_t out_len){
     if (out_len <= 0 ){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
@@ -145,16 +145,16 @@ ssize_t dmludp_send_data_handshake(Connection* conn, uint8_t* out, size_t out_le
     return static_cast<ssize_t>(written);
 }
 
-bool dmludp_conn_is_closed(Connection* conn){
+inline bool dmludp_conn_is_closed(Connection* conn){
     return conn->is_closed();
 }
 
-void dmludp_conn_free(Connection* conn) {
+inline void dmludp_conn_free(Connection* conn) {
     delete conn;
 }
 
 
-ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
+inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
     if(out_len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
@@ -172,7 +172,7 @@ ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
 }
 
 
-ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t out_len){
+inline ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t out_len){
     if(out_len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
@@ -198,7 +198,7 @@ ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t out_len){
 
 }
 
-ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
+inline ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
     if(len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
