@@ -92,17 +92,27 @@ class Socket final : public std::enable_shared_from_this<Socket> {
 
   void localSockAddrStorage(const sockaddr_storage& ss);
 
-  Connection* getConnection();
+  // Connection* getConnection();
 
-  Connection* dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
+  // Connection* dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
 
-  Connection* dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
+  // Connection* dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
 
-  Connection* create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
+  // Connection* create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
+  //                         bool is_server);
+
+  std::shared_ptr<Connection> getConnection();
+
+  std::shared_ptr<Connection> dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer);
+
+  std::shared_ptr<Connection> dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer);
+
+  std::shared_ptr<Connection> create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, 
                           bool is_server);
 
   // Maybe become unique_ptr
-  Connection* dmludp_connection;
+  // Connection* dmludp_connection;
+  std::shared_ptr<Connection> dmludp_connection;
 
   struct sockaddr_storage peer;
 

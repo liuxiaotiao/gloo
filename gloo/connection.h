@@ -157,15 +157,19 @@ class Connection{
 
     RecvBuf rec_buffer;
  
-    static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
-        auto conn = new Connection(local, peer, config, false);
-        return conn;
+    // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
+    static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
+        // auto conn = new Connection(local, peer, config, false);
+        // return conn;
+        return std::make_shared<Connection>(local, peer, config, false);
     };
 
-    static Connection* accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
-        auto conn = new Connection(local, peer, config, true);
+    // static Connection* accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
+    static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
+        // auto conn = new Connection(local, peer, config, true);
+        // return conn;
+        return std::make_shared<Connection>Connection(local, peer, config, true);
 
-        return conn;
     };
 
     Connection(sockaddr_storage local, 
@@ -190,6 +194,11 @@ class Connection{
     // std::unordered_map<uint64_t, uint8_t> recv_dic;
     // std::vector send_data_buf:Vec<u8>;
     // std::vector norm2_vec:Vec<u8>;
+    prioritydic(),
+    sent_pkt(),
+    recv_dic(),
+    send_data_buf(),
+    norm2_vec(),
     record_win(0),
     total_offset(0),
     recv_flag(false),
