@@ -811,9 +811,9 @@ class Connection{
             len = length/1024 + 1;
         }
 
-        send_data_buf.insert(send_data_buf.end(), buf, buf+length);
+        send_data_buf.insert(send_data_buf.begin(), buf, buf+length);
 
-        norm2_vec.insert(norm2_vec.end(), len, 3);
+        norm2_vec.insert(norm2_vec.begin(), len, 3);
 
         send_buffer.clear();
     };

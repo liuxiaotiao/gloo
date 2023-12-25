@@ -127,7 +127,7 @@ std::shared_ptr<Socket> Socket::accept() {
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
-    accept_socket->dmludp_connection = std::move(connection);
+    accept_socket->dmludp_connection = connection;
 
     // Bind random port in local and remote node.
     sockaddr_storage storage;
@@ -162,10 +162,10 @@ std::shared_ptr<Socket> Socket::accept() {
     auto start = std::chrono::high_resolution_clock::now();
     ssize_t sent = accept_socket->write(out, written);
 
-    struct sockaddr *tmp_local;
-    // struct sockaddr *local_addr tmp_peer;
-    struct sockaddr_storage tmp_peer_addr;
-    struct sockaddr_storage *local_addr = &local;
+    // struct sockaddr *tmp_local;
+    // // struct sockaddr *local_addr tmp_peer;
+    // struct sockaddr_storage tmp_peer_addr;
+    // struct sockaddr_storage *local_addr = &local;
     for (;;){
       ssize_t received = accept_socket->read(buffer, 1500);
       if(received <1){
@@ -241,7 +241,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr *tmp_local;
   // struct sockaddr *local_addr tmp_peer;
   struct sockaddr_storage tmp_peer_addr;
-  struct sockaddr_storage *local_addr = &local;
+  // struct sockaddr_storage *local_addr = &local;
   socklen_t peer_addr_len = sizeof(tmp_peer_addr);
   uint8_t out[1500];
   uint8_t buffer[1500];
