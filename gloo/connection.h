@@ -411,7 +411,7 @@ class Connection{
 
     //Send single packet
     ///////
-    size_t send_data(std::vector<uint8_t> out){
+    size_t send_data(std::vector<uint8_t> &out){
         
         size_t done = 0;
         size_t total_len = HEADER_LENGTH;
@@ -571,7 +571,7 @@ class Connection{
         return total_len;
     };
 
-    size_t send_data_stop(std::vector<uint8_t> out){ 
+    size_t send_data_stop(std::vector<uint8_t> &out){ 
         size_t total_len = HEADER_LENGTH;
 
         // auto pn =  pkt_num_spaces[1].next_pkt_num;
@@ -594,7 +594,7 @@ class Connection{
         return total_len;
     };
 
-    size_t send_data_handshake(std::vector<uint8_t> out){     
+    size_t send_data_handshake(std::vector<uint8_t> &out){     
         size_t total_len = HEADER_LENGTH;
 
         uint64_t pn = 0;

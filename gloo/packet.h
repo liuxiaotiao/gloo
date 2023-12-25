@@ -131,13 +131,13 @@ namespace dmludp{
                 first = 0x08;
             }
 
-            put_u8(out, first);
+            put_u8(out, first, off);
             
             off += sizeof(uint8_t);
             put_u64(out, pkt_num, off);
             off += sizeof(uint64_t);
 
-            put_u8(out, priority);
+            put_u8(out, priority, off);
             off += sizeof(uint8_t);
             put_u64(out, offset, off);
             off += sizeof(uint64_t);
@@ -177,8 +177,8 @@ namespace dmludp{
             std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
         };
 
-        void put_u8(std::vector<uint8_t> &vec, uint8_t input){
-            vec.push_back(input);
+        void put_u8(std::vector<uint8_t> &vec, uint8_t input, int position){
+            vec.at(position)= input;
         };
 
         size_t len(){
