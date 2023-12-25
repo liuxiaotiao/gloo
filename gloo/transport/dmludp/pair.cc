@@ -162,7 +162,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   // Reset addresses.
   self_ = socket->sockName();
   peer_ = socket->peerName();
-
+  dmludp_connection = socket->getConnection();
   // Take over ownership of the socket's file descriptor. The code in
   // this class works directly with file descriptor directly.
   fd_ = socket->release();
