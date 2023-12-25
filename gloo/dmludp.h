@@ -163,9 +163,9 @@ inline bool dmludp_conn_is_closed(std::shared_ptr<Connection> conn){
 }
 
 // inline void dmludp_conn_free(Connection* conn) {
-inline void dmludp_conn_free(std::shared_ptr<Connection> conn) {
-    delete conn;
-}
+// inline void dmludp_conn_free(std::shared_ptr<Connection> conn) {
+//     delete conn;
+// }
 
 
 // inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {

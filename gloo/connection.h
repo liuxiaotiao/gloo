@@ -168,7 +168,7 @@ class Connection{
     static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
         // auto conn = new Connection(local, peer, config, true);
         // return conn;
-        return std::make_shared<Connection>Connection(local, peer, config, true);
+        return std::make_shared<Connection>(local, peer, config, true);
 
     };
 
