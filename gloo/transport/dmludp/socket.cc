@@ -127,7 +127,7 @@ std::shared_ptr<Socket> Socket::accept() {
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
-    accept_socket->dmludp_connection = connection;
+    accept_socket->dmludp_connection = std::move(connection);
 
     // Bind random port in local and remote node.
     sockaddr_storage storage;

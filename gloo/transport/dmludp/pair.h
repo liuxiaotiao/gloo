@@ -173,7 +173,9 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         update_timerfd(message.begin()->first);
       }else{
         struct itimerspec new_value = {};
-        timerfd_settime(fd_, 0, &new_value, NULL);
+        // timerfd_settime(fd_, 0, &new_value, NULL);
+        timerfd_settime(timer_fd, 0, &new_value, NULL);
+
       }
     }
   }
@@ -185,7 +187,9 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     itimerspec new_value{};
     new_value.it_value.tv_sec = duration.count() / 1000000000;
     new_value.it_value.tv_nsec = duration.count() % 1000000000;
-    timerfd_settime(fd_, 0, &new_value, nullptr);
+    // timerfd_settime(fd_, 0, &new_value, nullptr);
+    timerfd_settime(timer_fd, 0, &new_value, nullptr);
+
   }
 
   void add_message(std::chrono::steady_clock::time_point time, retry_message& new_task) {
@@ -223,7 +227,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
           retry.retry_time = futureTimePoint;
           retry.data = it->second.data;
           retry.len = it->second.len;
-          ::send(outerPtr.fd_, it->second.data.data(), it->second.len, 0);
+          auto variable_time = ::send(outerPtr.fd_, it->second.data.data(), it->second.len, 0);
           outerPtr.add_message(futureTimePoint, retry);
         }
       }
