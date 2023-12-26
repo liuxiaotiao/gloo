@@ -288,6 +288,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     peer = tmp_peer_addr;
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect(local, peer);
+    dmludp_connection = connection;
     ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
     written = dmludp_conn_send(connection, out, sizeof(out));
     sent = write(out, written);
