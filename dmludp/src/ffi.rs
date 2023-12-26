@@ -14,7 +14,7 @@ use libc::c_void;
 use libc::size_t;
 use libc::sockaddr;
 use libc::ssize_t;
-
+use libc::timespec;
 #[cfg(not(windows))]
 use libc::AF_INET;
 #[cfg(windows)]
