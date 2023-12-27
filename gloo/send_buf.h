@@ -7,6 +7,8 @@
 namespace dmludp{
 const size_t SEND_BUFFER_SIZE = 1024;
 
+const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
+
     class SendBuf{
         public:
         std::deque<std::shared_ptr<RangeBuf>> data;
@@ -33,7 +35,7 @@ const size_t SEND_BUFFER_SIZE = 1024;
         pos(0),
         off(0),
         length(0),
-        max_data(0),
+        max_data(MIN_SENDBUF_INITIAL_LEN * 8),
         used_length(0),
         removed(0),
         sent(0){};
