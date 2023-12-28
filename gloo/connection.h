@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <sys/socket.h>
+#include <set>
 
 #include "gloo/packet.h"
 #include "gloo/Recovery.h"
@@ -152,6 +153,8 @@ class Connection{
     std::chrono::nanoseconds rtt;
     
     std::chrono::high_resolution_clock::time_point handshake;
+
+    std::set<uint64_t> ack_set;
 
     SendBuf send_buffer;
 
@@ -320,6 +323,10 @@ class Connection{
     
     //Get unack offset. 
     void process_ack(std::vector<uint8_t> buf){
+        std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
+        auto hd = Header::from_slice(ack_header);
+        ack_set.erase(hd->pn);
+
         std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.end());
 
         std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
@@ -495,6 +502,7 @@ class Connection{
                 psize = (uint64_t)(pkt_counter*8);
                 ack_point = sent_pkt.size();
                 stop_ack = true;
+                ack_set.insert(pn);
             }
             else{
                 std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
@@ -509,6 +517,7 @@ class Connection{
                 }
                 ack_point = sent_pkt.size();
                 psize = 64;
+                ack_set.insert(pn);
             }
             total_len += (size_t)psize;
             delete hdr; 
@@ -625,7 +634,11 @@ class Connection{
 
     // Add Wating for receving(12.28)
     bool is_waiting(){
-        return stop_flag;
+        return stop_flag && ack_set.empty();
+    }
+
+    bool enable_adding(){
+        return ack_set.empty() && (send_buffer.pos == 0);
     }
 
     bool is_stopped(){

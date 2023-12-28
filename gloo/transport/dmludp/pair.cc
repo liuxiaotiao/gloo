@@ -672,10 +672,12 @@ void Pair::handleEvents(int events) {
 }
 
 void Pair::handlewrite(){
-  bool done = dmludp_conn_send_all(dmludp_connection);
+  if(dmludp_enable_adding(dmludp_connection)){
+      bool done = dmludp_conn_send_all(dmludp_connection);
 
-  if (!done){
-    return;
+    if (!done){
+      return;
+    }
   }
 
   while (1){
