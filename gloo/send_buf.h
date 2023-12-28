@@ -189,10 +189,10 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 if (wrtie_data.size() > capacity) {
                     // Truncate the input buffer according to the stream's capacity.
                     auto local_len = capacity;
-                    std::copy(wrtie_data.begin(), wrtie_data.begin()+local_len, tmp_data.begin());
+                    tmp_data.assign(wrtie_data.begin(), wrtie_data.begin()+local_len);  
                     // data = data.resize(len);
                 }else{
-                    std::copy(wrtie_data.begin(), wrtie_data.end(), tmp_data.begin());
+                    tmp_data.assign(wrtie_data.begin(), wrtie_data.end());  
                 }
         
                 // We already recorded the final offset, so we can just discard the
