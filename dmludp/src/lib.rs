@@ -1060,6 +1060,7 @@ impl Connection {
         if !self.send_data_buf.is_empty(){
             self.send_data_buf.clear();
         }
+        self.total_offset = 0;
         let len = match buf.len() % 1024 {
             0 => buf.len() / 1024,
             _ => buf.len()/1024 + 1,
