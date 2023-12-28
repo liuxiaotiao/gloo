@@ -263,6 +263,11 @@ pub extern "C" fn dmludp_buffer_is_empty(conn: &mut Connection) -> bool{
 }
 
 #[no_mangle]
+pub extern "C" fn dmludp_is_empty(conn: &mut Connection) -> bool{
+    conn.empty()
+}
+
+#[no_mangle]
 pub extern "C" fn dmludp_conn_is_stop(conn: &mut Connection) -> bool{
     conn.is_stopped()
 }
