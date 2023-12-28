@@ -325,7 +325,7 @@ class Connection{
     void process_ack(std::vector<uint8_t> buf){
         std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
         auto hd = Header::from_slice(ack_header);
-        ack_set.erase(hd->pn);
+        ack_set.erase(hd->pkt_num);
 
         std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.end());
 
