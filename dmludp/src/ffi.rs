@@ -258,7 +258,7 @@ pub extern "C" fn dmludp_conn_is_empty(conn: &mut Connection) -> bool{
 }
 
 #[no_mangle]
-pub extern "C" fn dmludp_is_waitinh(conn: &mut Connection) -> bool{
+pub extern "C" fn dmludp_is_waiting(conn: &mut Connection) -> bool{
     conn.waiting()
 }
 
