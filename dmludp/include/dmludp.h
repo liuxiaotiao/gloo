@@ -257,4 +257,6 @@ void dmludp_conn_free(dmludp_conn *conn);
 
 void dmludp_set_rtt(dmludp_conn *conn, long interval);
 
+bool dmludp_is_waiting(dmludp_conn *conn);
+
 }
