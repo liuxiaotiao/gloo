@@ -105,9 +105,9 @@ inline void dmludp_data_write(std::shared_ptr<Connection> conn, const uint8_t* b
     conn->data_write(buf, len);
 }
 
-inline bool dmludp_enable_adding(std::shared_ptr<Connection> conn){
-    return conn->enable_adding();
-}
+// inline bool dmludp_enable_adding(std::shared_ptr<Connection> conn){
+//     return conn->enable_adding();
+// }
 
 // Fill up congestion control window
 // inline bool dmludp_conn_send_all(Connection* conn) {

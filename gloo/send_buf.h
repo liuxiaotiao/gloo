@@ -395,9 +395,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             }
             return stop;
         };
-
-    
-
     };
     
 }

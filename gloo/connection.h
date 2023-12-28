@@ -284,6 +284,9 @@ class Connection{
         // All side can send data.
         if (hdr->ty == Type::ACK){
             process_ack(buf);
+            if (ack_set.size() == 0){
+                stop_ack = true;
+            }
         }
 
         if (hdr->ty == Type::ElictAck){
@@ -501,7 +504,6 @@ class Connection{
                 }
                 psize = (uint64_t)(pkt_counter*8);
                 ack_point = sent_pkt.size();
-                stop_ack = true;
                 ack_set.insert(pn);
             }
             else{
@@ -637,9 +639,10 @@ class Connection{
         return stop_flag && ack_set.empty();
     }
 
-    bool enable_adding(){
-        return ack_set.empty() && (send_buffer.pos == 0);
-    }
+    // bool enable_adding(){
+    //     // return ack_set.empty() && (send_buffer.pos == 0);
+    //     return stop_flag && stop_ack;
+    // }
 
     bool is_stopped(){
         return stop_flag && stop_ack;
