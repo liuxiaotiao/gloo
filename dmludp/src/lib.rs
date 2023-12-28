@@ -1047,6 +1047,10 @@ impl Connection {
         self.send_data_buf.is_empty()
     }
 
+    pub fn empty(& self) -> bool{
+        self.data_is_empty() && self.is_empty()
+    }
+
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     pub fn data_write(&mut self, buf: &[u8]){
