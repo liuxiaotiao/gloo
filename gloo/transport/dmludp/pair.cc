@@ -852,7 +852,7 @@ void Pair::handleReadWrite(int events) {
     //   auto& op = tx_.front();
     //   write2dmludp(op);
     // }
-    if (!tx_.empty() && dmludp_conn_is_stop(dmludp_connection)){
+    if (!tx_.empty() && dmludp_is_empty(dmludp_connection)){
       auto& op = tx_.front();
       write2dmludp(op);
       tx_.pop_front();

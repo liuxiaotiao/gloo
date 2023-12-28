@@ -121,6 +121,9 @@ inline long dmludp_get_rtt(std::shared_ptr<Connection> conn){
     return conn->get_rtt();
 }
 
+inline long dmludp_is_empty(std::shared_ptr<Connection> conn){
+    return conn->empty();
+}
 
 // inline ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
 inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){

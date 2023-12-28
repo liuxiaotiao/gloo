@@ -794,6 +794,10 @@ class Connection{
         return send_data_buf.empty();
     };
 
+    bool empty(){
+        return data_is_empty() && is_empty();
+    }
+
     // Application can send data through this function, 
     // It can dynamically add the new coming data to the buffer.
     void data_write(const uint8_t* buf, size_t length){

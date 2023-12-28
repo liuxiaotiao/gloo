@@ -159,7 +159,7 @@ std::shared_ptr<Socket> Socket::accept() {
     uint8_t out[1500];
     uint8_t buffer[1500];
     ssize_t written = dmludp_conn_send(connection, out, sizeof(out));
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     ssize_t sent = accept_socket->write(out, written);
 
     // struct sockaddr *tmp_local;
@@ -168,13 +168,13 @@ std::shared_ptr<Socket> Socket::accept() {
     // struct sockaddr_storage *local_addr = &local;
     for (;;){
       ssize_t received = accept_socket->read(buffer, 1500);
-      if(received <1){
+      if(received < 1){
         continue;
       }
       ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
-      auto end = std::chrono::high_resolution_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      dmludp_set_rtt(connection, duration.count());
+      // auto end = std::chrono::high_resolution_clock::now();
+      // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+      // dmludp_set_rtt(connection, duration.count());
       new_socket = false;
       break;
     }
@@ -249,7 +249,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   auto temp_connection = dmludp_conn_connect(local, ss);
 
   ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
-  ssize_t sent = sendto(fd_, out, sizeof(written), 0, (struct sockaddr *) &ss, peer_addr_len);
+  auto start = std::chrono::high_resolution_clock::now();
+  ssize_t sent = sendto(fd_, out, written, 0, (struct sockaddr *) &ss, peer_addr_len);
 
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
@@ -266,6 +267,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     if(ss.ss_family != tmp_peer_addr.ss_family){
       continue;
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     if (tmp_peer_addr.ss_family == AF_INET) { // IPv4
         struct sockaddr_in *ipv4_addr1 = (struct sockaddr_in *)&ss;
         struct sockaddr_in *ipv4_addr2 = (struct sockaddr_in *)&tmp_peer_addr;
@@ -289,8 +292,9 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect(local, peer);
     dmludp_connection = connection;
-    ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
-    written = dmludp_conn_send(connection, out, sizeof(out));
+    dmludp_set_rtt(dmludp_connection, duration.count());
+    ssize_t dmludp_recv = dmludp_conn_recv(dmludp_connection, buffer, received);
+    written = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     sent = write(out, written);
     new_socket = false;
     break;
