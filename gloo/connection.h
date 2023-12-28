@@ -623,6 +623,11 @@ class Connection{
         return total_len;
     };
 
+    // Add Wating for receving(12.28)
+    bool is_waiting(){
+        return stop_flag;
+    }
+
     bool is_stopped(){
         return stop_flag && stop_ack;
     };
