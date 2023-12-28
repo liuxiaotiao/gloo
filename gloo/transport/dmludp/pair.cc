@@ -849,17 +849,22 @@ void Pair::handleReadWrite(int events) {
     GLOO_ENFORCE(
         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
 
-    if (!tx_.empty()){
+    // if (!tx_.empty()){
+    //   auto& op = tx_.front();
+    //   write2dmludp(op);
+    // }
+    if (!tx_.empty() && dmludp_is_empty(dmludp_connection)){
       auto& op = tx_.front();
       write2dmludp(op);
+      tx_.pop_front();
     }
 
     handlewrite();
     
     // Timer_fd will be responsible for whether the stop control message is received
-    if (dmludp_conn_is_stop(dmludp_connection)){
-      tx_.pop_front();
-    }
+    // if (dmludp_conn_is_stop(dmludp_connection)){
+    //   tx_.pop_front();
+    // }
 
     // If there is nothing to transmit; remove EPOLLOUT.
     if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection) && dmludp_buffer_is_empty(dmludp_connection)) {
