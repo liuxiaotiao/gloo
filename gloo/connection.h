@@ -639,10 +639,10 @@ class Connection{
         return stop_flag && ack_set.empty();
     }
 
-    // bool enable_adding(){
-    //     // return ack_set.empty() && (send_buffer.pos == 0);
-    //     return stop_flag && stop_ack;
-    // }
+    bool enable_adding(){
+        // return ack_set.empty() && (send_buffer.pos == 0);
+        return stop_flag && stop_ack;
+    }
 
     bool is_stopped(){
         return stop_flag && stop_ack;
