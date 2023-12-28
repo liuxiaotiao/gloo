@@ -856,6 +856,10 @@ impl Connection {
         self.stop_flag && self.stop_ack
     }
 
+    pub fn waiting(&self)->bool{
+        self.stop_flag
+    }
+
     //Start updating congestion control window and sending new data.
     pub fn is_ack(&self)->bool{
         let now = Instant::now();
