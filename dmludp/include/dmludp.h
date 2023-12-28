@@ -245,6 +245,8 @@ bool dmludp_conn_is_empty(dmludp_conn *conn);
 
 bool dmludp_buffer_is_empty(dmludp_conn *conn);
 
+bool dmludp_is_empty(dmludp_conn *conn);
+
 ssize_t dmludp_data_read(dmludp_conn *conn, uint8_t *out, size_t out_len);
 
 // Returns whether or not this is a server-side connection.
