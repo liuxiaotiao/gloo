@@ -159,6 +159,8 @@ class Connection{
     SendBuf send_buffer;
 
     RecvBuf rec_buffer;
+
+    bool initial;
  
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -215,7 +217,8 @@ class Connection{
     rtt(0),
     handshake(std::chrono::high_resolution_clock::now()),
     // std::unordered_map<uint64_t, uint64_t> sent_dic;
-    bidirect(true)
+    bidirect(true),
+    initial(false)
     // Recovery recovery,
     // SendBuf send_buffer,
     // RecvBuf recv_buffer,
@@ -279,6 +282,7 @@ class Connection{
         if (hdr->ty == Type::Handshake && !is_server){
             handshake_confirmed = false;
             feed_back = true;
+            initial = true;
         }
         
         // All side can send data.
@@ -645,7 +649,7 @@ class Connection{
     }
 
     bool is_stopped(){
-        return stop_flag && stop_ack;
+        return stop_flag && stop_ack && initial;
     };
 
     //Start updating congestion control window and sending new data.
@@ -775,6 +779,7 @@ class Connection{
         // let now = Instant::now();
         if (rtt.count() == 0 && is_server == true){
             handshake_completed = true;
+            initial = true;
             return Type::Handshake;
         }
 
