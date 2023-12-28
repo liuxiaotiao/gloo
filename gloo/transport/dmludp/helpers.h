@@ -57,17 +57,17 @@ class ReadValueOperation final
     auto self = std::move(this->leak_);
 
     // Read T.
-    auto rv = socket_->read(&t_, sizeof(t_));
-    if (rv == -1) {
-      fn_(socket_, SystemError("read", errno), std::move(t_));
-      return;
-    }
+    // auto rv = socket_->read(&t_, sizeof(t_));
+    // if (rv == -1) {
+    //   fn_(socket_, SystemError("read", errno), std::move(t_));
+    //   return;
+    // }
 
-    // Check for short read (assume we can read in a single call).
-    if (rv < sizeof(t_)) {
-      fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
-      return;
-    }
+    // // Check for short read (assume we can read in a single call).
+    // if (rv < sizeof(t_)) {
+    //   fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
+    //   return;
+    // }
 
     fn_(socket_, Error::kSuccess, std::move(t_));
   }
