@@ -815,6 +815,8 @@ class Connection{
             len = length/1024 + 1;
         }
 
+        total_offset = 0;
+
         send_data_buf.insert(send_data_buf.begin(), buf, buf+length);
 
         norm2_vec.insert(norm2_vec.begin(), len, 3);

@@ -147,6 +147,10 @@ inline bool dmludp_conn_is_stop(std::shared_ptr<Connection> conn){
     return conn->is_stopped();
 }
 
+inline bool dmludp_is_waiting(std::shared_ptr<Connection> conn){
+    return conn->is_waiting();
+}
+
 // inline ssize_t dmludp_send_data_handshake(Connection* conn, uint8_t* out, size_t out_len){
 inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     if (out_len <= 0 ){

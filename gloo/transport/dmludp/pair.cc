@@ -692,7 +692,9 @@ void Pair::handlewrite(){
         remove_retrymessage_by_pktnum(pkt_num);
       }
     }
-
+    if (dmludp_is_waiting(dmludp_connection)){
+      break;
+    }
     ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     if (dmludpwrite < 0){
       if (dmludp_conn_is_stop(dmludp_connection)){
