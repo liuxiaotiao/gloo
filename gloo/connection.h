@@ -192,8 +192,8 @@ class Connection{
     localaddr(local),
     peeraddr(peer),
     written_data(0),
-    stop_flag(false),
-    stop_ack(false),
+    stop_flag(true),
+    stop_ack(true),
     // std::unordered_map<uint64_t, uint8_t> prioritydic;
     // std::vector sent_pkt: Vec<u64>;
     // std::unordered_map<uint64_t, uint8_t> recv_dic;
@@ -276,13 +276,13 @@ class Connection{
         if (hdr->ty == Type::Handshake && is_server){
             update_rtt();
             handshake_completed = true;
+            initial = true;
         }
         
         //If receiver receives a Handshake packet, it will be papred to send a Handshank.
         if (hdr->ty == Type::Handshake && !is_server){
             handshake_confirmed = false;
             feed_back = true;
-            initial = true;
         }
         
         // All side can send data.
@@ -466,6 +466,7 @@ class Connection{
             hdr->pkt_length = psize;
             hdr->to_bytes(out);
             feed_back = false;
+            initial = true;
         }
     
         //send the received packet condtion
@@ -779,7 +780,6 @@ class Connection{
         // let now = Instant::now();
         if (rtt.count() == 0 && is_server == true){
             handshake_completed = true;
-            initial = true;
             return Type::Handshake;
         }
 

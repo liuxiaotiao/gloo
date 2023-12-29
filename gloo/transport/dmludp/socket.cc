@@ -255,9 +255,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
-  // dmludp_conn_free(temp_connection);
-  // connect((struct sockaddr *)&tmp_addr, sizeof(tmp_addr));
-  // ssize_t sent = write(out, written);
+
   for (;;){
     ssize_t received = recvfrom(fd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
     // ssize_t received = read(buffer, 1500);
