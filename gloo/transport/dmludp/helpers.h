@@ -145,19 +145,19 @@ class WriteValueOperation final
     // }
     // fn_(socket_, Error::KSuccess);
     
-
+    // Unrelated operation!!!
     // Write T.
-    auto rv = socket_->write(&t_, sizeof(t_));
-    if (rv == -1) {
-      fn_(socket_, SystemError("write", errno));
-      return;
-    }
+    // auto rv = socket_->write(&t_, sizeof(t_));
+    // if (rv == -1) {
+    //   fn_(socket_, SystemError("write", errno));
+    //   return;
+    // }
 
-    // Check for short write (assume we can write in a single call).
-    if (rv < sizeof(t_)) {
-      fn_(socket_, ShortWriteError(rv, sizeof(t_)));
-      return;
-    }
+    // // Check for short write (assume we can write in a single call).
+    // if (rv < sizeof(t_)) {
+    //   fn_(socket_, ShortWriteError(rv, sizeof(t_)));
+    //   return;
+    // }
 
     fn_(socket_, Error::kSuccess);
   }
