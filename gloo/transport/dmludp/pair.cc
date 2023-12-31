@@ -681,6 +681,9 @@ void Pair::handlewrite(){
   }
 
   while (1){
+    if (dmludp_is_waiting(dmludp_connection)){
+      break;
+    }
     uint8_t out[1500];
 
     uint8_t buffer[1500];
@@ -694,9 +697,7 @@ void Pair::handlewrite(){
         remove_retrymessage_by_pktnum(pkt_num);
       }
     }
-    if (dmludp_is_waiting(dmludp_connection)){
-      break;
-    }
+
     ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     if (dmludpwrite < 0){
       if (dmludp_conn_is_stop(dmludp_connection)){
@@ -714,14 +715,16 @@ void Pair::handlewrite(){
       struct retry_message retry;
       retry.pkt_num = pkt_num;
       retry.len = dmludpwrite;
-      double rtt = dmludp_get_rtt(dmludp_connection);
+      long rtt = dmludp_get_rtt(dmludp_connection);
       auto now = std::chrono::steady_clock::now();
-      std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
-      std::chrono::steady_clock::time_point futureTimePoint = now + duration;
+      // std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
+      std::chrono::steady_clock::duration interval = std::chrono::nanoseconds(rtt);
+      std::chrono::steady_clock::time_point futureTimePoint = now + interval;
       retry.retry_time = futureTimePoint;
       std::copy(std::begin(out), std::end(out), retry.data.begin());
       add_message(futureTimePoint, retry);
     }
+
     break;
   }
 

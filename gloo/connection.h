@@ -161,6 +161,9 @@ class Connection{
     RecvBuf rec_buffer;
 
     bool initial;
+
+    // Used to control normal message sending.
+    bool waiting_flag;
  
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -194,6 +197,7 @@ class Connection{
     written_data(0),
     stop_flag(true),
     stop_ack(true),
+    waiting_flag(false),
     // std::unordered_map<uint64_t, uint8_t> prioritydic;
     // std::vector sent_pkt: Vec<u64>;
     // std::unordered_map<uint64_t, uint8_t> recv_dic;
@@ -395,6 +399,7 @@ class Connection{
     bool send_all(){
         stop_flag = false;
         stop_ack = false;
+        waiting_flag = false;
         
         // need to change!!!!!!!!!
         set_handshake();
@@ -487,6 +492,11 @@ class Connection{
                 addUint64(out, pair.second);
             }
             recv_hashmap.clear();
+            
+            // Control normal message sending.
+            if (stop_flag){
+                waiting_flag = true;
+            }
         }
 
         // chekc is_ack condition is correct or not.
@@ -641,7 +651,7 @@ class Connection{
 
     // Add Wating for receving(12.28)
     bool is_waiting(){
-        return stop_flag && ack_set.empty();
+        return waiting_flag;
     }
 
     bool enable_adding(){

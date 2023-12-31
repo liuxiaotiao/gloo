@@ -172,10 +172,9 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       if (!message.empty()) {
         update_timerfd(message.begin()->first);
       }else{
-        struct itimerspec new_value = {};
+        struct itimerspec new_value{};
         // timerfd_settime(fd_, 0, &new_value, NULL);
         timerfd_settime(timer_fd, 0, &new_value, NULL);
-
       }
     }
   }
@@ -184,7 +183,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     auto now = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_point - now);
 
-    itimerspec new_value{};
+    struct itimerspec new_value{};
     new_value.it_value.tv_sec = duration.count() / 1000000000;
     new_value.it_value.tv_nsec = duration.count() % 1000000000;
     // timerfd_settime(fd_, 0, &new_value, nullptr);
@@ -193,9 +192,25 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   }
 
   void add_message(std::chrono::steady_clock::time_point time, retry_message& new_task) {
-    message[time] = std::move(new_task);
+    // if (message.empty()){
+    //   // message[time] = std::move(new_task);
+    //   message.emplace(time, std::move(new_task));
+    //   message_time[new_task.pkt_num] = time;
+    //   update_timerfd(message.begin()->first);
+    // }else{
+    //   // message[time] = std::move(new_task);
+    //   message.emplace(time, std::move(new_task));
+    //   message_time[new_task.pkt_num] = time;
+    // }
+    message.emplace(time, std::move(new_task));
     message_time[new_task.pkt_num] = time;
-    update_timerfd(message.begin()->first);
+    if (message.size() == 1){
+      update_timerfd(message.begin()->first);
+    }else{
+      if (message.begin()->first != time){
+        update_timerfd(message.begin()->first);
+      }
+    }
   }
 
 
