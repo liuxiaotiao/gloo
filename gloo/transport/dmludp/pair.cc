@@ -709,7 +709,7 @@ void Pair::handlewrite(){
     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
     int type;
     int pkt_num;
-    auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
+    auto rv = dmludp_header_info(out, 26, type, pkt_num);
     if(rv == 4 || type == 6){
       /// add timer
       struct retry_message retry;
