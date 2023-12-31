@@ -492,11 +492,6 @@ class Connection{
                 addUint64(out, pair.second);
             }
             recv_hashmap.clear();
-            
-            // Control normal message sending.
-            if (stop_flag){
-                waiting_flag = true;
-            }
         }
 
         // chekc is_ack condition is correct or not.
@@ -539,6 +534,11 @@ class Connection{
             total_len += (size_t)psize;
             delete hdr; 
             hdr = nullptr; 
+
+            // Control normal message sending.
+            if (stop_flag){
+                waiting_flag = true;
+            }
 
             return total_len;
         }
