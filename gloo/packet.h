@@ -149,11 +149,11 @@ namespace dmludp{
             std::vector<uint8_t> data_slice(sizeof(uint64_t));
             #if IS_BIG_ENDIAN
                 for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[7 - i] = (value >> (i * 8)) & 0xFF;
+                    data_slice[7 - i] = (input >> (i * 8)) & 0xFF;
                 }
             #else
                 for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[i] = (value >> (i * 8)) & 0xFF;
+                    data_slice[i] = (input >> (i * 8)) & 0xFF;
                 }
             }
             #endif
@@ -180,7 +180,7 @@ namespace dmludp{
         //     std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
         // };
 
-        static uint64_t get_u64(const std::vector<uint8_t>& vec, int position) {
+        static uint64_t get_u64(const std::vector<uint8_t> vec, int position) {
             uint64_t value = 0;
             std::vector<uint8_t> data_slice(vec.begin() + position, vec.begin() + position + sizeof(uint64_t));
             #if IS_BIG_ENDIAN
