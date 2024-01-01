@@ -567,7 +567,8 @@ class Connection{
             offset = (uint64_t)out_len;
             psize = (uint64_t)out_len;
             hdr->to_bytes(out);
-                
+            
+            std::copy(data_slice.begin(), data_slice.begin() + out_len, out.begin() + 26);
             if (stop == true){
                 stop_flag = true;
             }
@@ -703,6 +704,7 @@ class Connection{
             };
             record_win = congestion_window;
             auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
+            for (auto i : )
             return result;
         }else{
             auto congestion_window = record_win;

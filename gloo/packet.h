@@ -145,37 +145,77 @@ namespace dmludp{
 
         };
 
-        static uint64_t get_u64(std::vector<uint8_t> vec, int start){
-            uint64_t value;
+        void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position) {
+            std::vector<uint8_t> bytes(sizeof(uint64_t));
             #if IS_BIG_ENDIAN
-                for (int i = 0; i < 8; ++i) {
-                    value |= static_cast<uint64_t>(vec[i]) << ((7 - i) * 8);
+                for (int i = 0; i < sizeof(uint64_t); ++i) {
+                    bytes[7 - i] = (value >> (i * 8)) & 0xFF;
                 }
             #else
-                for (int i = 0; i < 8; ++i) {
-                    value |= static_cast<uint64_t>(vec[i]) << (i * 8);
+                for (int i = 0; i < sizeof(uint64_t); ++i) {
+                    bytes[i] = (value >> (i * 8)) & 0xFF;
+                }
+            }
+            #endif
+            std::copy(bytes.begin(), bytes.end(), vec.begin() + position);
+        };
+
+        // void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
+        //     std::vector<uint8_t> data_slice(sizeof(uint64_t));
+        //     #if IS_BIG_ENDIAN
+        //         // for (int i = 0; i < sizeof(uint64_t); ++i) {
+        //         //     data_slice[i] = static_cast<uint8_t>(input >> ((7 - i) * 8));
+        //         // }
+        //         for (int i = 0; i < sizeof(uint64_t); ++i) {
+        //             data_slice[7 - i] = (input >> (i * 8)) & 0xFF;
+        //         }
+        //     #else 
+        //         // for (int i = 0; i < sizeof(uint64_t); ++i) {
+        //         //     data_slice[i] = static_cast<uint8_t>(input >> (i * 8));
+        //         // }
+        //         for (int i = 0; i < sizeof(uint64_t); ++i) {
+        //             data_slice[i] = (input >> (i * 8)) & 0xFF;
+        //         }
+        //     #endif
+        //     std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
+        // };
+
+        static uint64_t get_u64(const std::vector<uint8_t>& vec, int position) {
+            uint64_t value = 0;
+            std::vector<uint8_t> data_slice(vec.begin() + position, vec.begin() + position + sizeof(uint64_t));
+            #if IS_BIG_ENDIAN
+                for (size_t i = 0; i < bytes.size(); ++i) {
+                    value |= static_cast<uint64_t>(bytes[i]) << (8 * (7 - i));
+                }
+            #else
+                for (size_t i = 0; i < bytes.size(); ++i) {
+                    value |= static_cast<uint64_t>(bytes[i]) << (8 * i);
                 }
             #endif
             return value;
         };
 
+
+
+        // static uint64_t get_u64(std::vector<uint8_t> vec, int start){
+        //     uint64_t value = 0;
+        //     std::vector<uint8_t> data_slice(vec.begin() + start, vec.begin() + start + sizeof(uint64_t));
+        //     #if IS_BIG_ENDIAN
+        //         for (int i = start; i < start + 8; ++i) {
+        //             value |= static_cast<uint64_t>(data_slice[i]) << ((7 - i) * 8);
+        //         }
+        //     #else
+        //         for (int i = start; i < start + 8; ++i) {
+        //             value |= static_cast<uint64_t>(data_slice[i]) << (i  * 8);
+        //         }
+        //     #endif
+        //     return value;
+        // };
+
         static uint8_t get_u8(std::vector<uint8_t> vec, int position){
             return vec[position];
         };
 
-        void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
-            std::vector<uint8_t> data_slice(sizeof(uint64_t));
-            #if IS_BIG_ENDIAN
-                for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[i] = static_cast<uint8_t>(input >> ((7 - i) * 8));
-                }
-            #else 
-                for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[i] = static_cast<uint8_t>(input >> (i * 8));
-                }
-            #endif
-            std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
-        };
 
         void put_u8(std::vector<uint8_t> &vec, uint8_t input, int position){
             vec.at(position)= input;

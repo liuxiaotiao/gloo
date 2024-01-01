@@ -331,7 +331,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         };
 
         // From application to protocal.
-        bool emit(std::vector<uint8_t> out, size_t& out_len, uint64_t& out_off){
+        bool emit(std::vector<uint8_t> &out, size_t& out_len, uint64_t& out_off){
             bool stop = false;
             out_len = out.size();
 
