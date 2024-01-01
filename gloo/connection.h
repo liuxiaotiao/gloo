@@ -704,7 +704,6 @@ class Connection{
             };
             record_win = congestion_window;
             auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
-            for (auto i : )
             return result;
         }else{
             auto congestion_window = record_win;

@@ -146,18 +146,18 @@ namespace dmludp{
         };
 
         void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position) {
-            std::vector<uint8_t> bytes(sizeof(uint64_t));
+            std::vector<uint8_t> data_slice(sizeof(uint64_t));
             #if IS_BIG_ENDIAN
                 for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    bytes[7 - i] = (value >> (i * 8)) & 0xFF;
+                    data_slice[7 - i] = (value >> (i * 8)) & 0xFF;
                 }
             #else
                 for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    bytes[i] = (value >> (i * 8)) & 0xFF;
+                    data_slice[i] = (value >> (i * 8)) & 0xFF;
                 }
             }
             #endif
-            std::copy(bytes.begin(), bytes.end(), vec.begin() + position);
+            std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
         };
 
         // void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
@@ -184,18 +184,16 @@ namespace dmludp{
             uint64_t value = 0;
             std::vector<uint8_t> data_slice(vec.begin() + position, vec.begin() + position + sizeof(uint64_t));
             #if IS_BIG_ENDIAN
-                for (size_t i = 0; i < bytes.size(); ++i) {
-                    value |= static_cast<uint64_t>(bytes[i]) << (8 * (7 - i));
+                for (size_t i = 0; i < data_slice.size(); ++i) {
+                    value |= static_cast<uint64_t>(data_slice[i]) << (8 * (7 - i));
                 }
             #else
-                for (size_t i = 0; i < bytes.size(); ++i) {
-                    value |= static_cast<uint64_t>(bytes[i]) << (8 * i);
+                for (size_t i = 0; i < data_slice.size(); ++i) {
+                    value |= static_cast<uint64_t>(data_slice[i]) << (8 * i);
                 }
             #endif
             return value;
         };
-
-
 
         // static uint64_t get_u64(std::vector<uint8_t> vec, int start){
         //     uint64_t value = 0;
