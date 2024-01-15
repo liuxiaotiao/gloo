@@ -368,9 +368,9 @@ class Connection{
         handshake = retransmission_ack.at(hd->pkt_num).second;
         update_rtt();
         retransmission_ack.erase(hd->pkt_num);
-        std::vector<uint8_t> ackvector(buf.begin() + 26, buf.end());
+        std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.end());
 
-        // std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
+        std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
 
         // uint64_t max_ack = convertToUint64(ackvector);
 
@@ -386,9 +386,9 @@ class Connection{
             std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
             uint64_t unack = convertToUint64(ackvector);
             start += 8;
-            std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 1, ackvector.begin());
-            uint64_t priority = convertToUint64(ackvector);
-
+            // std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 1, ackvector.begin());
+            uint64_t priority = unackbuf[start];
+            start += 1;
             if ( sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
                     // Remove from send_buffer
@@ -470,18 +470,16 @@ class Connection{
 
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
-    ssize_t nwrite(sbuffer &send_data, size_t win_size) {
+    ssize_t nwrite(sbuffer &send_data, size_t win_size, size_t congestion_window) {
         if (send_buffer.data.empty()){
             size_t off_len = 0;
             auto toffset = send_data.sent() % 1024;
             off_len = (size_t)1024 - toffset;
 
-            // Note: written_data refers to the non-retransmitted data.
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
             send_data.left -= (size_t)result;
             return result;
         }else{
-            auto congestion_window = record_win;
             size_t off_len = 0;
 
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
@@ -510,10 +508,10 @@ class Connection{
             norm2_vec.clear();
         }
         size_t len = 0;
-        if (length % 1350 == 0){
-            len = length / 1350;
+        if (iovecs_len % 1350 == 0){
+            len = iovecs_len / 1350;
         }else{
-            len = length / 1350 + 1;
+            len = iovecs_len / 1350 + 1;
         }
         if (len == 1){
             norm2_vec.insert(norm2_vec.end(), len, 3);
@@ -647,7 +645,7 @@ class Connection{
             hdr->to_bytes(out);
             int offset = 26;
             for (auto j = ack_point; j <= end_point ; j++){
-                Header::put_u64(out[i], record_send[j], offset + 8 * j);
+                Header::put_u64(out, record_send[j], offset + 8 * j);
             }
 
             delete hdr; 
@@ -665,7 +663,7 @@ class Connection{
             ssize_t pn = -1;
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-                if ((e.second.second + 1.2* get_rtt())> now ){
+                if ((e.second.second + std::chrono::nanoseconds duration(1.2* get_rtt()))> now ){
                     pn = (ssize_t)e.first;
                     break;
                 }
@@ -758,7 +756,7 @@ class Connection{
             for (const auto& pair : recv_hashmap) {
                 Header::put_u64(out, pair.first, off);
                 off += 1;
-                Header::put_u8(out, pair.second);
+                Header::put_u8(out, pair.second, off);
                 off += 8;
             }
             recv_hashmap.clear();
@@ -975,14 +973,16 @@ class Connection{
                 congestion_window = recovery.cwnd();
             };
             record_win = congestion_window;
-            auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
-            return result;
+            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
+            // return result;
+            return 0;
         }else{
             auto congestion_window = record_win;
             size_t off_len = 0;
 
-            auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
-            return result;
+            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
+            // return result;
+            return 0;
         }
 
     };

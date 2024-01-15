@@ -136,7 +136,7 @@ namespace dmludp{
             uint64_t second = *reinterpret_cast<const uint64_t*>(b.data() + 1);
             uint64_t third = b[9];
             uint64_t forth = *reinterpret_cast<const uint64_t*>(b.data() + 10);
-            uint64_t forth = *reinterpret_cast<const uint64_t*>(b.data() + 18);
+            uint64_t fifth = *reinterpret_cast<const uint64_t*>(b.data() + 18);
 
             return std::make_shared<Header>(ty, second, third, forth, fifth);
         };
