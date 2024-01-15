@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <set>
 #include <unordered_map>
+#include <sys/uio.h>
 
 #include "gloo/packet.h"
 #include "gloo/Recovery.h"
@@ -571,14 +572,14 @@ class Connection{
                 return wlen;
             }
             written_len += wlen;
-            if (send_data[current_buffer_pos].sent == send_data[current_buffer_pos].len 
+            if (send_data.at(current_buffer_pos).sent == send_data.at(current_buffer_pos).len 
             && (current_buffer_pos < data_buffer.size() -1)){
                 current_buffer_pos += 1;
                 send_data[current_buffer_pos].sent += wlen;
             }
             if (written_len >= congestion_window)
                 break;
-            if (data_buffer[current_buffer_pos].left() == 0 && (current_buffer_pos == data_buffer.size() - 1))
+            if (data_buffer.at(current_buffer_pos).left() == 0 && (current_buffer_pos == data_buffer.size() - 1))
                 break;
         }
         
@@ -612,7 +613,7 @@ class Connection{
             record_send.push_back(offset);
 
             if (s_flag){
-                messages[i/10].msg_hdr.msg_iov = iovecs[i - pkt_size + 1];
+                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
                 messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
                 stop_flag = true;
                 break;
@@ -698,7 +699,7 @@ class Connection{
             out.resize(pktlen + 26);
             hdr->to_bytes(out);
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
-            std::copy(retransmission_ack.at(wait_ack.begin(), wait_ack.end(), out.begin() + 26));
+            std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + 26);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
             retransmission_ack.erase((uint64_t)pn);
