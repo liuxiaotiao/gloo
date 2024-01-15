@@ -601,7 +601,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
                 auto buf = data.at(pos);
 
-                if (buf->second == 0){
+                if (buf.second == 0){
                     pos += 1;
                     continue;
                 }
@@ -609,20 +609,20 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 size_t buf_len = 0;
                 
                 bool partial;
-                if( buf->second <= MIN_SENDBUF_INITIAL_LEN){
+                if( buf.second <= MIN_SENDBUF_INITIAL_LEN){
                     partial = true;
                 }else{
                     partial = false;
                 }
 
                 // Copy data to the output buffer.
-                out.iov_base = (void *)(buf->first);
-                out.iov_len = buf->second;
+                out.iov_base = (void *)(buf.first);
+                out.iov_len = buf.second;
 
-                length -= (uint64_t)(buf->second);
-                used_length -= (buf->second);
+                length -= (uint64_t)(buf.second);
+                used_length -= (buf.second);
 
-                out_len = (buf->second);
+                out_len = (buf.second);
 
                 //buf.consume(buf_len);
                 pos += 1;
