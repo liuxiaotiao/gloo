@@ -63,7 +63,7 @@ class sbuffer{
     sbuffer(uint8_t* src, size_t len):
     src(src),
     len(len),
-    size_t(len){
+    sent(0){
 
     };
 
@@ -73,7 +73,7 @@ class sbuffer{
         return len - sent;
     };
 
-}
+};
 
 class Config {
     public:

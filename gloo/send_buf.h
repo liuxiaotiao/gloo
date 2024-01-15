@@ -476,7 +476,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t)off_len;
                         used_length += off_len;
                         write_len += off_len;
-                        offset_recv.insert(off, true);
                     }
                     else{
                         data.push_back(std::make_pair(src + start_off, ready_written ));
@@ -487,7 +486,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         write_len += ready_written;
 
                         write_data_len -= write_len;
-                        offset_recv.insert(off, true);
                         return write_len;
                     }
                 }
@@ -501,7 +499,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t)SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
                         it += SEND_BUFFER_SIZE;
-                        offset_recv.insert(off, true);
                     }else{
                         write_len += ready_written - it;
                         offset_recv[off] = true;
@@ -510,7 +507,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t)(ready_written - it);
                         used_length += (ready_written - it);
                         it = ready_written;
-                        offset_recv.insert(off, true);
                     }
                     write_data_len -= write_len;
                     return write_len;
@@ -547,7 +543,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t)off_len;
                         used_length += off_len;
                         write_len += off_len;
-                        offset_recv.insert(off, true);
+                        // offset_recv.insert(off, true);
                     }
                     else{
                         data.push_back(std::make_pair(off, ready_written ));
@@ -558,7 +554,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         write_len += ready_written;
 
                         write_data_len -= write_len;
-                        offset_recv.insert(off, true);
+                        // offset_recv.insert(off, true);
                         return write_len;
                     }
                 }
@@ -572,7 +568,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t) SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
                         it += SEND_BUFFER_SIZE;
-                        offset_recv.insert(off, true);
+                        // offset_recv.insert(off, true);
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
@@ -581,7 +577,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);
                         it = ready_written;
-                        offset_recv.insert(off, true);
+                        // offset_recv.insert(off, true);
                     }
 
                     write_data_len -= write_len;
@@ -609,7 +605,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 
                 size_t buf_len = 0;
                 
-
+                bool partial;
                 if( buf->second <= MIN_SENDBUF_INITIAL_LEN){
                     partial = true;
                 }else{
