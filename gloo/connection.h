@@ -470,7 +470,7 @@ class Connection{
 
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
-    ssize_t nwrite(sbuffer &send_data, size_t win_size, size_t congestion_window) {
+    ssize_t nwrite(sbuffer &send_data, size_t congestion_window) {
         if (send_buffer.data.empty()){
             size_t off_len = 0;
             auto toffset = send_data.sent() % 1024;
@@ -595,7 +595,7 @@ class Connection{
             record_send.push_back(offset);
 
             if (s_flag){
-                messages[i/10].msg_hdr.msg_iov = iovecs( i - pkt_size + 1).data();
+                messages[i/10].msg_hdr.msg_iov = iovecs[i - pkt_size + 1].data();
                 messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
                 stop_flag = true;
                 break;
@@ -645,7 +645,8 @@ class Connection{
             hdr->to_bytes(out);
             int offset = 26;
             for (auto j = ack_point; j <= end_point ; j++){
-                Header::put_u64(out, record_send[j], offset + 8 * j);
+                Header::put_u64(out, record_send[j], offset);
+                offset += 8;
             }
 
             delete hdr; 
@@ -663,7 +664,8 @@ class Connection{
             ssize_t pn = -1;
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-                if ((e.second.second + std::chrono::nanoseconds duration(1.2* get_rtt()))> now ){
+                std::chrono::nanoseconds duration(1.2* get_rtt());
+                if ((e.second.second + duration)> now ){
                     pn = (ssize_t)e.first;
                     break;
                 }
@@ -754,9 +756,9 @@ class Connection{
             // pkt_length may not be 8
             size_t off = 26;
             for (const auto& pair : recv_hashmap) {
-                Header::put_u64(out, pair.first, off);
+                Header::put_u64(out, pair.first, (int)off);
                 off += 1;
-                Header::put_u8(out, pair.second, off);
+                Header::put_u8(out, pair.second, (int)off);
                 off += 8;
             }
             recv_hashmap.clear();
