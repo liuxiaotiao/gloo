@@ -66,8 +66,8 @@ Pair::Pair(
       self_(device_->nextAddress()),
       ex_(nullptr),
       innertimer(*this) {
-        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+        // timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+        // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
 
         // this->innertimer.setOuter(this);
       }
@@ -1033,7 +1033,7 @@ bool Pair::write2dmludp(Op& op){
         break;
       }
       if (ack_len > 0){
-        auto socketwrite = ::send(fd_, out, ack_len);
+        auto socketwrite = ::send(fd_, out, ack_len, 0);
       }
       ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
       if (socketread > 0 )
