@@ -541,7 +541,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 if (off_len > 0){
                     if ( ready_written > off_len ){
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, (uint64_t)off_len));
+                        data.push_back(std::make_pair(src + off, (uint64_t)off_len));
                         off += (uint64_t)off_len;
                         length += (uint64_t)off_len;
                         used_length += off_len;
@@ -549,7 +549,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         // offset_recv.insert(off, true);
                     }
                     else{
-                        data.push_back(std::make_pair(off, (uint64_t)ready_written ));
+                        data.push_back(std::make_pair(src + off, (uint64_t)ready_written ));
                         offset_recv[off] = true;
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
@@ -566,7 +566,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     if((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, SEND_BUFFER_SIZE));
+                        data.push_back(std::make_pair(src + off, SEND_BUFFER_SIZE));
                         off += (uint64_t) SEND_BUFFER_SIZE;
                         length += (uint64_t) SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
@@ -575,7 +575,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, (uint64_t)(ready_written - it)));
+                        data.push_back(std::make_pair(src + off, (uint64_t)(ready_written - it)));
                         off += (uint64_t) (ready_written - it);
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);

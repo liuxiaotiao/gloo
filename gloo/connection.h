@@ -201,7 +201,7 @@ class Connection{
     // Used to control normal message sending.
     bool waiting_flag;
  
-    std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point> retransmission_ack;
+    std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         // auto conn = new Connection(local, peer, config, false);
