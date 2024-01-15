@@ -1105,7 +1105,7 @@ void Pair::handleReadWrite(int events){
   }
 
   if (events & EPOLLIN) {
-    while (read()) {
+    while (handleread()) {
       // Keep going
     }
   }
