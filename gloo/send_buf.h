@@ -541,7 +541,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 if (off_len > 0){
                     if ( ready_written > off_len ){
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, off_len));
+                        data.push_back(std::make_pair(off, (uint64_t)off_len));
                         off += (uint64_t)off_len;
                         length += (uint64_t)off_len;
                         used_length += off_len;
@@ -549,7 +549,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         // offset_recv.insert(off, true);
                     }
                     else{
-                        data.push_back(std::make_pair(off, ready_written ));
+                        data.push_back(std::make_pair(off, (uint64_t)ready_written ));
                         offset_recv[off] = true;
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
@@ -562,7 +562,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }
                 }
 
-                if (auto it = off_len ; it < ready_written ; ){
+                for (auto it = off_len ; it < ready_written ; ){
                     if((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
@@ -575,7 +575,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, (ready_written - it)));
+                        data.push_back(std::make_pair(off, (uint64_t)(ready_written - it)));
                         off += (uint64_t) (ready_written - it);
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <sys/socket.h>
 #include <set>
+#include <unordered_map>
 
 #include "gloo/packet.h"
 #include "gloo/Recovery.h"
@@ -469,10 +470,10 @@ class Connection{
 
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
-    ssize_t nwrite(sbuffer send_data, size_t win_size) {
+    ssize_t nwrite(sbuffer &send_data, size_t win_size) {
         if (send_buffer.data.empty()){
             size_t off_len = 0;
-            auto toffset = send_data.sent % 1024;
+            auto toffset = send_data.sent() % 1024;
             off_len = (size_t)1024 - toffset
 
             // Note: written_data refers to the non-retransmitted data.
@@ -581,13 +582,13 @@ class Connection{
             record_send.push_back(offset);
 
             if (s_flag){
-                messages[i/10].msg_hdr.msg_iov = iov( i - pkt_size + 1).data();
+                messages[i/10].msg_hdr.msg_iov = iovecs( i - pkt_size + 1).data();
                 messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
                 stop_flag = true;
                 break;
             }
             if( i % pkt_size == pkt_size - 1){
-                messages[i/10].msg_hdr.msg_iov = &iov[i - pkt_size + 1];
+                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
                 messages[i/10].msg_hdr.msg_iovlen = pkt_size;
             }
 
@@ -663,7 +664,7 @@ class Connection{
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += 26;
             out.resize(pktlen + 26);
-            hdr.to_bytes(out);
+            hdr->to_bytes(out);
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
             std::copy(retransmission_ack.at(wait_ack.begin(), wait_ack.end(), out.begin() + 26));
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
@@ -796,43 +797,43 @@ class Connection{
         }
         
         ////////////////////////////
-        if (ty == Type::Application){
-            size_t out_len = 0; 
-            uint64_t out_off = 0;
+        // if (ty == Type::Application){
+        //     size_t out_len = 0; 
+        //     uint64_t out_off = 0;
 
-            std::vector<uint8_t> data_slice(out.begin()+ 26 , out.end());
-            bool stop = send_buffer.emit(data_slice, out_len, out_off);
+        //     std::vector<uint8_t> data_slice(out.begin()+ 26 , out.end());
+        //     bool stop = send_buffer.emit(data_slice, out_len, out_off);
 
-            sent_count += 1;
-            sent_number += 1;
-            // pn = pkt_num_spaces[0].next_pkt_num;
-            // pkt_num_spaces[0].next_pkt_num += 1;
-            pn = pkt_num_spaces.at(0).updatepktnum();
-            priority = priority_calculation(out_off);
+        //     sent_count += 1;
+        //     sent_number += 1;
+        //     // pn = pkt_num_spaces[0].next_pkt_num;
+        //     // pkt_num_spaces[0].next_pkt_num += 1;
+        //     pn = pkt_num_spaces.at(0).updatepktnum();
+        //     priority = priority_calculation(out_off);
 
-            hdr->ty = ty;
-            hdr->pkt_num = pn;
-            hdr->offset = out_off;
-            hdr->priority = priority;
-            hdr->pkt_length = (uint64_t)out_len;
+        //     hdr->ty = ty;
+        //     hdr->pkt_num = pn;
+        //     hdr->offset = out_off;
+        //     hdr->priority = priority;
+        //     hdr->pkt_length = (uint64_t)out_len;
 
-            offset = (uint64_t)out_len;
-            psize = (uint64_t)out_len;
-            hdr->to_bytes(out);
+        //     offset = (uint64_t)out_len;
+        //     psize = (uint64_t)out_len;
+        //     hdr->to_bytes(out);
             
-            std::copy(data_slice.begin(), data_slice.begin() + out_len, out.begin() + 26);
-            if (stop == true){
-                stop_flag = true;
-            }
+        //     std::copy(data_slice.begin(), data_slice.begin() + out_len, out.begin() + 26);
+        //     if (stop == true){
+        //         stop_flag = true;
+        //     }
 
-            if (sent_dic.find(out_off) != sent_dic.end()){
-                sent_dic[out_off] -= 1;
-            }else{
-                sent_dic[out_off] = priority;
-            }
+        //     if (sent_dic.find(out_off) != sent_dic.end()){
+        //         sent_dic[out_off] -= 1;
+        //     }else{
+        //         sent_dic[out_off] = priority;
+        //     }
 
-            sent_pkt.push_back(hdr->offset);
-        }  
+        //     sent_pkt.push_back(hdr->offset);
+        // }  
 
         if (ty == Type::Stop){
             hdr->ty = ty;
