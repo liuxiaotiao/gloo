@@ -499,7 +499,7 @@ class Connection{
             return completed;
         }
         for (auto i = 0 ; i < iovecs_len; i++){
-            data_buffer.emplace_back(iovecs[i].iov_base, iovecs[i].iov_len);
+            data_buffer.emplace_back((uint8_t*)iovecs[i].iov_base, iovecs[i].iov_len);
         }
         if (data_buffer.size() <= 0){
             completed = false;
@@ -578,7 +578,7 @@ class Connection{
             }
             if (written_len >= congestion_window)
                 break;
-            if (data_buffer.[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+            if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
                 break;
         }
         
