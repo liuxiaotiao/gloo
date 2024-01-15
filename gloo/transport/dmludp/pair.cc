@@ -1335,9 +1335,9 @@ void Pair::sendAsyncMode(Op& op) {
   // // Write in place without checking socket for writeability.
   // // This is the fast path.
   ///////////////////////////////////////////////////////////
-  // if (write(op)) {
-  //   return;
-  // }
+  if (write2dmludp(op)) {
+    return;
+  }
   //////////////////////////////////////////////////
 
   // Write may have resulted in an error.
