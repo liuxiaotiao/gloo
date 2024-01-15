@@ -398,7 +398,7 @@ bool Pair::write(Op& op) {
     // return value is 
     auto msg = dmludp2write(dmludp_connection, iov.data(), ioc, &msg_num, &sent_size);
     while (sent_num < msg_num){
-      rv = sendmmsg(sockfd, msg, msg_num, 0);
+      rv = sendmmsg(fd_, msg, msg_num, 0);
       if (rv == -1){
         if (errno == EINTR) {
           continue;
@@ -1089,7 +1089,7 @@ void Pair::handleReadWrite(int events){
      while (!tx_.empty()) {
       if (dmludp_transmission_complete(dmludp_connection)){
         auto& op = tx_.front();
-        if (write2dmludp(dmludp_connection, op)){
+        if (write2dmludp(op)){
           // Write2dmludp completed; remove from queue.
           tx_.pop_front();
         }else{

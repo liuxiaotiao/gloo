@@ -201,7 +201,7 @@ class Connection{
     // Used to control normal message sending.
     bool waiting_flag;
  
-    std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point> retransmission_ack,
+    std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point> retransmission_ack;
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         // auto conn = new Connection(local, peer, config, false);
@@ -292,7 +292,7 @@ class Connection{
         return result;
     };
 
-    size_t recv_slice(std::vector<uint8_t> buf){
+    size_t recv_slice(std::vector<uint8_t> &buf){
         auto len = buf.size();
 
         // see in dmludp.h
@@ -302,7 +302,7 @@ class Connection{
 
         recv_count += 1;
 
-        auto hdr = Header::from_slice(buf);
+        auto hdr = Header::from_bytes(buf);
 
         size_t read = 0;
 
@@ -474,7 +474,7 @@ class Connection{
         if (send_buffer.data.empty()){
             size_t off_len = 0;
             auto toffset = send_data.sent() % 1024;
-            off_len = (size_t)1024 - toffset
+            off_len = (size_t)1024 - toffset;
 
             // Note: written_data refers to the non-retransmitted data.
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
@@ -504,6 +504,21 @@ class Connection{
         }
         if (data_buffer.size() <= 0){
             completed = false;
+        }
+
+        if (!norm2_vec.empty()){
+            norm2_vec.clear();
+        }
+        size_t len = 0;
+        if (length % 1350 == 0){
+            len = length / 1350;
+        }else{
+            len = length / 1350 + 1;
+        }
+        if (len == 1){
+            norm2_vec.insert(norm2_vec.end(), len, 3);
+        }else{
+            norm2_vec.insert(norm2_vec.end(), len, 3);
         }
 
         return completed;
@@ -600,7 +615,7 @@ class Connection{
     bool transmission_complete(){
         bool result = true;
         for (auto i : data_buffer){
-            if (i.left() != 0){
+            if (i.left != 0){
                 result = false;
             }
         }
@@ -660,7 +675,7 @@ class Connection{
             }
             uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
             auto ty = Type::ElicitAck;
-            size_t pktlen = retransmission_ack.at((uint64_t)pn).first.size();
+            pktlen = retransmission_ack.at((uint64_t)pn).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += 26;
             out.resize(pktlen + 26);
@@ -741,60 +756,62 @@ class Connection{
             // pkt_length may not be 8
             size_t off = 26;
             for (const auto& pair : recv_hashmap) {
-                addUint64(out, pair.first);
-                addUint8(out, pair.second);
+                Header::put_u64(out, pair.first, off);
+                off += 1;
+                Header::put_u8(out, pair.second);
+                off += 8;
             }
             recv_hashmap.clear();
         }
 
         // chekc is_ack condition is correct or not.
-        if (ty == Type::ElicitAck){
-            // pn =  pkt_num_spaces[1].next_pkt_num;
-            // pkt_num_spaces[1].next_pkt_num += 1;
-            pn = pkt_num_spaces.at(1).updatepktnum();
-            if (stop_flag == true){
-                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
-                size_t pkt_counter = sent_pkt.size() - ack_point;
-                hdr->ty = ty;
-                hdr->pkt_num = pn;
-                hdr->offset = offset;
-                hdr->priority = priority;
-                hdr->pkt_length = (uint64_t)(pkt_counter*8);
-                hdr->to_bytes(out);
+        // if (ty == Type::ElicitAck){
+        //     // pn =  pkt_num_spaces[1].next_pkt_num;
+        //     // pkt_num_spaces[1].next_pkt_num += 1;
+        //     pn = pkt_num_spaces.at(1).updatepktnum();
+        //     if (stop_flag == true){
+        //         std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
+        //         size_t pkt_counter = sent_pkt.size() - ack_point;
+        //         hdr->ty = ty;
+        //         hdr->pkt_num = pn;
+        //         hdr->offset = offset;
+        //         hdr->priority = priority;
+        //         hdr->pkt_length = (uint64_t)(pkt_counter*8);
+        //         hdr->to_bytes(out);
 
-                for (auto it = res.begin(); it != res.end(); ++it) {
-                    addUint64(out, *it);
-                }
-                psize = (uint64_t)(pkt_counter*8);
-                ack_point = sent_pkt.size();
-                ack_set.insert(pn);
-            }
-            else{
-                std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
-                hdr->ty = ty;
-                hdr->pkt_num = pn;
-                hdr->offset = offset;
-                hdr->priority = priority;
-                hdr->pkt_length = 64;
-                hdr->to_bytes(out);
-                for (auto it = res.begin(); it != res.end(); ++it) {
-                    addUint64(out, *it);
-                }
-                ack_point = sent_pkt.size();
-                psize = 64;
-                ack_set.insert(pn);
-            }
-            total_len += (size_t)psize;
-            delete hdr; 
-            hdr = nullptr; 
+        //         for (auto it = res.begin(); it != res.end(); ++it) {
+        //             addUint64(out, *it);
+        //         }
+        //         psize = (uint64_t)(pkt_counter*8);
+        //         ack_point = sent_pkt.size();
+        //         ack_set.insert(pn);
+        //     }
+        //     else{
+        //         std::vector<uint64_t> res(sent_pkt.begin()+ack_point, sent_pkt.end());
+        //         hdr->ty = ty;
+        //         hdr->pkt_num = pn;
+        //         hdr->offset = offset;
+        //         hdr->priority = priority;
+        //         hdr->pkt_length = 64;
+        //         hdr->to_bytes(out);
+        //         for (auto it = res.begin(); it != res.end(); ++it) {
+        //             addUint64(out, *it);
+        //         }
+        //         ack_point = sent_pkt.size();
+        //         psize = 64;
+        //         ack_set.insert(pn);
+        //     }
+        //     total_len += (size_t)psize;
+        //     delete hdr; 
+        //     hdr = nullptr; 
 
-            // Control normal message sending.
-            if (stop_flag){
-                waiting_flag = true;
-            }
+        //     // Control normal message sending.
+        //     if (stop_flag){
+        //         waiting_flag = true;
+        //     }
 
-            return total_len;
-        }
+        //     return total_len;
+        // }
         
         ////////////////////////////
         // if (ty == Type::Application){
@@ -1149,12 +1166,9 @@ class Connection{
             total_offset = 0;
         ///////////////////////////////////////////////////////
         // change vector to pointer to reduce operation time
-        // send_data_buf.insert(send_data_buf.begin(), buf, buf+length);
 
-        // Select one way from 
-        // send_buffer_pointer.push_back(buf);
-        // send_buffer_len.push_back(length);
-        data_buffer.push_back(std::make_pair(buf, length));
+
+        // data_buffer.push_back(std::make_pair(buf, length));
 
         norm2_vec.insert(norm2_vec.begin(), len, 3);
 

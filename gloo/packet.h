@@ -110,6 +110,37 @@ namespace dmludp{
             return std::make_shared<Header>(ty, second, third, forth, fifth);
         };
 
+        static std::shared_ptr<Header> from_bytes(std::vector<uint8_t> &b){
+            int off = 0;
+            auto first = get_u8(b, off);
+            Type ty;
+            if (first == 0x01) {
+                ty = Type::Retry;
+            }else if (first == 0x02){
+                ty = Type::Handshake;
+            }else if (first == 0x03){
+                ty = Type::Application;
+            }else if (first == 0x04){
+                ty = Type::ElicitAck;
+            }else if (first == 0x05){
+                ty = Type::ACK;
+            }else if (first == 0x06){
+                ty = Type::Stop;
+            }else if (first == 0x07){
+                ty = Type::Fin;
+            }else if (first = 0x08){
+                ty = Type::StartAck;
+            }else{
+                ty = Type::Unknown;
+            }
+            uint64_t second = *reinterpret_cast<const uint64_t*>(vec.data() + 1);
+            uint64_t third = b[9];
+            uint64_t forth = *reinterpret_cast<const uint64_t*>(vec.data() + 10);
+            uint64_t forth = *reinterpret_cast<const uint64_t*>(vec.data() + 18);
+
+            return std::make_shared<Header>(ty, second, third, forth, fifth);
+        };
+
         void to_bytes(std::vector<uint8_t> &out){
             uint8_t first = 0;
             int off = 0;
