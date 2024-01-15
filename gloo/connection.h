@@ -572,13 +572,13 @@ class Connection{
                 return wlen;
             }
             written_len += wlen;
-            if (data_buffer.at(current_buffer_pos).sent == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size() -1)){
+            if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size() -1)){
                 current_buffer_pos += 1;
-                data_buffer[current_buffer_pos].sent += wlen;
+                data_buffer[current_buffer_pos].left -= wlen;
             }
             if (written_len >= congestion_window)
                 break;
-            if (data_buffer.[current_buffer_pos].left() == 0 && (current_buffer_pos == data_buffer.size() - 1))
+            if (data_buffer.[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
                 break;
         }
         
