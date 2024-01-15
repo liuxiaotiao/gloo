@@ -26,7 +26,7 @@ namespace dmludp{
         Application = 0x03,
 
         /// server ask reciver
-        ElictAck = 0x04,
+        ElicitAck = 0x04,
 
         ///ACK
         ACK = 0x05,
@@ -86,7 +86,7 @@ namespace dmludp{
             }else if (first == 0x03){
                 ty = Type::Application;
             }else if (first == 0x04){
-                ty = Type::ElictAck;
+                ty = Type::ElicitAck;
             }else if (first == 0x05){
                 ty = Type::ACK;
             }else if (first == 0x06){
@@ -119,7 +119,7 @@ namespace dmludp{
                 first = 0x02;
             }else if (ty == Type::Application){
                 first = 0x03;
-            }else if (ty == Type::ElictAck){
+            }else if (ty == Type::ElicitAck){
                 first = 0x04;
             }else if (ty == Type::ACK){
                 first = 0x05;

@@ -101,8 +101,33 @@ inline void dmludp_set_rtt(std::shared_ptr<Connection> conn, long interval){
 
 // Write data from application to protocal
 // inline void dmludp_data_write(Connection* conn, const uint8_t* buf, size_t len){
-inline void dmludp_data_write(std::shared_ptr<Connection> conn, const uint8_t* buf, size_t len){
-    conn->data_write(buf, len);
+// inline void dmludp_data_write(std::shared_ptr<Connection> conn, const uint8_t* buf, size_t len){
+//     conn->data_write(buf, len);
+// }
+
+// Date: 7th Jan 2024
+inline size_t dmludp_data_write(std::shared_ptr<Connection> conn, uint8_t* buf, size_t len){
+    return conn->data_write(buf, len);
+}
+
+inline bool dmludp_get_data(std::shared_ptr<Connection> conn, strcut iovec *iovecs, int iovecs_len){
+    return conn->get_data(iovecs, iovecs_len);
+}
+
+inline ssize_t dmludp_data_send_mmsg(std::shared_ptr<Connection> conn, 
+    std::vector<uint8_t> &padding, 
+    std::vector<struct mmsghdr> &messages, 
+    std::vector<struct iovec> &iovecs, 
+    int pkt_size = 10){
+    return conn->send_mmsg(padding, messages, iovecs, pkt_size);
+}
+
+inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
+    return conn->transmission_complete();
+}
+
+inline ssize_t dmludp_send_elicit_ack(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
+    return conn->send_elicit_ack(out);
 }
 
 inline bool dmludp_enable_adding(std::shared_ptr<Connection> conn){
@@ -119,6 +144,10 @@ inline bool dmludp_conn_send_all(std::shared_ptr<Connection> conn) {
 inline bool dmludp_conn_is_empty(std::shared_ptr<Connection> conn){
     return conn->data_is_empty();
 }
+
+inline bool dmludp_conn_data_empty(std::shared_ptr<Connection> conn){
+    return conn->data_empty();
+};
 
 // inline long dmludp_get_rtt(Connection* conn){
 inline long dmludp_get_rtt(std::shared_ptr<Connection> conn){
@@ -137,7 +166,7 @@ inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, uint8_t* 
 
     std::vector<uint8_t> out_vector(out_len);
     size_t written = conn->send_data_stop(out_vector);
-    memcpy(out, out_vector.data(), out_len);
+    memcpy(out, out_vector.data(), written);
     return static_cast<ssize_t>(written);
 }
 
