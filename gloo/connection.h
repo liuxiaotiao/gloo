@@ -58,19 +58,19 @@ class sbuffer{
 
     size_t len;
 
-    size_t sent;
+    size_t left;
 
     sbuffer(uint8_t* src, size_t len):
     src(src),
     len(len),
-    sent(0){
+    left(len){
 
     };
 
     ~sbuffer(){};
 
-    size_t left(){
-        return len - sent;
+    size_t sent(){
+        return len - left;
     };
 
 };
@@ -252,7 +252,8 @@ class Connection{
     handshake(std::chrono::high_resolution_clock::now()),
     bidirect(true),
     initial(false),
-    current_buffer_pos(0)
+    current_buffer_pos(0),
+    retransmission_ack()
     {};
 
     ~Connection(){
@@ -342,7 +343,7 @@ class Connection{
         }
 
         // In dmludp.h
-        if (hdr->ty == packet::Type::Stop){
+        if (hdr->ty == Type::Stop){
             stop_flag = false;
             return 0;
         }
@@ -366,7 +367,7 @@ class Connection{
         handshake = retransmission_ack.at(hd->pkt_num).second;
         update_rtt();
         retransmission_ack.erase(hd->pkt_num);
-        std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.end());
+        std::vector<uint8_t> ackvector(buf.begin() + 26, buf.end());
 
         // std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
 
@@ -472,18 +473,18 @@ class Connection{
         if (send_buffer.data.empty()){
             size_t off_len = 0;
             auto toffset = send_data.sent % 1024;
-            size_t off_len = (size_t)1024 - toffset
+            off_len = (size_t)1024 - toffset
 
             // Note: written_data refers to the non-retransmitted data.
-            auto result = send_buffer.write(send_data.src, send_data.sent, send_data.left(), congestion_window, off_len);
-            send_data.sent += result;
+            auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
+            send_data.left -= (size_t)result;
             return result;
         }else{
             auto congestion_window = record_win;
             size_t off_len = 0;
 
-            auto result = send_buffer.write(send_data.src, send_data.sent, send_data.left(), congestion_window, off_len);
-            send_data.sent += result;
+            auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
+            send_data.left -= result;
             return result;
         }
 
@@ -491,14 +492,13 @@ class Connection{
     
     // Used to get pointer owner and length
     // get_data() is used after get(op) in gloo.
-    bool get_data(strcut iovec* iovecs, int iovecs_len){
-        // data_buffer.clear();
+    bool get_data(struct iovec* iovecs, int iovecs_len){
         bool completed = true;
         if ( data_buffer.size() > 0 ){
             completed = false;
             return completed;
         }
-        for (auto i < 0 ; i < iovecs_len; i++){
+        for (auto i = 0 ; i < iovecs_len; i++){
             data_buffer.emplace_back(iovecs[i].iov_base, iovecs[i].iov_len);
         }
         if (data_buffer.size() <= 0){
@@ -557,21 +557,21 @@ class Connection{
         for ( auto i = 0; ; ++i){
             size_t out_len = 0; 
             uint64_t out_off = 0;
-            bool s_flag = send_buffer.emit(&iov[i*3+1], outlen, out_off);
+            bool s_flag = send_buffer.emit(&iovecs[i*3+1], out_len, out_off);
             sent_count += 1;
             sent_number += 1;
             auto pn = pkt_num_spaces.at(0).updatepktnum();
             auto priority = priority_calculation(out_off);
             Type ty = Type::Application;
 
-            std::make_shared<Header> hdr(ty, pn, priority, out_off, (uint64_t)out_len);
-            iov[3*i].iov_base = (void *)hdr.get();
-            iov[3*i].iov_len = 26;
+            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off, (uint64_t)out_len);
+            iovecs[3*i].iov_base = (void *)hdr.get();
+            iovecs[3*i].iov_len = 26;
             
-            iov[3*i + 2].iov_base = padding.get();
-            iov[3*i + 2].iov_len = 1472 - 26 - out_len;
+            iovecs[3*i + 2].iov_base = padding.data();
+            iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
 
-            offset = (uint64_t)out_len;
+            auto offset = (uint64_t)out_len;
             if (sent_dic.find(out_off) != sent_dic.end()){
                 sent_dic[out_off] -= 1;
             }else{
@@ -610,7 +610,7 @@ class Connection{
     }
 
     ssize_t send_elicit_ack(std::vector<uint8_t> &out){
-        auto ty == Type::ElicitAck;
+        auto ty = Type::ElicitAck;
         auto pktnum = record_send.size();
         if (retransmission_ack.size() == 0 && (ack_point + 1) == pktnum){
             return -1;
@@ -620,8 +620,8 @@ class Connection{
             size_t pktlen = 160 * 8;
             size_t end_point = ack_point + 159;
             if  (pktnum <= end_point ){
-                pktlen = (pkt_num - ack_point + 1) * 8;
-                end_point = pkt_num - ack_point;
+                pktlen = (pktnum - ack_point + 1) * 8;
+                end_point = pktnum - ack_point;
             }
             
             auto pn = pkt_num_spaces.at(1).updatepktnum();
@@ -631,7 +631,7 @@ class Connection{
             hdr->to_bytes(out);
             int offset = 26;
             for (auto j = ack_point; j <= end_point ; j++){
-                header::put_u64(out[i], record_send[j], offset + 8 * j);
+                Header::put_u64(out[i], record_send[j], offset + 8 * j);
             }
 
             delete hdr; 
@@ -658,7 +658,7 @@ class Connection{
                 return 0;
             }
             uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
-            auto ty == Type::ElicitAck;
+            auto ty = Type::ElicitAck;
             size_t pktlen = retransmission_ack.at((uint64_t)pn).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += 26;

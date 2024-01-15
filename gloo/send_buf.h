@@ -59,8 +59,11 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
             while (tmp_pos <= (data.size() - 1)){
                 auto b = data.at(tmp_pos);
-                if(!(b->is_empty())){
-                    return b->off();
+                // if(!(b->is_empty())){
+                //     return b->off();
+                // }
+                if(b.second != 0){
+                    return off;
                 }
                 tmp_pos += 1;
             }
@@ -103,7 +106,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             }
 
             for (auto x : data) {
-                length += x->second;
+                length += x.second;
             }
 
             return length;

@@ -70,7 +70,7 @@ inline int dmludp_header_info(uint8_t* data, size_t buf_len, int &type, int &pn)
         result = 2;
     }else if(hdr->ty == Type::Application){
         result = 3;
-    }else if(hdr->ty == Type::ElictAck){
+    }else if(hdr->ty == Type::ElicitAck){
         result = 4;
     }else if(hdr->ty == Type::ACK){
         result = 5;
