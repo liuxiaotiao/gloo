@@ -522,6 +522,23 @@ class Connection{
         return completed;
     }
 
+    void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
+        std::vector<uint8_t> data_slice(sizeof(uint64_t));
+        #if IS_BIG_ENDIAN
+            for (int i = 0; i < sizeof(uint64_t); ++i) {
+                data_slice[i] = static_cast<uint8_t>(input >> ((7 - i) * 8));
+            }
+        #else 
+            for (int i = 0; i < sizeof(uint64_t); ++i) {
+                data_slice[i] = static_cast<uint8_t>(input >> (i * 8));
+            }
+        #endif
+        std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
+    };
+
+    void put_u8(std::vector<uint8_t> &vec, uint8_t input, int position){
+        vec.at(position)= input;
+    };
     // send_mmsg will merge multiple message to a big messge flow.
     // If data all is already in the send_buffer, the return is 0.🌟🌟🌟
     ssize_t send_mmsg(std::vector<uint8_t> &padding, 
@@ -571,7 +588,7 @@ class Connection{
         for ( auto i = 0; ; ++i){
             size_t out_len = 0; 
             uint64_t out_off = 0;
-            bool s_flag = send_buffer.emit(&iovecs[i*3+1], out_len, out_off);
+            bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
             sent_count += 1;
             sent_number += 1;
             auto pn = pkt_num_spaces.at(0).updatepktnum();
@@ -595,7 +612,7 @@ class Connection{
             record_send.push_back(offset);
 
             if (s_flag){
-                messages[i/10].msg_hdr.msg_iov = iovecs[i - pkt_size + 1].data();
+                messages[i/10].msg_hdr.msg_iov = iovecs[i - pkt_size + 1];
                 messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
                 stop_flag = true;
                 break;
@@ -645,7 +662,7 @@ class Connection{
             hdr->to_bytes(out);
             int offset = 26;
             for (auto j = ack_point; j <= end_point ; j++){
-                Header::put_u64(out, record_send[j], offset);
+                put_u64(out, record_send[j], offset);
                 offset += 8;
             }
 
@@ -664,7 +681,7 @@ class Connection{
             ssize_t pn = -1;
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-                std::chrono::nanoseconds duration(1.2* get_rtt());
+                std::chrono::nanoseconds duration((uint64_t)(1.2* get_rtt()));
                 if ((e.second.second + duration)> now ){
                     pn = (ssize_t)e.first;
                     break;
@@ -756,9 +773,9 @@ class Connection{
             // pkt_length may not be 8
             size_t off = 26;
             for (const auto& pair : recv_hashmap) {
-                Header::put_u64(out, pair.first, (int)off);
+                put_u64(out, pair.first, (int)off);
                 off += 1;
-                Header::put_u8(out, pair.second, (int)off);
+                put_u8(out, pair.second, (int)off);
                 off += 8;
             }
             recv_hashmap.clear();
