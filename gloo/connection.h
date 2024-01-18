@@ -554,6 +554,9 @@ class Connection{
     {
         // auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
+        // clear record_send
+        record_send.clear();
+        ack_point = 0;
 
         // For the windows size change, it should be reconsider later(1/11/2024)
         if (send_buffer.data.empty()) {
@@ -667,47 +670,56 @@ class Connection{
     ssize_t send_elicit_ack(std::vector<uint8_t> &out){
         auto ty = Type::ElicitAck;
         auto pktnum = record_send.size();
-        if (retransmission_ack.size() == 0 && (ack_point + 1) == pktnum){
+        if (retransmission_ack.size() == 0 && ack_point == pktnum){
             if (stop_ack){
                 return -1;
             }
         }
-        
-        if ((ack_point + 1) != pktnum){
-            size_t pktlen = 160 * 8;
-            size_t end_point = ack_point + 159;
-            if  (pktnum <= end_point ){
-                pktlen = (pktnum - ack_point + 1) * 8;
-                end_point = pktnum - ack_point;
+
+        // ack_point is used to mark how many ack sent.
+        if ( ack_point != pktnum ){
+            size_t pktlen = 0;
+            size_t end_point = 0;
+
+            size_t leftnum = pktnum - ack_point;
+            if (pktnum - ack_point >= 160 ){
+                size_t pktlen = 160 * 8;
+                auto pn = pkt_num_spaces.at(1).updatepktnum();
+                Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+                out.resize( pktlen + 26 );
+                hdr->to_bytes(out);
+                memcpy(out.data() + 26, record_send.data() + ack_point, out.size());
+                delete hdr; 
+                hdr = nullptr; 
+                ack_set.insert(pn);
+                ack_point += 160;
+                std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
+                std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+                retransmission_ack[pn] = std::make_pair(wait_ack, now);
+
+                return pktlen;
+            }else{
+                auto pn = pkt_num_spaces.at(1).updatepktnum();
+                size_t pktlen = (pktnum - ack_point) * 8;
+                Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+                out.resize( pktlen + 26 );
+                hdr->to_bytes(out);
+                memcpy(out.data() + 26, record_send.data() + ack_point, out.size());
+                delete hdr; 
+                hdr = nullptr; 
+                ack_set.insert(pn);
+                ack_point = pktnum;
+                std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
+                std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+                retransmission_ack[pn] = std::make_pair(wait_ack, now);
+                return pktlen;
             }
-            
-            auto pn = pkt_num_spaces.at(1).updatepktnum();
-            Header* hdr = new Header(ty, pn, 0, 0, pktlen);
-            pktlen += 26;
-            out.resize(pktlen);
-            hdr->to_bytes(out);
-            int offset = 26;
-            for (auto j = ack_point; j <= end_point ; j++){
-                put_u64(out, record_send[j], offset);
-                offset += 8;
-            }
-
-            delete hdr; 
-            hdr = nullptr; 
-            ack_set.insert(pn);
-            ack_point = end_point + 1;
-
-            std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
-            std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-            retransmission_ack[pn] = std::make_pair(wait_ack, now);
-
-            return pktlen;
         }else{
             size_t pktlen = 0; 
             ssize_t pn = -1;
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-                std::chrono::nanoseconds duration((uint64_t)(1.2* get_rtt()));
+                std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
                 if ((e.second.second + duration)> now ){
                     pn = (ssize_t)e.first;
                     break;
@@ -730,8 +742,76 @@ class Connection{
             retransmission_ack.erase((uint64_t)pn);
             delete hdr; 
             hdr = nullptr; 
-            return pktlen;
+            return pktlen;           
         }
+
+        // auto ty = Type::ElicitAck;
+        // auto pktnum = record_send.size();
+        // if (retransmission_ack.size() == 0 && ack_point  == pktnum){
+        //     if (stop_ack){
+        //         return -1;
+        //     }
+        // }
+
+        // if ((ack_point + 1) != pktnum){
+        //     size_t pktlen = 160 * 8;
+        //     size_t end_point = ack_point + 159;
+        //     if  (pktnum <= end_point ){
+        //         pktlen = (pktnum - ack_point + 1) * 8;
+        //         end_point = pktnum - ack_point;
+        //     }
+            
+        //     auto pn = pkt_num_spaces.at(1).updatepktnum();
+        //     Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+        //     pktlen += 26;
+        //     out.resize(pktlen);
+        //     hdr->to_bytes(out);
+        //     int offset = 26;
+        //     for (auto j = ack_point; j <= end_point ; j++){
+        //         put_u64(out, record_send[j], offset);
+        //         offset += 8;
+        //     }
+
+        //     delete hdr; 
+        //     hdr = nullptr; 
+        //     ack_set.insert(pn);
+        //     ack_point = end_point + 1;
+
+        //     std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
+        //     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        //     retransmission_ack[pn] = std::make_pair(wait_ack, now);
+
+        //     return pktlen;
+        // }else{
+        //     size_t pktlen = 0; 
+        //     ssize_t pn = -1;
+        //     for (const auto& e : retransmission_ack){
+        //         std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        //         std::chrono::nanoseconds duration((uint64_t)(1.2* get_rtt()));
+        //         if ((e.second.second + duration)> now ){
+        //             pn = (ssize_t)e.first;
+        //             break;
+        //         }
+        //     }
+        //     if (pn == -1){
+        //         return 0;
+        //     }
+        //     uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
+        //     auto ty = Type::ElicitAck;
+        //     pktlen = retransmission_ack.at((uint64_t)pn).first.size();
+        //     Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
+        //     pktlen += 26;
+        //     out.resize(pktlen + 26);
+        //     hdr->to_bytes(out);
+        //     std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
+        //     std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + 26);
+        //     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        //     retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
+        //     retransmission_ack.erase((uint64_t)pn);
+        //     delete hdr; 
+        //     hdr = nullptr; 
+        //     return pktlen;
+        // }
 
     }
 
