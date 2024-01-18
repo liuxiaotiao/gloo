@@ -653,11 +653,11 @@ class Connection{
         auto ty = Type::ElicitAck;
         auto pktnum = record_send.size();
         if (retransmission_ack.size() == 0 && (ack_point + 1) == pktnum){
-         if(stop_ack){
-		 std::cout<<"stop_ack: "<<stop_ack<<std::endl;
-		 _Exit(0);
-	      	 return -1;
-	 }
+            if(stop_ack){
+            std::cout<<"stop_ack: "<<stop_ack<<std::endl;
+            _Exit(0);
+                return -1;
+            }
         }
         
         if ((ack_point + 1) != pktnum){
