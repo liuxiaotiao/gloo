@@ -1003,12 +1003,12 @@ bool Pair::write2dmludp(Op& op){
   //   // dmludp_data_write adds return.
   //   written += dmludp_data_write(dmludp_connection, (uint8_t*)i.iov_base, (size_t)i.iov_len);
   // }
-  std::vector<uint8_t> padding;
+  std::vector<uint8_t> padding(1472, 0);
   std::vector<struct mmsghdr> messages;
   std::vector<struct iovec> iovecs;
   bool w2dmludp = dmludp_get_data(dmludp_connection, iov.data(), ioc);
 
-  if (w2dmludp){
+  if (!w2dmludp){
     return false;
   }
 
@@ -1016,7 +1016,7 @@ bool Pair::write2dmludp(Op& op){
     size_t sent = 0;
     uint8_t buffer[1500];
     written += dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-    while(message.size() > sent){
+    while(messages.size() > sent){
       auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
       if (retval == -1){
         if (errno == EINTR)

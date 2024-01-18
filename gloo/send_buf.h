@@ -419,7 +419,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
         size_t pkt_num(){
             return data.size();
-        }
+        };
         
         // Explain: 
         // off_len = SEND_BUFFER_SIZE - sent_partial_off
@@ -586,6 +586,8 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     write_data_len -= write_len;
                     return write_len;
                 }
+                // ?
+                // return write_len;
             }
     
         };
