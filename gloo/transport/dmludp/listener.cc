@@ -36,7 +36,6 @@ Listener::Listener(std::shared_ptr<Loop> loop, const attr& attr)
   listener_->reuseAddr(true);
   listener_->bind(attr.ai_addr);
   listener_->listen(kBacklog);
-  // listener_->block(false);
   addr_ = listener_->sockName();
 
   // Register with loop for readability events.

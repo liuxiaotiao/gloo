@@ -90,7 +90,6 @@ void read(
   auto x = std::make_shared<ReadValueOperation<T>>(
       std::move(loop), std::move(socket), std::move(fn));
   x->run();
-  std::cout<<"void read"<<std::endl;
 }
 
 // WriteValueOperation asynchronously writes a value of type T to the

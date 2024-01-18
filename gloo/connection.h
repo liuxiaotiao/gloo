@@ -483,7 +483,6 @@ class Connection{
             auto toffset = send_data.sent() % 1350;
             off_len = (size_t)1350 - toffset;
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
-	    std::cout<<"after: "<<send_data.left<<std::endl;
             return result;
         }else{
             size_t off_len = 0;
@@ -584,16 +583,13 @@ class Connection{
             if (written_len >= congestion_window)
                 break;
         }
-	std::cout<<"current_buffer_pos: "<<current_buffer_pos<<std::endl;
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 3);
         messages.resize((send_buffer.data.size() / pkt_size) + 1 );
-	std::cout<<"message.size(): "<<messages.size()<<std::endl;
         for ( auto i = 0; ; ++i){
             size_t out_len = 0; 
             uint64_t out_off = 0;
             bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
-	    std::cout<<"iovecs[i*3+1]: "<<iovecs[i*3+1].iov_len<<std::endl;
             sent_count += 1;
             sent_number += 1;
             auto pn = pkt_num_spaces.at(0).updatepktnum();
@@ -616,36 +612,6 @@ class Connection{
 
             record_send.push_back(offset);
 
-            /*if (s_flag){
-                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
-                messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
-		std::cout<<"i - pkt_size + 1 = "<<(i - pkt_size + 1)<<std::endl;
-                stop_flag = true;
-                break;
-            }*/
-                // if (i < pkt_size){
-                //     messages[i/10].msg_hdr.msg_iov = &iovecs[0];
-                //     messages[i/10].msg_hdr.msg_iovlen = ( i + 1) % pkt_size;
-                // }else{
-                //     auto t = (i +1) / pkt_size;
-                //     messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size * t + 1];
-                //     messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
-                // }
-
-               /* if ( i % pkt_size){
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[i - i % pkt_size];
-                }else{
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[i];
-                }
-                messages[i/10].msg_hdr.msg_iovlen = (i % pkt_size + 1);
-
-                stop_flag = true;
-                break;
-            }
-            if( i % pkt_size == pkt_size - 1){
-                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
-                messages[i/10].msg_hdr.msg_iovlen = pkt_size;
-            }*/
 		    if (s_flag){
                 if ( i % pkt_size){
                     messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - i % pkt_size)];
@@ -663,9 +629,9 @@ class Connection{
             }
 
         }
-	if ( written_len){
-		stop_ack = false;
-	}
+        if ( written_len){
+            stop_ack = false;
+        }
         return written_len;
 
     };
