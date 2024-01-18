@@ -17,6 +17,13 @@
 #include <gloo/common/common.h>
 #include <gloo/common/logging.h>
 #include <gloo/transport/dmludp/helpers.h>
+#include "gloo/common/error.h"
+#include "gloo/common/logging.h"
+#include <signal.h>
+#include <errno.h>
+#include "gloo/transport/dmludp/buffer.h"
+#include "gloo/transport/dmludp/context.h"
+#include "gloo/transport/dmludp/pair.h"
 
 namespace gloo {
 namespace transport {
@@ -57,7 +64,6 @@ void Listener::handleEvents(int /* unused */) {
       // GLOO_ENFORCE(false, "accept: ", strerror(errno));
     }
      auto sock = listener_->accept();
-
     sock->reuseAddr(true);
     // sock->noDelay(true);
 
@@ -75,7 +81,6 @@ void Listener::handleEvents(int /* unused */) {
           if (error) {
             return;
           }
-
           haveConnection(std::move(socket), seq);
         });
   }
@@ -89,7 +94,7 @@ Address Listener::nextAddress() {
 void Listener::waitForConnection(sequence_number_t seq, connect_callback_t fn) {
   std::unique_lock<std::mutex> lock(mutex_);
 
-  // If we don't yet have an fd for this sequence number, persist callback.
+ // If we don't yet have an fd for this sequence number, persist callback.
   auto it = seqToSocket_.find(seq);
   if (it == seqToSocket_.end()) {
     seqToCallback_.emplace(seq, std::move(fn));
@@ -113,7 +118,6 @@ void Listener::haveConnection(
     seqToSocket_.emplace(seq, std::move(socket));
     return;
   }
-
   // If we already have a callback for this sequence number, trigger it.
   auto fn = std::move(it->second);
   seqToCallback_.erase(it);

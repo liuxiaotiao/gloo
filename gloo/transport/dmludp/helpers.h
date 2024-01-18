@@ -14,7 +14,7 @@
 #include <gloo/transport/dmludp/error.h>
 #include <gloo/transport/dmludp/loop.h>
 #include <gloo/transport/dmludp/socket.h>
-
+#include <iostream>
 namespace gloo {
 namespace transport {
 namespace dmludp {
@@ -58,19 +58,19 @@ class ReadValueOperation final
 
     // Read T.
     // This part is not important!!!!
-    // auto rv = socket_->read(&t_, sizeof(t_));
-    // if (rv == -1) {
-    //   fn_(socket_, SystemError("read", errno), std::move(t_));
-    //   return;
-    // }
+    auto rv = socket_->read(&t_, sizeof(t_));
+    if (rv == -1) {
+       fn_(socket_, SystemError("read", errno), std::move(t_));
+       return;
+     }
 
     // Check for short read (assume we can read in a single call).
-    // if (rv < sizeof(t_)) {
-    //   fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
-    //   return;
-    // }
-
+     if (rv < sizeof(t_)) {
+       fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
+       return;
+     }
     fn_(socket_, Error::kSuccess, std::move(t_));
+
   }
 
  private:
@@ -90,6 +90,7 @@ void read(
   auto x = std::make_shared<ReadValueOperation<T>>(
       std::move(loop), std::move(socket), std::move(fn));
   x->run();
+  std::cout<<"void read"<<std::endl;
 }
 
 // WriteValueOperation asynchronously writes a value of type T to the
@@ -147,17 +148,17 @@ class WriteValueOperation final
     
     // Unrelated operation!!!
     // Write T.
-    // auto rv = socket_->write(&t_, sizeof(t_));
-    // if (rv == -1) {
-    //   fn_(socket_, SystemError("write", errno));
-    //   return;
-    // }
+    auto rv = socket_->write(&t_, sizeof(t_));
+    if (rv == -1) {
+      fn_(socket_, SystemError("write", errno));
+      return;
+    }
 
     // // Check for short write (assume we can write in a single call).
-    // if (rv < sizeof(t_)) {
-    //   fn_(socket_, ShortWriteError(rv, sizeof(t_)));
-    //   return;
-    // }
+    if (rv < sizeof(t_)) {
+      fn_(socket_, ShortWriteError(rv, sizeof(t_)));
+      return;
+    }
 
     fn_(socket_, Error::kSuccess);
   }

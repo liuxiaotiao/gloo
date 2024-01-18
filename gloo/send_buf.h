@@ -159,8 +159,10 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         // Remove received data from send buffer.
         void recv_and_drop() {
             if (data.empty()) {
+		    std::cout<<"data.empty()"<<std::endl;
                 return;
             }
+	    std::cout<<"data.size(): "<<data.size()<<" "<<data.empty()<<std::endl;
 
             // Note: off defines the start offset of the buffer.
             size_t currentIndex = 0; 
@@ -430,7 +432,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 recv_and_drop();
                 recv_count.clear();
             }
-
             auto capacity = cap();
             if (capacity == 0) {
                 return 0;

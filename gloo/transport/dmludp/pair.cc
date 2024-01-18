@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <sstream>
-
+#include <iostream>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -66,8 +66,8 @@ Pair::Pair(
       self_(device_->nextAddress()),
       ex_(nullptr),
       innertimer(*this) {
-        // timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-        // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
 
         // this->innertimer.setOuter(this);
       }
@@ -995,7 +995,6 @@ bool Pair::write2dmludp(Op& op){
   }
 
   const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-
   ssize_t written = 0;
   // Include preamble if necessary
   // for (auto i : iov){
@@ -1003,12 +1002,12 @@ bool Pair::write2dmludp(Op& op){
   //   // dmludp_data_write adds return.
   //   written += dmludp_data_write(dmludp_connection, (uint8_t*)i.iov_base, (size_t)i.iov_len);
   // }
-  std::vector<uint8_t> padding;
+  std::vector<uint8_t> padding(1400, 0);
   std::vector<struct mmsghdr> messages;
   std::vector<struct iovec> iovecs;
   bool w2dmludp = dmludp_get_data(dmludp_connection, iov.data(), ioc);
-
-  if (w2dmludp){
+  std::cout<<w2dmludp<<std::endl;
+  if (!w2dmludp){
     return false;
   }
 
@@ -1016,8 +1015,9 @@ bool Pair::write2dmludp(Op& op){
     size_t sent = 0;
     uint8_t buffer[1500];
     written += dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-    while(message.size() > sent){
+    while(messages.size() > sent){
       auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
+      std::cout<<"retval: "<<retval<<" errpr: "<<errno<<std::endl;
       if (retval == -1){
         if (errno == EINTR)
           continue;
@@ -1025,7 +1025,6 @@ bool Pair::write2dmludp(Op& op){
       }
       sent += retval;
     }
-
     while (true){
       uint8_t out[1500];
       size_t ack_len = dmludp_send_elicit_ack(dmludp_connection, out, 1500);
@@ -1328,7 +1327,6 @@ void Pair::sendAsyncMode(Op& op) {
     return;
   }
   //////////////////////////////////////////////////
-
   // Write may have resulted in an error.
   // throwIfException();
 
