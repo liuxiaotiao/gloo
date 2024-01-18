@@ -366,9 +366,6 @@ class Connection{
         std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
         auto hd = Header::from_slice(ack_header);
         ack_set.erase(hd->pkt_num);
-        if(ack_set.empty()){
-            stop_ack = true;
-        }
         handshake = retransmission_ack.at(hd->pkt_num).second;
         update_rtt();
         retransmission_ack.erase(hd->pkt_num);
@@ -477,19 +474,17 @@ class Connection{
     ssize_t nwrite(sbuffer &send_data, size_t congestion_window) {
         if (send_buffer.data.empty()){
             size_t off_len = 0;
-            auto toffset = send_data.sent() % 1350;
-            off_len = (size_t)1350 - toffset;
+            auto toffset = send_data.sent() % 1024;
+            off_len = (size_t)1024 - toffset;
 
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
-            
-            // It's wired that send_data.left cannot minus result, it will get a huge number
-            // send_data.left -= (size_t)result;
+            send_data.left -= (size_t)result;
             return result;
         }else{
             size_t off_len = 0;
 
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
-            // send_data.left -= result;
+            send_data.left -= result;
             return result;
         }
 
@@ -552,7 +547,7 @@ class Connection{
         std::vector<struct iovec> &iovecs, 
         int pkt_size)
     {
-        // auto sbuf = data_buffer.at(current_buffer_pos);
+        auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
         // clear record_send
         record_send.clear();
@@ -580,23 +575,15 @@ class Connection{
                 return wlen;
             }
             written_len += wlen;
-            if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
-                break;
- 
-            // data_buffer[current_buffer_pos].left -= wlen;
-            // If all iov data has been written to send buffer, the current_buffer_pos will add 1;
-            if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size() )){
+            if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size() -1)){
                 current_buffer_pos += 1;
+                data_buffer[current_buffer_pos].left -= wlen;
             }
-            // Alternative
-            // if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len ){
-            //     current_buffer_pos += 1;
-            // }
-
             if (written_len >= congestion_window)
                 break;
+            if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+                break;
         }
-
         
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 3);
@@ -627,28 +614,17 @@ class Connection{
 
             record_send.push_back(offset);
 
-            // Rewrite
-            if (s_flag){     
-                if ( i % pkt_size){
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - i % pkt_size)];
-                }else{
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[3 * i];
-                }
-                messages[i/10].msg_hdr.msg_iovlen = ( 3* (i % pkt_size + 1));
-
+            if (s_flag){
+                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
+                messages[i/10].msg_hdr.msg_iovlen = i % pkt_size;
                 stop_flag = true;
                 break;
             }
-            if( (i % pkt_size) == (pkt_size - 1)){
-                messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - pkt_size + 1)];
-                messages[i/10].msg_hdr.msg_iovlen = 3 * pkt_size;
+            if( i % pkt_size == pkt_size - 1){
+                messages[i/10].msg_hdr.msg_iov = &iovecs[i - pkt_size + 1];
+                messages[i/10].msg_hdr.msg_iovlen = pkt_size;
             }
 
-        }
-
-        // Using stop_flag to control ack message written.
-        if (written_len){
-            stop_ack = false;
         }
         return written_len;
 
@@ -670,10 +646,15 @@ class Connection{
     ssize_t send_elicit_ack(std::vector<uint8_t> &out){
         auto ty = Type::ElicitAck;
         auto pktnum = record_send.size();
+<<<<<<< HEAD
         if (retransmission_ack.size() == 0 && ack_point == pktnum){
             if (stop_ack){
                 return -1;
             }
+=======
+        if (retransmission_ack.size() == 0 && (ack_point + 1) == pktnum){
+            return -1;
+>>>>>>> parent of 3697fdb (Fix send)
         }
 
         // ack_point is used to mark how many ack sent.
