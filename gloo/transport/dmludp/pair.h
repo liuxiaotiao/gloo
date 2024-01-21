@@ -227,7 +227,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
     void handleEvents(int events){
       uint64_t expirations;
-      ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
+      auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
       for (auto it = (outerPtr.message).begin(); it != (outerPtr.message).end(); it++){
         auto now = std::chrono::steady_clock::now();
         if (it->second.retry_time > now){

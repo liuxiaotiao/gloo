@@ -510,9 +510,10 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         used_length += (ready_written - it);
                         it = ready_written;
                     }
-                    write_data_len -= write_len;
-                    return write_len;
-                }     
+                    
+                }  
+                write_data_len -= write_len;
+                return write_len;   
             }
             else{
                 // Get the stream send capacity. This will return an error if the stream
@@ -582,9 +583,10 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         // offset_recv.insert(off, true);
                     }
 
-                    write_data_len -= write_len;
-                    return write_len;
+                    
                 }
+                write_data_len -= write_len;
+                return write_len;
             }
     
         };

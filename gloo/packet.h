@@ -15,7 +15,7 @@
 #endif
 
 namespace dmludp{
-    enum Type {
+    enum Type : uint8_t {
         /// Retry packet.
         Retry = 0x01,
 
@@ -43,7 +43,8 @@ namespace dmludp{
         Unknown = 0x09,
     };
 
-
+// Avoid memory alignment
+#pragma pack(push, 1)
     class Header{
         public:
         /// The type of the packet.
@@ -134,7 +135,7 @@ namespace dmludp{
                 ty = Type::Unknown;
             }
             uint64_t second = *reinterpret_cast<const uint64_t*>(b.data() + 1);
-            uint64_t third = b[9];
+            uint8_t third = b[9];
             uint64_t forth = *reinterpret_cast<const uint64_t*>(b.data() + 10);
             uint64_t fifth = *reinterpret_cast<const uint64_t*>(b.data() + 18);
 
@@ -241,5 +242,5 @@ namespace dmludp{
         };
     };
 }
-
+#pragma pack(pop)
 
