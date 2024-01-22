@@ -15,7 +15,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         // std::deque<std::shared_ptr<RangeBuf>> data;
         // Date: 8th Jan, 2024
         // Data pair store offset 
-        std::deque<std::pair<uint8_t*, uint64_t>> data;
+        std::deque<std::pair<uint64_t,std::pair<uint8_t*, uint64_t>>> data;
 
         size_t pos;
 
@@ -590,7 +590,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     if((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(std::make_pair(src + off, SEND_BUFFER_SIZE)));
+                        data.push_back(std::make_pair(off, std::make_pair(src + off, SEND_BUFFER_SIZE)));
                         off += (uint64_t) SEND_BUFFER_SIZE;
                         length += (uint64_t) SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
@@ -599,7 +599,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off,std::make_pair(src + off, (uint64_t)(ready_written - it))));
+                        data.push_back(std::make_pair(off, std::make_pair(src + off, (uint64_t)(ready_written - it))));
                         off += (uint64_t) (ready_written - it);
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);

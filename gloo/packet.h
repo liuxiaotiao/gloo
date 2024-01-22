@@ -160,8 +160,9 @@ namespace dmludp{
             }else if (ty == Type::Fin){
                 first = 0x07;
             }else if (ty == Type::StartAck){
-            }else{}
                 first = 0x08;
+            }else{
+                first = 0x09;
             }
 
             put_u8(out, first, off);
