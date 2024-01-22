@@ -129,7 +129,8 @@ inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
 inline ssize_t dmludp_send_elicit_ack(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     std::vector<uint8_t> out_vector(out_len);
     ssize_t written = conn->send_elicit_ack(out_vector);
-    memcpy(out, out_vector.data(), written);
+    if ( written > 0)
+        memcpy(out, out_vector.data(), written);
     return written;
 }
 

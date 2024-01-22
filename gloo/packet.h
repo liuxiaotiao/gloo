@@ -157,9 +157,10 @@ namespace dmludp{
                 first = 0x05;
             }else if (ty == Type::Stop){
                 first = 0x06;
-            }else if (ty == Type::StartAck){
+            }else if (ty == Type::Fin){
                 first = 0x07;
-            }else{
+            }else if (ty == Type::StartAck){
+            }else{}
                 first = 0x08;
             }
 

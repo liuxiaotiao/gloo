@@ -62,7 +62,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 // if(!(b->is_empty())){
                 //     return b->off();
                 // }
-                if(b.second != 0){
+                if(b.second.second != 0){
                     return off;
                 }
                 tmp_pos += 1;
@@ -106,7 +106,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             }
 
             for (auto x : data) {
-                length += x.second;
+                length += x.second.second;
             }
 
             return length;
@@ -162,17 +162,41 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 return;
             }
 
-            // Note: off defines the start offset of the buffer.
-            size_t currentIndex = 0; 
-            for (auto it = offset_recv.begin(); it != offset_recv.end(); /* no increment here */){
-                if (it->second == true){
-                    data[currentIndex++] = data[it->first];
-                    it = offset_recv.erase(it);
-                }else{
-                    ++it;
+            std::set<uint64_t> keysToDelete;
+
+            for (const auto& kv : offset_recv) {
+                if (!kv.second) { 
+                    keysToDelete.insert(kv.first);
                 }
             }
-            data.resize((currentIndex - 1));
+          
+            data.erase(
+                std::remove_if(
+                    data.begin(), 
+                    data.end(),
+                    [&keysToDelete](const std::pair<uint64_t, std::pair<uint8_t*, uint64_t>>& element) {
+                        return keysToDelete.find(element.first) != keysToDelete.end();
+                    }
+                ), 
+                data.end()
+            );
+
+            for (const auto& key : keysToDelete) {
+                offset_recv.erase(key);
+            }
+
+
+            // // Note: off defines the start offset of the buffer.
+            // size_t currentIndex = 0; 
+            // for (auto it = offset_recv.begin(); it != offset_recv.end(); /* no increment here */){
+            //     if (it->second == true){
+            //         data[currentIndex++] = data[it->first];
+            //         it = offset_recv.erase(it);
+            //     }else{
+            //         ++it;
+            //     }
+            // }
+            // data.resize((currentIndex - 1));
         };
         
         // From protocal to scoket
@@ -427,7 +451,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         ssize_t write(uint8_t* src, size_t start_off, size_t &write_data_len, size_t window_size, size_t off_len) {
             // All data in the buffer has been sent out, remove received data from the buffer.
             if (pos == 0) {
-                recv_and_drop();
+                //recv_and_drop();
                 recv_count.clear();
             }
             auto capacity = cap();
@@ -473,15 +497,15 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 if (off_len > 0){
                     if ( ready_written > off_len ){
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + start_off, off_len));
+                        data.push_back(std::make_pair(off, std::make_pair(src + start_off, off_len)));
                         off += (uint64_t)off_len;
                         length += (uint64_t)off_len;
                         used_length += off_len;
                         write_len += off_len;
                     }
                     else{
-                        data.push_back(std::make_pair(src + start_off, ready_written ));
                         offset_recv[off] = true;
+                        data.push_back(std::make_pair(off,std::make_pair(src + start_off, ready_written )));
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
                         used_length += ready_written;
@@ -496,7 +520,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     if ((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + start_off + it, SEND_BUFFER_SIZE));
+                        data.push_back(std::make_pair(off,std::make_pair(src + start_off + it, SEND_BUFFER_SIZE)));
                         off += (uint64_t)SEND_BUFFER_SIZE;
                         length += (uint64_t)SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
@@ -504,7 +528,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }else{
                         write_len += ready_written - it;
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + start_off + it, ready_written - it));
+                        data.push_back(std::make_pair(off,std::make_pair(src + start_off + it, ready_written - it)));
                         off += (uint64_t)(ready_written - it);
                         length += (uint64_t)(ready_written - it);
                         used_length += (ready_written - it);
@@ -541,7 +565,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 if (off_len > 0){
                     if ( ready_written > off_len ){
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + off, (uint64_t)off_len));
+                        data.push_back(std::make_pair(off,std::make_pair(src + off, (uint64_t)off_len)));
                         off += (uint64_t)off_len;
                         length += (uint64_t)off_len;
                         used_length += off_len;
@@ -549,7 +573,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         // offset_recv.insert(off, true);
                     }
                     else{
-                        data.push_back(std::make_pair(src + off, (uint64_t)ready_written ));
+                        data.push_back(std::make_pair(off,std::make_pair(src + off, (uint64_t)ready_written )));
                         offset_recv[off] = true;
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
@@ -566,7 +590,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     if((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + off, SEND_BUFFER_SIZE));
+                        data.push_back(std::make_pair(std::make_pair(src + off, SEND_BUFFER_SIZE)));
                         off += (uint64_t) SEND_BUFFER_SIZE;
                         length += (uint64_t) SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
@@ -575,7 +599,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(src + off, (uint64_t)(ready_written - it)));
+                        data.push_back(std::make_pair(off,std::make_pair(src + off, (uint64_t)(ready_written - it))));
                         off += (uint64_t) (ready_written - it);
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);
@@ -602,7 +626,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
                 auto buf = data.at(pos);
 
-                if (buf.second == 0){
+                if (buf.second.second == 0){
                     pos += 1;
                     continue;
                 }
@@ -610,20 +634,20 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 size_t buf_len = 0;
                 
                 bool partial;
-                if( buf.second <= MIN_SENDBUF_INITIAL_LEN){
+                if( buf.second.second <= MIN_SENDBUF_INITIAL_LEN){
                     partial = true;
                 }else{
                     partial = false;
                 }
 
                 // Copy data to the output buffer.
-                out.iov_base = (void *)(buf.first);
-                out.iov_len = buf.second;
+                out.iov_base = (void *)(buf.second.first);
+                out.iov_len = buf.second.second;
 
-                length -= (uint64_t)(buf.second);
-                used_length -= (buf.second);
+                length -= (uint64_t)(buf.second.second);
+                used_length -= (buf.second.second);
 
-                out_len = (buf.second);
+                out_len = (buf.second.second);
 
                 //buf.consume(buf_len);
                 pos += 1;

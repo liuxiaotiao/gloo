@@ -394,7 +394,7 @@ class Connection{
             uint64_t unack = convertToUint64(ackvector);
             start += 8;
             // std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 1, ackvector.begin());
-            uint64_t priority = unackbuf[start];
+            uint8_t priority = unackbuf[start];
             start += 1;
             if ( sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
@@ -438,8 +438,9 @@ class Connection{
             count += 1;
 
         }
-
-        
+        if( send_buffer.pos == 0){
+            send_buffer.recv_and_drop();
+        }    
     };
 
     uint8_t findweight(uint64_t unack){
@@ -590,20 +591,26 @@ class Connection{
             size_t out_len = 0; 
             uint64_t out_off = 0;
             bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
+            out_off -= (uint64_t)out_len;
             sent_count += 1;
             sent_number += 1;
             auto pn = pkt_num_spaces.at(0).updatepktnum();
             auto priority = priority_calculation(out_off);
             Type ty = Type::Application;
 
-            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off, (uint64_t)out_len);
+            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
             iovecs[3*i].iov_base = (void *)hdr.get();
             iovecs[3*i].iov_len = 26;
-            
-            iovecs[3*i + 2].iov_base = padding.data();
-            iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
+            if (!s_flag){
+                iovecs[3*i + 2].iov_base = padding.data();
+                iovecs[3*i + 2].iov_len = 1;
+            }else{
+                iovecs[3*i + 2].iov_base = padding.data();
+                iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
+            }
 
-            auto offset = (uint64_t)out_len;
+
+            auto offset = out_off;
             if (sent_dic.find(out_off) != sent_dic.end()){
                 sent_dic[out_off] -= 1;
             }else{
@@ -778,7 +785,7 @@ class Connection{
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
                 std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
-                if ((e.second.second + duration)> now ){
+                if ((e.second.second + duration) < now ){
                     pn = (ssize_t)e.first;
                     break;
                 }

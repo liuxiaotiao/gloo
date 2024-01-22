@@ -933,6 +933,7 @@ bool Pair::handleread(){
       break;
     }
 
+    ssize_t left_data = nbytes;
     while(1){
       uint8_t buffer[1500];
       ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
@@ -946,6 +947,9 @@ bool Pair::handleread(){
           uint8_t out[1500];
           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
+          if(left_data == 0){
+            break;
+          }
         }
         // Packet completes tranmission and start to iov.
         else if(rv == 6){
@@ -956,6 +960,7 @@ bool Pair::handleread(){
         }
         else if(rv == 3){
           rx_.nread += dmludpread;
+          left_data -= dmludpread;
         }
       }
       if (errno == EAGAIN) {
@@ -1025,7 +1030,7 @@ bool Pair::write2dmludp(Op& op){
     }
     while (true){
       uint8_t out[1500];
-      size_t ack_len = dmludp_send_elicit_ack(dmludp_connection, out, 1500);
+      ssize_t ack_len = dmludp_send_elicit_ack(dmludp_connection, out, 1500);
       if (ack_len == -1){
         break;
       }
@@ -1036,21 +1041,6 @@ bool Pair::write2dmludp(Op& op){
       if (socketread > 0 )
         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
     }
-
-    // while(true){
-    //   uint8_t out[1500];
-    //   size_t ack_len = dmludp_send_data_stop(dmludp_connection, out, 1500);
-    //   if (ack_len > 0){
-    //     auto socketwrite = send(fd_, out, ack_len);
-    //   }
-    //   ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
-    //   if (socketread > 0 ){
-    //     auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-    //     if (dmludp_conn_is_stop){
-    //       break;
-    //     }
-    //   }
-    // }
 
     if (dmludp_transmission_complete(dmludp_connection)){
       break;
