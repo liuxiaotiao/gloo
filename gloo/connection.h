@@ -602,9 +602,9 @@ class Connection{
             iovecs[3*i].iov_base = (void *)hdr.get();
             iovecs[3*i].iov_len = 26;
             if (!s_flag){
-                iovecs[3*i + 2].iov_base = padding.data();
+                /*iovecs[3*i + 2].iov_base = padding.data();
                 iovecs[3*i + 2].iov_len = 1;
-            }else{
+            }else{*/
                 iovecs[3*i + 2].iov_base = padding.data();
                 iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
             }
