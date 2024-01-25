@@ -261,15 +261,15 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, const uint8_t*
 }
 
 // inline ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
-inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, uint8_t* buf, size_t len){
+inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, size_t len){
     if(len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
-    std::vector<uint8_t> data_slice(len, 0);
+    std::vector<uint8_t> data_slice(len);
 
     size_t result = conn->read(data_slice, len);
-    memcpy(buf, data_slice.data(), len);
+    memcpy(buf, data_slice.data(), data_slice.size());
 
     return static_cast<ssize_t>(result);
 }

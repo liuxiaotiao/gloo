@@ -68,13 +68,13 @@ namespace dmludp{
                 // First enty
                 if (entry->second->off() == start_off){
                     if (entry->second->len() <= left){
-                        out.insert(out.begin(), (entry->second->data).begin(), (entry->second->data).end());
+                        std::copy((entry->second->data).begin(), (entry->second->data).end(), out.begin());
                         data_len += (entry->second)->len();
                         left -= (entry->second)->len();
                         last_max_off = entry->second->max_off();
                         data.erase(data.begin());
                     }else{
-                        out.insert(out.begin(), (entry->second->data).begin(), (entry->second->data).begin()+left);
+                        std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.begin());
                         data_len += left;
                         left = 0;
                         (entry->second)->consume(left);
@@ -89,13 +89,15 @@ namespace dmludp{
                         last_max_off += zero;
                         auto current_max_off = entry->second->max_off();
                         if((current_max_off - last_max_off ) < left){
-                            out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).end());
+                            std::copy((entry->second->data).begin(), (entry->second->data).end(), out.end());
+                            // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).end());
                             left -= (entry->second)->len();
                             data_len += (entry->second)->len();
                             last_max_off = entry->second->max_off();
                             data.erase(data.begin());
                         }else{
-                            out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
+                            std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.end());
+                            // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
                             data_len += left;
                             left = 0;
                             (entry->second)->consume(left);
