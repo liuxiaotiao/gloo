@@ -1066,11 +1066,6 @@ class Connection{
         return false;
     };
 
-    size_t read_data(){
-
-    }
-
-///////////////////
     size_t read(std::vector<uint8_t> &out, size_t output_len = 0){
         return rec_buffer.emit(out, output_len);
     };

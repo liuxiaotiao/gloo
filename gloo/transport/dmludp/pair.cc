@@ -974,12 +974,13 @@ bool Pair::handleread(){
   return true;
 }
 
-void Pair::dmludp2read(struct iovec iov){
-  std::vector<uint8_t> dmludpdata(iov.iov_len, {});
-  uint8_t* data = dmludpdata.data();
-  dmludp_data_write(dmludp_connection, data, iov.iov_len);
-  iov.iov_base = new uint8_t[iov.iov_len]; 
-  memcpy(iov.iov_base, data, iov.iov_len);
+void Pair::dmludp2read(struct iovec &iov){
+  // std::vector<uint8_t> dmludpdata(iov.iov_len, {});
+  // uint8_t* data = dmludpdata.data();
+  // dmludp_data_write(dmludp_connection, data, iov.iov_len);
+  // iov.iov_base = new uint8_t[iov.iov_len]; 
+  // memcpy(iov.iov_base, data, iov.iov_len);
+  dmludp_data_read(dmludp_connection, (uint8_t*)iov.iov_len, iov.iov_len);
 }
 
 // Data: 7th Jan 2024
