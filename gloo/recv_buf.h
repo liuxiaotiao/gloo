@@ -54,11 +54,8 @@ namespace dmludp{
             size_t left = 0;
             if (output_len == 0){
                 left = len;
-                // out.resize(len);
-                // std::fill(out.begin(), out.end(), 0);
             }else{
                 left = output_len;
-                // std::fill(out.begin(), out.end(), 0);
             }
             
             while (ready() && left > 0){
@@ -85,7 +82,8 @@ namespace dmludp{
                 }else{
                     size_t zero = entry->second->off() - last_max_off;
                     if(zero < left){
-                        out.insert(out.end(), zero, 0);
+                        if(zero != 0)
+                            out.insert(out.end(), zero, 0);
                         left -= zero;
                         data_len += zero;
                         last_max_off += zero;
