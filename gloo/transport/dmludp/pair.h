@@ -391,7 +391,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   bool handleread();
 
-  void dmludp2read(struct iovec iov);
+  void dmludp2read(struct iovec &iov);
 
   bool write2dmludp(Op& op);
 
