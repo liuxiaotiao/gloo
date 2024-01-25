@@ -269,7 +269,7 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, uint8_t* buf, 
     std::vector<uint8_t> data_slice(len, 0);
 
     size_t result = conn->read(data_slice, len);
-    memcpy(buf, data_slice.begin(), data_slice.end());
+    memcpy(buf, data_slice.data(), len);
 
     return static_cast<ssize_t>(result);
 }
