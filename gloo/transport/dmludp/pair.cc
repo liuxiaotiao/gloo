@@ -68,8 +68,6 @@ Pair::Pair(
       innertimer(*this) {
         timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
         device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
-
-        // this->innertimer.setOuter(this);
       }
 
 // Destructor performs a "soft" close.
@@ -277,94 +275,6 @@ ssize_t Pair::prepareWrite(
   return len;
 }
 
-// write is called from:
-// 1) the device thread (the handleEvents function)
-// 2) a user thread (the send function)
-//
-// In either case, the lock is held and the write function
-// below inherits it.
-//
-// bool Pair::write(Op& op) {
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   NonOwningPtr<UnboundBuffer> buf;
-//   std::array<struct iovec, 2> iov;
-//   int ioc;
-//   ssize_t rv;
-
-//   const auto opcode = op.getOpcode();
-
-//   // Acquire pointer to unbound buffer if applicable.
-//   if (opcode == Op::SEND_UNBOUND_BUFFER) {
-//     buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-//     if (!buf) {
-//       return false;
-//     }
-//   }
-
-//   for (;;) {
-//     const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-
-//     // Write
-//     rv = writev(fd_, iov.data(), ioc);
-//     if (rv == -1) {
-//       if (errno == EAGAIN) {
-//         if (sync_) {
-//           // Sync mode: blocking call returning with EAGAIN indicates timeout.
-//           signalException(GLOO_ERROR_MSG("Write timeout ", peer_.str()));
-//         } else {
-//           // Async mode: can't write more than this.
-//         }
-//         return false;
-//       }
-
-//       if (errno == ECONNRESET) {
-//         if (!sync_) {
-//           return false;
-//         }
-//       }
-//       if (errno == EPIPE) {
-//         if (!sync_) {
-//           return false;
-//         }
-//       }
-
-//       // Retry on EINTR
-//       if (errno == EINTR) {
-//         continue;
-//       }
-
-//       // Unexpected error
-//       signalException(
-//           GLOO_ERROR_MSG("writev ", peer_.str(), ": ", strerror(errno)));
-//       return false;
-//     }
-
-//     // From write(2) man page (NOTES section):
-//     //
-//     //  If a write() is interrupted by a signal handler before any
-//     //  bytes are written, then the call fails with the error EINTR;
-//     //  if it is interrupted after at least one byte has been written,
-//     //  the call succeeds, and returns the number of bytes written.
-//     //
-//     // If rv < nbytes we ALWAYS retry, regardless of sync/async mode,
-//     // since an EINTR may or may not have happened. If this was not
-//     // the case, and the kernel buffer is full, the next call to
-//     // write(2) will return EAGAIN, which is handled appropriately.
-//     op.nwritten += rv;
-//     if (rv < nbytes) {
-//       continue;
-//     }
-
-//     GLOO_ENFORCE_EQ(rv, nbytes);
-//     GLOO_ENFORCE_EQ(op.nwritten, op.preamble.nbytes);
-//     break;
-//   }
-
-//   writeComplete(op, buf, opcode);
-//   return true;
-// }
 bool Pair::write(Op& op) {
   if (state_ == CLOSED) {
     return false;
@@ -398,7 +308,7 @@ bool Pair::write(Op& op) {
     // return value is 
 
 
-      sent_num += rv;
+    sent_num += rv;
 
     
     op.nwritten += sent_size;
@@ -720,192 +630,6 @@ void Pair::handleEvents(int events) {
   GLOO_ENFORCE(false, "Unexpected state: ", state_);
 }
 
-// void Pair::handlewrite(){
-//   if(dmludp_enable_adding(dmludp_connection)){
-//     bool done = dmludp_conn_send_all(dmludp_connection);
-
-//     if (!done){
-//       return;
-//     }
-//   }
-
-//   while (1){
-//     if (dmludp_is_waiting(dmludp_connection)){
-//       break;
-//     }
-//     uint8_t out[1500];
-
-//     uint8_t buffer[1500];
-//     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//     if (socketread > 0){
-//       auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-//       int type;
-//       int pkt_num;
-//       auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//       if (rv == 5){
-//         remove_retrymessage_by_pktnum(pkt_num);
-//       }
-//     }
-
-//     ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-//     if (dmludpwrite < 0){
-//       if (dmludp_conn_is_stop(dmludp_connection)){
-//         dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
-//         ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
-//       }
-//       break;
-//     }
-//     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
-//     int type;
-//     int pkt_num;
-//     auto rv = dmludp_header_info(out, 26, type, pkt_num);
-//     if(rv == 4 || type == 6){
-//       /// add timer
-//       struct retry_message retry;
-//       retry.pkt_num = pkt_num;
-//       retry.len = dmludpwrite;
-//       long rtt = dmludp_get_rtt(dmludp_connection);
-//       auto now = std::chrono::steady_clock::now();
-//       // std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
-//       std::chrono::steady_clock::duration interval = std::chrono::nanoseconds(rtt);
-//       std::chrono::steady_clock::time_point futureTimePoint = now + interval;
-//       retry.retry_time = futureTimePoint;
-//       std::copy(std::begin(out), std::end(out), retry.data.begin());
-//       add_message(futureTimePoint, retry);
-//     }
-
-//     break;
-//   }
-
-//   return;
-// }
-
-// Write the data to the dmludp
-// bool Pair::write2dmludp(Op& op){
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   NonOwningPtr<UnboundBuffer> buf;
-//   std::array<struct iovec, 2> iov;
-//   int ioc;
-
-//   const auto opcode = op.getOpcode();
-
-//   const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-  
-//   if (nbytes <= 0){
-//     return false;
-//   }
-
-//   // Include preamble if necessary
-//   for (auto i : iov){
-//     dmludp_data_write(dmludp_connection, (const uint8_t*)i.iov_base, (size_t)i.iov_len);
-//     if (i.iov_len == nbytes){
-//       break;
-//     }
-//   }
-//   // Write
-//   op.nwritten += nbytes;
-
-//   writeComplete(op, buf, opcode);
-//   return true;
-// }
-
-//
-// bool Pair::write2dmludp(Op& op){
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   NonOwningPtr<UnboundBuffer> buf;
-//   std::array<struct iovec, 2> iov;
-//   int ioc;
-
-//   const auto opcode = op.getOpcode();
-
-//   const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-  
-//   if (nbytes <= 0){
-//     writeComplete(op, buf, opcode);
-//     return false;
-//   }
-
-//   // Include preamble if necessary
-//   for (auto i : iov){
-//     dmludp_data_write(dmludp_connection, (const uint8_t*)i.iov_base, (size_t)i.iov_len);
-//     if (i.iov_len == nbytes){
-//       break;
-//     }
-//   }
-//   // Write
-//   op.nwritten += nbytes;
-
-//   if (op.nwritten == op.preamble.nbytes){
-//     writeComplete(op, buf, opcode);
-//     return true;
-//   }
-//   return false;
-// }
-
-// void Pair::handlewrite(){
-//   if(dmludp_enable_adding(dmludp_connection)){
-//     bool done = dmludp_conn_send_all(dmludp_connection);
-
-//     if (!done){
-//       return;
-//     }
-//   }
-
-//   while (1){
-//     if (dmludp_is_waiting(dmludp_connection)){
-//       break;
-//     }
-//     uint8_t out[1500];
-
-//     uint8_t buffer[1500];
-//     ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//     if (socketread > 0){
-//       auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-//       int type;
-//       int pkt_num;
-//       auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//       if (rv == 5){
-//         remove_retrymessage_by_pktnum(pkt_num);
-//       }
-//     }
-
-//     ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-//     if (dmludpwrite < 0){
-//       if (dmludp_conn_is_stop(dmludp_connection)){
-//         dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
-//         ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
-//       }
-//       break;
-//     }
-//     ssize_t socket_write = ::send(fd_, out, dmludpwrite, 0);
-//     int type;
-//     int pkt_num;
-//     auto rv = dmludp_header_info(out, 26, type, pkt_num);
-//     if(rv == 4 || type == 6){
-//       /// add timer
-//       struct retry_message retry;
-//       retry.pkt_num = pkt_num;
-//       retry.len = dmludpwrite;
-//       long rtt = dmludp_get_rtt(dmludp_connection);
-//       auto now = std::chrono::steady_clock::now();
-//       // std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
-//       std::chrono::steady_clock::duration interval = std::chrono::nanoseconds(rtt);
-//       std::chrono::steady_clock::time_point futureTimePoint = now + interval;
-//       retry.retry_time = futureTimePoint;
-//       std::copy(std::begin(out), std::end(out), retry.data.begin());
-//       add_message(futureTimePoint, retry);
-//     }
-
-//     break;
-//   }
-
-//   return;
-// }
-
 
 bool Pair::handleread(){
   if (state_ == CLOSED) {
@@ -942,7 +666,7 @@ bool Pair::handleread(){
         dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
         int type;
         int pkt_num;
-        auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
+        rv = dmludp_header_info(buffer, 26, type, pkt_num);
         if(rv == 4){
           uint8_t out[1500];
           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
@@ -966,6 +690,9 @@ bool Pair::handleread(){
       if (errno == EAGAIN) {
         return false;
       }
+      if (errno == EINTR){
+        continue;
+      }
     }
     dmludp2read(iov);
   }
@@ -975,12 +702,7 @@ bool Pair::handleread(){
 }
 
 void Pair::dmludp2read(struct iovec &iov){
-  // std::vector<uint8_t> dmludpdata(iov.iov_len, {});
-  // uint8_t* data = dmludpdata.data();
-  // dmludp_data_write(dmludp_connection, data, iov.iov_len);
-  // iov.iov_base = new uint8_t[iov.iov_len]; 
-  // memcpy(iov.iov_base, data, iov.iov_len);
-  dmludp_data_read(dmludp_connection, iov.iov_len, iov.iov_len);
+  dmludp_data_read(dmludp_connection, iov.iov_base, iov.iov_len);
 }
 
 // Data: 7th Jan 2024
@@ -1088,100 +810,6 @@ void Pair::handleReadWrite(int events){
   }
 }
 
-// void Pair::handleReadWrite(int events) {
-//   if (events & EPOLLIN) {
-//     // timer for retransimission.
-//     if (!message.empty() && dmludp_conn_is_stop(dmludp_connection)){
-//       uint8_t buffer[1500];
-//       ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//       if (socketread > 0){
-//         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-//         int type;
-//         int pkt_num;
-//         auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//         if (rv == 5 || rv == 6){
-//           remove_retrymessage_by_pktnum(pkt_num);
-//         }
-//       }
-//     }
-//     while(handleread()){
-
-//     }
-//   }
-//   if (events & EPOLLOUT) {
-//     GLOO_ENFORCE(
-//         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
-
-//     // if (!tx_.empty()){
-//     //   auto& op = tx_.front();
-//     //   write2dmludp(op);
-//     // }
-//     if (!tx_.empty() && dmludp_conn_data_empty(dmludp_connection)){
-//       auto& op = tx_.front();
-//       write2dmludp(op);
-//       tx_.pop_front();
-//     }
-
-//     handlewrite();
-    
-//     // Timer_fd will be responsible for whether the stop control message is received
-//     // if (dmludp_conn_is_stop(dmludp_connection)){
-//     //   tx_.pop_front();
-//     // }
-
-//     // If there is nothing to transmit; remove EPOLLOUT.
-//     if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection) && dmludp_buffer_is_empty(dmludp_connection)) {
-//       device_->registerDescriptor(fd_, EPOLLIN, this);
-//     }
-
-//     // Under medication-------------------------------------------------
-//     while (!tx_.empty()) {
-//       auto& op = tx_.front();
-//       write2dmludp(op);
-//       if(handlewrite){
-//         break;
-//       }
-//       // Write completed; remove from queue.
-//       tx_.pop_front();
-//     }
-//     // If there is nothing to transmit; remove EPOLLOUT.
-//     if (tx_.empty()) {
-//       device_->registerDescriptor(fd_, EPOLLIN, this);
-//     }
-
-//   }
-
-// }
-
-// void Pair::handleReadWrite(int events) {
-//   if (events & EPOLLOUT) {
-//     GLOO_ENFORCE(
-//         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
-//     while (!tx_.empty()) {
-//       auto& op = tx_.front();
-//       if(!write2dmludp(op)){
-//         break;
-//       }
-//       // Write completed; remove from queue.
-//       tx_.pop_front();
-//     }
-//     handlewrite();
-
-//     // If there is nothing to transmit; remove EPOLLOUT.
-//     if (tx_.empty() && dmludp_conn_is_empty(dmludp_connection.get()) && dmludp_buffer_is_empty(dmludp_connection.get())) {
-//       device_->registerDescriptor(fd_, EPOLLIN, this);
-//     }
-//   }
-//   if (events & EPOLLIN) {
-//     handleread();
-//     if (!(events && EPOLLOUT)){
-
-//     }
-//     while (read()) {
-//       // Keep going
-//     }
-//   }
-// }
 
 // getBuffer must only be called when holding lock.
 Buffer* Pair::getBuffer(int slot) {
@@ -1317,7 +945,7 @@ void Pair::sendAsyncMode(Op& op) {
   }
   //////////////////////////////////////////////////
   // Write may have resulted in an error.
-  // throwIfException();
+  throwIfException();
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));

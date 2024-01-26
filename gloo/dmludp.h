@@ -266,6 +266,7 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, siz
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
+//  raw pointer, remove vector
     std::vector<uint8_t> data_slice(len);
 
     size_t result = conn->read(data_slice, len);
