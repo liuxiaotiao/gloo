@@ -403,20 +403,20 @@ class Connection{
             ini = valueToKeys[received_ack];
             ack_set.erase(ini);
             for (int key : keyToValues[ini]) {
-                auto it = retransmission_ack.find(key);
-                if (it != retransmission_ack.end()) {
-                    retransmission_ack.erase(key);
-                }
+                // auto it = retransmission_ack.find(key);
+                // if (it != retransmission_ack.end()) {
+                retransmission_ack.erase(key);
+                // }
 
-                auto ind = valueToKeys.find(key);
-                if (ind != valueToKeys.end()) {
-                    valueToKeys.erase(key);
-                }
+                // auto ind = valueToKeys.find(key);
+                // if (ind != valueToKeys.end()) {
+                valueToKeys.erase(key);
+                // }
 
-                auto remove_index = timeout_ack.find(key);
-                if (remove_index != timeout_ack.end()) {
-                    timeout_ack.erase(key);
-                }
+                // auto remove_index = timeout_ack.find(key);
+                // if (remove_index != timeout_ack.end()) {
+                timeout_ack.erase(key);
+                // }
             }
         }else{
             return;
