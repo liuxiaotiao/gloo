@@ -405,17 +405,17 @@ class Connection{
             for (int key : keyToValues[ini]) {
                 auto it = retransmission_ack.find(key);
                 if (it != retransmission_ack.end()) {
-                    retransmission_ack.erase(it);
+                    retransmission_ack.erase(key);
                 }
 
                 auto ind = valueToKeys.find(key);
                 if (ind != valueToKeys.end()) {
-                    valueToKeys.erase(it);
+                    valueToKeys.erase(key);
                 }
 
                 auto remove_index = timeout_ack.find(key);
                 if (remove_index != timeout_ack.end()) {
-                    timeout_ack.erase(it);
+                    timeout_ack.erase(key);
                 }
             }
         }else{
@@ -800,8 +800,8 @@ class Connection{
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             //// date: 1/28/2024
             auto initial_pn = valueToKeys[(uint64_t)pn];
-            keyToValues[initial_pn].push_back[pktnum];
-            valueToKeys[pkt_num] = initial_pn;
+            keyToValues[initial_pn].push_back(pktnum);
+            valueToKeys[pktnum] = initial_pn;
             auto it = retransmission_ack.find((uint64_t)pn);
             if (it != retransmission_ack.end()) {
                 timeout_ack.insert(*it);
