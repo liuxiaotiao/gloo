@@ -809,9 +809,7 @@ class Connection{
             }
             ////
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
-            //// date: 1/28/2024
-            // retransmission_ack.erase((uint64_t)pn);
-            //////
+
             delete hdr; 
             hdr = nullptr; 
             return pktlen;           
@@ -888,7 +886,9 @@ class Connection{
                 put_u8(out, pair.second, (int)off);
                 off += 8;
             }
-            recv_hashmap.clear();
+            ///// remove 1/29/2024
+            // recv_hashmap.clear();
+            /////
         }
 
         // chekc is_ack condition is correct or not.

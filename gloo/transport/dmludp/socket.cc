@@ -198,13 +198,11 @@ std::shared_ptr<Socket> Socket::accept() {
   // return std::make_shared<Socket>(rv);
 }
 
-// Connection* Socket::dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer){
 std::shared_ptr<Connection> Socket::dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, false);
 }
 
 // Call dmludp_conn_accept after accpect called
-// Connection* Socket::dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer){
 std::shared_ptr<Connection> Socket::dmludp_conn_accept(struct sockaddr_storage local, struct sockaddr_storage peer){
   return create_dmludp_connection(local, peer, true);
 }
@@ -239,9 +237,7 @@ void Socket::connect(const sockaddr_storage& ss) {
 
 void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr *tmp_local;
-  // struct sockaddr *local_addr tmp_peer;
   struct sockaddr_storage tmp_peer_addr;
-  // struct sockaddr_storage *local_addr = &local;
   socklen_t peer_addr_len = sizeof(tmp_peer_addr);
   uint8_t out[1500];
   uint8_t buffer[1500];
@@ -258,7 +254,6 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
 
   for (;;){
     ssize_t received = recvfrom(fd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
-    // ssize_t received = read(buffer, 1500);
     if(received < 1){
       continue;
     }
