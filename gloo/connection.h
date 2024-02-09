@@ -891,7 +891,7 @@ class Connection{
                 off += 8;
             }
             ///// remove 1/29/2024
-            // recv_hashmap.clear();
+            recv_hashmap.clear();
             /////
         }
 
