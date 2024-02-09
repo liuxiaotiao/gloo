@@ -65,25 +65,23 @@ class ReadValueOperation final
      }
 
     // Check for short read (assume we can read in a single call).
-     if (rv < sizeof(t_)) {
-       fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
-       return;
-     }
+    if (rv < sizeof(t_)) {
+      fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
+      return;
+    }
 
      //2/7/2024
-     auto rv = socket_->write(&t_, sizeof(t_));
-      if (rv == -1) {
-        fn_(socket_, SystemError("write", errno));
-        return;
-      }
+    rv = socket_->write(&t_, sizeof(t_));
+    if (rv == -1) {
+      return;
+    }
 
-      // // Check for short write (assume we can write in a single call).
-      if (rv < sizeof(t_)) {
-        fn_(socket_, ShortWriteError(rv, sizeof(t_)));
-        return;
+    // // Check for short write (assume we can write in a single call).
+    if (rv < sizeof(t_)) {
+      return;
     }
     //
-    
+
     fn_(socket_, Error::kSuccess, std::move(t_));
 
   }
@@ -175,20 +173,10 @@ class WriteValueOperation final
     }
 
     // 2/7/2024
-    for (;;){}
-      auto rv = socket_->read(&t_, sizeof(t_));
-      if (rv == -1) {
-        fn_(socket_, SystemError("read", errno), std::move(t_));
-        return;
-      }
-
-      // Check for short read (assume we can read in a single call).
-      if (rv < sizeof(t_)) {
-        fn_(socket_, ShortReadError(rv, sizeof(t_)), std::move(t_));
-        return;
-      }
-
-      break;
+    for (;;){
+      rv = socket_->read(&t_, sizeof(t_));
+      if (rv == sizeof(t_))
+        break;
     } 
     //////
 

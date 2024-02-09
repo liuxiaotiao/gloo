@@ -714,6 +714,10 @@ class Connection{
         if (send_buffer.data.size() != 0 || send_buffer.offset_recv.size() != 0){
             result = false;
         }
+        
+        if (result == true){
+            data_buffer.clear();
+        }
         return result;
     }
 
