@@ -43,6 +43,10 @@ namespace dmludp{
             return max_recv_off;
         }
 
+        bool is_empty(){
+            return data.empty();
+        }
+
         // Note: no consideration when recv_buf.size() bigger than given buffer.
         // Reconsider consume function, ant the relationship among off, len, start, write len.⭐️
         // Sendbuf also considers above questions.⭐️

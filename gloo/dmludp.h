@@ -118,7 +118,7 @@ inline ssize_t dmludp_data_send_mmsg(std::shared_ptr<Connection> conn,
     std::vector<uint8_t> &padding, 
     std::vector<struct mmsghdr> &messages, 
     std::vector<struct iovec> &iovecs, 
-    int pkt_size = 10){
+    int pkt_size = 1){
     return conn->send_mmsg(padding, messages, iovecs, pkt_size);
 }
 
@@ -204,6 +204,11 @@ inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, uint
 // inline bool dmludp_conn_is_closed(Connection* conn){
 inline bool dmludp_conn_is_closed(std::shared_ptr<Connection> conn){
     return conn->is_closed();
+}
+
+// check recv buffer if empty
+inline bool dmludp_conn_has_recv(std::shared_ptr<Connection> conn){
+    return conn->has_recv();
 }
 
 // inline void dmludp_conn_free(Connection* conn) {

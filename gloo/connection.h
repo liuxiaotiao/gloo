@@ -644,61 +644,112 @@ class Connection{
             if (written_len >= congestion_window)
                 break;
         }
-        // consider add ack message at the end of the flow.
-        iovecs.resize(send_buffer.data.size() * 3);
-        messages.resize((send_buffer.data.size() / pkt_size) + 1 );
-        for ( auto i = 0; ; ++i){
-            size_t out_len = 0; 
-            uint64_t out_off = 0;
-            bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
-            out_off -= (uint64_t)out_len;
-            sent_count += 1;
-            sent_number += 1;
-            auto pn = pkt_num_spaces.at(0).updatepktnum();
-            auto priority = priority_calculation(out_off);
-            Type ty = Type::Application;
 
-            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
-            iovecs[3*i].iov_base = (void *)hdr.get();
-            iovecs[3*i].iov_len = 26;
-            if (!s_flag){
-                /*iovecs[3*i + 2].iov_base = padding.data();
-                iovecs[3*i + 2].iov_len = 1;
-            }else{*/
-                iovecs[3*i + 2].iov_base = padding.data();
-                iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
-            }
+        if ( pkt_size == 1 ){
+            // consider add ack message at the end of the flow.
+            iovecs.resize(send_buffer.data.size() * 2);
+            messages.resize(send_buffer.data.size());
+            // unlock memory allocation, and consider move this to function parameter.
+            std::vector<std::shared_ptr<Header>> hdrs;
+            for ( auto i = 0; ; ++i){
+                size_t out_len = 0; 
+                uint64_t out_off = 0;
+                bool s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
+                out_off -= (uint64_t)out_len;
+                sent_count += 1;
+                sent_number += 1;
+                auto pn = pkt_num_spaces.at(0).updatepktnum();
+                auto priority = priority_calculation(out_off);
+                Type ty = Type::Application;
+                // counter?
+                // print address?
+                std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
+                hdrs.push_back(hdr);
+                iovecs[2*i].iov_base = (void *)hdr.get();
+                iovecs[2*i].iov_len = 26;
 
 
-            auto offset = out_off;
-            if (sent_dic.find(out_off) != sent_dic.end()){
-                sent_dic[out_off] -= 1;
-            }else{
-                sent_dic[out_off] = priority;
-            }
-
-            record_send.push_back(offset);
-
-		    if (s_flag){
-                if ( i % pkt_size){
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - i % pkt_size)];
+                auto offset = out_off;
+                if (sent_dic.find(out_off) != sent_dic.end()){
+                    sent_dic[out_off] -= 1;
                 }else{
-                    messages[i/10].msg_hdr.msg_iov = &iovecs[3*i ];
+                    sent_dic[out_off] = priority;
                 }
-                messages[i/10].msg_hdr.msg_iovlen = (3* (i % pkt_size + 1));
 
-                stop_flag = true;
-                break;
-            }
-            if( (i % pkt_size) == (pkt_size - 1)){
-                messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - pkt_size + 1)];
-                messages[i/10].msg_hdr.msg_iovlen = 3*pkt_size;
-            }
+                record_send.push_back(offset);
 
+                messages[i].msg_hdr.msg_iov = &iovecs[2*i];
+                messages[i].msg_hdr.msg_iovlen = 2;
+
+                if (s_flag){
+                    stop_flag = true;
+                    break;
+                }
+
+            }
+            if ( written_len){
+                stop_ack = false;
+            }
+        }else{
+            // consider add ack message at the end of the flow.
+            iovecs.resize(send_buffer.data.size() * 3);
+            messages.resize((send_buffer.data.size() / pkt_size) + 1 );
+            std::vector<std::shared_ptr<Header>> hdrs;
+            for ( auto i = 0; ; ++i){
+                size_t out_len = 0; 
+                uint64_t out_off = 0;
+                bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
+                out_off -= (uint64_t)out_len;
+                sent_count += 1;
+                sent_number += 1;
+                auto pn = pkt_num_spaces.at(0).updatepktnum();
+                auto priority = priority_calculation(out_off);
+                Type ty = Type::Application;
+
+                std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
+                hdrs.push_back(hdr);
+                iovecs[3*i].iov_base = (void *)hdr.get();
+                iovecs[3*i].iov_len = 26;
+                if (!s_flag){
+                    /*iovecs[3*i + 2].iov_base = padding.data();
+                    iovecs[3*i + 2].iov_len = 1;
+                }else{*/
+                    iovecs[3*i + 2].iov_base = padding.data();
+                    iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
+                }
+
+
+                auto offset = out_off;
+                if (sent_dic.find(out_off) != sent_dic.end()){
+                    sent_dic[out_off] -= 1;
+                }else{
+                    sent_dic[out_off] = priority;
+                }
+
+                record_send.push_back(offset);
+
+                if (s_flag){
+                    if ( i % pkt_size){
+                        messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - i % pkt_size)];
+                    }else{
+                        messages[i/10].msg_hdr.msg_iov = &iovecs[3*i ];
+                    }
+                    messages[i/10].msg_hdr.msg_iovlen = (3* (i % pkt_size + 1));
+
+                    stop_flag = true;
+                    break;
+                }
+                if( (i % pkt_size) == (pkt_size - 1)){
+                    messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - pkt_size + 1)];
+                    messages[i/10].msg_hdr.msg_iovlen = 3*pkt_size;
+                }
+
+            }
+            if ( written_len){
+                stop_ack = false;
+            }
         }
-        if ( written_len){
-            stop_ack = false;
-        }
+
         return written_len;
 
     };
@@ -1084,6 +1135,10 @@ class Connection{
     uint64_t max_ack() {
         return rec_buffer.max_ack();
     };
+
+    bool has_recv(){
+        return rec_buffer.is_empty();
+    }
   
     //Writing data to send buffer.
     size_t write() {

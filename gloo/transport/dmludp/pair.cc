@@ -672,43 +672,55 @@ bool Pair::handleread(){
     }
 
     ssize_t left_data = nbytes;
-    while(1){
-      uint8_t buffer[1500];
-      ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
-      ssize_t dmludpread = 0;
-      if(read > 0){
-        dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
-        int type;
-        int pkt_num;
-        rv = dmludp_header_info(buffer, 26, type, pkt_num);
-        if(rv == 4){
-          uint8_t out[1500];
-          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-          ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-          if(left_data == 0){
+
+    if (!dmludp_conn_has_recv(dmludp_connection)){
+      rx_.nread += dmludpread;
+      left_data -= dmludpread;
+    }
+
+    if (left_data > 0){
+      while(1){
+        uint8_t buffer[1500];
+        ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
+        ssize_t dmludpread = 0;
+        if(read > 0){
+          dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
+          int type;
+          int pkt_num;
+          rv = dmludp_header_info(buffer, 26, type, pkt_num);
+          if(rv == 4){
+            uint8_t out[1500];
+            ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
+            ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
+            if(left_data <= 0){
+              break;
+            }
+          }
+          // Packet completes tranmission and start to iov.
+          else if(rv == 6){
+            uint8_t out[1500];
+            auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
+            ssize_t socket_write = ::send(fd_, out, stopsize, 0);
             break;
           }
-        }
-        // Packet completes tranmission and start to iov.
-        else if(rv == 6){
-          uint8_t out[1500];
-          auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
-          ssize_t socket_write = ::send(fd_, out, stopsize, 0);
-          break;
-        }
-        else if(rv == 3){
-          rx_.nread += dmludpread;
-          left_data -= dmludpread;
-        }
-      }else{
-        if (errno == EAGAIN) {
-          return false;
-        }
-        if (errno == EINTR){
-          continue;
+          else if(rv == 3){
+            if (left_data > 0){
+              rx_.nread += dmludpread;
+              left_data -= dmludpread;
+            }
+          }
+        }else{
+          if (errno == EAGAIN) {
+            return false;
+          }
+          if (errno == EINTR){
+            continue;
+          }
         }
       }
     }
+
+
     dmludp2read(iov);
     break;
   }
