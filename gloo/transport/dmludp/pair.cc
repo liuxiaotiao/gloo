@@ -700,15 +700,17 @@ bool Pair::handleread(){
           rx_.nread += dmludpread;
           left_data -= dmludpread;
         }
-      }
-      if (errno == EAGAIN) {
-        return false;
-      }
-      if (errno == EINTR){
-        continue;
+      }else{
+        if (errno == EAGAIN) {
+          return false;
+        }
+        if (errno == EINTR){
+          continue;
+        }
       }
     }
     dmludp2read(iov);
+    break;
   }
 
   readComplete(buf);
