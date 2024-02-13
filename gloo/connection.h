@@ -1139,7 +1139,11 @@ class Connection{
     bool has_recv(){
         return rec_buffer.is_empty();
     }
-  
+    
+    size_t recv_len(){
+        return rec_buffer.len();
+    }
+
     //Writing data to send buffer.
     size_t write() {
         if (send_buffer.data.empty()){
