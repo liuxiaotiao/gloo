@@ -265,6 +265,10 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, const uint8_t*
 
 }
 
+inline size_t dmludp_conn_recv_len(std::shared_ptr<Connection> conn){
+    return conn->recv_len();
+}
+
 // inline ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
 inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, size_t len){
     if(len <= 0){
