@@ -47,7 +47,7 @@ namespace dmludp{
             return data.empty();
         }
 
-        size_t len(){
+        size_t length(){
             return (size_t)len;
         }
 

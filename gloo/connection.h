@@ -1141,7 +1141,7 @@ class Connection{
     }
     
     size_t recv_len(){
-        return rec_buffer.len();
+        return rec_buffer.length();
     }
 
     //Writing data to send buffer.
