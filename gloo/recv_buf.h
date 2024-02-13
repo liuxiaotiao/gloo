@@ -47,6 +47,10 @@ namespace dmludp{
             return data.empty();
         }
 
+        size_t len(){
+            return (size_t)len;
+        }
+
         // Note: no consideration when recv_buf.size() bigger than given buffer.
         // Reconsider consume function, ant the relationship among off, len, start, write len.⭐️
         // Sendbuf also considers above questions.⭐️
@@ -76,10 +80,12 @@ namespace dmludp{
                         data_len += (entry->second)->len();
                         left -= (entry->second)->len();
                         last_max_off = entry->second->max_off();
+                        len -= (entry->second)->len();
                         data.erase(data.begin());
                     }else{
                         std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.begin());
                         data_len += left;
+                        len -= left;
                         left = 0;
                         (entry->second)->consume(left);
                     }
@@ -96,6 +102,7 @@ namespace dmludp{
                             std::copy((entry->second->data).begin(), (entry->second->data).end(), out.end());
                             // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).end());
                             left -= (entry->second)->len();
+                            len -= (entry->second)->len();
                             data_len += (entry->second)->len();
                             last_max_off = entry->second->max_off();
                             data.erase(data.begin());
@@ -103,6 +110,7 @@ namespace dmludp{
                             std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.end());
                             // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
                             data_len += left;
+                            len -= left;
                             left = 0;
                             (entry->second)->consume(left);
                         }

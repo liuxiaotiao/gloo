@@ -674,8 +674,14 @@ bool Pair::handleread(){
     ssize_t left_data = nbytes;
 
     if (!dmludp_conn_has_recv(dmludp_connection)){
-      rx_.nread += dmludpread;
-      left_data -= dmludpread;
+      auto left_len = dmludp_conn_recv_len(dmludp_connection);
+      if (left_len <= left_data){
+        rx_.nread += dmludpread;
+        left_data -= dmludpread;
+      }else{
+        rx_.nread += left_data;
+        left_data -= left_data;  
+      }
     }
 
     if (left_data > 0){
