@@ -63,12 +63,12 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 //     return b->off();
                 // }
                 if(b.second.second != 0){
-                    return off;
+                    return b.first;
                 }
                 tmp_pos += 1;
             }
 
-            return off;
+            // return off;
         }
 
         /// Returns true if there is data to be written.
@@ -669,6 +669,8 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 stop = true;
                 pos = 0;
             }
+
+            out_off += out_len;
             return stop;
         };
 

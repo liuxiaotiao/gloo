@@ -472,7 +472,7 @@ class Connection{
                 // convert the result of priority_calculation to uint64
                 priority = priority_calculation(unack);
             }
-            start += 1;
+            // start += 1;
             if (priority == 1){
                 weights += 0.15;
             }else if (priority == 2) {
@@ -768,6 +768,7 @@ class Connection{
         
         if (result == true){
             data_buffer.clear();
+            current_buffer_pos = 0;
         }
         return result;
     }
