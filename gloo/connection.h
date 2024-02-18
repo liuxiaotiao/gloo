@@ -938,9 +938,9 @@ class Connection{
             size_t off = 26;
             for (const auto& pair : recv_hashmap) {
                 put_u64(out, pair.first, (int)off);
-                off += 1;
-                put_u8(out, pair.second, (int)off);
                 off += 8;
+                put_u8(out, pair.second, (int)off);
+                off += 1;
             }
             ///// remove 1/29/2024
             recv_hashmap.clear();
