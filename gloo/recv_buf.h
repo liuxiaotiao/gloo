@@ -51,6 +51,10 @@ namespace dmludp{
             return (size_t)len;
         }
 
+        size_t first_item_len(){
+            return data.begin()->second->len();
+        }
+
         // Note: no consideration when recv_buf.size() bigger than given buffer.
         // Reconsider consume function, ant the relationship among off, len, start, write len.⭐️
         // Sendbuf also considers above questions.⭐️
