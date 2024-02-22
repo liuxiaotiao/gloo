@@ -110,7 +110,7 @@ inline size_t dmludp_data_write(std::shared_ptr<Connection> conn, uint8_t* buf, 
     return conn->data_write(buf, len);
 }
 
-inline bool dmludp_get_data(std::shared_ptr<Connection> conn, struct iovec *iovecs, int iovecs_len){
+inline bool dmludp_get_data(std::shared_ptr<Connection> conn, const struct iovec *iovecs, int iovecs_len){
     return conn->get_data(iovecs, iovecs_len);
 }
 

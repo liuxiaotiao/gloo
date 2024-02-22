@@ -15,6 +15,7 @@
 #include "gloo/Recovery.h"
 #include "gloo/recv_buf.h"
 #include "gloo/send_buf.h"
+#include "gloo/common/memory.h"
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     #define IS_BIG_ENDIAN 1
@@ -57,7 +58,7 @@ struct RecvInfo {
 
 class sbuffer{
     public:
-    uint8_t * src;
+    const uint8_t * src;
 
     size_t len;
 
@@ -555,14 +556,15 @@ class Connection{
     
     // Used to get pointer owner and length
     // get_data() is used after get(op) in gloo.
-    bool get_data(struct iovec* iovecs, int iovecs_len){
+    bool get_data(const struct iovec* iovecs, int iovecs_len){
         bool completed = true;
         if ( data_buffer.size() > 0 ){
             completed = false;
             return completed;
         }
         for (auto i = 0 ; i < iovecs_len; i++){
-            data_buffer.emplace_back((uint8_t*)iovecs[i].iov_base, iovecs[i].iov_len);
+            // data_buffer.emplace_back((uint8_t*)iovecs[i].iov_base, iovecs[i].iov_len);
+            data_buffer.emplace_back(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len);
         }
         if (data_buffer.size() <= 0){
             completed = false;
@@ -636,7 +638,7 @@ class Connection{
                 return wlen;
             }
             written_len += wlen;
-	     if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+	        if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
                 break;
             if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
                 current_buffer_pos += 1;
