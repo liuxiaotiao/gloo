@@ -58,7 +58,7 @@ struct RecvInfo {
 
 class sbuffer{
     public:
-    const uint8_t * src;
+    uint8_t * src;
 
     size_t len;
 
@@ -556,7 +556,7 @@ class Connection{
     
     // Used to get pointer owner and length
     // get_data() is used after get(op) in gloo.
-    bool get_data(const struct iovec* iovecs, int iovecs_len){
+    bool get_data(struct iovec* iovecs, int iovecs_len){
         bool completed = true;
         if ( data_buffer.size() > 0 ){
             completed = false;
