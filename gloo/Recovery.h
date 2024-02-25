@@ -14,8 +14,8 @@ const size_t MINIMUM_WINDOW_PACKETS = 2;
 
 const size_t INI_WIN = 1350 * 8;
 
-const size_t PACKET_SIZE = 1200;
-
+// const size_t PACKET_SIZE = 1200;
+const size_t PACKET_SIZE = 1350;
 
 enum CongestionControlAlgorithm {
     /// CUBIC congestion control algorithm (default). `cubic` in a string form.

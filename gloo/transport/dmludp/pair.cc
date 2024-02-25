@@ -781,7 +781,7 @@ bool Pair::handleread(){
     for(;;){
       if (!dmludp_conn_has_recv(dmludp_connection)){
         auto left_len = dmludp_conn_recv_len(dmludp_connection);
-        if (left_len >= left_data){
+        if (left_len <= left_data){
           rx_.nread += left_len;
           left_data -= left_len;
         }else{
