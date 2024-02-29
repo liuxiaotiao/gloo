@@ -13,10 +13,6 @@ can be used to accelerate cross machine GPU-to-GPU memory transfers.
 
 [gpudirect]: https://developer.nvidia.com/gpudirect
 
-Where applicable, algorithms have an implementation that works with
-system memory buffers, and one that works with NVIDIA GPU memory
-buffers. In the latter case, it is not necessary to copy memory between
-host and device; this is taken care of by the algorithm implementations.
 
 ## Requirements
 
