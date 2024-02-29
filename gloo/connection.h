@@ -214,6 +214,9 @@ class Connection{
 
     // Used to control normal message sending.
     bool waiting_flag;
+
+    // Record how many data sent at once.
+    size_t written_data_len;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -268,7 +271,8 @@ class Connection{
     bidirect(true),
     initial(false),
     current_buffer_pos(0),
-    retransmission_ack()
+    retransmission_ack(),
+    written_data_len(0)
     {};
 
     ~Connection(){
@@ -558,6 +562,7 @@ class Connection{
     // get_data() is used after get(op) in gloo.
     bool get_data(struct iovec* iovecs, int iovecs_len){
         bool completed = true;
+        written_data_len = 0;
         if ( data_buffer.size() > 0 ){
             completed = false;
             return completed;
@@ -752,6 +757,7 @@ class Connection{
             }
         }
 
+        written_data_len += written_len;
         return written_len;
 
     };
