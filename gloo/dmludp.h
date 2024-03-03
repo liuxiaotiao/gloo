@@ -217,7 +217,7 @@ inline bool dmludp_conn_has_recv(std::shared_ptr<Connection> conn){
 // }
 
 inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
-    return conn->get_once_data_len(;)
+    return conn->get_once_data_len();
 }
 
 // inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {

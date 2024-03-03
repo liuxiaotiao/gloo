@@ -737,7 +737,7 @@ void Pair::handleEvents(int events) {
 //   return true;
 // }
 
-void Pair::dmludp2read(struct iovec &iov, size_t buffer_len = 0){
+void Pair::dmludp2read(struct iovec &iov, size_t buffer_len){
   size_t iovlen = 0;
   if(buffer_len = 0){
     iovlen = iov.iov_len;
@@ -839,7 +839,7 @@ void Pair::dmludp2read(struct iovec &iov, size_t buffer_len = 0){
 //   return false;
 // }
 
-bool protocal2read(){
+bool Pair::protocal2read(){
   if (state_ == CLOSED) {
     return false;
   }
@@ -847,7 +847,7 @@ bool protocal2read(){
   NonOwningPtr<UnboundBuffer> sbuf;
   std::array<struct iovec, 2> siov;
   int sioc;
-  ssize_t srv;
+  ssize_t rv;
 
   // Receive buffer
 
@@ -882,12 +882,13 @@ bool protocal2read(){
       }
       else if (rv == 5){
         if (dmludp_transmission_complete(dmludp_connection)){
-          auto &op = tx_.pop_front();
+          auto &op = tx_.front();
           const auto opcode = op.getOpcode();
           const auto nbytes = prepareWrite(op, sbuf, siov.data(), sioc);
           op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
-            writeComplete(op, buf, opcode);
+            writeComplete(op, sbuf, opcode);
+            tx_.pop_front();
           }
 
           if (tx_.empty()) {
@@ -946,7 +947,7 @@ bool protocal2read(){
   return false;
 }
 
-bool protocal2send(){
+bool Pair::protocal2send(){
   if (state_ == CLOSED) {
     return false;
   }
@@ -1032,35 +1033,35 @@ void Pair::handleReadWrite(int events){
 
 // Data: 7th Jan 2024
 // New version handleReadWrite
-void Pair::handleReadWrite(int events){
-  if (events & EPOLLOUT){
-    GLOO_ENFORCE(
-        !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
+// void Pair::handleReadWrite(int events){
+//   if (events & EPOLLOUT){
+//     GLOO_ENFORCE(
+//         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
 
-     while (!tx_.empty()) {
-      if (dmludp_transmission_complete(dmludp_connection)){
-        auto& op = tx_.front();
-        if (write2dmludp(op)){
-          // Write2dmludp completed; remove from queue.
-          tx_.pop_front();
-        }else{
-          // Data doesn't write into protocal, break and rewrite.
-          break;
-        }
-      }
-    }
+//      while (!tx_.empty()) {
+//       if (dmludp_transmission_complete(dmludp_connection)){
+//         auto& op = tx_.front();
+//         if (write2dmludp(op)){
+//           // Write2dmludp completed; remove from queue.
+//           tx_.pop_front();
+//         }else{
+//           // Data doesn't write into protocal, break and rewrite.
+//           break;
+//         }
+//       }
+//     }
 
-    if (tx_.empty()) {
-      device_->registerDescriptor(fd_, EPOLLIN, this);
-    }
-  }
+//     if (tx_.empty()) {
+//       device_->registerDescriptor(fd_, EPOLLIN, this);
+//     }
+//   }
 
-  if (events & EPOLLIN) {
-    while (handleread()) {
-      // Keep going
-    }
-  }
-}
+//   if (events & EPOLLIN) {
+//     while (handleread()) {
+//       // Keep going
+//     }
+//   }
+// }
 
 
 // getBuffer must only be called when holding lock.

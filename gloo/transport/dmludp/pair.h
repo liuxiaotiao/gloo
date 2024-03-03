@@ -384,11 +384,11 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   void handlewrite();
 
-  bool handleread();
+  // bool handleread();
 
-  void dmludp2read(struct iovec &iov);
+  void dmludp2read(struct iovec &iov, size_t buffer_len = 0);
 
-  bool write2dmludp(Op& op);
+  // bool write2dmludp(Op& op);
 
   bool protocal2read();
 
