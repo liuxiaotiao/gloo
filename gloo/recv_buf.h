@@ -52,13 +52,19 @@ namespace dmludp{
         }
 
         size_t first_item_len(){
-            return data.begin()->second->len();
+            auto top_len = 0;
+            if (!data.empty()){
+                top_len = data.begin()->second->len();
+            }
+            return top_len;
         }
 
         // Note: no consideration when recv_buf.size() bigger than given buffer.
         // Reconsider consume function, ant the relationship among off, len, start, write len.⭐️
         // Sendbuf also considers above questions.⭐️
-        size_t emit(std::vector<uint8_t> &out, size_t output_len = 0){
+        // Required_len: check the len of first entry in the buffer is same as the required len
+        // Output_len: the len of want to pop out from buffer, 0 pop out all data
+        size_t emit(std::vector<uint8_t> &out, size_t required_len = 0, size_t output_len = 0){
             size_t data_len = 0;
             size_t last_max_off = data.begin()->second->max_off();
             size_t start_off = data.begin()->second->off();

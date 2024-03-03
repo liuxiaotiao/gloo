@@ -217,6 +217,9 @@ class Connection{
 
     // Record how many data sent at once.
     size_t written_data_len;
+
+    // total data sent after one get data.
+    size_t written_data_once;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -272,7 +275,8 @@ class Connection{
     initial(false),
     current_buffer_pos(0),
     retransmission_ack(),
-    written_data_len(0)
+    written_data_len(0),
+    written_data_once(0)
     {};
 
     ~Connection(){
@@ -562,6 +566,7 @@ class Connection{
     // get_data() is used after get(op) in gloo.
     bool get_data(struct iovec* iovecs, int iovecs_len){
         bool completed = true;
+        written_data_once = 0;
         written_data_len = 0;
         if ( data_buffer.size() > 0 ){
             completed = false;
@@ -570,6 +575,7 @@ class Connection{
         for (auto i = 0 ; i < iovecs_len; i++){
             // data_buffer.emplace_back((uint8_t*)iovecs[i].iov_base, iovecs[i].iov_len);
             data_buffer.emplace_back(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len);
+            written_data_once += iovecs[i].iov_len;
         }
         if (data_buffer.size() <= 0){
             completed = false;
@@ -591,6 +597,10 @@ class Connection{
         }
 
         return completed;
+    }
+
+    size_t get_once_data_len(){
+        return written_data_once;
     }
 
     void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
@@ -1135,6 +1145,15 @@ class Connection{
             return true;
         }
         return false;
+    };
+
+    // Check if fixed length of first entry in received buffer exist.
+    bool check_first_entry(size_t check_len){
+        auto fst_len = rec_buffer.first_item_len();
+        if (fst_len != check_len){
+            return false;
+        }
+        return true;
     };
 
     size_t read(std::vector<uint8_t> &out, size_t output_len = 0){

@@ -218,11 +218,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     public:
     Pair& outerPtr;
 
-    // void setOuter(Pair* outer) {
-    //   outerPtr = outer;
-    //   outerPtr.device_->registerDescriptor(outerPtr.timer_fd, EPOLLIN, this);
-    // }
-
     dmludptimer(Pair& outer) : outerPtr(outer) {}
 
     void handleEvents(int events){
@@ -394,6 +389,10 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   void dmludp2read(struct iovec &iov);
 
   bool write2dmludp(Op& op);
+
+  bool protocal2read();
+
+  bool protocal2send();
 
   // Advances this pair's state. See the `Pair::state` enum for
   // possible states. State can only move forward, i.e. from
