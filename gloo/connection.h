@@ -798,7 +798,7 @@ class Connection{
     }
 
     //
-    ssize_t send_elicit_ack_message(){
+    ssize_t send_elicit_ack_message(std::vector<uint8_t> &out){
         auto ty = Type::ElicitAck;
         auto pktnum = record_send.size();
         if (ack_point == pktnum){
@@ -810,7 +810,7 @@ class Connection{
 
         size_t leftnum = pktnum - ack_point;
         size_t sent_num = std::min(leftnum, MAX_ACK_NUM);
-        size_t pktlen = sent_num * sizeof(uint64_t);
+        pktlen = sent_num * sizeof(uint64_t);
         auto pn = pkt_num_spaces.at(1).updatepktnum();
         Header* hdr = new Header(ty, pn, 0, 0, pktlen);
         out.resize(pktlen + HEADER_LENGTH);
