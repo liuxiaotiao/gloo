@@ -857,18 +857,18 @@ class Connection{
             std::vector<uint8_t> out_buffer;
             uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
             auto ty = Type::ElicitAck;
-            pktlen = retransmission_ack.at((uint64_t)pn).first.size();
+            pktlen = retransmission_ack.at(n).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += HEADER_LENGTH;
             out_buffer.resize(pktlen + HEADER_LENGTH);
             hdr->to_bytes(out_buffer);
-            std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
+            std::vector<uint8_t> wait_ack(retransmission_ack.at((n).first.begin(), retransmission_ack.at(n).first.end()));
             std::copy(wait_ack.begin(), wait_ack.end(), out_buffer.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-            auto initial_pn = valueToKeys[(uint64_t)pn];
+            auto initial_pn = valueToKeys[n];
             keyToValues[initial_pn].push_back(pktnum);
             valueToKeys[pktnum] = initial_pn;
-            auto it = retransmission_ack.find((uint64_t)pn);
+            auto it = retransmission_ack.find(n);
             if (it != retransmission_ack.end()) {
                 timeout_ack.insert(*it);
                 retransmission_ack.erase(it);

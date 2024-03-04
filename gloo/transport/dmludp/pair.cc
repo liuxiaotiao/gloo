@@ -879,7 +879,13 @@ bool Pair::protocal2read(){
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
-          const auto nbytes = prepareWrite(op, sbuf, siov.data(), sioc);
+          if (opcode == Op::SEND_UNBOUND_BUFFER) {
+            sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+            if (!sbuf) {
+              return false;
+            }
+          }
+          // const auto nbytes = prepareWrite(op, sbuf, siov.data(), sioc);
           op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
             writeComplete(op, sbuf, opcode);
