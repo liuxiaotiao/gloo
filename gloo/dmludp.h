@@ -130,7 +130,7 @@ inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
 inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
     // std::vector<std::vector<uint8_t>> out_vector(10);
     // std::set<std::chrono::high_resolution_clock::time_point> outstampes;
-    size_t written = conn->send_timeout_elicit_ack_message(out, outstampes);
+    size_t written = conn->send_timeout_elicit_ack_message(out, timestamps);
     // if ( written > 0){
     //     out = std::move(out_vector);
     //     timestamps = std::move(outstampes);
