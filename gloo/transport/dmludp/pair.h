@@ -220,31 +220,101 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
     dmludptimer(Pair& outer) : outerPtr(outer) {}
 
+    // void handleEvents(int events){
+    //   uint64_t expirations;
+    //   auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
+    //   for (auto it = (outerPtr.message).begin(); it != (outerPtr.message).end(); it++){
+    //     auto now = std::chrono::steady_clock::now();
+    //     if (it->second.retry_time > now){
+    //       outerPtr.update_timerfd(it->first);
+    //       break;
+    //     }else{
+    //       struct retry_message retry;
+    //       retry.pkt_num = it->second.pkt_num;
+    //       double rtt = dmludp_get_rtt(outerPtr.dmludp_connection);
+    //       std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
+    //       std::chrono::steady_clock::time_point futureTimePoint = now + duration;
+    //       retry.retry_time = futureTimePoint;
+    //       retry.data = it->second.data;
+    //       retry.len = it->second.len;
+    //       auto variable_time = ::send(outerPtr.fd_, it->second.data.data(), it->second.len, 0);
+    //       outerPtr.add_message(futureTimePoint, retry);
+    //     }
+    //   }
+
+    //   if (outerPtr.message.empty()){
+    //     struct itimerspec new_value = {};
+    //     timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+    //   }
+    // }
+
     void handleEvents(int events){
       uint64_t expirations;
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
-      for (auto it = (outerPtr.message).begin(); it != (outerPtr.message).end(); it++){
-        auto now = std::chrono::steady_clock::now();
-        if (it->second.retry_time > now){
-          outerPtr.update_timerfd(it->first);
-          break;
-        }else{
-          struct retry_message retry;
-          retry.pkt_num = it->second.pkt_num;
-          double rtt = dmludp_get_rtt(outerPtr.dmludp_connection);
-          std::chrono::steady_clock::duration duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double, std::nano>(rtt));
-          std::chrono::steady_clock::time_point futureTimePoint = now + duration;
-          retry.retry_time = futureTimePoint;
-          retry.data = it->second.data;
-          retry.len = it->second.len;
-          auto variable_time = ::send(outerPtr.fd_, it->second.data.data(), it->second.len, 0);
-          outerPtr.add_message(futureTimePoint, retry);
-        }
-      }
 
-      if (outerPtr.message.empty()){
+      std::vector<std::vector<uint8_t>> out;
+      std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+      auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
+      if (result == -1){
         struct itimerspec new_value = {};
         timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+        return;
+      }
+      else if(result == 0){
+        std::chrono::high_resolution_clock::time_point future_time_point;
+        if (!timestamps.empty()) {
+          future_time_point = *timestamps.begin();
+       
+          auto now = std::chrono::high_resolution_clock::now();
+          auto duration = future_time_point - now;
+
+          auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+          auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+
+          struct itimerspec new_value;
+          std::memset(&new_value, 0, sizeof(new_value));
+          new_value.it_value.tv_sec = secs.count(); 
+          new_value.it_value.tv_nsec = nanosecs.count(); 
+
+          if (timerfd_settime(fd, 0, &new_value, NULL) == -1) {
+              perror("timerfd_settime failed");
+              return;
+          }
+        }else{
+          struct itimerspec new_value = {};
+          timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+          return;
+        }
+      }
+      else{
+        for(auto e : out){
+          auto sent = ::send(outerPtr.fd_, e.data(), e.size(), 0);
+        }
+        std::chrono::high_resolution_clock::time_point future_time_point;
+        if (!timestamps.empty()) {
+          future_time_point = *timestamps.begin();
+        
+          auto now = std::chrono::high_resolution_clock::now();
+          auto duration = future_time_point - now;
+
+          auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+          auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+
+          struct itimerspec new_value;
+          std::memset(&new_value, 0, sizeof(new_value));
+          new_value.it_value.tv_sec = secs.count(); 
+          new_value.it_value.tv_nsec = nanosecs.count(); 
+
+          if (timerfd_settime(fd, 0, &new_value, NULL) == -1) {
+              perror("timerfd_settime failed");
+              return;
+          }
+        }
+        else{
+          struct itimerspec new_value = {};
+          timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+          return;
+        }
       }
     }
   };

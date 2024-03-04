@@ -28,6 +28,8 @@ namespace dmludp {
 
 const size_t HEADER_LENGTH = 26;
 
+const size_t MAX_ACK_NUM = 160;
+
 const size_t ELICIT_FLAG = 8;
 // use crate::ranges;
 const double CONGESTION_THREAHOLD = 0.01;
@@ -568,6 +570,10 @@ class Connection{
         bool completed = true;
         written_data_once = 0;
         written_data_len = 0;
+        ///////////////////
+        record_send.clear();
+        ack_point = 0;
+        ///////////////////
         if ( data_buffer.size() > 0 ){
             completed = false;
             return completed;
@@ -791,6 +797,89 @@ class Connection{
         return result;
     }
 
+    //
+    ssize_t send_elicit_ack_message(){
+        auto ty = Type::ElicitAck;
+        auto pktnum = record_send.size();
+        if (ack_point == pktnum){
+            return -1;
+        }
+
+        size_t pktlen = 0;
+        size_t end_point = 0;
+
+        size_t leftnum = pktnum - ack_point;
+        size_t sent_num = std::min(leftnum, MAX_ACK_NUM);
+        size_t pktlen = sent_num * sizeof(uint64_t);
+        auto pn = pkt_num_spaces.at(1).updatepktnum();
+        Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+        out.resize(pktlen + HEADER_LENGTH);
+        hdr->to_bytes(out);
+        memcpy(out.data() + HEADER_LENGTH, record_send.data() + ack_point, out.size());
+        delete hdr; 
+        hdr = nullptr; 
+        ack_set.insert(pn);
+        keyToValues[pn].push_back(pn);
+        valueToKeys[pn] = pn;
+        ack_point += sent_num;
+        std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
+        std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        retransmission_ack[pn] = std::make_pair(wait_ack, now);
+        pktlen += HEADER_LENGTH;
+        return pktlen;
+    }
+
+    // Time our occurs, timerfd triger this function and send retranmssion elicit ack.
+    ssize_t send_timeout_elicit_ack_message(std::vector<std::vector<uint8_t>> &out, std::vector<std::chrono::high_resolution_clock::time_point> &timestamps){
+        auto ty = Type::ElicitAck;
+        size_t pktlen = 0; 
+        ssize_t pn = -1;
+        std::vector<uint64_t> pn_list;
+        timestamps.clear();
+        if (retransmission_ack.empty()){
+            return -1;
+        }
+        
+        for (const auto& e : retransmission_ack){
+            std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+            std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
+            if ((e.second.second + duration) < now ){
+                pn_list.push_back(e.first);
+            }
+            else{
+                timestamps.insert(e.second.second + duration);
+            }
+        }
+        if (pn_list.size() == 0){
+            return 0;
+        }
+        for(auto n : pn_list){
+            uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
+            auto ty = Type::ElicitAck;
+            pktlen = retransmission_ack.at((uint64_t)pn).first.size();
+            Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
+            pktlen += HEADER_LENGTH;
+            out.resize(pktlen + HEADER_LENGTH);
+            hdr->to_bytes(out);
+            std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
+            std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + HEADER_LENGTH);
+            std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+            auto initial_pn = valueToKeys[(uint64_t)pn];
+            keyToValues[initial_pn].push_back(pktnum);
+            valueToKeys[pktnum] = initial_pn;
+            auto it = retransmission_ack.find((uint64_t)pn);
+            if (it != retransmission_ack.end()) {
+                timeout_ack.insert(*it);
+                retransmission_ack.erase(it);
+            }
+            retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
+
+            delete hdr; 
+            hdr = nullptr; 
+        }
+        return pn_list.size(); 
+    }
+
     // Send elicit ack operation and retransmission elicit ack.
     ssize_t send_elicit_ack(std::vector<uint8_t> &out){
         auto ty = Type::ElicitAck;
@@ -807,13 +896,13 @@ class Connection{
             size_t end_point = 0;
 
             size_t leftnum = pktnum - ack_point;
-            if (pktnum - ack_point >= 160 ){
-                size_t pktlen = 160 * 8;
+            if (pktnum - ack_point >= MAX_ACK_NUM ){
+                size_t pktlen = MAX_ACK_NUM * sizeof(uint64_t);
                 auto pn = pkt_num_spaces.at(1).updatepktnum();
                 Header* hdr = new Header(ty, pn, 0, 0, pktlen);
-                out.resize( pktlen + 26 );
+                out.resize( pktlen + HEADER_LENGTH );
                 hdr->to_bytes(out);
-                memcpy(out.data() + 26, record_send.data() + ack_point, out.size());
+                memcpy(out.data() + HEADER_LENGTH, record_send.data() + ack_point, out.size());
                 delete hdr; 
                 hdr = nullptr; 
                 ack_set.insert(pn);
@@ -822,18 +911,18 @@ class Connection{
                 valueToKeys[pn] = pn;
                 //////
                 ack_point += 160;
-                std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
+                std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
                 retransmission_ack[pn] = std::make_pair(wait_ack, now);
-                pktlen += 26;
+                pktlen += HEADER_LENGTH;
                 return pktlen;
             }else{
                 auto pn = pkt_num_spaces.at(1).updatepktnum();
-                size_t pktlen = (pktnum - ack_point) * 8;
+                size_t pktlen = (pktnum - ack_point) * sizeof(uint64_t);
                 Header* hdr = new Header(ty, pn, 0, 0, pktlen);
-                out.resize( pktlen + 26 );
+                out.resize( pktlen + HEADER_LENGTH );
                 hdr->to_bytes(out);
-                memcpy(out.data() + 26, record_send.data() + ack_point, out.size());
+                memcpy(out.data() + HEADER_LENGTH, record_send.data() + ack_point, out.size());
                 delete hdr; 
                 hdr = nullptr; 
                 ack_set.insert(pn);
@@ -842,7 +931,7 @@ class Connection{
                 valueToKeys[pn] = pn;
                 //////
                 ack_point = pktnum;
-                std::vector<uint8_t> wait_ack(out.begin()+26, out.end());
+                std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
                 retransmission_ack[pn] = std::make_pair(wait_ack, now);
                 pktlen += 26;
@@ -866,11 +955,11 @@ class Connection{
             auto ty = Type::ElicitAck;
             pktlen = retransmission_ack.at((uint64_t)pn).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
-            pktlen += 26;
-            out.resize(pktlen + 26);
+            pktlen += HEADER_LENGTH;
+            out.resize(pktlen + HEADER_LENGTH);
             hdr->to_bytes(out);
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
-            std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + 26);
+            std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             //// date: 1/28/2024
             auto initial_pn = valueToKeys[(uint64_t)pn];
