@@ -127,6 +127,18 @@ inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
     return conn->transmission_complete();
 }
 
+inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
+    return conn->send_timeout_elicit_ack_message(out, timestamps);
+}
+
+inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
+    std::vector<uint8_t> out_vector(1500);
+    ssize_t written = conn->send_elicit_ack_message(out_vector);
+    if ( written > 0)
+        out = std::move(out_vector);
+    return written;
+}
+
 inline ssize_t dmludp_send_elicit_ack(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     std::vector<uint8_t> out_vector(out_len);
     ssize_t written = conn->send_elicit_ack(out_vector);
@@ -275,14 +287,6 @@ inline bool dmludp_check_first_entry(std::shared_ptr<Connection> conn, size_t ch
 
 inline size_t dmludp_conn_recv_len(std::shared_ptr<Connection> conn){
     return conn->recv_len();
-}
-
-inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
-    return conn->send_elicit_ack_message(out);
-}
-
-inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
-    return conn->send_timeout_elicit_ack_message(out, timestamps);
 }
 
 // inline ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
