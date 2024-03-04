@@ -862,7 +862,7 @@ class Connection{
             pktlen += HEADER_LENGTH;
             out_buffer.resize(pktlen + HEADER_LENGTH);
             hdr->to_bytes(out_buffer);
-            std::vector<uint8_t> wait_ack(retransmission_ack.at((n).first.begin(), retransmission_ack.at(n).first.end()));
+            std::vector<uint8_t> wait_ack(retransmission_ack.at(n).first.begin(), retransmission_ack.at(n).first.end());
             std::copy(wait_ack.begin(), wait_ack.end(), out_buffer.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             auto initial_pn = valueToKeys[n];
