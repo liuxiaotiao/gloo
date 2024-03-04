@@ -281,7 +281,7 @@ inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, 
     return conn->send_elicit_ack_message(out);
 }
 
-inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::vector<std::chrono::high_resolution_clock::time_point> &timestamps){
+inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
     return conn->send_timeout_elicit_ack_message(out, timestamps);
 }
 

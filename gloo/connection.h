@@ -830,7 +830,7 @@ class Connection{
     }
 
     // Time our occurs, timerfd triger this function and send retranmssion elicit ack.
-    ssize_t send_timeout_elicit_ack_message(std::vector<std::vector<uint8_t>> &out, std::vector<std::chrono::high_resolution_clock::time_point> &timestamps){
+    ssize_t send_timeout_elicit_ack_message(std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
         auto ty = Type::ElicitAck;
         size_t pktlen = 0; 
         ssize_t pn = -1;
