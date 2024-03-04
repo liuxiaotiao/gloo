@@ -854,15 +854,16 @@ class Connection{
             return 0;
         }
         for(auto n : pn_list){
+            std::vector<uint8_t> out_buffer;
             uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
             auto ty = Type::ElicitAck;
             pktlen = retransmission_ack.at((uint64_t)pn).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += HEADER_LENGTH;
-            out.resize(pktlen + HEADER_LENGTH);
-            hdr->to_bytes(out);
+            out_buffer.resize(pktlen + HEADER_LENGTH);
+            hdr->to_bytes(out_buffer);
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
-            std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + HEADER_LENGTH);
+            std::copy(wait_ack.begin(), wait_ack.end(), out_buffer.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             auto initial_pn = valueToKeys[(uint64_t)pn];
             keyToValues[initial_pn].push_back(pktnum);
@@ -876,6 +877,7 @@ class Connection{
 
             delete hdr; 
             hdr = nullptr; 
+            out.push_back(out_buffer);
         }
         return pn_list.size(); 
     }

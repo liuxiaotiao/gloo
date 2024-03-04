@@ -254,7 +254,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
       std::vector<std::vector<uint8_t>> out;
       std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
-      auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
+      auto result = dmludp_send_timeout_elicit_ack_message(outerPtr.dmludp_connection, out, timestamps);
       if (result == -1){
         struct itimerspec new_value = {};
         timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
@@ -276,7 +276,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
           new_value.it_value.tv_sec = secs.count(); 
           new_value.it_value.tv_nsec = nanosecs.count(); 
 
-          if (timerfd_settime(fd, 0, &new_value, NULL) == -1) {
+          if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
               perror("timerfd_settime failed");
               return;
           }
@@ -305,7 +305,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
           new_value.it_value.tv_sec = secs.count(); 
           new_value.it_value.tv_nsec = nanosecs.count(); 
 
-          if (timerfd_settime(fd, 0, &new_value, NULL) == -1) {
+          if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
               perror("timerfd_settime failed");
               return;
           }
