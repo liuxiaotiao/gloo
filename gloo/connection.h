@@ -847,7 +847,7 @@ class Connection{
                 pn_list.push_back(e.first);
             }
             else{
-                timestamps.push_back(e.second.second + duration);
+                timestamps.insert(e.second.second + duration);
             }
         }
         if (pn_list.size() == 0){
