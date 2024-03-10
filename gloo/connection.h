@@ -196,6 +196,9 @@ class Connection{
 
     RecvBuf rec_buffer;
 
+    // How many ack need to process
+    size_t prepare_ack;
+
     ///// 1/28/204
     // Initial elicit_ack number and all retransmission elicit ack number.
     std::map<uint64_t, std::vector<uint64_t>> keyToValues;
@@ -284,7 +287,8 @@ class Connection{
     retransmission_ack(),
     written_data_len(0),
     written_data_once(0),
-    dmludp_error(0)
+    dmludp_error(0),
+    prepare_ack(0),
     {};
 
     ~Connection(){
@@ -465,6 +469,7 @@ class Connection{
             uint8_t priority = unackbuf[start];
             start += 1;
             if ( sent_dic.find(unack) != sent_dic.end()){
+                prepare_ack -= 1;
                 if (sent_dic.at(unack) == 0){
                     // Remove from send_buffer
                     send_buffer.ack_and_drop(unack);
@@ -635,6 +640,11 @@ class Connection{
         auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
         ssize_t written_len = 0;
+
+        if(prepare_ack != 0){
+            return 0;
+        }
+
         if (get_dmludp_error() != 11){
             // For the windows size change, it should be reconsider later(1/11/2024)
             if (send_buffer.data.empty()) {
@@ -706,6 +716,7 @@ class Connection{
 
                 record_send.push_back(offset);
                 record2ack.push_back(offset);
+                prepare_ack += 1;
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
                 messages[i].msg_hdr.msg_iovlen = 2;
 

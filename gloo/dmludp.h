@@ -315,6 +315,6 @@ inline void dmludp_set_error(std::shared_ptr<Connection> conn, size_t err){
     conn->set_error(err);
 }
 
-inline void dmludp_get_dmludp_error(std::shared_ptr<Connection> conn){
+inline size_t dmludp_get_dmludp_error(std::shared_ptr<Connection> conn){
     return conn->get_dmludp_error();
 }

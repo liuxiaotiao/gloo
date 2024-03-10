@@ -288,6 +288,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 return write_len;   
             }
             else{
+                sent = 0;
                 // Get the stream send capacity. This will return an error if the stream
                 // was stopped.
                 // length = (uint64_t)len();
