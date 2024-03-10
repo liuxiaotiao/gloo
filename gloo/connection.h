@@ -634,8 +634,8 @@ class Connection{
     {
         auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
-
-        if (get_dmludp_error != 11){
+        ssize_t written_len = 0;
+        if (get_dmludp_error() != 11){
             // For the windows size change, it should be reconsider later(1/11/2024)
             if (send_buffer.data.empty()) {
                 auto high_ratio = (double)high_priority  / (double)sent_number;
@@ -651,7 +651,7 @@ class Connection{
                 congestion_window = record_win;
             }
 
-            ssize_t written_len = 0;
+            
             for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
                 auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
                 if (written_len == 0 && wlen <= 0){
@@ -785,6 +785,10 @@ class Connection{
 
     size_t get_dmludp_error(){
         return dmludp_error;
+    }
+
+    void set_error(size_t err){
+        dmludp_error = err;
     }
 
     // If transmission complete
