@@ -632,111 +632,6 @@ void Pair::handleEvents(int events) {
 }
 
 
-// Date: 2/13/2024
-// bool Pair::handleread(){
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   ssize_t rv = 0;
-//   NonOwningPtr<UnboundBuffer> buf;
-
-//   for (;;){
-//     struct iovec iov = {
-//       .iov_base = nullptr,
-//       .iov_len = 0,
-//     };
-
-//     const auto nbytes = prepareRead(rx_, buf, iov);
-
-//     if (nbytes < 0) {
-//       uint8_t buffer[1500];
-//       ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//       ssize_t dmludpread = 0;
-//       if(read > 0){
-//         dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
-//         int type;
-//         int pkt_num;
-//         rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//         if(rv == 4){
-//           uint8_t out[1500];
-//           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-//           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-//         }
-//       }
-//       return false;
-//     }
-
-//     // Break from loop if the op is complete.
-//     // Note that this means that the buffer pointer has been
-//     // set, per the call to prepareRead.
-//     if (nbytes == 0) {
-//       break;
-//     }
-
-//     ssize_t left_data = nbytes;
-
-//     for(;;){
-//       if (!dmludp_conn_has_recv(dmludp_connection)){
-//         auto left_len = dmludp_conn_recv_len(dmludp_connection);
-//         if (left_len <= left_data){
-//           rx_.nread += left_len;
-//           left_data -= left_len;
-//         }else{
-//           rx_.nread += left_data;
-//           left_data -= left_data;  
-//         }
-//       }
-
-//       if (left_data > 0){
-//         while(1){
-//           uint8_t buffer[1500];
-//           ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//           ssize_t dmludpread = 0;
-//           if(read > 0){
-//             dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
-//             int type;
-//             int pkt_num;
-//             rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//             if(rv == 4){
-//               uint8_t out[1500];
-//               ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-//               ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-//               if(left_data <= 0){
-//                 break;
-//               }
-//             }
-//             // Packet completes tranmission and start to iov.
-//             else if(rv == 6){
-//               uint8_t out[1500];
-//               auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
-//               ssize_t socket_write = ::send(fd_, out, stopsize, 0);
-//               break;
-//             }
-//             else if(rv == 3){
-//               if (left_data > 0){
-//                 rx_.nread += dmludpread;
-//                 left_data -= dmludpread;
-//               }
-//             }
-//           }else{
-//             if (errno == EAGAIN) {
-//               return false;
-//             }
-//             if (errno == EINTR){
-//               continue;
-//             }
-//           }
-//         }
-//       }
-//       dmludp2read(iov);
-//       break;
-//     }
-//   }
-
-//   readComplete(buf);
-//   return true;
-// }
-
 void Pair::dmludp2read(struct iovec &iov, size_t buffer_len){
   size_t iovlen = 0;
   if(buffer_len == 0){
@@ -745,99 +640,6 @@ void Pair::dmludp2read(struct iovec &iov, size_t buffer_len){
   dmludp_data_read(dmludp_connection, iov.iov_base, iovlen);
 }
 
-// Data: 7th Jan 2024
-// bool Pair::write2dmludp(Op& op){
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   NonOwningPtr<UnboundBuffer> buf;
-//   std::array<struct iovec, 2> iov;
-//   int ioc;
-
-//   const auto opcode = op.getOpcode();
-//   if (opcode == Op::SEND_UNBOUND_BUFFER) {
-//     buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-//     if (!buf) {
-//       return false;
-//     }
-//   }
-
-//   const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-//   ssize_t written = 0;
-//   // Include preamble if necessary
-//   // for (auto i : iov){
-//   //   // Data: 7th Jan 2024
-//   //   // dmludp_data_write adds return.
-//   //   written += dmludp_data_write(dmludp_connection, (uint8_t*)i.iov_base, (size_t)i.iov_len);
-//   // }
-//   std::vector<uint8_t> padding(1446, 0);
-//   std::vector<struct mmsghdr> messages;
-//   std::vector<struct iovec> iovecs;
-//   bool w2dmludp = dmludp_get_data(dmludp_connection, iov.data(), ioc);
-//   if (!w2dmludp){
-//     return false;
-//   }
-
-//   while (true){
-//     size_t sent = 0;
-//     uint8_t buffer[1500];
-//     written += dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-//     while(messages.size() > sent){
-//       auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
-//       if (retval == -1){
-//         // Date: solve data cannot send out one time.
-//         // Move errno == EINTR out of while(1)
-//         if (errno == EINTR)
-//           continue;
-//         return false;
-//       }
-//       sent += retval;
-//     }
-//     while (true){
-//       uint8_t out[1500];
-//       ssize_t ack_len = dmludp_send_elicit_ack(dmludp_connection, out, 1500);
-//       if (ack_len == -1){
-//         break;
-//       }
-//       if (ack_len > 0){
-//         auto socketwrite = ::send(fd_, out, ack_len, 0);
-//       }
-//       ssize_t socketread = ::recv(fd_, buffer, sizeof(buffer) , 0);
-//       if (socketread > 0 ){
-//         auto dmludpread = dmludp_conn_recv(dmludp_connection, buffer, socketread);
-//         int type;
-//         int pkt_num;
-//         auto rv = dmludp_header_info(buffer, 26, type, pkt_num);
-//         if(rv == 4){
-//           uint8_t out[1500];
-//           ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
-//           ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-//         }
-//         // Packet completes tranmission and start to iov.
-//         else if(rv == 6){
-//           uint8_t out[1500];
-//           auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
-//           ssize_t socket_write = ::send(fd_, out, stopsize, 0);
-//           break;
-//         }
-//         else if(rv == 3){
-
-//         }
-//       }
-//     }
-
-//     if (dmludp_transmission_complete(dmludp_connection)){
-//       break;
-//     }
-//   }
-//   op.nwritten += written;
-
-//   if (op.nwritten == op.preamble.nbytes){
-//     writeComplete(op, buf, opcode);
-//     return true;
-//   }
-//   return false;
-// }
 
 bool Pair::protocal2read(){
   if (state_ == CLOSED) {
@@ -906,41 +708,6 @@ bool Pair::protocal2read(){
       }
     }
   }
-  
-  // Complete read
-  // size_t rioc = 0;
-  // if (!dmludp_conn_has_recv(dmludp_connection)){
-  //   NonOwningPtr<UnboundBuffer> rbuf;
-  //   while(true){
-  //     rioc += 1;
-  //     struct iovec riov = {
-  //         .iov_base = nullptr,
-  //         .iov_len = 0,
-  //       };
-  //     const auto rnbytes = prepareRead(rx_, rbuf, riov);
-  //     auto left_len = dmludp_conn_recv_len(dmludp_connection);
-
-  //     if (!rbuf){
-  //       if (rioc == 1){
-  //         bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
-  //         if (check_result){
-  //           rx_.nread += rnbytes;
-  //           dmludp2read(riov);
-  //           readComplete(rbuf);
-  //         }else{
-  //           return false;
-  //         }
-  //       }
-  //     }else{
-  //       if( left_len == rnbytes ){
-  //         rx_.nread += rnbytes;
-  //         dmludp2read(riov);
-  //         readComplete(rbuf);
-  //       }
-  //       break;
-  //     }
-  //   }
-  // }
 
   if (!dmludp_conn_has_recv(dmludp_connection)){   
     NonOwningPtr<UnboundBuffer> rbuf;
@@ -1025,16 +792,25 @@ bool Pair::protocal2send(){
     return false;
   }
   size_t sent = 0;
+  auto has_error = dmludp_get_dmludp_error(dmludp_connection);
   while(messages.size() > sent){
     auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
     if (retval == -1){
       // Date: solve data cannot send out one time.
       // Move errno == EINTR out of while(1)
-      if (errno == EINTR)
+      if (errno == EINTR){
         continue;
+      }
+
+      if (errno == EAGAIN){
+        dmludp_set_error(dmludp_connection, EAGAIN);
+      }
       return false;
     }
     sent += retval;
+  }
+  if (has_error == 11){
+    dmludp_set_error(dmludp_connection, 0);
   }
 
   size_t timer_counter = 0;

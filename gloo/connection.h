@@ -147,6 +147,8 @@ class Connection{
 
     std::vector<uint64_t> record_send;
 
+    std::vector<uint64_t> record2ack;
+
     std::unordered_map<uint64_t, uint8_t> recv_dic;
 
     //store data
@@ -222,6 +224,9 @@ class Connection{
 
     // total data sent after one get data.
     size_t written_data_once;
+
+    // Record errno
+    size_t dmludp_error;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     // static Connection* connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -278,7 +283,8 @@ class Connection{
     current_buffer_pos(0),
     retransmission_ack(),
     written_data_len(0),
-    written_data_once(0)
+    written_data_once(0),
+    dmludp_error(0)
     {};
 
     ~Connection(){
@@ -629,40 +635,43 @@ class Connection{
         auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
 
-        // For the windows size change, it should be reconsider later(1/11/2024)
-        if (send_buffer.data.empty()) {
-            auto high_ratio = (double)high_priority  / (double)sent_number;
-            high_priority = 0;
-            sent_number = 0;
-            if (high_ratio > CONGESTION_THREAHOLD){
-                congestion_window = recovery.rollback();
+        if (get_dmludp_error != 11){
+            // For the windows size change, it should be reconsider later(1/11/2024)
+            if (send_buffer.data.empty()) {
+                auto high_ratio = (double)high_priority  / (double)sent_number;
+                high_priority = 0;
+                sent_number = 0;
+                if (high_ratio > CONGESTION_THREAHOLD){
+                    congestion_window = recovery.rollback();
+                }else{
+                    congestion_window = recovery.cwnd();
+                };
+                record_win = congestion_window;
             }else{
-                congestion_window = recovery.cwnd();
-            };
-            record_win = congestion_window;
-        }else{
-            congestion_window = record_win;
-        }
+                congestion_window = record_win;
+            }
 
-        ssize_t written_len = 0;
-        for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
-            auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
-            if (written_len == 0 && wlen <= 0){
-                return wlen;
-            }
-            written_len += wlen;
-	        if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
-                break;
-            if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
-                current_buffer_pos += 1;
-            }
-            if (written_len >= congestion_window)
-                break;
-            
-            if (send_buffer.cap()<=0){
-                break;
+            ssize_t written_len = 0;
+            for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
+                auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
+                if (written_len == 0 && wlen <= 0){
+                    return wlen;
+                }
+                written_len += wlen;
+                if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+                    break;
+                if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
+                    current_buffer_pos += 1;
+                }
+                if (written_len >= congestion_window)
+                    break;
+                
+                if (send_buffer.cap()<=0){
+                    break;
+                }
             }
         }
+       
 
         if ( pkt_size == 1 ){
             // consider add ack message at the end of the flow.
@@ -696,7 +705,7 @@ class Connection{
                 }
 
                 record_send.push_back(offset);
-
+                record2ack.push_back(offset);
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
                 messages[i].msg_hdr.msg_iovlen = 2;
 
@@ -774,6 +783,10 @@ class Connection{
 
     };
 
+    size_t get_dmludp_error(){
+        return dmludp_error;
+    }
+
     // If transmission complete
     bool transmission_complete(){
         bool result = true;
@@ -795,23 +808,27 @@ class Connection{
 
     //
     ssize_t send_elicit_ack_message(std::vector<uint8_t> &out){
-        auto ty = Type::ElicitAck;
-        auto pktnum = record_send.size();
-        if (ack_point == pktnum){
+        auto ty = Type::ElicitAck;        
+        auto preparenum = record2ack.size();
+        if(record2ack.empty()){
             return -1;
         }
 
         size_t pktlen = 0;
-        size_t end_point = 0;
-
-        size_t leftnum = pktnum - ack_point;
-        size_t sent_num = std::min(leftnum, MAX_ACK_NUM);
+        
+        size_t sent_num = std::min(preparenum, MAX_ACK_NUM);
         pktlen = sent_num * sizeof(uint64_t);
         auto pn = pkt_num_spaces.at(1).updatepktnum();
         Header* hdr = new Header(ty, pn, 0, 0, pktlen);
         out.resize(pktlen + HEADER_LENGTH);
         hdr->to_bytes(out);
-        memcpy(out.data() + HEADER_LENGTH, record_send.data() + ack_point, out.size());
+        memcpy(out.data() + HEADER_LENGTH, record2ack.data(), out.size());
+        if(sent_num == record2ack.size()){
+            record2ack.clear();
+        }else{
+            record2ack.erase(record2ack.begin(), record2ack.begin()+ sent_num + 1);
+        }
+
         delete hdr; 
         hdr = nullptr; 
         ack_set.insert(pn);
@@ -823,6 +840,33 @@ class Connection{
         retransmission_ack[pn] = std::make_pair(wait_ack, now);
         pktlen += HEADER_LENGTH;
         return pktlen;
+
+        // if (ack_point == pktnum){
+        //     return -1;
+        // }
+
+        // size_t pktlen = 0;
+        // size_t end_point = 0;
+
+        // size_t leftnum = pktnum - ack_point;
+        // size_t sent_num = std::min(leftnum, MAX_ACK_NUM);
+        // pktlen = sent_num * sizeof(uint64_t);
+        // auto pn = pkt_num_spaces.at(1).updatepktnum();
+        // Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+        // out.resize(pktlen + HEADER_LENGTH);
+        // hdr->to_bytes(out);
+        // memcpy(out.data() + HEADER_LENGTH, record_send.data() + ack_point, out.size());
+        // delete hdr; 
+        // hdr = nullptr; 
+        // ack_set.insert(pn);
+        // keyToValues[pn].push_back(pn);
+        // valueToKeys[pn] = pn;
+        // ack_point += sent_num;
+        // std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
+        // std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        // retransmission_ack[pn] = std::make_pair(wait_ack, now);
+        // pktlen += HEADER_LENGTH;
+        // return pktlen;
     }
 
     // Time our occurs, timerfd triger this function and send retranmssion elicit ack.

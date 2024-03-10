@@ -252,70 +252,138 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       uint64_t expirations;
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
 
-      std::vector<std::vector<uint8_t>> out;
-      std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
-      auto result = dmludp_send_timeout_elicit_ack_message(outerPtr.dmludp_connection, out, timestamps);
-      if (result == -1){
-        struct itimerspec new_value = {};
-        timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
-        return;
-      }
-      else if(result == 0){
-        std::chrono::high_resolution_clock::time_point future_time_point;
-        if (!timestamps.empty()) {
-          future_time_point = *timestamps.begin();
-       
-          auto now = std::chrono::high_resolution_clock::now();
-          auto duration = future_time_point - now;
-
-          auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
-          auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
-
-          struct itimerspec new_value;
-          std::memset(&new_value, 0, sizeof(new_value));
-          new_value.it_value.tv_sec = secs.count(); 
-          new_value.it_value.tv_nsec = nanosecs.count(); 
-
-          if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
-              perror("timerfd_settime failed");
-              return;
-          }
-        }else{
+      while(true){
+        std::vector<std::vector<uint8_t>> out;
+        std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+        auto result = dmludp_send_timeout_elicit_ack_message(outerPtr.dmludp_connection, out, timestamps);
+        auto now = std::chrono::high_resolution_clock::now();
+        if (result == -1){
           struct itimerspec new_value = {};
           timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
           return;
         }
-      }
-      else{
-        for(auto e : out){
-          auto sent = ::send(outerPtr.fd_, e.data(), e.size(), 0);
-        }
-        std::chrono::high_resolution_clock::time_point future_time_point;
-        if (!timestamps.empty()) {
-          future_time_point = *timestamps.begin();
-        
-          auto now = std::chrono::high_resolution_clock::now();
-          auto duration = future_time_point - now;
+        else if(result == 0){
+          std::chrono::high_resolution_clock::time_point future_time_point;
+          if (!timestamps.empty()) {
+            future_time_point = *timestamps.begin();
+            auto duration = future_time_point - now;
 
-          auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
-          auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+            auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
 
-          struct itimerspec new_value;
-          std::memset(&new_value, 0, sizeof(new_value));
-          new_value.it_value.tv_sec = secs.count(); 
-          new_value.it_value.tv_nsec = nanosecs.count(); 
+            struct itimerspec new_value;
+            std::memset(&new_value, 0, sizeof(new_value));
+            new_value.it_value.tv_sec = secs.count(); 
+            new_value.it_value.tv_nsec = nanosecs.count(); 
 
-          if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
-              perror("timerfd_settime failed");
+            if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
+                perror("timerfd_settime failed");
+                continue;
+            }else{
               return;
+            }
+          }else{
+            struct itimerspec new_value = {};
+            timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+            return;
           }
         }
         else{
-          struct itimerspec new_value = {};
-          timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
-          return;
+          for(auto e : out){
+            auto sent = ::send(outerPtr.fd_, e.data(), e.size(), 0);
+          }
+          std::chrono::high_resolution_clock::time_point future_time_point;
+          if (!timestamps.empty()) {
+            future_time_point = *timestamps.begin();
+          
+            auto now = std::chrono::high_resolution_clock::now();
+            auto duration = future_time_point - now;
+
+            auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+            auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+
+            struct itimerspec new_value;
+            std::memset(&new_value, 0, sizeof(new_value));
+            new_value.it_value.tv_sec = secs.count(); 
+            new_value.it_value.tv_nsec = nanosecs.count(); 
+
+            if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
+                perror("timerfd_settime failed");
+                continue;
+            }else{
+              return;
+            }
+          }
+          else{
+            struct itimerspec new_value = {};
+            timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+            return;
+          }
         }
       }
+      // std::vector<std::vector<uint8_t>> out;
+      // std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+      // auto result = dmludp_send_timeout_elicit_ack_message(outerPtr.dmludp_connection, out, timestamps);
+      // auto now = std::chrono::high_resolution_clock::now();
+      // if (result == -1){
+      //   struct itimerspec new_value = {};
+      //   timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+      //   return;
+      // }
+      // else if(result == 0){
+      //   std::chrono::high_resolution_clock::time_point future_time_point;
+      //   if (!timestamps.empty()) {
+      //     future_time_point = *timestamps.begin();
+      //     auto duration = future_time_point - now;
+
+      //     auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+      //     auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+
+      //     struct itimerspec new_value;
+      //     std::memset(&new_value, 0, sizeof(new_value));
+      //     new_value.it_value.tv_sec = secs.count(); 
+      //     new_value.it_value.tv_nsec = nanosecs.count(); 
+
+      //     if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
+      //         perror("timerfd_settime failed");
+      //         return;
+      //     }
+      //   }else{
+      //     struct itimerspec new_value = {};
+      //     timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+      //     return;
+      //   }
+      // }
+      // else{
+      //   for(auto e : out){
+      //     auto sent = ::send(outerPtr.fd_, e.data(), e.size(), 0);
+      //   }
+      //   std::chrono::high_resolution_clock::time_point future_time_point;
+      //   if (!timestamps.empty()) {
+      //     future_time_point = *timestamps.begin();
+        
+      //     auto now = std::chrono::high_resolution_clock::now();
+      //     auto duration = future_time_point - now;
+
+      //     auto secs = std::chrono::duration_cast<std::chrono::seconds>(duration);
+      //     auto nanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - secs);
+
+      //     struct itimerspec new_value;
+      //     std::memset(&new_value, 0, sizeof(new_value));
+      //     new_value.it_value.tv_sec = secs.count(); 
+      //     new_value.it_value.tv_nsec = nanosecs.count(); 
+
+      //     if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
+      //         perror("timerfd_settime failed");
+      //         return;
+      //     }
+      //   }
+      //   else{
+      //     struct itimerspec new_value = {};
+      //     timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+      //     return;
+      //   }
+      // }
     }
   };
   friend class dmludptimer;
