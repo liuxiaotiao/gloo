@@ -414,20 +414,12 @@ class Connection{
             ini = valueToKeys[received_ack];
             ack_set.erase(ini);
             for (int key : keyToValues[ini]) {
-                // auto it = retransmission_ack.find(key);
-                // if (it != retransmission_ack.end()) {
+
                 retransmission_ack.erase(key);
-                // }
 
-                // auto ind = valueToKeys.find(key);
-                // if (ind != valueToKeys.end()) {
                 valueToKeys.erase(key);
-                // }
-
-                // auto remove_index = timeout_ack.find(key);
-                // if (remove_index != timeout_ack.end()) {
+  
                 timeout_ack.erase(key);
-                // }
             }
         }else{
             return;
@@ -557,7 +549,7 @@ class Connection{
             return result;
         }else{
             size_t off_len = 0;
-
+            
             auto result = send_buffer.write(send_data.src, send_data.sent(), send_data.left, congestion_window, off_len);
             return result;
         }
@@ -592,9 +584,9 @@ class Connection{
         }
         size_t len = 0;
         if (iovecs_len % 1350 == 0){
-            len = iovecs_len / 1350;
+            len = written_data_once / 1350;
         }else{
-            len = iovecs_len / 1350 + 1;
+            len = written_data_once / 1350 + 1;
         }
         if (len == 1){
             norm2_vec.insert(norm2_vec.end(), len, 3);
@@ -666,6 +658,10 @@ class Connection{
             }
             if (written_len >= congestion_window)
                 break;
+            
+            if (send_buffer.cap()<=0){
+                break;
+            }
         }
 
         if ( pkt_size == 1 ){
@@ -860,7 +856,7 @@ class Connection{
             pktlen = retransmission_ack.at(n).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
             pktlen += HEADER_LENGTH;
-            out_buffer.resize(pktlen + HEADER_LENGTH);
+            out_buffer.resize(pktlen);
             hdr->to_bytes(out_buffer);
             std::vector<uint8_t> wait_ack(retransmission_ack.at(n).first.begin(), retransmission_ack.at(n).first.end());
             std::copy(wait_ack.begin(), wait_ack.end(), out_buffer.begin() + HEADER_LENGTH);
