@@ -90,12 +90,14 @@ class Recovery{
     // cwnd = C(-(P - K))^3/k^3 + Wmax
     //x = [0:0.1:3.6];
     //y = -8*(x-1.8).^3/1.8^3;
+    //y= 4x^2−16x+8
     void update_win(float weights, double num){
         float winadd_copy = 0;
         double winadd = 0;
         if(function_change){
             winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
         }else{
+            // weights == 0, no loss, partial win double. weights > 0, dynamic add or minus window
             if (weights > 0){
                 function_change = true;
                 incre_win = incre_win_copy;
@@ -105,7 +107,7 @@ class Recovery{
             winadd = num * (double)max_datagram_size;
         }
 
-        if (winadd != num){
+        if (winadd != num*(double)max_datagram_size){
             roll_back_flag = true;
         }
 
@@ -142,14 +144,17 @@ class Recovery{
             tmp_win = 0;
         }
         if (!roll_back_flag) {
-            former_win_vecter.insert(tmp_win);
+            if (tmp_win !=0){
+                former_win_vecter.insert(tmp_win);
+            }
         }
 
         congestion_window = tmp_win;
-        incre_win = 0;
-        decre_win = 0;
-        incre_win_copy = 0;
-        decre_win_copy = 0;
+        // incre_win = 0;
+        // decre_win = 0;
+        // incre_win_copy = 0;
+        // decre_win_copy = 0;
+        parameter_reset();
         if (congestion_window >=  PACKET_SIZE*INITIAL_WINDOW_PACKETS){
             return congestion_window;
         }else{
@@ -176,6 +181,13 @@ class Recovery{
         return app_limit;
     };
     
+    void parameter_reset(){
+        incre_win = 0;
+        decre_win = 0;
+        incre_win_copy = 0;
+        decre_win_copy = 0;
+    }
+
     size_t rollback(){
         if (former_win_vecter.empty()){
             congestion_window = INI_WIN;
@@ -183,6 +195,11 @@ class Recovery{
             congestion_window = *former_win_vecter.rbegin();
             former_win_vecter.erase(--former_win_vecter.end()); 
         }
+        // incre_win = 0;
+        // decre_win = 0;
+        // incre_win_copy = 0;
+        // decre_win_copy = 0;
+        parameter_reset();
         return congestion_window;
     };
 

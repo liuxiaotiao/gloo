@@ -64,6 +64,78 @@ namespace dmludp{
         // Sendbuf also considers above questions.⭐️
         // Required_len: check the len of first entry in the buffer is same as the required len
         // Output_len: the len of want to pop out from buffer, 0 pop out all data
+        // size_t emit(std::vector<uint8_t> &out, size_t output_len = 0){
+        //     size_t data_len = 0;
+        //     size_t last_max_off = data.begin()->second->max_off();
+        //     size_t start_off = data.begin()->second->off();
+
+        //     size_t left = 0;
+        //     if (output_len == 0){
+        //         left = len;
+        //     }else{
+        //         left = output_len;
+        //     }
+            
+        //     while (ready() && left > 0){
+        //         if (data.empty()){
+        //             break;
+        //         }
+
+        //         auto entry = data.begin();
+
+        //         // First enty
+        //         if (entry->second->off() == start_off){
+        //             if (entry->second->len() <= left){
+        //                 std::copy((entry->second->data).begin(), (entry->second->data).end(), out.begin());
+        //                 data_len += (entry->second)->len();
+        //                 left -= (entry->second)->len();
+        //                 last_max_off = entry->second->max_off();
+        //                 len -= (entry->second)->len();
+        //                 data.erase(data.begin());
+        //             }else{
+        //                 std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.begin());
+        //                 data_len += left;
+        //                 len -= left;
+        //                 left = 0;
+        //                 (entry->second)->consume(left);
+        //             }
+        //         }else{
+        //             size_t zero = entry->second->off() - last_max_off;
+        //             if(zero < left){
+        //                 if(zero != 0)
+        //                     out.insert(out.end(), zero, 0);
+        //                 left -= zero;
+        //                 data_len += zero;
+        //                 last_max_off += zero;
+        //                 auto current_max_off = entry->second->max_off();
+        //                 if((current_max_off - last_max_off ) < left){
+        //                     std::copy((entry->second->data).begin(), (entry->second->data).end(), out.end());
+        //                     // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).end());
+        //                     left -= (entry->second)->len();
+        //                     len -= (entry->second)->len();
+        //                     data_len += (entry->second)->len();
+        //                     last_max_off = entry->second->max_off();
+        //                     data.erase(data.begin());
+        //                 }else{
+        //                     std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.end());
+        //                     // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
+        //                     data_len += left;
+        //                     len -= left;
+        //                     left = 0;
+        //                     (entry->second)->consume(left);
+        //                 }
+        //             }else{
+        //                 out.insert(out.end(), zero, 0);
+        //                 left -= zero;
+        //                 data_len += zero;
+        //             }
+        //         }
+
+        //     }
+        //     return data_len;
+        // };
+
+        // new version delete
         size_t emit(std::vector<uint8_t> &out, size_t output_len = 0){
             size_t data_len = 0;
             size_t last_max_off = data.begin()->second->max_off();
@@ -76,13 +148,15 @@ namespace dmludp{
                 left = output_len;
             }
             
+            auto itEnd = 0;
+            auto entry = data.begin();
             while (ready() && left > 0){
                 if (data.empty()){
                     break;
                 }
 
-                auto entry = data.begin();
-
+                // auto entry = data.begin();
+                itEnd = entry->first;
                 // First enty
                 if (entry->second->off() == start_off){
                     if (entry->second->len() <= left){
@@ -91,7 +165,7 @@ namespace dmludp{
                         left -= (entry->second)->len();
                         last_max_off = entry->second->max_off();
                         len -= (entry->second)->len();
-                        data.erase(data.begin());
+                        // data.erase(data.begin());
                     }else{
                         std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.begin());
                         data_len += left;
@@ -110,15 +184,13 @@ namespace dmludp{
                         auto current_max_off = entry->second->max_off();
                         if((current_max_off - last_max_off ) < left){
                             std::copy((entry->second->data).begin(), (entry->second->data).end(), out.end());
-                            // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).end());
                             left -= (entry->second)->len();
                             len -= (entry->second)->len();
                             data_len += (entry->second)->len();
                             last_max_off = entry->second->max_off();
-                            data.erase(data.begin());
+                            // data.erase(data.begin());
                         }else{
                             std::copy((entry->second->data).begin(), (entry->second->data).begin()+left, out.end());
-                            // out.insert(out.end(), (entry->second->data).begin(), (entry->second->data).begin()+left);
                             data_len += left;
                             len -= left;
                             left = 0;
@@ -130,8 +202,14 @@ namespace dmludp{
                         data_len += zero;
                     }
                 }
+                entry++;
 
             }
+            auto Endit = data.find(itEnd);
+            if (Endit != data.end()) {
+                Endit++; 
+            }
+            data.erase(data.begin(), Endit);
             return data_len;
         };
 

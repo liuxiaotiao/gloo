@@ -200,16 +200,21 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 //recv_and_drop();
                 recv_count.clear();
             }
-
+            sent = 0;
             max_data = (uint64_t)window_size;
             auto capacity = cap();
             if (capacity <= 0) {
                 return 0;
             }
 
-            // All data has been written into buffer.
-            if (write_data_len <= 0){
+            // All data has been written into buffer, all buffer data has been sent
+            if (write_data_len <= 0 && data.empty()){
                 return -1;
+            }
+            
+            // no new data, but still have some unack data.
+            if (write_data_len <= 0 && !data.empty()){
+                return 0;
             }
 
             if (is_empty()){

@@ -719,6 +719,7 @@ bool Pair::protocal2read(){
       const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
       if (rnbytes == 0){
+        dmludp_clear_recv_setting(dmludp_connection);
         readComplete(rbuf);
         break;
       }
@@ -765,6 +766,7 @@ bool Pair::protocal2send(){
   // Read data to protocal 
   if (dmludp_transmission_complete(dmludp_connection)){
     const auto opcode = op.getOpcode();
+    op.nwritten = 0;
     if (opcode == Op::SEND_UNBOUND_BUFFER) {
       buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
       if (!buf) {
@@ -804,6 +806,8 @@ bool Pair::protocal2send(){
 
       if (errno == EAGAIN){
         dmludp_set_error(dmludp_connection, EAGAIN);
+        struct itimerspec new_value = {};
+        timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
       return false;
     }
@@ -1014,7 +1018,9 @@ void Pair::sendAsyncMode(Op& op) {
 
   // // If an earlier operation hasn't finished transmitting,
   // // add this operation to the transmit queue.
-  
+  ////////////////////////////////////////
+  op.nwritten = 0;
+  ////////////////////////////////////////
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
     return;

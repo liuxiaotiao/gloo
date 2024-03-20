@@ -147,6 +147,7 @@ class Connection{
 
     std::vector<uint64_t> record_send;
 
+    // Record sent packet num 
     std::vector<uint64_t> record2ack;
 
     std::unordered_map<uint64_t, uint8_t> recv_dic;
@@ -195,9 +196,6 @@ class Connection{
     SendBuf send_buffer;
 
     RecvBuf rec_buffer;
-
-    // How many ack need to process
-    size_t prepare_ack;
 
     ///// 1/28/204
     // Initial elicit_ack number and all retransmission elicit ack number.
@@ -287,8 +285,7 @@ class Connection{
     retransmission_ack(),
     written_data_len(0),
     written_data_once(0),
-    dmludp_error(0),
-    prepare_ack(0),
+    dmludp_error(0)
     {};
 
     ~Connection(){
@@ -424,38 +421,18 @@ class Connection{
             ini = valueToKeys[received_ack];
             ack_set.erase(ini);
             for (int key : keyToValues[ini]) {
-
                 retransmission_ack.erase(key);
-
                 valueToKeys.erase(key);
-  
                 timeout_ack.erase(key);
             }
         }else{
             return;
         }
         keyToValues.erase(ini);
-        ////////
 
-        //// 1/28/2024
-        // ack_set.erase(hd->pkt_num);
-        // handshake = retransmission_ack.at(hd->pkt_num).second;
-        // update_rtt();
-        // retransmission_ack.erase(hd->pkt_num);
-        // // Move this judgement before ack_set.rease() and clear retransmission_ack
-	    // if(ack_set.empty()){
-        //     stop_ack = true;
-        // }
-        ///////
         std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.begin() + 26 + hd->pkt_length);
 
         std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
-
-        // uint64_t max_ack = convertToUint64(ackvector);
-
-        // if (max_ack > max_off){
-        //     max_off = max_ack;
-        // }
 
         size_t len = unackbuf.size();
         size_t start = 0;
@@ -465,11 +442,9 @@ class Connection{
             std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
             uint64_t unack = convertToUint64(ackvector);
             start += 8;
-            // std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 1, ackvector.begin());
             uint8_t priority = unackbuf[start];
             start += 1;
             if ( sent_dic.find(unack) != sent_dic.end()){
-                prepare_ack -= 1;
                 if (sent_dic.at(unack) == 0){
                     // Remove from send_buffer
                     send_buffer.ack_and_drop(unack);
@@ -507,6 +482,7 @@ class Connection{
                     pnum = 8;
                 }
                 recovery.update_win(weights, pnum);
+                weights = 0;
             }
             count += 1;
 
@@ -519,6 +495,10 @@ class Connection{
     uint8_t findweight(uint64_t unack){
         return prioritydic.at(unack);
     };
+
+    void clear_recv_setting(){
+        recv_dic.clear();
+    }
 
     bool send_all(){
         stop_flag = false;
@@ -575,7 +555,10 @@ class Connection{
         written_data_len = 0;
         ///////////////////
         record_send.clear();
+        sent_dic.clear();
         ack_point = 0;
+
+        send_buffer.off = 0;
         ///////////////////
         if ( data_buffer.size() > 0 ){
             completed = false;
@@ -641,13 +624,13 @@ class Connection{
         size_t congestion_window = 0;
         ssize_t written_len = 0;
 
-        if(prepare_ack != 0){
+        if(!retransmission_ack.empty()){
             return 0;
         }
 
         if (get_dmludp_error() != 11){
             // For the windows size change, it should be reconsider later(1/11/2024)
-            if (send_buffer.data.empty()) {
+            // if (send_buffer.data.empty()) {
                 auto high_ratio = (double)high_priority  / (double)sent_number;
                 high_priority = 0;
                 sent_number = 0;
@@ -657,9 +640,10 @@ class Connection{
                     congestion_window = recovery.cwnd();
                 };
                 record_win = congestion_window;
-            }else{
-                congestion_window = record_win;
-            }
+            // }else{
+            //     congestion_window = record_win;
+            //     recovery.parameter_reset();
+            // }
 
             
             for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
@@ -709,14 +693,15 @@ class Connection{
 
                 auto offset = out_off;
                 if (sent_dic.find(out_off) != sent_dic.end()){
-                    sent_dic[out_off] -= 1;
+                    if (sent_dic[out_off] != 3){
+                        sent_dic[out_off] -= 1;
+                    }
                 }else{
                     sent_dic[out_off] = priority;
                 }
 
                 record_send.push_back(offset);
                 record2ack.push_back(offset);
-                prepare_ack += 1;
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
                 messages[i].msg_hdr.msg_iovlen = 2;
 
@@ -762,7 +747,7 @@ class Connection{
                 if (sent_dic.find(out_off) != sent_dic.end()){
                     sent_dic[out_off] -= 1;
                 }else{
-                    sent_dic[out_off] = priority;
+                    sent_dic[out_off] = priority +2;
                 }
 
                 record_send.push_back(offset);
@@ -788,7 +773,10 @@ class Connection{
                 stop_ack = false;
             }
         }
-
+        iovecs.resize(record2ack.size() * 2);
+        // iovecs.shrink_to_fit();
+        messages.resize(record2ack.size());
+        // messages.shrink_to_fit();
         written_data_len += written_len;
         return written_len;
 
@@ -841,7 +829,7 @@ class Connection{
         if(sent_num == record2ack.size()){
             record2ack.clear();
         }else{
-            record2ack.erase(record2ack.begin(), record2ack.begin()+ sent_num + 1);
+            record2ack.erase(record2ack.begin(), record2ack.begin()+ sent_num);
         }
 
         delete hdr; 
@@ -891,6 +879,7 @@ class Connection{
         ssize_t pn = -1;
         std::vector<uint64_t> pn_list;
         timestamps.clear();
+        // Cancel timerfd.
         if (retransmission_ack.empty()){
             return -1;
         }
@@ -905,6 +894,7 @@ class Connection{
                 timestamps.insert(e.second.second + duration);
             }
         }
+        // No timeout occur
         if (pn_list.size() == 0){
             return 0;
         }
@@ -933,6 +923,11 @@ class Connection{
             delete hdr; 
             hdr = nullptr; 
             out.push_back(out_buffer);
+        }
+        if (timestamps.empty()){
+            std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+            std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
+            timestamps.insert(now + duration);
         }
         return pn_list.size(); 
     }
@@ -1315,8 +1310,8 @@ class Connection{
     }
     
     size_t recv_len(){
-        // return rec_buffer.length();
-        return rec_buffer.first_item_len();
+        return rec_buffer.length();
+        // return rec_buffer.first_item_len();
     }
 
     //Writing data to send buffer.
@@ -1354,7 +1349,7 @@ class Connection{
     };
 
     uint8_t priority_calculation(uint64_t off){
-        auto real_index = (uint64_t)(off/1024);
+        auto real_index = (uint64_t)(off/1350);
         return norm2_vec[real_index];
     };
 
