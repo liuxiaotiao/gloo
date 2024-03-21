@@ -323,7 +323,7 @@ class Connection{
         return result;
     };
 
-    size_t recv_slice(std::vector<uint8_t> &buf){
+    size_t recv_slice(std::vector<uint8_t> &buf, const uint8_t* src){
         auto len = buf.size();
 
         // see in dmludp.h
@@ -369,7 +369,9 @@ class Connection{
         if (hdr->ty == Type::Application){
             recv_count += 1;
             read = (size_t)(hdr->pkt_length);
-            std::vector<uint8_t> writebuf(buf.begin() + 26, buf.begin() + 26 + hdr->pkt_length);
+            std::vector<uint8_t> writebuf;
+            writebuf.insert(writebuf.end(), src + HEADER_LENGTH, data + 26 + hdr->pkt_length);
+            // std::vector<uint8_t> writebuf(buf.begin() + 26, buf.begin() + 26 + hdr->pkt_length);
             rec_buffer.write(writebuf, hdr->offset);
             recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
         }
@@ -498,6 +500,10 @@ class Connection{
 
     void clear_recv_setting(){
         recv_dic.clear();
+    }
+
+    void recv_reset(){
+        rec_buffer.reset();
     }
 
     bool send_all(){
@@ -1297,7 +1303,11 @@ class Connection{
         return true;
     };
 
-    size_t read(std::vector<uint8_t> &out, size_t output_len = 0){
+    void recv_padding(size_t total_len){
+        rec_buffer.data_padding(total_len);
+    }
+
+    size_t read(uint8_t* out, size_t output_len = 0){
         return rec_buffer.emit(out, output_len);
     };
 

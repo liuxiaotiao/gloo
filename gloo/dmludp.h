@@ -269,7 +269,7 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, const uint8_t*
 
     std::vector<uint8_t> recv_buf(buf, buf + out_len);
 
-    size_t received = conn->recv_slice(recv_buf);
+    size_t received = conn->recv_slice(recv_buf, buf);
     
     if (received == 0){
         auto hdr = Header::from_slice(recv_buf);
@@ -292,6 +292,14 @@ inline bool dmludp_check_first_entry(std::shared_ptr<Connection> conn, size_t ch
     return conn->check_first_entry(check_len);
 }
 
+inline void dmludp_conn_recv_padding(std::shared_ptr<Connection> conn, size_t total_len){
+    return conn->recv_padding(total_len);
+}
+
+inline void dmludp_conn_recv_reset(std::shared_ptr<Connection> conn){
+    conn->recv_reset();
+}
+
 inline size_t dmludp_conn_recv_len(std::shared_ptr<Connection> conn){
     return conn->recv_len();
 }
@@ -303,10 +311,8 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, siz
     }
 
 //  raw pointer, remove vector
-    std::vector<uint8_t> data_slice(len);
-
-    size_t result = conn->read(data_slice, len);
-    memcpy(buf, data_slice.data(), data_slice.size());
+    // std::vector<uint8_t> data_slice(len);    
+    size_t result = conn->read(buf, len);
 
     return static_cast<ssize_t>(result);
 }

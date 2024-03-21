@@ -652,6 +652,7 @@ bool Pair::protocal2read(){
   ssize_t rv;
 
   ssize_t dmludpread = 0;
+  bool ispadding = false;
   while(true){
     uint8_t buffer[1500];
     ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
@@ -661,6 +662,7 @@ bool Pair::protocal2read(){
       int type;
       int pkt_num;
       rv = dmludp_header_info(buffer, 26, type, pkt_num);
+      // Elicit ack
       if(rv == 4){
         uint8_t out[1500];
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
@@ -672,11 +674,14 @@ bool Pair::protocal2read(){
         uint8_t out[1500];
         auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
         ssize_t socket_write = ::send(fd_, out, stopsize, 0);
+        ispadding = true;
         break;
       }
+      // Application packet
       else if (rv == 3){
 
       }
+      // Acknowledge packet
       else if (rv == 5){
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
@@ -709,6 +714,7 @@ bool Pair::protocal2read(){
     }
   }
 
+  // Process readComplete
   if (!dmludp_conn_has_recv(dmludp_connection)){   
     NonOwningPtr<UnboundBuffer> rbuf;
     while(true){
@@ -719,27 +725,35 @@ bool Pair::protocal2read(){
       const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
       if (rnbytes == 0){
-        dmludp_clear_recv_setting(dmludp_connection);
         readComplete(rbuf);
+        dmludp_clear_recv_setting(dmludp_connection);
+        dmludp_conn_recv_reset(dmludp_connection);
         break;
       }
 
       auto left_len = dmludp_conn_recv_len(dmludp_connection);
 
       if (!rbuf){
+        // Check op info
         bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
         if (check_result){
           rx_.nread += rnbytes;
-          dmludp2read(riov);
+          dmludp2read(riov, rnbytes);
         }else{
           return false;
         }
       }else{
         if (rnbytes != left_len){
-          break;
+          if (ispadding){
+            dmludp_conn_recv_padding(dmludp_connection, rnbytes);
+            rx_.nread += rnbytes;
+            dmludp2read(riov, rnbytes);
+          }else{
+            break;
+          }
         }else{
           rx_.nread += rnbytes;
-          dmludp2read(riov);
+          dmludp2read(riov, rnbytes);
         }
       }
     }
