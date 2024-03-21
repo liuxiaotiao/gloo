@@ -370,7 +370,7 @@ class Connection{
             recv_count += 1;
             read = (size_t)(hdr->pkt_length);
             std::vector<uint8_t> writebuf;
-            writebuf.insert(writebuf.end(), src + HEADER_LENGTH, data + 26 + hdr->pkt_length);
+            writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + 26 + hdr->pkt_length);
             // std::vector<uint8_t> writebuf(buf.begin() + 26, buf.begin() + 26 + hdr->pkt_length);
             rec_buffer.write(writebuf, hdr->offset);
             recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
@@ -1296,7 +1296,7 @@ class Connection{
 
     // Check if fixed length of first entry in received buffer exist.
     bool check_first_entry(size_t check_len){
-        auto fst_len = rec_buffer.first_item_len();
+        auto fst_len = rec_buffer.first_item_len(check_len);
         if (fst_len != check_len){
             return false;
         }
@@ -1397,19 +1397,6 @@ class Connection{
         return rtt.count();
     };
 
-    /// Returns the maximum possible size of egress UDP payloads.
-    ///
-    /// This is the maximum size of UDP payloads that can be sent, and depends
-    /// on both the configured maximum send payload size of the local endpoint
-    /// (as configured with [`set_max_send_udp_payload_size()`]), as well as
-    /// the transport parameter advertised by the remote peer.
-    ///
-    /// Note that this value can change during the lifetime of the connection,
-    /// but should remain stable across consecutive calls to [`send()`].
-    ///
-    /// [`set_max_send_udp_payload_size()`]:
-    ///     struct.Config.html#method.set_max_send_udp_payload_size
-    /// [`send()`]: struct.Connection.html#method.send
     size_t max_send_udp_payload_size() {
         return MIN_CLIENT_INITIAL_LEN;
     };
@@ -1489,33 +1476,6 @@ class Connection{
     bool empty(){
         return data_is_empty() && is_empty();
     }
-
-    // Application can send data through this function, 
-    // It can dynamically add the new coming data to the buffer.
-    // void data_write(const uint8_t* buf, size_t length){
-    //     if (!norm2_vec.empty()){
-    //         norm2_vec.clear();
-    //     }
-    //     if (!send_data_buf.empty()){
-    //         send_data_buf.clear();
-    //     }
-
-    //     size_t len = 0;
-    //     if (length % 1024 == 0){
-    //         len = length / 1024;
-    //     }else{
-    //         len = length/1024 + 1;
-    //     }
-
-    //     total_offset = 0;
-    //     ///////////////////////////////////////////////////////
-    //     // change vector to pointer to reduce operation time
-    //     send_data_buf.insert(send_data_buf.begin(), buf, buf+length);
-
-    //     norm2_vec.insert(norm2_vec.begin(), len, 3);
-
-    //     send_buffer.clear();
-    // };
     
     // Date: 7th Jan, 2024
     size_t data_write(uint8_t* buf, size_t length){

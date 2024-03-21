@@ -26,21 +26,21 @@ namespace dmludp{
 
         ~RecvBuf(){};
 
-        void write(std::vector<uint8_t> &out, uint64_t out_off){
-            auto buf = RangeBuf::from(out, out_off);
+        // void write(std::vector<uint8_t> &out, uint64_t out_off){
+        //     auto buf = RangeBuf::from(out, out_off);
 
-            size_t buf_len = buf->len();
-            uint64_t tmp_off = buf->max_off()-(uint64_t)buf_len;
+        //     size_t buf_len = buf->len();
+        //     uint64_t tmp_off = buf->max_off()-(uint64_t)buf_len;
 
-            if (!(data.empty())){
-                auto entry = --data.end();
-                if (entry -> first == tmp_off){
-                    max_recv_off = tmp_off;
-                }
-            }   
-            data.insert(std::make_pair((buf->off()), buf));
-            len += buf_len;
-        };
+        //     if (!(data.empty())){
+        //         auto entry = --data.end();
+        //         if (entry -> first == tmp_off){
+        //             max_recv_off = tmp_off;
+        //         }
+        //     }   
+        //     data.insert(std::make_pair((buf->off()), buf));
+        //     len += buf_len;
+        // };
 
         void write(std::vector<uint8_t> &out, uint64_t out_off){
             auto data_len = data.size();
@@ -104,7 +104,7 @@ namespace dmludp{
             size_t emitLen = 0;
             
             if (output_len == 0){
-                out = static_cast<uint8_t>data.data() + removed;
+                out = static_cast<uint8_t>(data.data() + removed);
                 emitLen = data.size() - removed;
                 removed = data.size();
                 return emitLen;
