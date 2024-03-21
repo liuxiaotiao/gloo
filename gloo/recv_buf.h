@@ -104,7 +104,7 @@ namespace dmludp{
             size_t emitLen = 0;
             
             if (output_len == 0){
-                out = static_cast<uint8_t>(data.data() + removed);
+                out = static_cast<uint8_t*>(data.data() + removed);
                 emitLen = data.size() - removed;
                 removed = data.size();
                 return emitLen;
@@ -118,7 +118,7 @@ namespace dmludp{
                 return emitLen;
             }
 
-            out = static_cast<uint8_t>(data.data() + removed);
+            out = static_cast<uint8_t*>(data.data() + removed);
             emitLen = output_len;
             removed += output_len;
             return emitLen;
