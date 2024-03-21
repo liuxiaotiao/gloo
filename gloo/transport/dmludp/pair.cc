@@ -632,12 +632,17 @@ void Pair::handleEvents(int events) {
 }
 
 
-void Pair::dmludp2read(struct iovec &iov, size_t buffer_len){
+void Pair::dmludp2read(Op& op, NonOwningPtr<UnboundBuffer>& buf, size_t buffer_len){
   size_t iovlen = 0;
-  if(buffer_len == 0){
-    iovlen = iov.iov_len;
+  if (op.nread < sizeof(op.preamble)) {
+    iovlen = sizeof(op.preamble) - op.nread;
+    dmludp_data_read(dmludp_connection, (((void*)&op.preamble) + op.nread), iovlen, true);
+  }else{
+    void* ptr = (void*)buf->ptr;
+    size_t offset = op.offset;
+    iovlen = op.nbytes;
+    dmludp_data_read(dmludp_connection, ((void*)(((NonOwningPtr<UnboundBuffer>(op.ubuf))->ptr)) + offset), iovlen, true);
   }
-  dmludp_data_read(dmludp_connection, iov.iov_base, iovlen);
 }
 
 
@@ -726,7 +731,7 @@ bool Pair::protocal2read(){
 
       if (rnbytes == 0){
         readComplete(rbuf);
-        dmludp_clear_recv_setting(dmludp_connection);
+        // dmludp_clear_recv_setting(dmludp_connection);
         dmludp_conn_recv_reset(dmludp_connection);
         break;
       }
@@ -737,8 +742,8 @@ bool Pair::protocal2read(){
         // Check op info
         bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
         if (check_result){
+          dmludp2read(rx_, rbuf, rnbytes);
           rx_.nread += rnbytes;
-          dmludp2read(riov, rnbytes);
         }else{
           return false;
         }
@@ -746,14 +751,14 @@ bool Pair::protocal2read(){
         if (rnbytes != left_len){
           if (ispadding){
             dmludp_conn_recv_padding(dmludp_connection, rnbytes);
+            dmludp2read(rx_, rbuf, rnbytes);
             rx_.nread += rnbytes;
-            dmludp2read(riov, rnbytes);
           }else{
             break;
           }
         }else{
+          dmludp2read(rx_, rbuf, rnbytes);
           rx_.nread += rnbytes;
-          dmludp2read(riov, rnbytes);
         }
       }
     }
@@ -879,38 +884,6 @@ void Pair::handleReadWrite(int events){
     }
   }
 }
-
-// Data: 7th Jan 2024
-// New version handleReadWrite
-// void Pair::handleReadWrite(int events){
-//   if (events & EPOLLOUT){
-//     GLOO_ENFORCE(
-//         !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
-
-//      while (!tx_.empty()) {
-//       if (dmludp_transmission_complete(dmludp_connection)){
-//         auto& op = tx_.front();
-//         if (write2dmludp(op)){
-//           // Write2dmludp completed; remove from queue.
-//           tx_.pop_front();
-//         }else{
-//           // Data doesn't write into protocal, break and rewrite.
-//           break;
-//         }
-//       }
-//     }
-
-//     if (tx_.empty()) {
-//       device_->registerDescriptor(fd_, EPOLLIN, this);
-//     }
-//   }
-
-//   if (events & EPOLLIN) {
-//     while (handleread()) {
-//       // Keep going
-//     }
-//   }
-// }
 
 
 // getBuffer must only be called when holding lock.

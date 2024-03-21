@@ -50,7 +50,7 @@ namespace dmludp{
                             std::make_move_iterator(out.begin()), 
                             std::make_move_iterator(out.end()));
             }
-            else if(out_off > data_len){
+            else if(out_off == data_len){
                 data.insert(data.end(), 
                             std::make_move_iterator(out.begin()), 
                             std::make_move_iterator(out.end()));
@@ -100,27 +100,48 @@ namespace dmludp{
         }
 
         // when output_len is 0, left data will be emiited.
-        size_t emit(uint8_t* out, size_t output_len = 0){
+        size_t emit(uint8_t* out, bool iscopy, size_t output_len = 0){
             size_t emitLen = 0;
-            
-            if (output_len == 0){
+            if (iscopy){
+                if (output_len == 0){
+                    // out = static_cast<uint8_t*>(data.data() + removed);
+                    memcpy(out, data.data() + removed, data.size());
+                    emitLen = data.size() - removed;
+                    removed = data.size();
+                    return emitLen;
+                }
+
+                if ((output_len + removed) > data.size()){
+                    return emitLen;
+                }
+
+                if (removed == data.size()){
+                    return emitLen;
+                }
+
+                memcpy(out, data.data() + removed, output_len);
+                emitLen = output_len;
+                removed += output_len;
+            }else{
+                if (output_len == 0){
+                    out = static_cast<uint8_t*>(data.data() + removed);
+                    emitLen = data.size() - removed;
+                    removed = data.size();
+                    return emitLen;
+                }
+
+                if ((output_len + removed) > data.size()){
+                    return emitLen;
+                }
+
+                if (removed == data.size()){
+                    return emitLen;
+                }
+
                 out = static_cast<uint8_t*>(data.data() + removed);
-                emitLen = data.size() - removed;
-                removed = data.size();
-                return emitLen;
+                emitLen = output_len;
+                removed += output_len;
             }
-
-            if ((output_len + removed) > data.size()){
-                return emitLen;
-            }
-
-            if (removed == data.size()){
-                return emitLen;
-            }
-
-            out = static_cast<uint8_t*>(data.data() + removed);
-            emitLen = output_len;
-            removed += output_len;
             return emitLen;
         }
 

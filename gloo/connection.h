@@ -367,6 +367,9 @@ class Connection{
         }
 
         if (hdr->ty == Type::Application){
+            if (hdr->offset == 0){
+                clear_recv_setting();
+            }
             recv_count += 1;
             read = (size_t)(hdr->pkt_length);
             std::vector<uint8_t> writebuf;
@@ -1307,8 +1310,8 @@ class Connection{
         rec_buffer.data_padding(total_len);
     }
 
-    size_t read(uint8_t* out, size_t output_len = 0){
-        return rec_buffer.emit(out, output_len);
+    size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
+        return rec_buffer.emit(out, iscopy, output_len);
     };
 
     uint64_t max_ack() {
