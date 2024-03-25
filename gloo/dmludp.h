@@ -329,3 +329,7 @@ inline size_t dmludp_get_dmludp_error(std::shared_ptr<Connection> conn){
 inline void dmludp_clear_recv_setting(std::shared_ptr<Connection> conn){
     conn->clear_recv_setting();
 }
+
+inline void dmludp_conn_clear_sent_once(std::shared_ptr<Connection> conn){
+    conn->clear_sent_once();
+}

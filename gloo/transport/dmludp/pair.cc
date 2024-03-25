@@ -688,6 +688,9 @@ bool Pair::protocal2read(){
       }
       // Acknowledge packet
       else if (rv == 5){
+        if (tx_.empty()) {
+            continue;
+          } 
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
@@ -701,6 +704,7 @@ bool Pair::protocal2read(){
           op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
             writeComplete(op, sbuf, opcode);
+            dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
           }
 
@@ -800,7 +804,6 @@ bool Pair::protocal2send(){
     if (!w2dmludp){
       return false;
     }
-
   }
 
   std::vector<uint8_t> padding(1446, 0);

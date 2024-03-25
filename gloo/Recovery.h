@@ -62,6 +62,8 @@ class Recovery{
 
     size_t decre_win_copy;
 
+    size_t last_cwnd;
+
     Recovery():
     app_limit(false),
     // congestion_window(INI_WIN),
@@ -75,6 +77,7 @@ class Recovery{
     decre_win_copy(0){
         max_datagram_size = PACKET_SIZE;
         congestion_window = INI_WIN;
+        last_cwnd = INI_WIN;
     };
 
     ~Recovery(){};
@@ -91,24 +94,50 @@ class Recovery{
     //x = [0:0.1:3.6];
     //y = -8*(x-1.8).^3/1.8^3;
     //y= 4x^2−16x+8
-    void update_win(float weights, double num){
-        float winadd_copy = 0;
-        double winadd = 0;
-        if(function_change){
-            winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
-        }else{
-            // weights == 0, no loss, partial win double. weights > 0, dynamic add or minus window
-            if (weights > 0){
-                function_change = true;
-                incre_win = incre_win_copy;
-                decre_win = decre_win_copy;
-            }
-            winadd_copy = (3 * pow((double)weights, 2)  - 12 *(double)weights + 4) * (double)max_datagram_size; 
-            winadd = num * (double)max_datagram_size;
-        }
+    // void update_win(float weights, double num){
+    //     float winadd_copy = 0;
+    //     double winadd = 0;
+    //     if(function_change){
+    //         winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
+    //     }else{
+    //         // weights == 0, no loss, partial win double. weights > 0, dynamic add or minus window
+    //         if (weights > 0){
+    //             function_change = true;
+    //             incre_win = incre_win_copy;
+    //             decre_win = decre_win_copy;
+    //         }
+    //         winadd_copy = (3 * pow((double)weights, 2)  - 12 *(double)weights + 4) * (double)max_datagram_size; 
+    //         winadd = num * (double)max_datagram_size;
+    //     }
 
-        if (winadd != num*(double)max_datagram_size){
+    //     if (winadd != num*(double)max_datagram_size){
+    //         roll_back_flag = true;
+    //     }
+
+    //     if (winadd > 0){
+    //         incre_win += (size_t)winadd;
+    //     }else {
+    //         decre_win += (size_t)(-winadd);
+    //     }
+
+    //     if (winadd_copy > 0){
+    //         incre_win_copy += (size_t)winadd_copy;
+    //     }else {
+    //         decre_win_copy += (size_t)(-winadd_copy);
+    //     }
+    // };
+    
+    // update patial cwnd size
+    // y = 4x^2 − 16x + 8, y = 3x^2 - 12x + 4(current)
+
+    void update_win(float weights, double num){
+        double winadd = 0;
+
+        if (weights > 0){
+            winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
             roll_back_flag = true;
+        }else{
+            winadd = num * (double)max_datagram_size;
         }
 
         if (winadd > 0){
@@ -116,26 +145,8 @@ class Recovery{
         }else {
             decre_win += (size_t)(-winadd);
         }
-
-        if (winadd_copy > 0){
-            incre_win_copy += (size_t)winadd_copy;
-        }else {
-            decre_win_copy += (size_t)(-winadd_copy);
-        }
     };
 
-
-    /// Returns whether or not we should elicit an ACK even if we wouldn't
-    /// otherwise have constructed an ACK eliciting packet.
-    bool should_elicit_ack(size_t pkt_num) {
-        if (pkt_num % ELICT_ACK_CONSTANT == 0){
-            return true;
-        }else{
-            return false;
-        }
-    };
-
-    ///modified
     size_t cwnd(){
         size_t tmp_win = 0;
         if (2*incre_win > decre_win){
@@ -143,27 +154,65 @@ class Recovery{
         }else{
             tmp_win = 0;
         }
-        if (!roll_back_flag) {
-            if (tmp_win !=0){
-                former_win_vecter.insert(tmp_win);
-            }
+
+        if (!roll_back_flag && (tmp_win > INI_WIN)) {
+            former_win_vecter.insert(tmp_win);
         }
 
         congestion_window = tmp_win;
-        // incre_win = 0;
-        // decre_win = 0;
-        // incre_win_copy = 0;
-        // decre_win_copy = 0;
+        last_cwnd = tmp_win;
         parameter_reset();
-        if (congestion_window >=  PACKET_SIZE*INITIAL_WINDOW_PACKETS){
-            return congestion_window;
-        }else{
-            congestion_window = PACKET_SIZE*INITIAL_WINDOW_PACKETS;
+        if (congestion_window < INI_WIN){
+            congestion_window = INI_WIN;
+            tmp_win = INI_WIN;
             return congestion_window;
         }
-        
+        return congestion_window;
     };
+
+    size_t rollback(){
+        if (former_win_vecter.empty()){
+            congestion_window = INI_WIN;
+        }else{
+            congestion_window = *former_win_vecter.rbegin();
+            former_win_vecter.erase(--former_win_vecter.end()); 
+            if (last_cwnd == congestion_window && last_cwnd != INI_WIN){
+                congestion_window = *former_win_vecter.rbegin();
+                former_win_vecter.erase(--former_win_vecter.end()); 
+            }
+        }
+        parameter_reset();
+        return congestion_window;
+    };
+
+
+    ///modified
+    // size_t cwnd(){
+    //     size_t tmp_win = 0;
+    //     if (2*incre_win > decre_win){
+    //         tmp_win = 2*incre_win - decre_win;
+    //     }else{
+    //         tmp_win = 0;
+    //     }
+    //     if (!roll_back_flag) {
+    //         if (tmp_win !=0 && tmp_win>INI_WIN){
+    //             former_win_vecter.insert(tmp_win);
+    //         }
+    //     }
+
+    //     congestion_window = tmp_win;
+        
+    //     parameter_reset();
+    //     if (congestion_window >=  PACKET_SIZE*INITIAL_WINDOW_PACKETS){
+    //         return congestion_window;
+    //     }else{
+    //         congestion_window = PACKET_SIZE*INITIAL_WINDOW_PACKETS;
+    //         return congestion_window;
+    //     }
+        
+    // };
     
+
 
     size_t cwnd_available()  {
         return (congestion_window - bytes_in_flight);
@@ -188,20 +237,16 @@ class Recovery{
         decre_win_copy = 0;
     }
 
-    size_t rollback(){
-        if (former_win_vecter.empty()){
-            congestion_window = INI_WIN;
-        }else{
-            congestion_window = *former_win_vecter.rbegin();
-            former_win_vecter.erase(--former_win_vecter.end()); 
-        }
-        // incre_win = 0;
-        // decre_win = 0;
-        // incre_win_copy = 0;
-        // decre_win_copy = 0;
-        parameter_reset();
-        return congestion_window;
-    };
+    // size_t rollback(){
+    //     if (former_win_vecter.empty()){
+    //         congestion_window = INI_WIN;
+    //     }else{
+    //         congestion_window = *former_win_vecter.rbegin();
+    //         former_win_vecter.erase(--former_win_vecter.end()); 
+    //     }
+    //     parameter_reset();
+    //     return congestion_window;
+    // };
 
 };
 

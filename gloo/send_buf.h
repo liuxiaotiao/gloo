@@ -35,6 +35,9 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
         size_t sent;
 
+        // scenario: left not received data is more than cwnd.
+        ssize_t send_partial;
+
         std::unordered_set<uint64_t> recv_count;
 
         SendBuf():
@@ -44,7 +47,8 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         max_data(MIN_SENDBUF_INITIAL_LEN * 8),
         used_length(0),
         removed(0),
-        sent(0){};
+        sent(0),
+        send_partial(0){};
 
         ~SendBuf(){};
 
@@ -111,10 +115,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
             return length;
         };
-        /// Returns true if the stream was stopped before completion.
-        // bool is_stopped(){
-        //     self.error.is_some()
-        // }
 
         /// Updates the max_data limit to the given value.
         void update_max_data(uint64_t maxdata) {
@@ -204,7 +204,8 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             max_data = (uint64_t)window_size;
             auto capacity = cap();
             if (capacity <= 0) {
-                return 0;
+                send_partial = (ssize_t)window_size;
+                return -2;
             }
 
             // All data has been written into buffer, all buffer data has been sent
@@ -248,7 +249,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
                 // off_len represnts the length of a splited data
                 if (off_len > 0){
-                    if ( ready_written > off_len ){
+                    if (ready_written > off_len){
                         offset_recv[off] = true;
                         data.push_back(std::make_pair(off, std::make_pair(src + start_off, off_len)));
                         off += (uint64_t)off_len;
@@ -258,7 +259,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }
                     else{
                         offset_recv[off] = true;
-                        data.push_back(std::make_pair(off, std::make_pair(src + start_off, ready_written )));
+                        data.push_back(std::make_pair(off, std::make_pair(src + start_off, ready_written)));
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
                         used_length += ready_written;
@@ -308,7 +309,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 }
 
                 size_t ready_written = 0;
-                if ( write_data_len > capacity){
+                if (write_data_len > capacity){
                     ready_written = capacity;
                 }else{
                     ready_written = write_data_len;
@@ -324,10 +325,9 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t)off_len;
                         used_length += off_len;
                         write_len += off_len;
-                        // offset_recv.insert(off, true);
                     }
                     else{
-                        data.push_back(std::make_pair(off, std::make_pair(src + start_off, (uint64_t)ready_written )));
+                        data.push_back(std::make_pair(off, std::make_pair(src + start_off, (uint64_t)ready_written)));
                         offset_recv[off] = true;
                         off += (uint64_t)ready_written;
                         length += (uint64_t)ready_written;
@@ -335,7 +335,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         write_len += ready_written;
 
                         write_data_len -= write_len;
-                        // offset_recv.insert(off, true);
                         return write_len;
                     }
                 }
@@ -349,7 +348,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t) SEND_BUFFER_SIZE;
                         used_length += SEND_BUFFER_SIZE;
                         it += SEND_BUFFER_SIZE;
-                        // offset_recv.insert(off, true);
                     }else{
                         write_len += (ready_written - it);
                         offset_recv[off] = true;
@@ -358,10 +356,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                         length += (uint64_t) (ready_written - it);
                         used_length += (ready_written - it);
                         it = ready_written;
-                        // offset_recv.insert(off, true);
                     }
-
-                    
                 }
                 write_data_len -= write_len;
                 return write_len;
@@ -373,7 +368,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             bool stop = false;
             out_len = 0;
             out_off = off_front();
-            while ( ready () ){
+            while (ready()){
                 if(pos >= data.size()){
                     break;
                 }
@@ -388,7 +383,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 size_t buf_len = 0;
                 
                 bool partial;
-                if( buf.second.second <= MIN_SENDBUF_INITIAL_LEN){
+                if(buf.second.second <= MIN_SENDBUF_INITIAL_LEN){
                     partial = true;
                 }else{
                     partial = false;
@@ -413,6 +408,15 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
             }
             sent += out_len;
+
+            if (send_partial >= 0){
+                send_partial -= out_len;
+                if (send_partial < 0){
+                    stop = true;
+                    pos = 0;
+                    send_partial = 0;
+                }
+            }
 
             //All data in the congestion control window has been sent. need to modify
             if (sent  >= max_data) {
