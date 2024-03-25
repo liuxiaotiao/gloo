@@ -409,9 +409,9 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             }
             sent += out_len;
 
-            if (send_partial >= 0){
+            if (send_partial > 0){
                 send_partial -= out_len;
-                if (send_partial < 0){
+                if (send_partial <= 0){
                     stop = true;
                     pos = 0;
                     send_partial = 0;

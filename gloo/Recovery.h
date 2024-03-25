@@ -132,12 +132,12 @@ class Recovery{
 
     void update_win(float weights, double num){
         double winadd = 0;
-
+        roll_back_flag = false;
         if (weights > 0){
             winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
             roll_back_flag = true;
         }else{
-            winadd = num * (double)max_datagram_size;
+            winadd = num * (double)max_datagram_size; 
         }
 
         if (winadd > 0){
@@ -154,9 +154,12 @@ class Recovery{
         }else{
             tmp_win = 0;
         }
-
+        
         if (!roll_back_flag && (tmp_win > INI_WIN)) {
             former_win_vecter.insert(tmp_win);
+            if (tmp_win > last_cwnd){
+                former_win_vecter.insert(last_cwnd);
+            }
         }
 
         congestion_window = tmp_win;
@@ -177,10 +180,16 @@ class Recovery{
             congestion_window = *former_win_vecter.rbegin();
             former_win_vecter.erase(--former_win_vecter.end()); 
             if (last_cwnd == congestion_window && last_cwnd != INI_WIN){
-                congestion_window = *former_win_vecter.rbegin();
-                former_win_vecter.erase(--former_win_vecter.end()); 
+                if (former_win_vecter.empty()){
+                    congestion_window = INI_WIN;
+                }
+                else {
+                    congestion_window = *former_win_vecter.rbegin();
+                    former_win_vecter.erase(--former_win_vecter.end()); 
+                }
             }
         }
+        last_cwnd = congestion_window;
         parameter_reset();
         return congestion_window;
     };
