@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 ///Consider rewriting to udp.h
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>

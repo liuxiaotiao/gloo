@@ -352,9 +352,9 @@ class Connection{
 
         if (hdr->ty == Type::ElicitAck){
             recv_flag = true;
-            std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
+            std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
-            std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
+            std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
             check_loss(checkbuf);
             feed_back = true;
         }
@@ -672,9 +672,11 @@ class Connection{
                     break;
                 }
             }
+        }else{
+            send_buffer.sent = 0;
         }
        
-
+        
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
             iovecs.resize(send_buffer.data.size() * 2);
@@ -780,8 +782,8 @@ class Connection{
                 stop_ack = false;
             }
         }
-        iovecs.resize(record2ack.size() * 2);
-        messages.resize(record2ack.size());
+        // iovecs.resize(record2ack.size() * 2);
+        // messages.resize(record2ack.size());
         written_data_len += written_len;
         return written_len;
 
