@@ -893,7 +893,7 @@ bool Pair::protocal2send(){
     sent += retval;
   }
   if (has_error == 11){
-    dmludp_set_error(dmludp_connection, 0);
+    dmludp_set_error(dmludp_connection, 0, sent);
   }
 
   size_t timer_counter = 0;

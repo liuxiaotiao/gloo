@@ -230,6 +230,8 @@ class Connection{
     size_t dmludp_error;
 
     size_t rx_length;
+
+    size_t sys_err_sent;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -281,7 +283,8 @@ class Connection{
     written_data_len(0),
     written_data_once(0),
     dmludp_error(0).
-    rx_length(0)
+    rx_length(0),
+    sys_err_sent(0)
     {};
 
     ~Connection(){
@@ -804,7 +807,16 @@ class Connection{
         }
         // iovecs.resize(record2ack.size() * 2);
         // messages.resize(record2ack.size());
-        written_data_len += written_len;
+
+        if (sys_err_sent == 0){
+            written_data_len += written_len;
+        }else{
+            auto first = iovecs.size() - 2 * sys_err_sent;
+            auto second = messages.size() - sys_err_sent;
+            iovecs.erase(iovecs.begin(), iovecs.begin() + first);
+            messages.erase(messages.begin(), messages.begin() + second);
+            sys_err_sent = 0;
+        }
         return written_len;
 
     };
@@ -813,8 +825,9 @@ class Connection{
         return dmludp_error;
     }
 
-    void set_error(size_t err){
+    void set_error(size_t err, size_t unsent){
         dmludp_error = err;
+        sys_err_sent = unsent;
     }
 
     // If transmission complete
@@ -1033,7 +1046,7 @@ class Connection{
     }
 
 
-    void addUint64 (std::vector<uint8_t>& v, uint64_t input){
+    void addUint64(std::vector<uint8_t>& v, uint64_t input){
         #if  IS_BIG_ENDIAN
         for (size_t i = 0; i < sizeof(uint64_t); ++i) {
             v.push_back(static_cast<uint8_t>(input >> (i * 8)));
@@ -1364,9 +1377,6 @@ class Connection{
 
 //////////////////////////
     void check_loss(std::vector<uint8_t> b){
-        // auto b = octets::OctetsMut::with_slice(recv_buf);
-
-        // let result:Vec<u64> = Vec::new();
         int start = 0;
         while (b.size()>0) {
             auto offset = Header::get_u64(b, start);
