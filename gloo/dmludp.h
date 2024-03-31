@@ -63,7 +63,6 @@ inline void dmludp_config_free(Config* config){
 inline int dmludp_header_info(uint8_t* data, size_t buf_len, int &off, int &pn) {
     std::vector<uint8_t> buf(data, data + buf_len);
     auto hdr = Header::from_slice(buf);
-    
     pn = hdr->pkt_num;
     int result = 0;
     off = (int)hdr->offset;
@@ -320,8 +319,8 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, siz
     return static_cast<ssize_t>(result);
 }
 
-inline void dmludp_set_error(std::shared_ptr<Connection> conn, size_t err, int sent){
-    conn->set_error(err, (size_t)sent);
+inline void dmludp_set_error(std::shared_ptr<Connection> conn, size_t err){
+    conn->set_error(err);
 }
 
 inline size_t dmludp_get_dmludp_error(std::shared_ptr<Connection> conn){
@@ -337,7 +336,7 @@ inline void dmludp_conn_clear_sent_once(std::shared_ptr<Connection> conn){
 }
 
 inline bool dmludp_conn_receive_complete(std::shared_ptr<Connection> conn){
-    return conn->receive_complete();
+return    conn->receive_complete();
 }
 
 inline void dmludp_conn_rx_len(std::shared_ptr<Connection> conn, size_t expected){

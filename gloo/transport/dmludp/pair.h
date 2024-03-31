@@ -249,7 +249,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             new_value.it_value.tv_nsec = nanosecs.count(); 
 
             if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
-                // perror("timerfd_settime failed 1");
                 continue;
             }else{
               return;
@@ -280,7 +279,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             new_value.it_value.tv_nsec = nanosecs.count(); 
 
             if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
-                // perror("timerfd_settime failed 2");
                 continue;
             }else{
               return;

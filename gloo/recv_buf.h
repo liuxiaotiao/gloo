@@ -22,51 +22,72 @@ namespace dmludp{
 
         size_t removed;
 
-        // how many data padding with 0
-        size_t padding_len;
-
-        RecvBuf():
-            off(0), 
-            len(0), 
-            last_maxoff(0), 
-            max_recv_off(0), 
-            removed(0), 
-            padding_len(0){};
+        RecvBuf():off(0), len(0), last_maxoff(0), max_recv_off(0), removed(0){};
 
         ~RecvBuf(){};
 
-        void write(std::vector<uint8_t> &out, uint64_t out_off){
+/*        void write(std::vector<uint8_t> &out, uint64_t out_off){
             auto data_len = data.size();
             if(out_off > data_len){
-                // data.resize(out_off);
-                // data.insert(data.end(), 
-                //             std::make_move_iterator(out.begin()), 
-                //             std::make_move_iterator(out.end()));
-                data.resize(out_off + out.size());
-                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+                data.resize(out_off);
+                data.insert(data.end(), 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
             }
             else if(out_off == data_len){
-                // data.insert(data.end(), 
-                //             std::make_move_iterator(out.begin()), 
-                //             std::make_move_iterator(out.end()));
-                data.resize(out_off + out.size());
-                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+                data.insert(data.end(), 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
             }
             else{
                 size_t startPos = out_off; 
                 size_t endPos = out_off+out.size();  
 
+                auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
+
+                data.insert(it, 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
+            }
+            len += out.size();
+        }*/
+	void write(std::vector<uint8_t> &out, uint64_t out_off){
+            auto data_len = data.size();
+	    if(out_off == 0){
+		    std::cout<<"recv out_ofr = 0"<<std::endl;
+	    }
+            if(out_off > data_len){
+                //data.resize(out_off);
+		//std::cout<<"point 2"<<std::endl;
+                // data.insert(data.end(),
+                //             std::make_move_iterator(out.begin()),
+                //             std::make_move_iterator(out.end()));
+		data.resize(out_off+out.size());
+		                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+            }
+            else if(out_off == data_len){
+                // data.insert(data.end(),
+                //             std::make_move_iterator(out.begin()),
+                //             std::make_move_iterator(out.end()));
+		    data.resize(out_off + out.size());
+                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+            }
+            else{
+                size_t startPos = out_off;
+                size_t endPos = out_off+out.size();
                 // auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
 
-                // data.insert(it, 
-                //             std::make_move_iterator(out.begin()), 
+                // data.insert(it,
+                //             std::make_move_iterator(out.begin()),
                 //             std::make_move_iterator(out.end()));
                 memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
             }
             len += out.size();
         }
 
-
+        size_t receive_length(){
+            return len;
+        }
         uint64_t max_ack(){
             return max_recv_off;
         }
@@ -77,13 +98,6 @@ namespace dmludp{
 
         size_t length(){
             return (data.size() - removed);
-        }
-
-
-        // no loss, when use loss use another function
-        // how many data real received.
-        size_t receive_length(){
-            return len;
         }
 
         size_t first_item_len(size_t checkLength){

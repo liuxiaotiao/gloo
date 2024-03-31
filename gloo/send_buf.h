@@ -63,6 +63,9 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
             while (tmp_pos <= (data.size() - 1)){
                 auto b = data.at(tmp_pos);
+                // if(!(b->is_empty())){
+                //     return b->off();
+                // }
                 if(b.second.second != 0){
                     return b.first;
                 }
@@ -414,9 +417,8 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     send_partial = 0;
                 }
             }
-
             //All data in the congestion control window has been sent. need to modify
-            if (sent  >= max_data) {
+            if (sent >= max_data) {
                 stop = true;
                 pos = 0;
             }

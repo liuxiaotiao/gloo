@@ -328,6 +328,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
+	std::cout<<"writeComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -513,6 +514,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
+  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -667,6 +669,12 @@ bool Pair::protocal2read(){
       int offset;
       int pkt_num;
       rv = dmludp_header_info(buffer, 26, offset, pkt_num);
+      if (read == 74&&offset == 0){
+                    for (auto index = 0; index < read; index++){
+                            std::cout<<(int)(buffer[index])<<" ";
+                    }
+                    std::cout<<std::endl;
+            }
       // Elicit ack
       if(rv == 4){
         uint8_t out[1500];
@@ -684,8 +692,9 @@ bool Pair::protocal2read(){
       }
       // Application packet
       else if (rv == 3){
-        if ((read - 26) == sizeof(rx_.preamble)){
+if ((read - 26) == sizeof(rx_.preamble)){
           if (offset == 0){
+		  std::cout<<"offset:0"<<std::endl;
             NonOwningPtr<UnboundBuffer> rbuf;
             while(true){
               struct iovec riov = {
@@ -693,21 +702,24 @@ bool Pair::protocal2read(){
                 .iov_len = 0,
               };
               const auto rnbytes = prepareRead(rx_, rbuf, riov);
-
+		std::cout<<"rnbytes:"<<rnbytes<<" received data:"<<dmludp_connection->rec_buffer.data.size()<<std::endl;
               if (rnbytes == 0){
+		      //std::cout<<"rx_.opcode:"<<this->rx_.getOpcode()<<std::endl;
                 readComplete(rbuf);
                 dmludp_conn_recv_reset(dmludp_connection);
                 break;
               }
 
               if (rbuf){
-                dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
+		      dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
                 break;
               }
               
               bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+	     
               if (check_result){
                 dmludp2read(rx_, rbuf, rnbytes);
+		std::cout<<"rx_.opcode:"<<this->rx_.getOpcode()<<std::endl;
                 rx_.nread += rnbytes;
               }
             }
@@ -770,6 +782,7 @@ bool Pair::protocal2read(){
       }
     }else{
       if (errno == EAGAIN) {
+	//      std::cout<<"recv errno == EAGAIN"<<std::endl;
         break;
       }
       if (errno == EINTR){
@@ -779,50 +792,50 @@ bool Pair::protocal2read(){
   }
 
   // Process readComplete
-  // Process unbounded_buffer op
-  // if (!dmludp_conn_has_recv(dmludp_connection)){   
-  //   NonOwningPtr<UnboundBuffer> rbuf;
-  //   while(true){
-  //     struct iovec riov = {
-  //         .iov_base = nullptr,
-  //         .iov_len = 0,
-  //       };
-  //     const auto rnbytes = prepareRead(rx_, rbuf, riov);
+  /*if (!dmludp_conn_has_recv(dmludp_connection)){   
+    NonOwningPtr<UnboundBuffer> rbuf;
+    while(true){
+      struct iovec riov = {
+          .iov_base = nullptr,
+          .iov_len = 0,
+        };
+      const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
-  //     if (rnbytes == 0){
-  //       readComplete(rbuf);
-  //       // dmludp_clear_recv_setting(dmludp_connection);
-  //       dmludp_conn_recv_reset(dmludp_connection);
-  //       break;
-  //     }
+      if (rnbytes == 0){
+        readComplete(rbuf);
+        // dmludp_clear_recv_setting(dmludp_connection);
+        dmludp_conn_recv_reset(dmludp_connection);
+        break;
+      }
 
-  //     auto left_len = dmludp_conn_recv_len(dmludp_connection);
+      auto left_len = dmludp_conn_recv_len(dmludp_connection);
 
-  //     if (!rbuf){
-  //       // Check op info
-  //       bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
-  //       if (check_result){
-  //         dmludp2read(rx_, rbuf, rnbytes);
-  //         rx_.nread += rnbytes;
-  //       }else{
-  //         return false;
-  //       }
-  //     }else{
-  //       if (rnbytes != left_len){
-  //         if (ispadding){
-  //           dmludp_conn_recv_padding(dmludp_connection, rnbytes);
-  //           dmludp2read(rx_, rbuf, rnbytes);
-  //           rx_.nread += rnbytes;
-  //         }else{
-  //           break;
-  //         }
-  //       }else{
-  //         dmludp2read(rx_, rbuf, rnbytes);
-  //         rx_.nread += rnbytes;
-  //       }
-  //     }
-  //   }
-  // }
+      if (!rbuf){
+        // Check op info
+        bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+	std::cout<<"check_first_entry:"<<check_result<<std::endl;
+        if (check_result){
+          dmludp2read(rx_, rbuf, rnbytes);
+          rx_.nread += rnbytes;
+        }else{
+          return false;
+        }
+      }else{
+        if (rnbytes != left_len){
+          if (ispadding){
+            dmludp_conn_recv_padding(dmludp_connection, rnbytes);
+            dmludp2read(rx_, rbuf, rnbytes);
+            rx_.nread += rnbytes;
+          }else{
+            break;
+          }
+        }else{
+          dmludp2read(rx_, rbuf, rnbytes);
+          rx_.nread += rnbytes;
+        }
+      }
+    }
+  }*/
 
   if (dmludpread<0 && errno == EAGAIN){
     return false;
@@ -865,17 +878,26 @@ bool Pair::protocal2send(){
   std::vector<uint8_t> padding(1446, 0);
   std::vector<struct mmsghdr> messages;
   std::vector<struct iovec> iovecs;
-
   auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
   // No data needs to send.
   if (messages.size() == 0){
     return false;
   }
+	if(dmludp_get_dmludp_error(dmludp_connection) == 11){
+  std::cout<<"sendmmsg, message.size()"<<messages.size()<<" wlen:"<<wlen<<std::endl;
+	}
   size_t sent = 0;
   auto has_error = dmludp_get_dmludp_error(dmludp_connection);
   while(messages.size() > sent){
     auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
+   /* if (has_error == EAGAIN){
+	    std::cout<<"retval:"<<retval<<" sent:"<<sent<<std::endl;
+  }*/
     if (retval == -1){
+	    std::cout<<"errno:"<<errno<<std::endl;
+	    if (has_error == EAGAIN){
+            std::cout<<"retval:"<<retval<<" sent:"<<sent<<" errno:"<<errno<<std::endl;
+  }
       // Date: solve data cannot send out one time.
       // Move errno == EINTR out of while(1)
       if (errno == EINTR){
@@ -883,7 +905,8 @@ bool Pair::protocal2send(){
       }
 
       if (errno == EAGAIN){
-        dmludp_set_error(dmludp_connection, EAGAIN, sent);
+	      std::cout<<"errno == EAGAIN, message.size()"<<message.size()<<std::endl;
+      	      dmludp_set_error(dmludp_connection, EAGAIN);
         struct itimerspec new_value = {};
         timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
@@ -891,8 +914,11 @@ bool Pair::protocal2send(){
     }
     sent += retval;
   }
+if(dmludp_get_dmludp_error(dmludp_connection) == 11){
+	std::cout<<"sent:"<<sent<<std::endl;
+}
   if (has_error == 11){
-    dmludp_set_error(dmludp_connection, 0, 0);
+    dmludp_set_error(dmludp_connection, 0);
   }
 
   size_t timer_counter = 0;

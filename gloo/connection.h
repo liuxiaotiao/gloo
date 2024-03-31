@@ -162,6 +162,7 @@ class Connection{
     size_t record_win;
 
     uint64_t total_offset;
+    size_t rx_length;
 
     bool recv_flag;
 
@@ -228,10 +229,6 @@ class Connection{
 
     // Record errno
     size_t dmludp_error;
-
-    size_t rx_length;
-
-    size_t sys_err_sent;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -283,8 +280,7 @@ class Connection{
     written_data_len(0),
     written_data_once(0),
     dmludp_error(0),
-    rx_length(0),
-    sys_err_sent(0)
+rx_length(0)
     {};
 
     ~Connection(){
@@ -350,22 +346,27 @@ class Connection{
         
         // All side can send data.
         if (hdr->ty == Type::ACK){
+	//	std::cout<<"start ACK"<<std::endl;
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
             }
+	  //  std::cout<<"end ACK"<<std::endl;
         }
 
         if (hdr->ty == Type::ElicitAck){
+	//	std::cout<<"start ElicitACK"<<std::endl;
             recv_flag = true;
-            std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
+            std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
-            std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
+            std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
             check_loss(checkbuf);
             feed_back = true;
+	  //  std::cout<<"end ElicitACK"<<std::endl;
         }
 
         if (hdr->ty == Type::Application){
+	//	std::cout<<"start app"<<std::endl;
             if (hdr->offset == 0){
                 clear_recv_setting();
             }
@@ -376,6 +377,7 @@ class Connection{
             // std::vector<uint8_t> writebuf(buf.begin() + 26, buf.begin() + 26 + hdr->pkt_length);
             rec_buffer.write(writebuf, hdr->offset);
             recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
+	    //std::cout<<"end app"<<std::endl;
         }
 
         // In dmludp.h
@@ -536,7 +538,22 @@ class Connection{
         }
         
     };
+    //  no loss scenario, no stop packet.
+    bool receive_complete(){
+        auto rlen = rec_buffer.receive_length();
+        if (rx_length == rlen){
+            return true;
+        }
+        return false;
+    }
 
+    void rx_len(size_t expected){
+        rx_length = expected;
+    }
+
+    void reset_rx_len(){
+        rx_length = 0;
+    }
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
     ssize_t nwrite(sbuffer &send_data, size_t congestion_window) {
@@ -598,24 +615,6 @@ class Connection{
 
     size_t get_once_data_len(){
         return written_data_once;
-    }
-
-    //  no loss scenario, no stop packet.
-    bool receive_complete(){
-        auto rlen = rec_buffer.receive_length();
-        std::cout<<"rlen:"<<rlen<<" rx_length"<<rx_length<<std::endl;
-        if (rx_length == rlen){
-            return true;
-        }
-        return false;
-    }
-
-    void rx_len(size_t expected){
-        rx_length = expected;
-    }
-
-    void reset_rx_len(){
-        rx_length = 0;
     }
 
     void clear_sent_once(){
@@ -700,11 +699,13 @@ class Connection{
             send_buffer.sent = 0;
         }
        
-        
+if (get_dmludp_error() == 11){std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;}
+
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
             iovecs.resize(send_buffer.data.size() * 2);
             messages.resize(send_buffer.data.size());
+	    if (get_dmludp_error() == 11){std::cout<<"messages.resize:"<<messages.size()<<std::endl;}
             // unlock memory allocation, and consider move this to function parameter.
             std::vector<std::shared_ptr<Header>> hdrs;
             for (auto i = 0; ; ++i){
@@ -712,10 +713,8 @@ class Connection{
                 uint64_t out_off = 0;
                 bool s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
                 out_off -= (uint64_t)out_len;
-                if (sys_err_sent == 0){
-                    sent_count += 1;
-                    sent_number += 1;
-                } 
+                sent_count += 1;
+                sent_number += 1;
                 auto pn = pkt_num_spaces.at(0).updatepktnum();
                 auto priority = priority_calculation(out_off);
                 Type ty = Type::Application;
@@ -742,6 +741,9 @@ class Connection{
 
                 if (s_flag){
                     stop_flag = true;
+		    if (get_dmludp_error() == 11){
+			    std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
+		    }
                     break;
                 }
 
@@ -808,18 +810,12 @@ class Connection{
                 stop_ack = false;
             }
         }
-        // iovecs.resize(record2ack.size() * 2);
-        // messages.resize(record2ack.size());
-
-        if (sys_err_sent == 0){
-            written_data_len += written_len;
-        }else{
-            // auto first = iovecs.size() - 2 * sys_err_sent;
-            // auto second = messages.size() - sys_err_sent;
-            iovecs.erase(iovecs.begin(), iovecs.begin() + 2 * sys_err_sent);
-            messages.erase(messages.begin(), messages.begin() + sys_err_sent);
-            sys_err_sent = 0;
-        }
+        //iovecs.resize(record2ack.size() * 2);
+        //messages.resize(record2ack.size());
+        written_data_len += written_len;
+	if (get_dmludp_error() == 11){
+                            std::cout<<"messages.size:"<<messages.size()<<std::endl;
+                    }
         return written_len;
 
     };
@@ -828,9 +824,8 @@ class Connection{
         return dmludp_error;
     }
 
-    void set_error(size_t err, size_t unsent){
+    void set_error(size_t err){
         dmludp_error = err;
-        sys_err_sent = unsent;
     }
 
     // If transmission complete
@@ -1049,7 +1044,7 @@ class Connection{
     }
 
 
-    void addUint64(std::vector<uint8_t>& v, uint64_t input){
+    void addUint64 (std::vector<uint8_t>& v, uint64_t input){
         #if  IS_BIG_ENDIAN
         for (size_t i = 0; i < sizeof(uint64_t); ++i) {
             v.push_back(static_cast<uint8_t>(input >> (i * 8)));
@@ -1380,6 +1375,9 @@ class Connection{
 
 //////////////////////////
     void check_loss(std::vector<uint8_t> b){
+        // auto b = octets::OctetsMut::with_slice(recv_buf);
+
+        // let result:Vec<u64> = Vec::new();
         int start = 0;
         while (b.size()>0) {
             auto offset = Header::get_u64(b, start);
