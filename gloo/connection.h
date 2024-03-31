@@ -282,7 +282,7 @@ class Connection{
     retransmission_ack(),
     written_data_len(0),
     written_data_once(0),
-    dmludp_error(0).
+    dmludp_error(0),
     rx_length(0),
     sys_err_sent(0)
     {};
@@ -603,6 +603,7 @@ class Connection{
     //  no loss scenario, no stop packet.
     bool receive_complete(){
         auto rlen = rec_buffer.receive_length();
+        std::cout<<"rlen:"<<rlen<<" rx_length"<<rx_length<<std::endl;
         if (rx_length == rlen){
             return true;
         }
@@ -813,10 +814,10 @@ class Connection{
         if (sys_err_sent == 0){
             written_data_len += written_len;
         }else{
-            auto first = iovecs.size() - 2 * sys_err_sent;
-            auto second = messages.size() - sys_err_sent;
-            iovecs.erase(iovecs.begin(), iovecs.begin() + first);
-            messages.erase(messages.begin(), messages.begin() + second);
+            // auto first = iovecs.size() - 2 * sys_err_sent;
+            // auto second = messages.size() - sys_err_sent;
+            iovecs.erase(iovecs.begin(), iovecs.begin() + 2 * sys_err_sent);
+            messages.erase(messages.begin(), messages.begin() + sys_err_sent);
             sys_err_sent = 0;
         }
         return written_len;

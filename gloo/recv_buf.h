@@ -31,7 +31,6 @@ namespace dmludp{
             last_maxoff(0), 
             max_recv_off(0), 
             removed(0), 
-            received(0), 
             padding_len(0){};
 
         ~RecvBuf(){};

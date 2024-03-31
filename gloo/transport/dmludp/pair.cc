@@ -18,7 +18,6 @@
 #include <netinet/in.h>
 ///Consider rewriting to udp.h
 #include <netinet/tcp.h>
-#include <netinet/udp.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -884,7 +883,7 @@ bool Pair::protocal2send(){
       }
 
       if (errno == EAGAIN){
-        dmludp_set_error(dmludp_connection, EAGAIN);
+        dmludp_set_error(dmludp_connection, EAGAIN, sent);
         struct itimerspec new_value = {};
         timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
@@ -893,7 +892,7 @@ bool Pair::protocal2send(){
     sent += retval;
   }
   if (has_error == 11){
-    dmludp_set_error(dmludp_connection, 0, sent);
+    dmludp_set_error(dmludp_connection, 0, 0);
   }
 
   size_t timer_counter = 0;
