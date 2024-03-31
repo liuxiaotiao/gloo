@@ -665,9 +665,9 @@ bool Pair::protocal2read(){
     dmludpread = 0;
     if(read > 0){
       dmludpread = dmludp_conn_recv(dmludp_connection, buffer, read);
-      int type;
+      int offset;
       int pkt_num;
-      rv = dmludp_header_info(buffer, 26, type, pkt_num);
+      rv = dmludp_header_info(buffer, 26, offset, pkt_num);
       // Elicit ack
       if(rv == 4){
         uint8_t out[1500];
@@ -685,7 +685,62 @@ bool Pair::protocal2read(){
       }
       // Application packet
       else if (rv == 3){
+        if ((read - 26) == sizeof(rx_.preamble)){
+          if (offset == 0){
+            NonOwningPtr<UnboundBuffer> rbuf;
+            while(true){
+              struct iovec riov = {
+                .iov_base = nullptr,
+                .iov_len = 0,
+              };
+              const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
+              if (rnbytes == 0){
+                readComplete(rbuf);
+                dmludp_conn_recv_reset(dmludp_connection);
+                break;
+              }
+
+              if (rbuf){
+                dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
+                break;
+              }
+              
+              bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+              if (check_result){
+                dmludp2read(rx_, rbuf, rnbytes);
+                rx_.nread += rnbytes;
+              }
+            }
+          }
+          
+        }
+        else{
+          if(dmludp_conn_receive_complete(dmludp_connection)){
+            NonOwningPtr<UnboundBuffer> rbuf;
+            while(true){
+              struct iovec riov = {
+                .iov_base = nullptr,
+                .iov_len = 0,
+              };
+              const auto rnbytes = prepareRead(rx_, rbuf, riov);
+
+              if (rnbytes == 0){
+                readComplete(rbuf);
+                dmludp_conn_recv_reset(dmludp_connection);
+                dmludp_conn_reset_rx_len(dmludp_connection);
+                break;
+              }
+
+              if (rbuf){
+                dmludp2read(rx_, rbuf, rnbytes);
+                rx_.nread += rnbytes;
+              }
+
+            }
+
+          }
+        }
       }
       // Acknowledge packet
       else if (rv == 5){
@@ -725,49 +780,50 @@ bool Pair::protocal2read(){
   }
 
   // Process readComplete
-  if (!dmludp_conn_has_recv(dmludp_connection)){   
-    NonOwningPtr<UnboundBuffer> rbuf;
-    while(true){
-      struct iovec riov = {
-          .iov_base = nullptr,
-          .iov_len = 0,
-        };
-      const auto rnbytes = prepareRead(rx_, rbuf, riov);
+  // Process unbounded_buffer op
+  // if (!dmludp_conn_has_recv(dmludp_connection)){   
+  //   NonOwningPtr<UnboundBuffer> rbuf;
+  //   while(true){
+  //     struct iovec riov = {
+  //         .iov_base = nullptr,
+  //         .iov_len = 0,
+  //       };
+  //     const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
-      if (rnbytes == 0){
-        readComplete(rbuf);
-        // dmludp_clear_recv_setting(dmludp_connection);
-        dmludp_conn_recv_reset(dmludp_connection);
-        break;
-      }
+  //     if (rnbytes == 0){
+  //       readComplete(rbuf);
+  //       // dmludp_clear_recv_setting(dmludp_connection);
+  //       dmludp_conn_recv_reset(dmludp_connection);
+  //       break;
+  //     }
 
-      auto left_len = dmludp_conn_recv_len(dmludp_connection);
+  //     auto left_len = dmludp_conn_recv_len(dmludp_connection);
 
-      if (!rbuf){
-        // Check op info
-        bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
-        if (check_result){
-          dmludp2read(rx_, rbuf, rnbytes);
-          rx_.nread += rnbytes;
-        }else{
-          return false;
-        }
-      }else{
-        if (rnbytes != left_len){
-          if (ispadding){
-            dmludp_conn_recv_padding(dmludp_connection, rnbytes);
-            dmludp2read(rx_, rbuf, rnbytes);
-            rx_.nread += rnbytes;
-          }else{
-            break;
-          }
-        }else{
-          dmludp2read(rx_, rbuf, rnbytes);
-          rx_.nread += rnbytes;
-        }
-      }
-    }
-  }
+  //     if (!rbuf){
+  //       // Check op info
+  //       bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+  //       if (check_result){
+  //         dmludp2read(rx_, rbuf, rnbytes);
+  //         rx_.nread += rnbytes;
+  //       }else{
+  //         return false;
+  //       }
+  //     }else{
+  //       if (rnbytes != left_len){
+  //         if (ispadding){
+  //           dmludp_conn_recv_padding(dmludp_connection, rnbytes);
+  //           dmludp2read(rx_, rbuf, rnbytes);
+  //           rx_.nread += rnbytes;
+  //         }else{
+  //           break;
+  //         }
+  //       }else{
+  //         dmludp2read(rx_, rbuf, rnbytes);
+  //         rx_.nread += rnbytes;
+  //       }
+  //     }
+  //   }
+  // }
 
   if (dmludpread<0 && errno == EAGAIN){
     return false;

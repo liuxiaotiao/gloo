@@ -228,6 +228,8 @@ class Connection{
 
     // Record errno
     size_t dmludp_error;
+
+    size_t rx_length;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
@@ -278,7 +280,8 @@ class Connection{
     retransmission_ack(),
     written_data_len(0),
     written_data_once(0),
-    dmludp_error(0)
+    dmludp_error(0).
+    rx_length(0)
     {};
 
     ~Connection(){
@@ -592,6 +595,23 @@ class Connection{
 
     size_t get_once_data_len(){
         return written_data_once;
+    }
+
+    //  no loss scenario, no stop packet.
+    bool receive_complete(){
+        auto rlen = rec_buffer.receive_length();
+        if (rx_length == rlen){
+            return true;
+        }
+        return false;
+    }
+
+    void rx_len(size_t expected){
+        rx_length = expected;
+    }
+
+    void reset_rx_len(){
+        rx_length = 0;
     }
 
     void clear_sent_once(){

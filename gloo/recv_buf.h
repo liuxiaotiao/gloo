@@ -22,7 +22,17 @@ namespace dmludp{
 
         size_t removed;
 
-        RecvBuf():off(0), len(0), last_maxoff(0), max_recv_off(0), removed(0){};
+        // how many data padding with 0
+        size_t padding_len;
+
+        RecvBuf():
+            off(0), 
+            len(0), 
+            last_maxoff(0), 
+            max_recv_off(0), 
+            removed(0), 
+            received(0), 
+            padding_len(0){};
 
         ~RecvBuf(){};
 
@@ -68,6 +78,13 @@ namespace dmludp{
 
         size_t length(){
             return (data.size() - removed);
+        }
+
+
+        // no loss, when use loss use another function
+        // how many data real received.
+        size_t receive_length(){
+            return len;
         }
 
         size_t first_item_len(size_t checkLength){
