@@ -711,8 +711,10 @@ class Connection{
                 uint64_t out_off = 0;
                 bool s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
                 out_off -= (uint64_t)out_len;
-                sent_count += 1;
-                sent_number += 1;
+                if (sys_err_sent == 0){
+                    sent_count += 1;
+                    sent_number += 1;
+                } 
                 auto pn = pkt_num_spaces.at(0).updatepktnum();
                 auto priority = priority_calculation(out_off);
                 Type ty = Type::Application;
