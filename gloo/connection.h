@@ -280,7 +280,7 @@ class Connection{
     written_data_len(0),
     written_data_once(0),
     dmludp_error(0),
-rx_length(0)
+    rx_length(0)
     {};
 
     ~Connection(){
@@ -699,7 +699,9 @@ rx_length(0)
             send_buffer.sent = 0;
         }
        
-if (get_dmludp_error() == 11){std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;}
+        if (get_dmludp_error() == 11){
+            std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
+            }
 
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
@@ -1044,7 +1046,7 @@ if (get_dmludp_error() == 11){std::cout<<"send_buffer.data.size():"<<send_buffer
     }
 
 
-    void addUint64 (std::vector<uint8_t>& v, uint64_t input){
+    void addUint64(std::vector<uint8_t>& v, uint64_t input){
         #if  IS_BIG_ENDIAN
         for (size_t i = 0; i < sizeof(uint64_t); ++i) {
             v.push_back(static_cast<uint8_t>(input >> (i * 8)));
@@ -1373,16 +1375,11 @@ if (get_dmludp_error() == 11){std::cout<<"send_buffer.data.size():"<<send_buffer
         send_buffer.clear();
     };
 
-//////////////////////////
     void check_loss(std::vector<uint8_t> b){
-        // auto b = octets::OctetsMut::with_slice(recv_buf);
-
-        // let result:Vec<u64> = Vec::new();
         int start = 0;
         while (b.size()>0) {
             auto offset = Header::get_u64(b, start);
             start += sizeof(uint64_t);
-            // let offset = b.get_u64().unwrap();
             if (recv_dic.find(offset)!= recv_dic.end()){
                 recv_hashmap.insert(std::make_pair(offset, 0));
             }else{

@@ -270,7 +270,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     }
                 }
         
-                for ( auto it = off_len; it < ready_written; ){
+                for (auto it = off_len; it < ready_written; ){
                     if ((ready_written - it) > SEND_BUFFER_SIZE){
                         write_len += SEND_BUFFER_SIZE;
                         offset_recv[off] = true;
@@ -304,7 +304,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                     return 0;
                 }
         
-                if ( write_data_len == 0){
+                if (write_data_len == 0){
                     return 0;
                 }
 
@@ -318,7 +318,7 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
                 size_t write_len = 0;
 
                 if (off_len > 0){
-                    if ( ready_written > off_len ){
+                    if (ready_written > off_len){
                         offset_recv[off] = true;
                         data.push_back(std::make_pair(off, std::make_pair(src + start_off, (uint64_t)off_len)));
                         off += (uint64_t)off_len;
