@@ -701,7 +701,7 @@ class Connection{
        
         if (get_dmludp_error() == 11){
             std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
-            }
+        }
 
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
@@ -815,11 +815,132 @@ class Connection{
         //iovecs.resize(record2ack.size() * 2);
         //messages.resize(record2ack.size());
         written_data_len += written_len;
-	if (get_dmludp_error() == 11){
-                            std::cout<<"messages.size:"<<messages.size()<<std::endl;
-                    }
+	    if (get_dmludp_error() == 11){
+            std::cout<<"messages.size:"<<messages.size()<<std::endl;
+        }
         return written_len;
 
+    };
+
+    ssize_t send_msg(std::vector<uint8_t> &padding, 
+        std::vector<struct msghdr> &messages, 
+        std::vector<struct iovec> &iovecs)
+    {
+        auto sbuf = data_buffer.at(current_buffer_pos);
+        size_t congestion_window = 0;
+        ssize_t written_len = 0;
+
+        if(!retransmission_ack.empty()){
+            return -1;
+        }
+
+        if (get_dmludp_error() != 11){
+            auto high_ratio = 0.0;
+            if (high_priority == 0 && sent_number){
+                high_ratio = 0;
+            }else{
+                high_ratio = (double)high_priority  / (double)sent_number;
+            }
+            high_priority = 0;
+            sent_number = 0;
+            if (high_ratio > CONGESTION_THREAHOLD){
+                congestion_window = recovery.rollback();
+            }else{
+                congestion_window = recovery.cwnd();
+            };
+            record_win = congestion_window;
+
+            
+            for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
+                auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
+                // if (written_len == 0 && wlen <= 0){
+                //     return wlen;
+                // }
+                if (wlen == -2){
+                    written_len = 0;
+                    break;
+                }
+                written_len += wlen;
+                if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+                    break;
+                if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
+                    current_buffer_pos += 1;
+                }
+                if (written_len >= congestion_window)
+                    break;
+                
+                if (send_buffer.cap()<=0){
+                    break;
+                }
+            }
+        }else{
+            send_buffer.sent = 0;
+        }
+       
+        if (get_dmludp_error() == 11){
+            std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
+        }
+
+      
+        // consider add ack message at the end of the flow.
+        iovecs.resize(send_buffer.data.size() * 2);
+        messages.resize(send_buffer.data.size());
+	    if (get_dmludp_error() == 11){
+            std::cout<<"messages.resize:"<<messages.size()<<std::endl;
+            }
+        // unlock memory allocation, and consider move this to function parameter.
+        std::vector<std::shared_ptr<Header>> hdrs;
+        for (auto i = 0; ; ++i){
+            size_t out_len = 0; 
+            uint64_t out_off = 0;
+            bool s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
+            out_off -= (uint64_t)out_len;
+            sent_count += 1;
+            sent_number += 1;
+            auto pn = pkt_num_spaces.at(0).updatepktnum();
+            auto priority = priority_calculation(out_off);
+            Type ty = Type::Application;
+            // counter?
+            // print address?
+            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
+            hdrs.push_back(hdr);
+            iovecs[2*i].iov_base = (void *)hdr.get();
+            iovecs[2*i].iov_len = 26;
+
+            auto offset = out_off;
+            if (sent_dic.find(out_off) != sent_dic.end()){
+                if (sent_dic[out_off] != 3){
+                    sent_dic[out_off] -= 1;
+                }
+            }else{
+                sent_dic[out_off] = priority;
+            }
+
+            record_send.push_back(offset);
+            record2ack.push_back(offset);
+            messages[i].msg_iov = &iovecs[2*i];
+            messages[i].msg_iovlen = 2;
+
+            if (s_flag){
+                stop_flag = true;
+                if (get_dmludp_error() == 11){
+                    std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
+                }
+                break;
+            }
+
+        }
+        if (written_len){
+            stop_ack = false;
+        }
+
+        //iovecs.resize(record2ack.size() * 2);
+        //messages.resize(record2ack.size());
+        written_data_len += written_len;
+	    if (get_dmludp_error() == 11){
+            std::cout<<"messages.size:"<<messages.size()<<std::endl;
+        }
+        return written_len;
     };
 
     size_t get_dmludp_error(){

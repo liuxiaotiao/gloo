@@ -876,30 +876,27 @@ bool Pair::protocal2send(){
   }
 
   std::vector<uint8_t> padding(1446, 0);
-  std::vector<struct mmsghdr> messages;
+  std::vector<struct msghdr> messages;
   std::vector<struct iovec> iovecs;
-  auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
+  // auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
+  auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
   // No data needs to send.
   if (messages.size() == 0){
     return false;
   }
 	if(dmludp_get_dmludp_error(dmludp_connection) == 11){
-  std::cout<<"sendmmsg, message.size()"<<messages.size()<<" wlen:"<<wlen<<std::endl;
+    std::cout<<"sendmsg, message.size()"<<messages.size()<<" wlen:"<<wlen<<std::endl;
 	}
   size_t sent = 0;
   auto has_error = dmludp_get_dmludp_error(dmludp_connection);
-  while(messages.size() > sent){
-    auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
-   /* if (has_error == EAGAIN){
-	    std::cout<<"retval:"<<retval<<" sent:"<<sent<<std::endl;
-  }*/
+
+  for (auto& msg : messages) {
+    auto retval = sendmsg(sockfd, &msg, 0); 
     if (retval == -1){
-	    std::cout<<"errno:"<<errno<<std::endl;
-	    if (has_error == EAGAIN){
-            std::cout<<"retval:"<<retval<<" sent:"<<sent<<" errno:"<<errno<<std::endl;
-        }
-      // Date: solve data cannot send out one time.
-      // Move errno == EINTR out of while(1)
+      if (has_error == EAGAIN){
+        std::cout<<"retval:"<<retval<<" sent:"<<sent<<" errno:"<<errno<<std::endl;
+      }
+
       if (errno == EINTR){
         continue;
       }
@@ -912,8 +909,36 @@ bool Pair::protocal2send(){
       }
       return false;
     }
-    sent += retval;
+    sent++;
   }
+
+
+  // while(messages.size() > sent){
+  //   auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
+  //  /* if (has_error == EAGAIN){
+	//     std::cout<<"retval:"<<retval<<" sent:"<<sent<<std::endl;
+  // }*/
+  //   if (retval == -1){
+	//     std::cout<<"errno:"<<errno<<std::endl;
+	//     if (has_error == EAGAIN){
+  //           std::cout<<"retval:"<<retval<<" sent:"<<sent<<" errno:"<<errno<<std::endl;
+  //       }
+  //     // Date: solve data cannot send out one time.
+  //     // Move errno == EINTR out of while(1)
+  //     if (errno == EINTR){
+  //       continue;
+  //     }
+
+  //     if (errno == EAGAIN){
+	//       std::cout<<"errno == EAGAIN, message.size()"<<message.size()<<std::endl;
+  //     	dmludp_set_error(dmludp_connection, EAGAIN);
+  //       struct itimerspec new_value = {};
+  //       timerfd_settime(timer_fd, 0, &new_value, NULL);
+  //     }
+  //     return false;
+  //   }
+  //   sent += retval;
+  // }
   if(dmludp_get_dmludp_error(dmludp_connection) == 11){
     std::cout<<"sent:"<<sent<<std::endl;
   }
