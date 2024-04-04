@@ -53,23 +53,23 @@ namespace dmludp{
         }*/
 	void write(std::vector<uint8_t> &out, uint64_t out_off){
             auto data_len = data.size();
-	    if(out_off == 0){
-		    std::cout<<"recv out_ofr = 0"<<std::endl;
-	    }
+            // if(out_off == 0){
+            //     std::cout<<"recv out_ofr = 0"<<std::endl;
+            // }
             if(out_off > data_len){
                 //data.resize(out_off);
 		//std::cout<<"point 2"<<std::endl;
                 // data.insert(data.end(),
                 //             std::make_move_iterator(out.begin()),
                 //             std::make_move_iterator(out.end()));
-		data.resize(out_off+out.size());
-		                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+		    data.resize(out_off+out.size());
+		        memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
             }
             else if(out_off == data_len){
                 // data.insert(data.end(),
                 //             std::make_move_iterator(out.begin()),
                 //             std::make_move_iterator(out.end()));
-		    data.resize(out_off + out.size());
+		        data.resize(out_off + out.size());
                 memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
             }
             else{
@@ -180,7 +180,4 @@ namespace dmludp{
             return !data.empty();
         };
     };
-
- 
-
 }    

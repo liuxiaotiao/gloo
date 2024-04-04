@@ -128,7 +128,7 @@ inline ssize_t dmludp_data_send_msg(std::shared_ptr<Connection> conn,
     std::vector<uint8_t> &padding, 
     std::vector<struct msghdr> &messages, 
     std::vector<struct iovec> &iovecs){
-    return conn->send_mmsg(padding, messages, iovecs);
+    return conn->send_msg(padding, messages, iovecs);
 }
 
 inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){

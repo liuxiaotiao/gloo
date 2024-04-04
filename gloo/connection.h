@@ -346,37 +346,40 @@ class Connection{
         
         // All side can send data.
         if (hdr->ty == Type::ACK){
-	//	std::cout<<"start ACK"<<std::endl;
+	    //	std::cout<<"start ACK"<<std::endl;
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
             }
-	  //  std::cout<<"end ACK"<<std::endl;
+	    //  std::cout<<"end ACK"<<std::endl;
         }
 
         if (hdr->ty == Type::ElicitAck){
-	//	std::cout<<"start ElicitACK"<<std::endl;
+	    //	std::cout<<"start ElicitACK"<<std::endl;
             recv_flag = true;
             std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
             std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
             check_loss(checkbuf);
             feed_back = true;
-	  //  std::cout<<"end ElicitACK"<<std::endl;
+	    //  std::cout<<"end ElicitACK"<<std::endl;
         }
 
         if (hdr->ty == Type::Application){
-	//	std::cout<<"start app"<<std::endl;
+	    //	std::cout<<"start app"<<std::endl;
             if (hdr->offset == 0){
                 clear_recv_setting();
             }
             recv_count += 1;
             read = (size_t)(hdr->pkt_length);
-            std::vector<uint8_t> writebuf;
-            writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + 26 + hdr->pkt_length);
-            // std::vector<uint8_t> writebuf(buf.begin() + 26, buf.begin() + 26 + hdr->pkt_length);
-            rec_buffer.write(writebuf, hdr->offset);
-            recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
+            if (recv_dic.find(hdr->offset) != recv_dic.end()){
+                return 0;
+            }else{
+                std::vector<uint8_t> writebuf;
+                writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + 26 + hdr->pkt_length);
+                rec_buffer.write(writebuf, hdr->offset);
+                recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
+            } 
 	    //std::cout<<"end app"<<std::endl;
         }
 
@@ -675,9 +678,6 @@ class Connection{
             
             for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
                 auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
-                // if (written_len == 0 && wlen <= 0){
-                //     return wlen;
-                // }
                 if (wlen == -2){
                     written_len = 0;
                     break;
@@ -699,15 +699,17 @@ class Connection{
             send_buffer.sent = 0;
         }
        
-        if (get_dmludp_error() == 11){
-            std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
-        }
+        // if (get_dmludp_error() == 11){
+        //     std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
+        // }
 
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
             iovecs.resize(send_buffer.data.size() * 2);
             messages.resize(send_buffer.data.size());
-	    if (get_dmludp_error() == 11){std::cout<<"messages.resize:"<<messages.size()<<std::endl;}
+	        // if (get_dmludp_error() == 11){
+            //     std::cout<<"messages.resize:"<<messages.size()<<std::endl;
+            //     }
             // unlock memory allocation, and consider move this to function parameter.
             std::vector<std::shared_ptr<Header>> hdrs;
             for (auto i = 0; ; ++i){
@@ -743,9 +745,9 @@ class Connection{
 
                 if (s_flag){
                     stop_flag = true;
-		    if (get_dmludp_error() == 11){
-			    std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
-		    }
+                    // if (get_dmludp_error() == 11){
+                    //     std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
+                    // }
                     break;
                 }
 
@@ -815,9 +817,9 @@ class Connection{
         //iovecs.resize(record2ack.size() * 2);
         //messages.resize(record2ack.size());
         written_data_len += written_len;
-	    if (get_dmludp_error() == 11){
-            std::cout<<"messages.size:"<<messages.size()<<std::endl;
-        }
+	    // if (get_dmludp_error() == 11){
+        //     std::cout<<"messages.size:"<<messages.size()<<std::endl;
+        // }
         return written_len;
 
     };
@@ -877,17 +879,17 @@ class Connection{
             send_buffer.sent = 0;
         }
        
-        if (get_dmludp_error() == 11){
-            std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
-        }
+        // if (get_dmludp_error() == 11){
+        //     std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
+        // }
 
       
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 2);
         messages.resize(send_buffer.data.size());
-	    if (get_dmludp_error() == 11){
-            std::cout<<"messages.resize:"<<messages.size()<<std::endl;
-            }
+	    // if (get_dmludp_error() == 11){
+        //     std::cout<<"messages.resize:"<<messages.size()<<std::endl;
+        //     }
         // unlock memory allocation, and consider move this to function parameter.
         std::vector<std::shared_ptr<Header>> hdrs;
         for (auto i = 0; ; ++i){
@@ -923,9 +925,9 @@ class Connection{
 
             if (s_flag){
                 stop_flag = true;
-                if (get_dmludp_error() == 11){
-                    std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
-                }
+                // if (get_dmludp_error() == 11){
+                //     std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
+                // }
                 break;
             }
 
@@ -937,9 +939,9 @@ class Connection{
         //iovecs.resize(record2ack.size() * 2);
         //messages.resize(record2ack.size());
         written_data_len += written_len;
-	    if (get_dmludp_error() == 11){
-            std::cout<<"messages.size:"<<messages.size()<<std::endl;
-        }
+	    // if (get_dmludp_error() == 11){
+        //     std::cout<<"messages.size:"<<messages.size()<<std::endl;
+        // }
         return written_len;
     };
 
