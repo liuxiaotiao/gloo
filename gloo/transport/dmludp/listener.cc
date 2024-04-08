@@ -62,9 +62,15 @@ void Listener::handleEvents(int /* unused */) {
       // Actual error.
       // GLOO_ENFORCE(false, "accept: ", strerror(errno));
     }
-     auto sock = listener_->accept();
+    auto sock = listener_->accept();
     sock->reuseAddr(true);
     // sock->noDelay(true);
+    unsigned int rate = 3000000000; // 1Mbps
+    if (setsockopt(sock->fd_, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
+        perror("setsockopt SO_MAX_PACING_RATE failed");
+        close(sock->fd_);
+        exit(EXIT_FAILURE);
+    }
 
     // Read sequence number.
     read<sequence_number_t>(

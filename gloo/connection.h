@@ -231,6 +231,7 @@ class Connection{
     size_t dmludp_error;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
+
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         return std::make_shared<Connection>(local, peer, config, false);
     };
@@ -925,9 +926,10 @@ class Connection{
 
             if (s_flag){
                 stop_flag = true;
-                // if (get_dmludp_error() == 11){
-                //     std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
-                // }
+                if ((i+1) < send_buffer.data.size()){
+                    iovecs.resize((i+1) * 2);
+                    messages.resize(i+1);
+                }
                 break;
             }
 
@@ -992,7 +994,7 @@ class Connection{
         if(sent_num == record2ack.size()){
             record2ack.clear();
         }else{
-            record2ack.erase(record2ack.begin(), record2ack.begin()+ sent_num);
+            record2ack.erase(record2ack.begin(), record2ack.begin() + sent_num);
         }
 
         delete hdr; 
