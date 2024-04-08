@@ -65,10 +65,10 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr),
-      innertimer(*this) {
-        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+      ex_(nullptr){
+      // innertimer(*this) {
+        // timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+        // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
@@ -850,6 +850,16 @@ bool Pair::protocal2send(){
     return false;
   }
 
+  std::vector<std::vector<uint8_t>> out;
+  std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+  auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
+  auto now = std::chrono::high_resolution_clock::now();
+  if (result > 0){
+    for(auto e : out){
+      auto sent = ::send(fd_, e.data(), e.size(), 0);
+    }
+  }
+
   NonOwningPtr<UnboundBuffer> buf;
   std::array<struct iovec, 2> iov;
   int ioc;
@@ -907,7 +917,7 @@ bool Pair::protocal2send(){
 	      // std::cout<<"errno == EAGAIN, message.size()"<<message.size()<<std::endl;
       	dmludp_set_error(dmludp_connection, EAGAIN);
         struct itimerspec new_value = {};
-        timerfd_settime(timer_fd, 0, &new_value, NULL);
+        // timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
       return false;
     }
@@ -935,10 +945,10 @@ bool Pair::protocal2send(){
       new_value.it_value.tv_sec = seconds.count(); 
       new_value.it_value.tv_nsec = nanoseconds_part.count(); 
 
-      if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
-          perror("timerfd_settime 3");
-          exit(EXIT_FAILURE);
-      }
+      // if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
+      //     perror("timerfd_settime 3");
+      //     exit(EXIT_FAILURE);
+      // }
       // timerfd_settime(timer_fd, 0, &new_value, NULL);
     }
     std::vector<uint8_t> out;
