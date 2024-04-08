@@ -231,7 +231,6 @@ class Connection{
     size_t dmludp_error;
  
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
-
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         return std::make_shared<Connection>(local, peer, config, false);
     };
@@ -347,13 +346,16 @@ class Connection{
         
         // All side can send data.
         if (hdr->ty == Type::ACK){
-	    //	std::cout<<"start ACK"<<std::endl;
+		std::cout<<std::endl;
+	    	std::cout<<"[Start] start ACK"<<std::endl;
+
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
             }
-	    //  std::cout<<"end ACK"<<std::endl;
-        }
+	      std::cout<<"[End] end ACK"<<std::endl;
+	      std::cout<<std::endl;
+	}
 
         if (hdr->ty == Type::ElicitAck){
 	    //	std::cout<<"start ElicitACK"<<std::endl;
@@ -363,6 +365,7 @@ class Connection{
             std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
             check_loss(checkbuf);
             feed_back = true;
+	    std::cout<<"[Recevie] Elicit ack packet num:"<<send_num<<std::endl;
 	    //  std::cout<<"end ElicitACK"<<std::endl;
         }
 
@@ -405,10 +408,11 @@ class Connection{
     void process_ack(std::vector<uint8_t> buf){
         std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
         auto hd = Header::from_slice(ack_header);
-
+	std::cout<<"[Receive] Acknowledge packet num::"<<hd->pkt_num<<std::endl;
         //// 1/28/2024
         if (ack_set.empty()){
             stop_ack = true;
+	    std::cout<<"[Debug] return 1"<<std::endl;
             return;
         }
         auto received_ack = hd->pkt_num;
@@ -422,6 +426,7 @@ class Connection{
             if(timeout_check != timeout_ack.end()){
                 handshake = timeout_ack.at(hd->pkt_num).second;
             }else{
+		    std::cout<<"[Debug] return 2"<<std::endl;
                 return;
             }
         }
@@ -436,10 +441,12 @@ class Connection{
                 timeout_ack.erase(key);
             }
         }else{
+		std::cout<<"[Debug] return 3"<<std::endl;
             return;
         }
         keyToValues.erase(ini);
 
+		std::cout<<"[Debug] After acknowledge retransmission_ack.size:"<<retransmission_ack.size()<<std::endl;
         std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.begin() + 26 + hd->pkt_length);
 
         std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
@@ -500,6 +507,7 @@ class Connection{
         if (send_buffer.pos == 0){
             send_buffer.recv_and_drop();
         }    
+	std::cout<<"[Debug] send_buffer.data.size:"<<send_buffer.data.size()<<" send_buffer.offset_recv.size:"<<send_buffer.offset_recv.size()<<std::endl;
     };
 
     uint8_t findweight(uint64_t unack){
@@ -832,11 +840,11 @@ class Connection{
         auto sbuf = data_buffer.at(current_buffer_pos);
         size_t congestion_window = 0;
         ssize_t written_len = 0;
-
+//	std::cout<<"[Debug] send_msg"<<std::endl;
         if(!retransmission_ack.empty()){
             return -1;
         }
-
+//	std::cout<<"[Debug] start preparing data"<<std::endl;
         if (get_dmludp_error() != 11){
             auto high_ratio = 0.0;
             if (high_priority == 0 && sent_number){
@@ -856,6 +864,7 @@ class Connection{
             
             for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
                 auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
+		std::cout<<"[Debug] data_buffer["<<current_buffer_pos<<"].left = "<<data_buffer.at(current_buffer_pos).left<<" written:"<<wlen<<std::endl;
                 // if (written_len == 0 && wlen <= 0){
                 //     return wlen;
                 // }
@@ -884,11 +893,11 @@ class Connection{
         //     std::cout<<"send_buffer.data.size():"<<send_buffer.data.size()<<std::endl;
         // }
 
-      
+	std::cout<<"[Debug] send_buffer.data.size():"<<send_buffer.data.size()<<" pos:"<<send_buffer.pos<<" cwnd:"<<congestion_window<<std::endl; 
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 2);
         messages.resize(send_buffer.data.size());
-	    // if (get_dmludp_error() == 11){
+      	// if (get_dmludp_error() == 11){
         //     std::cout<<"messages.resize:"<<messages.size()<<std::endl;
         //     }
         // unlock memory allocation, and consider move this to function parameter.
@@ -919,6 +928,9 @@ class Connection{
                 sent_dic[out_off] = priority;
             }
 
+	    if(offset == 0){
+		    std::cout<<"offset: 0"<<std::endl;
+	    }
             record_send.push_back(offset);
             record2ack.push_back(offset);
             messages[i].msg_iov = &iovecs[2*i];
@@ -926,7 +938,10 @@ class Connection{
 
             if (s_flag){
                 stop_flag = true;
-                if ((i+1) < send_buffer.data.size()){
+                // if (get_dmludp_error() == 11){
+                //     std::cout<<"i:"<<i<<" send_buffer.sent:"<<send_buffer.sent<<std::endl;
+                // }
+		if ((i+1) < send_buffer.data.size()){
                     iovecs.resize((i+1) * 2);
                     messages.resize(i+1);
                 }
@@ -944,7 +959,8 @@ class Connection{
 	    // if (get_dmludp_error() == 11){
         //     std::cout<<"messages.size:"<<messages.size()<<std::endl;
         // }
-        return written_len;
+	//std::cout<<"[Debug] retransmission_ack.size:"<<retransmission_ack.size()<<std::endl;
+  	return written_len;
     };
 
     size_t get_dmludp_error(){
@@ -994,7 +1010,7 @@ class Connection{
         if(sent_num == record2ack.size()){
             record2ack.clear();
         }else{
-            record2ack.erase(record2ack.begin(), record2ack.begin() + sent_num);
+            record2ack.erase(record2ack.begin(), record2ack.begin()+ sent_num);
         }
 
         delete hdr; 
@@ -1007,6 +1023,8 @@ class Connection{
         std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
         retransmission_ack[pn] = std::make_pair(wait_ack, now);
         pktlen += HEADER_LENGTH;
+std::cout<<"[Debug] retransmission_ack.size:"<<retransmission_ack.size()<<std::endl;
+std::cout<<"[Send] Elicit acknowledge packet number:"<<pn<<std::endl;
         return pktlen;
     }
 
@@ -1061,6 +1079,7 @@ class Connection{
             delete hdr; 
             hdr = nullptr; 
             out.push_back(out_buffer);
+	    std::cout<<"[Send] retry Elicit acknowledge packet num:"<<pktnum<<std::endl;
         }
         if (timestamps.empty()){
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();

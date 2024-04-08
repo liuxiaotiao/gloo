@@ -83,6 +83,7 @@ namespace dmludp{
                 memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
             }
             len += out.size();
+	    std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
         }
 
         size_t receive_length(){

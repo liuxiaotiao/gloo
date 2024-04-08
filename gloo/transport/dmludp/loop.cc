@@ -11,9 +11,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <iostream>
 #include <array>
-
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 #include <gloo/common/error.h>
 #include <gloo/common/logging.h>
 
@@ -120,7 +122,8 @@ void Loop::registerDescriptor(int fd, int events, Handler* h) {
   struct epoll_event ev;
   ev.events = events;
   ev.data.ptr = h;
-
+ // std::cout<<"[Debug] registerDescriptor fd:"<<fd<<std::endl;
+ // std::cout<<std::endl;
   auto rv = epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
   if (rv == -1 && errno == EEXIST) {
     rv = epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
@@ -155,6 +158,20 @@ void Loop::run() {
 
     // Wait for something to happen
     nfds = epoll_wait(fd_, events.data(), events.size(), 10);
+    auto now = std::chrono::high_resolution_clock::now();
+
+    // 转换为time_t以便可以用std::put_time来格式化日期和时间
+    auto now_c = std::chrono::system_clock::to_time_t(now);
+
+    // 获取当前时间的微秒部分
+    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
+
+    // 输出
+    /*std::cout << "[Debug] Current time: "
+              << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
+              << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
+
+    std::cout<<" nfds: "<<nfds<<std::endl;*/
     if (nfds == 0) {
       continue;
     }
@@ -163,12 +180,19 @@ void Loop::run() {
     }
 
     GLOO_ENFORCE_NE(nfds, -1);
+    std::cout<<std::endl;
+    std::cout << "[Debug] Current time: "
+              << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
+              << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
+    std::cout<<" nfds: "<<nfds<<std::endl;
     for (int i = 0; i < nfds; i++) {
+	  //  std::cout<<"[Debug] Active fd:"<<(int)events[i].data.fd<<std::endl;
       Handler* h = reinterpret_cast<Handler*>(events[i].data.ptr);
       h->handleEvents(events[i].events);
       TSAN_ANNOTATE_HAPPENS_BEFORE(h);
     }
+   // std::cout<<std::endl;
   }
 }
 

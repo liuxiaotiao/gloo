@@ -66,9 +66,10 @@ Pair::Pair(
       sendBufferSize_(0),
       self_(device_->nextAddress()),
       ex_(nullptr){
-      // innertimer(*this) {
-        // timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-        // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+      //innertimer(*this) {
+//        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+//	std::cout<<"[Debug] timer_fd:"<<timer_fd<<std::endl;
+//        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
@@ -328,7 +329,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	// std::cout<<"writeComplete:"<<opcode<<std::endl;
+	 std::cout<<"writeComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -514,7 +515,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  // std::cout<<"readComplete:"<<opcode<<std::endl;
+  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -680,6 +681,10 @@ bool Pair::protocal2read(){
         uint8_t out[1500];
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
         ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
+	std::cout<<"[Debug] recv header pn:"<<pkt_num<<std::endl;
+	if(socketwrite == -1 && errno == EAGAIN){
+		std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
+	}
       }
 
       // Packet completes tranmission and start to iov.
@@ -758,7 +763,7 @@ bool Pair::protocal2read(){
         if (tx_.empty()) {
             continue;
           } 
-        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+//        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
@@ -775,6 +780,7 @@ bool Pair::protocal2read(){
             writeComplete(op, sbuf, opcode);
             dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
+	    std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
           }
 
           if (tx_.empty()) {
@@ -849,7 +855,10 @@ bool Pair::protocal2send(){
   if (state_ == CLOSED) {
     return false;
   }
-
+  NonOwningPtr<UnboundBuffer> buf;
+  std::array<struct iovec, 2> iov;
+  int ioc;
+  ssize_t rv;
   std::vector<std::vector<uint8_t>> out;
   std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
   auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
@@ -858,13 +867,7 @@ bool Pair::protocal2send(){
     for(auto e : out){
       auto sent = ::send(fd_, e.data(), e.size(), 0);
     }
-  }
-
-  NonOwningPtr<UnboundBuffer> buf;
-  std::array<struct iovec, 2> iov;
-  int ioc;
-  ssize_t rv;
-  
+  }  
   auto &op = tx_.front();
 
   // Read data to protocal 
@@ -901,7 +904,7 @@ bool Pair::protocal2send(){
 	// }
   size_t sent = 0;
   auto has_error = dmludp_get_dmludp_error(dmludp_connection);
-
+	
   for (auto& msg : messages) {
     auto retval = sendmsg(fd_, &msg, 0); 
     if (retval == -1){
@@ -914,16 +917,19 @@ bool Pair::protocal2send(){
       }
 
       if (errno == EAGAIN){
-	      // std::cout<<"errno == EAGAIN, message.size()"<<message.size()<<std::endl;
-      	dmludp_set_error(dmludp_connection, EAGAIN);
+	       std::cout<<"errno == EAGAIN"<<std::endl;
+  /*    	dmludp_set_error(dmludp_connection, EAGAIN);
         struct itimerspec new_value = {};
-        // timerfd_settime(timer_fd, 0, &new_value, NULL);
+        timerfd_settime(timer_fd, 0, &new_value, NULL);*/
       }
       return false;
     }
+    if(retval == 0){
+	    std::cout<<"retval == 0, sent:"<<sent<<" messages.size:"<<messages.size()<<std::endl;
+    }
     sent++;
   }
-  device_->registerDescriptor(fd_, EPOLLIN, this);
+ // device_->registerDescriptor(fd_, EPOLLIN, this);
   // if(dmludp_get_dmludp_error(dmludp_connection) == 11){
   //   std::cout<<"sent:"<<sent<<std::endl;
   // }
@@ -945,10 +951,10 @@ bool Pair::protocal2send(){
       new_value.it_value.tv_sec = seconds.count(); 
       new_value.it_value.tv_nsec = nanoseconds_part.count(); 
 
-      // if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
-      //     perror("timerfd_settime 3");
-      //     exit(EXIT_FAILURE);
-      // }
+     /* if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
+          perror("timerfd_settime 3");
+          exit(EXIT_FAILURE);
+      }*/
       // timerfd_settime(timer_fd, 0, &new_value, NULL);
     }
     std::vector<uint8_t> out;
@@ -958,6 +964,9 @@ bool Pair::protocal2send(){
     }
     if (ack_len > 0){
       auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
+      if(socketwrite == -1 && errno == EAGAIN){
+	      std::cout<<"ack EAGAIN"<<std::endl;
+      }
     }
   }
 
@@ -1105,6 +1114,7 @@ void Pair::sendAsyncMode(Op& op) {
   ////////////////////////////////////////
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
+    std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
     return;
   }
   // Write may have resulted in an error.
@@ -1112,6 +1122,7 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
+  std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 
