@@ -553,6 +553,7 @@ class Connection{
     //  no loss scenario, no stop packet.
     bool receive_complete(){
         auto rlen = rec_buffer.receive_length();
+        std::cout<<"[Complete check] rlen:"<<rlen<<" "<<(rlen<rx_length)<<" rx_length:"<<rx_length<<std::endl;
         if (rx_length == rlen){
             return true;
         }

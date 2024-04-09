@@ -681,10 +681,10 @@ bool Pair::protocal2read(){
         uint8_t out[1500];
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
         ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-	std::cout<<"[Debug] recv header pn:"<<pkt_num<<std::endl;
-	if(socketwrite == -1 && errno == EAGAIN){
-		std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
-	}
+        std::cout<<"[Debug] recv header pn:"<<pkt_num<<std::endl;
+        if(socketwrite == -1 && errno == EAGAIN){
+          std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
+        }
       }
 
       // Packet completes tranmission and start to iov.
@@ -780,7 +780,7 @@ bool Pair::protocal2read(){
             writeComplete(op, sbuf, opcode);
             dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
-	    std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+	          std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
           }
 
           if (tx_.empty()) {
@@ -951,11 +951,6 @@ bool Pair::protocal2send(){
       new_value.it_value.tv_sec = seconds.count(); 
       new_value.it_value.tv_nsec = nanoseconds_part.count(); 
 
-     /* if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
-          perror("timerfd_settime 3");
-          exit(EXIT_FAILURE);
-      }*/
-      // timerfd_settime(timer_fd, 0, &new_value, NULL);
     }
     std::vector<uint8_t> out;
     ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out);
