@@ -917,9 +917,9 @@ bool Pair::protocal2send(){
       }
 
       if (errno == EAGAIN){
-	       std::cout<<"errno == EAGAIN"<<std::endl;
-  /*    	dmludp_set_error(dmludp_connection, EAGAIN);
-        struct itimerspec new_value = {};
+	      std::cout<<"errno == EAGAIN"<<std::endl;
+      	dmludp_set_error(dmludp_connection, EAGAIN, sent);
+      /*  struct itimerspec new_value = {};
         timerfd_settime(timer_fd, 0, &new_value, NULL);*/
       }
       return false;
@@ -934,7 +934,7 @@ bool Pair::protocal2send(){
   //   std::cout<<"sent:"<<sent<<std::endl;
   // }
   if (has_error == 11 && (sent == messages.size())){
-    dmludp_set_error(dmludp_connection, 0);
+    dmludp_set_error(dmludp_connection, 0, 0);
   }
 
   size_t timer_counter = 0;

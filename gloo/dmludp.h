@@ -326,8 +326,8 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, siz
     return static_cast<ssize_t>(result);
 }
 
-inline void dmludp_set_error(std::shared_ptr<Connection> conn, size_t err){
-    conn->set_error(err);
+inline void dmludp_set_error(std::shared_ptr<Connection> conn, size_t err, size_t sent = 0){
+    conn->set_error(err, sent);
 }
 
 inline size_t dmludp_get_dmludp_error(std::shared_ptr<Connection> conn){
