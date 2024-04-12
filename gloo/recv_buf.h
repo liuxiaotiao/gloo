@@ -26,10 +26,12 @@ namespace dmludp{
 
         ~RecvBuf(){};
 
-	void write(std::vector<uint8_t> &out, uint64_t out_off){
+
+	    void write(std::vector<uint8_t> &out, uint64_t out_off){
             auto data_len = data.size();
+
             if(out_off > data_len){
-		    data.resize(out_off+out.size());
+		        data.resize(out_off+out.size());
 		        memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
             }
             else if(out_off == data_len){
@@ -39,13 +41,14 @@ namespace dmludp{
             else{
                 size_t startPos = out_off;
                 size_t endPos = out_off+out.size();
+
                 memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
             }
             len += out.size();
-	        // std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
-            // if(len > data.size()){
-            //     _Exit(0);
-            // }
+	        if(len>data.size()){
+				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+                _Exit(0);
+            }
         }
 
         size_t receive_length(){

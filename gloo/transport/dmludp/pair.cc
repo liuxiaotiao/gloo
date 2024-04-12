@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <sys/timerfd.h>
 #include <linux/udp.h>
-
+#include <stdlib.h>
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
 #include "gloo/transport/dmludp/buffer.h"
@@ -324,7 +324,6 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	 std::cout<<"writeComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -510,7 +509,6 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -666,7 +664,6 @@ bool Pair::protocal2read(){
       int pkt_num;
       rv = dmludp_header_info(buffer, 26, offset, pkt_num);
 
-      // Elicit ack
       if(rv == 4){
         uint8_t out[1500];
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
@@ -683,7 +680,7 @@ bool Pair::protocal2read(){
       }
       // Application packet
       else if (rv == 3){
-        if ((read - 26) == sizeof(rx_.preamble) && (offset == 0)){
+        if (offset == 0){
             NonOwningPtr<UnboundBuffer> rbuf;
             while(true){
               struct iovec riov = {
@@ -743,6 +740,7 @@ bool Pair::protocal2read(){
         if (tx_.empty()) {
             continue;
           } 
+
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
@@ -752,13 +750,12 @@ bool Pair::protocal2read(){
               return false;
             }
           }
-          // const auto nbytes = prepareWrite(op, sbuf, siov.data(), sioc);
+
           op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
             writeComplete(op, sbuf, opcode);
             dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
-	          // std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
           }
 
           if (tx_.empty()) {
@@ -823,10 +820,10 @@ bool Pair::protocal2send(){
   }
 
   std::vector<uint8_t> padding(1446, 0);
-  std::vector<struct mmsghdr> messages;
+  std::vector<struct msghdr> messages;
   std::vector<struct iovec> iovecs;
-  auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-  // auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
+  // auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
+  auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
   // No data needs to send.
   if (messages.size() == 0){
     return false;
@@ -834,13 +831,11 @@ bool Pair::protocal2send(){
 
   size_t sent = 0;
   auto has_error = dmludp_get_dmludp_error(dmludp_connection);
-
-  while(messages.size() > sent){
-    auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
-
+	
+  for (auto& msg : messages) {
+    auto retval = sendmsg(fd_, &msg, 0); 
     if (retval == -1){
-      // Date: solve data cannot send out one time.
-      // Move errno == EINTR out of while(1)
+
       if (errno == EINTR){
         continue;
       }
@@ -850,26 +845,11 @@ bool Pair::protocal2send(){
       }
       return false;
     }
-    sent += retval;
+    sent++;
   }
-	
-  // for (auto& msg : messages) {
-  //   auto retval = sendmsg(fd_, &msg, 0); 
-  //   if (retval == -1){
-  //     if (errno == EINTR){
-  //       continue;
-  //     }
-
-  //     if (errno == EAGAIN){
-  //     	dmludp_set_error(dmludp_connection, EAGAIN, sent);
-  //     }
-  //     return false;
-  //   }
-  //   sent++;
-  // }
 
   if (has_error == 11 && (sent == messages.size())){
-    dmludp_set_error(dmludp_connection, 0, 0);
+    dmludp_set_error(dmludp_connection, 0,0 );
   }
 
   size_t timer_counter = 0;
@@ -894,9 +874,6 @@ bool Pair::protocal2send(){
     }
     if (ack_len > 0){
       auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
-      // if(socketwrite == -1 && errno == EAGAIN){
-	    //   std::cout<<"ack EAGAIN"<<std::endl;
-      // }
     }
   }
 
@@ -1037,14 +1014,11 @@ void Pair::sendSyncMode(Op& op) {
 void Pair::sendAsyncMode(Op& op) {
   GLOO_ENFORCE(!sync_);
 
-  // // If an earlier operation hasn't finished transmitting,
-  // // add this operation to the transmit queue.
-  ////////////////////////////////////////
+  // If an earlier operation hasn't finished transmitting,
+  // add this operation to the transmit queue.
   op.nwritten = 0;
-  ////////////////////////////////////////
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
-    std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
     return;
   }
   // Write may have resulted in an error.
@@ -1052,7 +1026,6 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
-  std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 

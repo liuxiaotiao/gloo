@@ -63,16 +63,13 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
 
             while (tmp_pos <= (data.size() - 1)){
                 auto b = data.at(tmp_pos);
-                // if(!(b->is_empty())){
-                //     return b->off();
-                // }
+
                 if(b.second.second != 0){
                     return b.first;
                 }
                 tmp_pos += 1;
             }
 
-            // return off;
         }
 
         /// Returns true if there is data to be written.
@@ -197,7 +194,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
         ssize_t write(uint8_t* src, size_t start_off, size_t &write_data_len, size_t window_size, size_t off_len) {
             // All data in the buffer has been sent out, remove received data from the buffer.
             if (pos == 0) {
-                //recv_and_drop();
                 recv_count.clear();
             }
             sent = 0;
@@ -219,7 +215,6 @@ const size_t MIN_SENDBUF_INITIAL_LEN = 1350;
             }
 
             if (is_empty()){
-                // max_data = (uint64_t)window_size;
                 removed = 0;
                 sent = 0;
                 // Get the send capacity. This will return an error if the stream
