@@ -1104,10 +1104,10 @@ class Connection{
                 delete hdr; 
                 hdr = nullptr; 
                 ack_set.insert(pn);
-                //// date: 1/28/2024
+
                 keyToValues[pn].push_back(pn);
                 valueToKeys[pn] = pn;
-                //////
+
                 ack_point += 160;
                 std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
@@ -1159,7 +1159,7 @@ class Connection{
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
             std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-            //// date: 1/28/2024
+
             auto initial_pn = valueToKeys[(uint64_t)pn];
             keyToValues[initial_pn].push_back(pktnum);
             valueToKeys[pktnum] = initial_pn;
@@ -1168,7 +1168,7 @@ class Connection{
                 timeout_ack.insert(*it);
                 retransmission_ack.erase(it);
             }
-            ////
+            
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
 
             delete hdr; 
@@ -1192,7 +1192,6 @@ class Connection{
     };
 
     //Send single packet
-    ///////
     size_t send_data(std::vector<uint8_t> &out){
         
         size_t done = 0;
@@ -1247,9 +1246,7 @@ class Connection{
                 put_u8(out, pair.second, (int)off);
                 off += 1;
             }
-            ///// remove 1/29/2024
             recv_hashmap.clear();
-            /////
         }
 
         // chekc is_ack condition is correct or not.
@@ -1368,9 +1365,6 @@ class Connection{
     size_t send_data_stop(std::vector<uint8_t> &out){ 
         size_t total_len = HEADER_LENGTH;
 
-        // auto pn =  pkt_num_spaces[1].next_pkt_num;
-        // pkt_num_spaces[1].next_pkt_num += 1;
-
         auto pn = pkt_num_spaces.at(1).updatepktnum();
 
         uint64_t offset = 0;
@@ -1416,7 +1410,6 @@ class Connection{
     }
 
     bool enable_adding(){
-        // return ack_set.empty() && (send_buffer.pos == 0);
         return stop_flag && stop_ack;
     }
 
@@ -1461,7 +1454,6 @@ class Connection{
     
     size_t recv_len(){
         return rec_buffer.length();
-        // return rec_buffer.first_item_len();
     }
 
     //Writing data to send buffer.
@@ -1484,15 +1476,12 @@ class Connection{
                 congestion_window = recovery.cwnd();
             };
             record_win = congestion_window;
-            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
-            // return result;
+
             return 0;
         }else{
             auto congestion_window = record_win;
             size_t off_len = 0;
 
-            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
-            // return result;
             return 0;
         }
 
@@ -1617,9 +1606,6 @@ class Connection{
         if (!norm2_vec.empty()){
             norm2_vec.clear();
         }
-        // if (!send_data_buf.empty()){
-        //     send_data_buf.clear();
-        // }
 
         size_t len = 0;
         if (length % 1350 == 0){
@@ -1630,11 +1616,6 @@ class Connection{
 
         if (data_buffer.empty())
             total_offset = 0;
-        ///////////////////////////////////////////////////////
-        // change vector to pointer to reduce operation time
-
-
-        // data_buffer.push_back(std::make_pair(buf, length));
 
         norm2_vec.insert(norm2_vec.begin(), len, 3);
 
