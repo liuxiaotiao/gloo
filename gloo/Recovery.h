@@ -66,7 +66,9 @@ class Recovery{
 
     Recovery():
     app_limit(false),
+    // congestion_window(INI_WIN),
     bytes_in_flight(0),
+    // max_datagram_size(PACKET_SIZE);
     incre_win(0),
     decre_win(0),
     roll_back_flag(false),
@@ -87,9 +89,47 @@ class Recovery{
     void reset() {
         congestion_window = max_datagram_size * INITIAL_WINDOW_PACKETS;
     };
-  
+
+    // cwnd = C(-(P - K))^3/k^3 + Wmax
+    //x = [0:0.1:3.6];
+    //y = -8*(x-1.8).^3/1.8^3;
+    //y= 4x^2−16x+8
+    // void update_win(float weights, double num){
+    //     float winadd_copy = 0;
+    //     double winadd = 0;
+    //     if(function_change){
+    //         winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
+    //     }else{
+    //         // weights == 0, no loss, partial win double. weights > 0, dynamic add or minus window
+    //         if (weights > 0){
+    //             function_change = true;
+    //             incre_win = incre_win_copy;
+    //             decre_win = decre_win_copy;
+    //         }
+    //         winadd_copy = (3 * pow((double)weights, 2)  - 12 *(double)weights + 4) * (double)max_datagram_size; 
+    //         winadd = num * (double)max_datagram_size;
+    //     }
+
+    //     if (winadd != num*(double)max_datagram_size){
+    //         roll_back_flag = true;
+    //     }
+
+    //     if (winadd > 0){
+    //         incre_win += (size_t)winadd;
+    //     }else {
+    //         decre_win += (size_t)(-winadd);
+    //     }
+
+    //     if (winadd_copy > 0){
+    //         incre_win_copy += (size_t)winadd_copy;
+    //     }else {
+    //         decre_win_copy += (size_t)(-winadd_copy);
+    //     }
+    // };
+    
     // update patial cwnd size
     // y = 4x^2 − 16x + 8, y = 3x^2 - 12x + 4(current)
+
     void update_win(float weights, double num){
         double winadd = 0;
         roll_back_flag = false;
@@ -154,6 +194,35 @@ class Recovery{
         return congestion_window;
     };
 
+
+    ///modified
+    // size_t cwnd(){
+    //     size_t tmp_win = 0;
+    //     if (2*incre_win > decre_win){
+    //         tmp_win = 2*incre_win - decre_win;
+    //     }else{
+    //         tmp_win = 0;
+    //     }
+    //     if (!roll_back_flag) {
+    //         if (tmp_win !=0 && tmp_win>INI_WIN){
+    //             former_win_vecter.insert(tmp_win);
+    //         }
+    //     }
+
+    //     congestion_window = tmp_win;
+        
+    //     parameter_reset();
+    //     if (congestion_window >=  PACKET_SIZE*INITIAL_WINDOW_PACKETS){
+    //         return congestion_window;
+    //     }else{
+    //         congestion_window = PACKET_SIZE*INITIAL_WINDOW_PACKETS;
+    //         return congestion_window;
+    //     }
+        
+    // };
+    
+
+
     size_t cwnd_available()  {
         return (congestion_window - bytes_in_flight);
     };
@@ -176,6 +245,17 @@ class Recovery{
         incre_win_copy = 0;
         decre_win_copy = 0;
     }
+
+    // size_t rollback(){
+    //     if (former_win_vecter.empty()){
+    //         congestion_window = INI_WIN;
+    //     }else{
+    //         congestion_window = *former_win_vecter.rbegin();
+    //         former_win_vecter.erase(--former_win_vecter.end()); 
+    //     }
+    //     parameter_reset();
+    //     return congestion_window;
+    // };
 
 };
 

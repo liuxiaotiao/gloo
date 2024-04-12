@@ -101,6 +101,12 @@ inline void dmludp_set_rtt(std::shared_ptr<Connection> conn, long interval){
     conn->set_rtt(interval);
 }
 
+// Write data from application to protocal
+// inline void dmludp_data_write(Connection* conn, const uint8_t* buf, size_t len){
+// inline void dmludp_data_write(std::shared_ptr<Connection> conn, const uint8_t* buf, size_t len){
+//     conn->data_write(buf, len);
+// }
+
 // Date: 7th Jan 2024
 inline size_t dmludp_data_write(std::shared_ptr<Connection> conn, uint8_t* buf, size_t len){
     return conn->data_write(buf, len);
@@ -130,14 +136,20 @@ inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
 }
 
 inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
+    // std::vector<std::vector<uint8_t>> out_vector(10);
+    // std::set<std::chrono::high_resolution_clock::time_point> outstampes;
     size_t written = conn->send_timeout_elicit_ack_message(out, timestamps);
+    // if ( written > 0){
+    //     out = std::move(out_vector);
+    //     timestamps = std::move(outstampes);
+    // }
     return written; 
 }
 
 inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
     std::vector<uint8_t> out_vector(1500);
     ssize_t written = conn->send_elicit_ack_message(out_vector);
-    if (written > 0)
+    if ( written > 0)
         out = std::move(out_vector);
     return written;
 }
@@ -145,7 +157,7 @@ inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, 
 inline ssize_t dmludp_send_elicit_ack(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     std::vector<uint8_t> out_vector(out_len);
     ssize_t written = conn->send_elicit_ack(out_vector);
-    if (written > 0)
+    if ( written > 0)
         memcpy(out, out_vector.data(), written);
     return written;
 }
@@ -227,6 +239,10 @@ inline bool dmludp_conn_has_recv(std::shared_ptr<Connection> conn){
     return conn->has_recv();
 }
 
+// inline void dmludp_conn_free(Connection* conn) {
+// inline void dmludp_conn_free(std::shared_ptr<Connection> conn) {
+//     delete conn;
+// }
 
 inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
     return conn->get_once_data_len();
@@ -302,6 +318,8 @@ inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, siz
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
+//  raw pointer, remove vector
+    // std::vector<uint8_t> data_slice(len);
     size_t result = conn->read(static_cast<uint8_t*>(buf), iscopy, len);
 
 

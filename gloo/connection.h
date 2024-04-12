@@ -69,7 +69,9 @@ class sbuffer{
     sbuffer(uint8_t* src, size_t len):
     src(src),
     len(len),
-    left(len){};
+    left(len){
+
+    };
 
     ~sbuffer(){};
 
@@ -160,8 +162,6 @@ class Connection{
     size_t record_win;
 
     uint64_t total_offset;
-
-    // rx expected data len
     size_t rx_length;
 
     bool recv_flag;
@@ -198,14 +198,20 @@ class Connection{
 
     RecvBuf rec_buffer;
 
+    ///// 1/28/204
     // Initial elicit_ack number and all retransmission elicit ack number.
     std::map<uint64_t, std::vector<uint64_t>> keyToValues;
-
     // Retransmission elicit ack number and its initial elicit ack number.
     std::map<uint64_t, uint64_t> valueToKeys;
 
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> timeout_ack;
+    ///////
 
+    // Date: 7th Jan 2024
+    // std::vector<uint8_t *> send_buffer_pointer;
+
+    // std::vector<size_t> send_buffer_len;
+    // Date: 7th Jan 2024
     std::vector<sbuffer> data_buffer;
 
     size_t current_buffer_pos;
@@ -226,14 +232,12 @@ class Connection{
 
     // Used to record how many packet has been sent before EAGAIN
     size_t dmludp_error_sent;
-
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
-
-    static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
+    static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         return std::make_shared<Connection>(local, peer, config, false);
     };
 
-    static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
+    static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
         return std::make_shared<Connection>(local, peer, config, true);
     };
 
@@ -288,10 +292,10 @@ class Connection{
 
     void update_rtt(){
         auto arrive_time = std::chrono::high_resolution_clock::now();
-        if (rtt.count() == 0){
+        if (rtt.count() == 0 ){
             rtt = arrive_time - handshake;
         }else{
-            rtt = 17 * (arrive_time - handshake) / 16;
+            rtt = 17 * ( arrive_time - handshake ) / 16;
         }
     };
 
@@ -345,22 +349,27 @@ class Connection{
         
         // All side can send data.
         if (hdr->ty == Type::ACK){
+std::cout<<std::endl;
+                std::cout<<"[Start] start ACK"<<std::endl;
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
             }
-	    }
+	    std::cout<<"[End] end ACK"<<std::endl;
+              std::cout<<std::endl;
+	}
 
         if (hdr->ty == Type::ElicitAck){
             recv_flag = true;
-            std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
+            std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
-            std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
+            std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
             check_loss(checkbuf);
             feed_back = true;
         }
 
         if (hdr->ty == Type::Application){
+		std::cout<<"[Receive] offset:"<<hdr->offset<<", len:"<<hdr->pkt_length<<std::endl;
             if (hdr->offset == 0){
                 clear_recv_setting();
             }
@@ -442,13 +451,16 @@ class Connection{
         while (start < len){
             std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
             uint64_t unack = convertToUint64(ackvector);
+	    std::cout<<"[ACK] offset:"<<unack;
             start += 8;
             uint8_t priority = unackbuf[start];
+	    std::cout<<" received:"<<(int)priority;
             start += 1;
             if (sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
                     // Remove from send_buffer
                     send_buffer.ack_and_drop(unack);
+		    std::cout<<" remove condition 1";
                 }
             }else{
                 continue;
@@ -471,6 +483,7 @@ class Connection{
                 weights += 0.25;
             }else{
                 send_buffer.ack_and_drop(unack);
+		std::cout<<" remove condition 2";
             }
             auto real_priority = priority_calculation(unack);
             if (priority != 0 && real_priority == 3){
@@ -486,6 +499,8 @@ class Connection{
                 weights = 0;
             }
             count += 1;
+	    std::cout<<std::endl;
+
         }
         if (send_buffer.pos == 0){
             send_buffer.recv_and_drop();
@@ -532,10 +547,10 @@ class Connection{
         }
         
     };
-
     //  no loss scenario, no stop packet.
     bool receive_complete(){
         auto rlen = rec_buffer.receive_length();
+	std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
         if (rx_length == rlen){
             return true;
         }
@@ -549,7 +564,6 @@ class Connection{
     void reset_rx_len(){
         rx_length = 0;
     }
-
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
     ssize_t nwrite(sbuffer &send_data, size_t congestion_window) {
@@ -574,13 +588,13 @@ class Connection{
         bool completed = true;
         written_data_once = 0;
         written_data_len = 0;
-	    dmludp_error_sent = 0;
+	dmludp_error_sent = 0;
         record_send.clear();
         sent_dic.clear();
         ack_point = 0;
 
         send_buffer.off = 0;
-        if (data_buffer.size() > 0){
+        if ( data_buffer.size() > 0 ){
             completed = false;
             return completed;
         }
@@ -693,13 +707,15 @@ class Connection{
             send_buffer.sent = 0;
         }
        
-
+        // if (get_dmludp_error() == 11){
+        // }
 
         if (pkt_size == 1){
             // consider add ack message at the end of the flow.
             iovecs.resize(send_buffer.data.size() * 2);
             messages.resize(send_buffer.data.size());
-
+	        // if (get_dmludp_error() == 11){
+            //     }
             // unlock memory allocation, and consider move this to function parameter.
             std::vector<std::shared_ptr<Header>> hdrs;
             for (auto i = 0; ; ++i){
@@ -712,7 +728,8 @@ class Connection{
                 auto pn = pkt_num_spaces.at(0).updatepktnum();
                 auto priority = priority_calculation(out_off);
                 Type ty = Type::Application;
-
+                // counter?
+                // print address?
                 std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
                 hdrs.push_back(hdr);
                 iovecs[2*i].iov_base = (void *)hdr.get();
@@ -734,6 +751,8 @@ class Connection{
 
                 if (s_flag){
                     stop_flag = true;
+                    // if (get_dmludp_error() == 11){
+                    // }
                     break;
                 }
 
@@ -744,9 +763,9 @@ class Connection{
         }else{
             // consider add ack message at the end of the flow.
             iovecs.resize(send_buffer.data.size() * 3);
-            messages.resize((send_buffer.data.size() / pkt_size) + 1);
+            messages.resize((send_buffer.data.size() / pkt_size) + 1 );
             std::vector<std::shared_ptr<Header>> hdrs;
-            for (auto i = 0; ; ++i){
+            for ( auto i = 0; ; ++i){
                 size_t out_len = 0; 
                 uint64_t out_off = 0;
                 bool s_flag = send_buffer.emit(iovecs[i*3+1], out_len, out_off);
@@ -762,6 +781,9 @@ class Connection{
                 iovecs[3*i].iov_base = (void *)hdr.get();
                 iovecs[3*i].iov_len = 26;
                 if (!s_flag){
+                    /*iovecs[3*i + 2].iov_base = padding.data();
+                    iovecs[3*i + 2].iov_len = 1;
+                }else{*/
                     iovecs[3*i + 2].iov_base = padding.data();
                     iovecs[3*i + 2].iov_len = 1472 - 26 - out_len;
                 }
@@ -777,7 +799,7 @@ class Connection{
                 record_send.push_back(offset);
 
                 if (s_flag){
-                    if (i % pkt_size){
+                    if ( i % pkt_size){
                         messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - i % pkt_size)];
                     }else{
                         messages[i/10].msg_hdr.msg_iov = &iovecs[3*i ];
@@ -787,19 +809,21 @@ class Connection{
                     stop_flag = true;
                     break;
                 }
-                if((i % pkt_size) == (pkt_size - 1)){
+                if( (i % pkt_size) == (pkt_size - 1)){
                     messages[i/10].msg_hdr.msg_iov = &iovecs[3 * (i - pkt_size + 1)];
                     messages[i/10].msg_hdr.msg_iovlen = 3*pkt_size;
                 }
 
             }
-            if (written_len){
+            if ( written_len){
                 stop_ack = false;
             }
         }
-
+        //iovecs.resize(record2ack.size() * 2);
+        //messages.resize(record2ack.size());
         written_data_len += written_len;
-
+	    // if (get_dmludp_error() == 11){
+        // }
         return written_len;
 
     };
@@ -833,7 +857,9 @@ class Connection{
             
             for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
                 auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
-
+                // if (written_len == 0 && wlen <= 0){
+                //     return wlen;
+                // }
                 if (wlen == -2){
                     written_len = 0;
                     break;
@@ -855,42 +881,46 @@ class Connection{
             send_buffer.sent = 0;
         }
 
-
+        // if (get_dmludp_error() == 11){
+        // }
 
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 2);
         messages.resize(send_buffer.data.size());
-
+      	// if (get_dmludp_error() == 11){
+        //     }
         // unlock memory allocation, and consider move this to function parameter.
         std::vector<std::shared_ptr<Header>> hdrs;
         for (auto i = 0; ; ++i){
             size_t out_len = 0; 
             uint64_t out_off = 0;
             bool s_flag = false;
-            auto priority = 0;
-            if (get_dmludp_error() == 0){
-                s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
-                out_off -= (uint64_t)out_len;
-                sent_count += 1;
-                sent_number += 1;
-                auto pn = pkt_num_spaces.at(0).updatepktnum();
-                priority = priority_calculation(out_off);
-                Type ty = Type::Application;
 
-                std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
-                hdrs.push_back(hdr);
-                iovecs[2*i].iov_base = (void *)hdr.get();
-                iovecs[2*i].iov_len = 26;
-            }
-            else{
+	    auto priority = 0;
+	    if (get_dmludp_error() == 0){
+                s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
+            out_off -= (uint64_t)out_len;
+            sent_count += 1;
+            sent_number += 1;
+            auto pn = pkt_num_spaces.at(0).updatepktnum();
+            priority = priority_calculation(out_off);
+            Type ty = Type::Application;
+            // counter?
+            // print address?
+            std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
+            hdrs.push_back(hdr);
+            iovecs[2*i].iov_base = (void *)hdr.get();
+            iovecs[2*i].iov_len = 26;
+		}else{
                 if (i < dmludp_error_sent){
-                    send_buffer.emit(iovecs[0], out_len, out_off);
+			                    send_buffer.emit(iovecs[0], out_len, out_off);
                     continue;
                 }
 
                 s_flag = send_buffer.emit(iovecs[(i-dmludp_error_sent)*2+1], out_len, out_off);
                 out_off -= (uint64_t)out_len;
-
+                // sent_count += 1;
+                // sent_number += 1;
                 auto pn = pkt_num_spaces.at(0).updatepktnum();
                 priority = priority_calculation(out_off);
                 Type ty = Type::Application;
@@ -901,7 +931,6 @@ class Connection{
                 iovecs[2*(i-dmludp_error_sent)].iov_base = (void *)hdr.get();
                 iovecs[2*(i-dmludp_error_sent)].iov_len = 26;
             }
-            
             auto offset = out_off;
             if (sent_dic.find(out_off) != sent_dic.end()){
                 if (sent_dic[out_off] != 3&& ((get_dmludp_error() != 11))){
@@ -910,13 +939,16 @@ class Connection{
             }else{
                 sent_dic[out_off] = priority;
             }
-
-            if (get_dmludp_error() == 0){
-                record_send.push_back(offset);
-                record2ack.push_back(offset);
-                messages[i].msg_iov = &iovecs[2*i];
-                messages[i].msg_iovlen = 2;
-            }else{
+std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<std::endl;
+	    //if(offset == 0){
+	    //}
+	    if (get_dmludp_error() == 0){
+            record_send.push_back(offset);
+            record2ack.push_back(offset);
+            messages[i].msg_iov = &iovecs[2*i];
+            messages[i].msg_iovlen = 2;
+	    }else{
+		    
                 messages[i-dmludp_error_sent].msg_iov = &iovecs[2*(i-dmludp_error_sent)];
                 messages[i-dmludp_error_sent].msg_iovlen = 2;
             }
@@ -924,21 +956,25 @@ class Connection{
 
             if (s_flag){
                 stop_flag = true;
-                if ((i+1) < send_buffer.data.size()){
+                // if (get_dmludp_error() == 11){
+                // }
+		if ((i+1) < send_buffer.data.size()){
                     if (get_dmludp_error() == 0){
-                        iovecs.resize((i+1) * 2);
-                        messages.resize(i+1);
-                    }else{
-                        iovecs.resize((i + 1 - dmludp_error_sent) * 2);
+			iovecs.resize((i+1) * 2);
+                    	messages.resize(i+1);
+		    }else{
+			iovecs.resize((i + 1 - dmludp_error_sent) * 2);
                         messages.resize(i + 1 - dmludp_error_sent);
-                    }
-                }
-                else{
-                    if (get_dmludp_error() == 11){
-                        iovecs.resize((i + 1 - dmludp_error_sent) * 2);
-                        messages.resize(i + 1 - dmludp_error_sent);
-                    }
-                }
+		    }
+		}
+		else{
+			if (get_dmludp_error() == 11){
+                        	iovecs.resize((i + 1 - dmludp_error_sent) * 2);
+                        	messages.resize(i + 1 - dmludp_error_sent);
+			}
+		    
+		    
+		}
                 break;
             }
 
@@ -946,8 +982,13 @@ class Connection{
         if (written_len){
             stop_ack = false;
         }
+
+        //iovecs.resize(record2ack.size() * 2);
+        //messages.resize(record2ack.size());
         written_data_len += written_len;
-  	    return written_len;
+	    // if (get_dmludp_error() == 11){
+        // }
+  	return written_len;
     };
 
     size_t get_dmludp_error(){
@@ -956,7 +997,7 @@ class Connection{
 
     void set_error(size_t err, size_t application_sent){
         dmludp_error = err;
-	    if (application_sent != 0){
+	        if (application_sent != 0){
             dmludp_error_sent += application_sent;
         }else{
             dmludp_error_sent = 0;
@@ -1033,7 +1074,7 @@ class Connection{
         for (const auto& e : retransmission_ack){
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
-            if ((e.second.second + duration) < now){
+            if ((e.second.second + duration) < now ){
                 pn_list.push_back(e.first);
             }
             else{
@@ -1104,10 +1145,10 @@ class Connection{
                 delete hdr; 
                 hdr = nullptr; 
                 ack_set.insert(pn);
-
+                //// date: 1/28/2024
                 keyToValues[pn].push_back(pn);
                 valueToKeys[pn] = pn;
-
+                //////
                 ack_point += 160;
                 std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
@@ -1141,7 +1182,7 @@ class Connection{
             for (const auto& e : retransmission_ack){
                 std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
                 std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
-                if ((e.second.second + duration) < now){
+                if ((e.second.second + duration) < now ){
                     pn = (ssize_t)e.first;
                     break;
                 }
@@ -1159,7 +1200,7 @@ class Connection{
             std::vector<uint8_t> wait_ack(retransmission_ack.at((uint64_t)pn).first.begin(), retransmission_ack.at((uint64_t)pn).first.end());
             std::copy(wait_ack.begin(), wait_ack.end(), out.begin() + HEADER_LENGTH);
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-
+            //// date: 1/28/2024
             auto initial_pn = valueToKeys[(uint64_t)pn];
             keyToValues[initial_pn].push_back(pktnum);
             valueToKeys[pktnum] = initial_pn;
@@ -1168,7 +1209,7 @@ class Connection{
                 timeout_ack.insert(*it);
                 retransmission_ack.erase(it);
             }
-            
+            ////
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
 
             delete hdr; 
@@ -1192,6 +1233,7 @@ class Connection{
     };
 
     //Send single packet
+    ///////
     size_t send_data(std::vector<uint8_t> &out){
         
         size_t done = 0;
@@ -1246,7 +1288,9 @@ class Connection{
                 put_u8(out, pair.second, (int)off);
                 off += 1;
             }
+            ///// remove 1/29/2024
             recv_hashmap.clear();
+            /////
         }
 
         // chekc is_ack condition is correct or not.
@@ -1365,6 +1409,9 @@ class Connection{
     size_t send_data_stop(std::vector<uint8_t> &out){ 
         size_t total_len = HEADER_LENGTH;
 
+        // auto pn =  pkt_num_spaces[1].next_pkt_num;
+        // pkt_num_spaces[1].next_pkt_num += 1;
+
         auto pn = pkt_num_spaces.at(1).updatepktnum();
 
         uint64_t offset = 0;
@@ -1410,6 +1457,7 @@ class Connection{
     }
 
     bool enable_adding(){
+        // return ack_set.empty() && (send_buffer.pos == 0);
         return stop_flag && stop_ack;
     }
 
@@ -1454,6 +1502,7 @@ class Connection{
     
     size_t recv_len(){
         return rec_buffer.length();
+        // return rec_buffer.first_item_len();
     }
 
     //Writing data to send buffer.
@@ -1476,12 +1525,15 @@ class Connection{
                 congestion_window = recovery.cwnd();
             };
             record_win = congestion_window;
-
+            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
+            // return result;
             return 0;
         }else{
             auto congestion_window = record_win;
             size_t off_len = 0;
 
+            // auto result = send_buffer.write(send_data_buf, congestion_window, off_len, max_off);
+            // return result;
             return 0;
         }
 
@@ -1606,6 +1658,9 @@ class Connection{
         if (!norm2_vec.empty()){
             norm2_vec.clear();
         }
+        // if (!send_data_buf.empty()){
+        //     send_data_buf.clear();
+        // }
 
         size_t len = 0;
         if (length % 1350 == 0){
@@ -1616,6 +1671,11 @@ class Connection{
 
         if (data_buffer.empty())
             total_offset = 0;
+        ///////////////////////////////////////////////////////
+        // change vector to pointer to reduce operation time
+
+
+        // data_buffer.push_back(std::make_pair(buf, length));
 
         norm2_vec.insert(norm2_vec.begin(), len, 3);
 

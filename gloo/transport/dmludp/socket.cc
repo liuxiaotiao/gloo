@@ -47,6 +47,12 @@ void Socket::reuseAddr(bool on) {
   int value = on ? 1 : 0;
   auto rv = ::setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
   GLOO_ENFORCE_NE(rv, -1, "setsockopt: ", strerror(errno));
+/*    unsigned int rate = 3000000000; // 1Mbps
+  if (setsockopt(fd_, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
+      perror("setsockopt SO_MAX_PACING_RATE failed");
+      close(fd_);
+      exit(EXIT_FAILURE);
+  }*/
 }
 
 

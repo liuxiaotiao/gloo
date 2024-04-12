@@ -26,26 +26,65 @@ namespace dmludp{
 
         ~RecvBuf(){};
 
-
-	    void write(std::vector<uint8_t> &out, uint64_t out_off){
+/*        void write(std::vector<uint8_t> &out, uint64_t out_off){
             auto data_len = data.size();
-
             if(out_off > data_len){
-		        data.resize(out_off+out.size());
+                data.resize(out_off);
+                data.insert(data.end(), 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
+            }
+            else if(out_off == data_len){
+                data.insert(data.end(), 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
+            }
+            else{
+                size_t startPos = out_off; 
+                size_t endPos = out_off+out.size();  
+
+                auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
+
+                data.insert(it, 
+                            std::make_move_iterator(out.begin()), 
+                            std::make_move_iterator(out.end()));
+            }
+            len += out.size();
+        }*/
+	void write(std::vector<uint8_t> &out, uint64_t out_off){
+            auto data_len = data.size();
+            // if(out_off == 0){
+            //     std::cout<<"recv out_ofr = 0"<<std::endl;
+            // }
+            if(out_off > data_len){
+                //data.resize(out_off);
+		//std::cout<<"point 2"<<std::endl;
+                // data.insert(data.end(),
+                //             std::make_move_iterator(out.begin()),
+                //             std::make_move_iterator(out.end()));
+		    data.resize(out_off+out.size());
 		        memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
             }
             else if(out_off == data_len){
+                // data.insert(data.end(),
+                //             std::make_move_iterator(out.begin()),
+                //             std::make_move_iterator(out.end()));
 		        data.resize(out_off + out.size());
                 memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
             }
             else{
                 size_t startPos = out_off;
                 size_t endPos = out_off+out.size();
+                // auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
 
+                // data.insert(it,
+                //             std::make_move_iterator(out.begin()),
+                //             std::make_move_iterator(out.end()));
                 memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
             }
             len += out.size();
-	        if(len>data.size()){
+//	    std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+	                if(len>data.size()){
 				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
                 _Exit(0);
             }
