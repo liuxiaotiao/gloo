@@ -84,7 +84,7 @@ namespace dmludp{
             }
             len += out.size();
 //	    std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
-	                if(len>data.size()){
+	        if(len>data.size()){
 				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
                 _Exit(0);
             }

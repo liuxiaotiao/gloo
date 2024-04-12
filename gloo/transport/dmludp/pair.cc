@@ -678,9 +678,9 @@ bool Pair::protocal2read(){
         uint8_t out[1500];
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
         ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
-	if(socketwrite == -1 && errno == EAGAIN){
-	//	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
-	}
+        if(socketwrite == -1 && errno == EAGAIN){
+        //	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
+        }
       }
 
       // Packet completes tranmission and start to iov.
@@ -693,7 +693,7 @@ bool Pair::protocal2read(){
       }
       // Application packet
       else if (rv == 3){
-	      std::cout<<"[Debug] application offset:"<<offset<<std::endl;
+	      std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
         if ((read - 26) == sizeof(rx_.preamble)&&(offset == 0)){
          // if (offset == 0){
             NonOwningPtr<UnboundBuffer> rbuf;
@@ -883,10 +883,11 @@ bool Pair::protocal2send(){
   }
 
   std::vector<uint8_t> padding(1446, 0);
-  std::vector<struct msghdr> messages;
+  // std::vector<struct msghdr> messages;
+  std::vector<struct mmsghdr> messages;
   std::vector<struct iovec> iovecs;
-  // auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-  auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
+  auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
+  // auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
   // No data needs to send.
   if (messages.size() == 0){
     return false;
@@ -897,35 +898,53 @@ bool Pair::protocal2send(){
   size_t sent = 0;
   auto has_error = dmludp_get_dmludp_error(dmludp_connection);
 	
-  for (auto& msg : messages) {
-    auto retval = sendmsg(fd_, &msg, 0); 
-    if (retval == -1){
-      // if (has_error == EAGAIN){
-      // }
+  // for (auto& msg : messages) {
+  //   auto retval = sendmsg(fd_, &msg, 0); 
+  //   if (retval == -1){
+  //     // if (has_error == EAGAIN){
+  //     // }
 
+  //     if (errno == EINTR){
+  //       continue;
+  //     }
+
+  //     if (errno == EAGAIN){
+	//       // std::cout<<"errno == EAGAIN, sent:"<<sent<<", message.size:"<<messages.size()<<std::endl;
+  //     	dmludp_set_error(dmludp_connection, EAGAIN, sent);
+  // /*      struct itimerspec new_value = {};
+  //       timerfd_settime(timer_fd, 0, &new_value, NULL);*/
+  //     }
+  //     return false;
+  //   }
+  //   if(retval == 0){
+	//    // std::cout<<"retval == 0, sent:"<<sent<<" messages.size:"<<messages.size()<<std::endl;
+  //   }
+  //   sent++;
+  // }
+
+  while(messages.size() > sent){
+    auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
+
+    if (retval == -1){
+      // Date: solve data cannot send out one time.
+      // Move errno == EINTR out of while(1)
       if (errno == EINTR){
         continue;
       }
 
       if (errno == EAGAIN){
-	      // std::cout<<"errno == EAGAIN, sent:"<<sent<<", message.size:"<<messages.size()<<std::endl;
       	dmludp_set_error(dmludp_connection, EAGAIN, sent);
-  /*      struct itimerspec new_value = {};
-        timerfd_settime(timer_fd, 0, &new_value, NULL);*/
       }
       return false;
     }
-    if(retval == 0){
-	   // std::cout<<"retval == 0, sent:"<<sent<<" messages.size:"<<messages.size()<<std::endl;
-    }
-    sent++;
+    sent += retval;
   }
  // device_->registerDescriptor(fd_, EPOLLIN, this);
   // if(dmludp_get_dmludp_error(dmludp_connection) == 11){
   //   std::cout<<"sent:"<<sent<<std::endl;
   // }
   if (has_error == 11 && (sent == messages.size())){
-    dmludp_set_error(dmludp_connection, 0,0 );
+    dmludp_set_error(dmludp_connection, 0, 0);
   }
 
   size_t timer_counter = 0;
