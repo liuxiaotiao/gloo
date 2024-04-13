@@ -772,8 +772,8 @@ class Connection{
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
                 messages[i].msg_hdr.msg_iovlen = 2;
             }else{
-                messages[i-dmludp_error_sent].msg_iov = &iovecs[2*(i-dmludp_error_sent)];
-                messages[i-dmludp_error_sent].msg_iovlen = 2;
+                messages[i-dmludp_error_sent].msg_hdr.msg_iov = &iovecs[2*(i-dmludp_error_sent)];
+                messages[i-dmludp_error_sent].msg_hdr.msg_iovlen = 2;
             }
 
             if (s_flag){
