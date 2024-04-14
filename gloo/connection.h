@@ -30,6 +30,8 @@ const size_t HEADER_LENGTH = 26;
 
 const size_t MAX_ACK_NUM = 160;
 
+const size_t MAX_ACK_NUM_PKTNUM = 1350;
+
 const size_t ELICIT_FLAG = 8;
 // use crate::ranges;
 const double CONGESTION_THREAHOLD = 0.01;
@@ -105,6 +107,52 @@ class Config {
     };
 };
 
+class Received_Record_Debug{
+    public:
+    // key: #packet, value: (offset, length)
+    std::map<uint64_t, std::pair<uint64_t, uint64_t>> pktnum2offset;
+
+    // key: acknowledge packet num, value: (application num, received or not)
+    std::map<uint64_t, std::map<uint64_t, uint8_t>> acknowledege_record;
+
+    Received_Record_Debug(){};
+
+    ~Received_Record_Debug(){};
+
+    void add_offset_and_pktnum(uint64_t pn, uint64_t offset, uint64_t len){
+        pktnum2offset.emplace(pn, std::make_pair(offset, len));
+    };
+
+    void add_acknowledeg_info(uint64_t ack_pn, std::map<uint64_t, uint8_t> received){
+        acknowledege_record[ack_pn] = std::move(received);
+    }
+
+    void clear(){
+        pktnum2offset.clear();
+        acknowledege_record.clear();
+    };
+
+    void show(){
+        std::cout<<"[Receive Error]"<<std::endl;
+        std::cout<<"[Info] Application packet info"<<std::endl;
+        for (const auto& [key, value] : pktnum2offset){
+            std::cout << "Application: " << key << ", offset: (" << value.first << ", length:" << value.second << ")" << std::endl;
+        }
+        std::cout<<std::endl;
+        std::cout<<"[Info] Acknowledge info"<<std::endl;
+        for (const auto& outer_pair : acknowledege_record) {
+            std::cout << "Acknowledge pktnum: " << outer_pair.first << std::endl;
+
+            // iterate inner map
+            for (const auto& inner_pair : outer_pair.second) {
+                std::cout << "Application num: " << inner_pair.first << ", offset: " << inner_pair.second << std::endl;
+            }
+        }
+        std::cout<<std::endl;
+
+    }
+
+};
 
 class Connection{
     public: 
@@ -147,8 +195,24 @@ class Connection{
 
     std::vector<uint64_t> record_send;
 
-    // Record sent packet num 
+    // Record sent packet offset
     std::vector<uint64_t> record2ack;
+
+    // Record sent application packet num
+    std::vector<uint64_t> record2ack_pktnum;
+    
+    // Record sent application packet num
+    std::vector<uint64_t> record_send_pktnum;
+
+    // Key: sent packet number, value: correspoind offset
+    std::map<uint64_t, uint64_t> pktnum2offset;
+
+    // map for received application pktnum and corresponding offset
+    std::map<uint64_t, uint64_t> receive_pktnum2offset;
+
+    uint64_t start_receive_offset;
+
+    std::vector<uint8_t> receive_result;
 
     std::unordered_map<uint64_t, uint8_t> recv_dic;
 
@@ -198,19 +262,17 @@ class Connection{
 
     RecvBuf rec_buffer;
 
+    Received_Record_Debug RRD;
+
     ///// 1/28/204
     // Initial elicit_ack number and all retransmission elicit ack number.
     std::map<uint64_t, std::vector<uint64_t>> keyToValues;
+
     // Retransmission elicit ack number and its initial elicit ack number.
     std::map<uint64_t, uint64_t> valueToKeys;
 
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> timeout_ack;
-    ///////
 
-    // Date: 7th Jan 2024
-    // std::vector<uint8_t *> send_buffer_pointer;
-
-    // std::vector<size_t> send_buffer_len;
     // Date: 7th Jan 2024
     std::vector<sbuffer> data_buffer;
 
@@ -232,7 +294,12 @@ class Connection{
 
     // Used to record how many packet has been sent before EAGAIN
     size_t dmludp_error_sent;
+
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
+
+    // sender record the map relationship between acknowledege packet number and (start application packet number and end application packet number)
+    std::map<uint64_t, std::pair<uint64_t, uint64_t>> send_pkt_duration;
+
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config ) {
         return std::make_shared<Connection>(local, peer, config, false);
     };
@@ -283,7 +350,8 @@ class Connection{
     written_data_once(0),
     dmludp_error(0),
     rx_length(0),
-    dmludp_error_sent(0)
+    dmludp_error_sent(0),
+    start_receive_offset(0)
     {};
 
     ~Connection(){
@@ -324,11 +392,6 @@ class Connection{
     size_t recv_slice(std::vector<uint8_t> &buf, const uint8_t* src){
         auto len = buf.size();
 
-        // see in dmludp.h
-        // if (len == 0){
-        //     return Err(Error::BufferTooShort);
-        // }
-
         recv_count += 1;
 
         auto hdr = Header::from_bytes(buf);
@@ -359,30 +422,66 @@ class Connection{
             std::cout<<std::endl;
 	    }
 
+        // if (hdr->ty == Type::ElicitAck){
+        //     recv_flag = true;
+        //     std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
+        //     send_num = convertToUint64(subbuf);
+        //     std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
+        //     check_loss(checkbuf);
+        //     feed_back = true;
+        // }
+
         if (hdr->ty == Type::ElicitAck){
             recv_flag = true;
-            std::vector<uint8_t> subbuf( buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
+            std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
-            std::vector<uint8_t> checkbuf( buf.begin() + 26, buf.end());
-            check_loss(checkbuf);
+            std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
+            check_loss_pktnum(checkbuf);
             feed_back = true;
         }
 
+        // if (hdr->ty == Type::Application){
+		//     std::cout<<"[Receive] offset:"<<hdr->offset<<", len:"<<hdr->pkt_length<<std::endl;
+        //     if (hdr->offset == 0){
+        //         clear_recv_setting();
+        //     }
+        //     recv_count += 1;
+        //     read = (size_t)(hdr->pkt_length);
+        //     if (recv_dic.find(hdr->offset) != recv_dic.end()){
+        //         return 0;
+        //     }else{
+        //         std::vector<uint8_t> writebuf;
+        //         writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + 26 + hdr->pkt_length);
+        //         rec_buffer.write(writebuf, hdr->offset);
+        //         recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
+        //     } 
+        // }
+
         if (hdr->ty == Type::Application){
-		    std::cout<<"[Receive] offset:"<<hdr->offset<<", len:"<<hdr->pkt_length<<std::endl;
+            if (receive_pktnum2offset.find(hdr->pkt_num) != receive_pktnum2offset.end()){
+                std::cout<<"[Error] Duplicate application packet"<<std::endl;
+                _Exit(0);
+            }
+            RRD.add_offset_and_pktnum(hdr->pkt_num, hdr->offset, hdr->pkt_length);
             if (hdr->offset == 0){
                 clear_recv_setting();
             }
-            recv_count += 1;
-            read = (size_t)(hdr->pkt_length);
+
+            // Debug
             if (recv_dic.find(hdr->offset) != recv_dic.end()){
-                return 0;
-            }else{
-                std::vector<uint8_t> writebuf;
-                writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + 26 + hdr->pkt_length);
-                rec_buffer.write(writebuf, hdr->offset);
-                recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
-            } 
+                RRD.show();
+                _Exit(0);
+            }
+            recv_count += 1;
+            
+            std::vector<uint8_t> writebuf;
+            // optimize to reduce copy time.
+            writebuf.insert(writebuf.end(), src + HEADER_LENGTH, src + HEADER_LENGTH + hdr->pkt_length);
+            rec_buffer.write(writebuf, hdr->offset);
+            receive_pktnum2offset.insert(std::make_pair(hdr->pkt_num, hdr->offset));
+
+            // Debug
+            recv_dic.insert(std::make_pair(hdr->offset, hdr->priority));
         }
 
         // In dmludp.h
@@ -403,16 +502,124 @@ class Connection{
     };
 
     //Get unack offset. 
+    // void process_ack(std::vector<uint8_t> buf){
+    //     std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
+    //     auto hd = Header::from_slice(ack_header);
+    //     //// 1/28/2024
+    //     if (ack_set.empty()){
+    //         stop_ack = true;
+    //         return;
+    //     }
+    //     auto received_ack = hd->pkt_num;
+    //     auto initial_ack = valueToKeys.find(received_ack);
+        
+    //     auto check_ack = retransmission_ack.find(received_ack);
+    //     if(check_ack!=retransmission_ack.end()){
+    //         handshake = retransmission_ack.at(hd->pkt_num).second;
+    //     }else{
+    //         auto timeout_check = timeout_ack.find(received_ack);
+    //         if(timeout_check != timeout_ack.end()){
+    //             handshake = timeout_ack.at(hd->pkt_num).second;
+    //         }else{
+    //             return;
+    //         }
+    //     }
+    //     update_rtt();
+    //     uint64_t ini = 0;
+    //     if (initial_ack != valueToKeys.end()){
+    //         ini = valueToKeys[received_ack];
+    //         ack_set.erase(ini);
+    //         for (int key : keyToValues[ini]) {
+    //             retransmission_ack.erase(key);
+    //             valueToKeys.erase(key);
+    //             timeout_ack.erase(key);
+    //         }
+    //     }else{
+    //         return;
+    //     }
+    //     keyToValues.erase(ini);
+
+    //     std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.begin() + 26 + hd->pkt_length);
+
+    //     std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
+
+    //     size_t len = unackbuf.size();
+    //     size_t start = 0;
+    //     float weights = 0;
+    //     size_t count = 1;
+    //     while (start < len){
+    //         std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
+    //         uint64_t unack = convertToUint64(ackvector);
+	//         std::cout<<"[ACK] offset:"<<unack;
+    //         start += 8;
+    //         uint8_t priority = unackbuf[start];
+	//         std::cout<<" received:"<<(int)priority;
+    //         start += 1;
+    //         if (sent_dic.find(unack) != sent_dic.end()){
+    //             if (sent_dic.at(unack) == 0){
+    //                 // Remove from send_buffer
+    //                 send_buffer.ack_and_drop(unack);
+	// 	            std::cout<<" remove condition 1";
+    //             }
+    //         }else{
+    //             continue;
+    //         }
+
+    //         // received 0 or not received 1
+    //         // Note: Reconsider priority and real_priority to avoid redundant operation.🌟🌟
+    //         // Note: Merge insert_ack and ack_and_drop into one function to reduce twice size computation.🌟🌟
+    //         // 0 received, 1 not received.
+    //         if (priority != 0){
+    //             // convert the result of priority_calculation to uint64
+    //             priority = priority_calculation(unack);
+    //         }
+    //         // start += 1;
+    //         if (priority == 1){
+    //             weights += 0.15;
+    //         }else if (priority == 2) {
+    //             weights += 0.2;
+    //         }else if (priority == 3) {
+    //             weights += 0.25;
+    //         }else{
+    //             send_buffer.ack_and_drop(unack);
+	// 	        std::cout<<" remove condition 2";
+    //         }
+    //         auto real_priority = priority_calculation(unack);
+    //         if (priority != 0 && real_priority == 3){
+    //             high_priority += 1;
+    //         }
+            
+    //         if (count % 8 == 0 || start == len){
+    //             double pnum = count % 8;
+    //             if (pnum == 0){
+    //                 pnum = 8;
+    //             }
+    //             recovery.update_win(weights, pnum);
+    //             weights = 0;
+    //         }
+    //         count += 1;
+	//         std::cout<<std::endl;
+
+    //     }
+    //     if (send_buffer.pos == 0){
+    //         send_buffer.recv_and_drop();
+    //     }    
+    // };
+
     void process_ack(std::vector<uint8_t> buf){
-        std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
+        std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + HEADER_LENGTH);
         auto hd = Header::from_slice(ack_header);
-        //// 1/28/2024
+
         if (ack_set.empty()){
             stop_ack = true;
             return;
         }
         auto received_ack = hd->pkt_num;
+
         auto initial_ack = valueToKeys.find(received_ack);
+
+        uint64_t start_pn = send_pkt_duration[received_ack].first;
+        uint64_t end_pn = send_pkt_duration[received_ack].second;
         
         auto check_ack = retransmission_ack.find(received_ack);
         if(check_ack!=retransmission_ack.end()){
@@ -432,6 +639,7 @@ class Connection{
             ack_set.erase(ini);
             for (int key : keyToValues[ini]) {
                 retransmission_ack.erase(key);
+                send_pkt_duration.erase(key);
                 valueToKeys.erase(key);
                 timeout_ack.erase(key);
             }
@@ -439,6 +647,8 @@ class Connection{
             return;
         }
         keyToValues.erase(ini);
+        
+        auto result = send_pkt_duration.erase(received_ack);
 
         std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.begin() + 26 + hd->pkt_length);
 
@@ -446,19 +656,14 @@ class Connection{
 
         size_t len = unackbuf.size();
         size_t start = 0;
-        float weights = 0;
-        size_t count = 1;
-        while (start < len){
-            std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
-            uint64_t unack = convertToUint64(ackvector);
-	        std::cout<<"[ACK] offset:"<<unack;
-            start += 8;
-            uint8_t priority = unackbuf[start];
-	        std::cout<<" received:"<<(int)priority;
-            start += 1;
+        float weights = 0;        
+        
+        for (auto check_pn = start_pn ; check_pn <= end_pn ; check_pn++){
+            auto real_index = check_pn - start_pn;
+            uint8_t priority = unackbuf[real_index];
+            auto unack = pktnum2offset[check_pn];
             if (sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
-                    // Remove from send_buffer
                     send_buffer.ack_and_drop(unack);
 		            std::cout<<" remove condition 1";
                 }
@@ -466,15 +671,11 @@ class Connection{
                 continue;
             }
 
-            // received 0 or not received 1
-            // Note: Reconsider priority and real_priority to avoid redundant operation.🌟🌟
-            // Note: Merge insert_ack and ack_and_drop into one function to reduce twice size computation.🌟🌟
-            // 0 received, 1 not received.
             if (priority != 0){
                 // convert the result of priority_calculation to uint64
                 priority = priority_calculation(unack);
             }
-            // start += 1;
+
             if (priority == 1){
                 weights += 0.15;
             }else if (priority == 2) {
@@ -490,22 +691,22 @@ class Connection{
                 high_priority += 1;
             }
             
-            if (count % 8 == 0 || start == len){
-                double pnum = count % 8;
+            if ((real_index + 1) % 8 == 0 || check_pn == end_pn){
+                double pnum = (real_index + 1) % 8;
                 if (pnum == 0){
                     pnum = 8;
                 }
                 recovery.update_win(weights, pnum);
                 weights = 0;
             }
-            count += 1;
 	        std::cout<<std::endl;
-
         }
         if (send_buffer.pos == 0){
             send_buffer.recv_and_drop();
         }    
-    };
+    }
+
+
 
     uint8_t findweight(uint64_t unack){
         return prioritydic.at(unack);
@@ -513,6 +714,7 @@ class Connection{
 
     void clear_recv_setting(){
         recv_dic.clear();
+        receive_pktnum2offset.clear();
     }
 
     void recv_reset(){
@@ -552,6 +754,7 @@ class Connection{
         auto rlen = rec_buffer.receive_length();
 	    std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
         if (rx_length == rlen){
+            RRD.clear();
             return true;
         }
         return false;
@@ -592,6 +795,10 @@ class Connection{
         record_send.clear();
         sent_dic.clear();
         ack_point = 0;
+
+        if (!send_pkt_duration.empty()){
+            _Exit(0);
+        }
 
         send_buffer.off = 0;
         if ( data_buffer.size() > 0 ){
@@ -806,7 +1013,7 @@ class Connection{
     //     return written_len;
 
     // };
-        ssize_t send_mmsg(std::vector<uint8_t> &padding, 
+    ssize_t send_mmsg(std::vector<uint8_t> &padding, 
         std::vector<struct mmsghdr> &messages, 
         std::vector<struct iovec> &iovecs)
     {
@@ -918,6 +1125,9 @@ class Connection{
             if (get_dmludp_error() == 0){
                 record_send.push_back(offset);
                 record2ack.push_back(offset);
+                record_send_pktnum.push_back(pn);
+                record2ack_pktnum.push_back(pn);
+                pktnum2offset[pn] = out_off;
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
                 messages[i].msg_hdr.msg_iovlen = 2;
             }else{
@@ -1176,6 +1386,49 @@ class Connection{
         return pktlen;
     }
 
+    ssize_t send_elicit_ack_message_pktnum(std::vector<uint8_t> &out){
+        auto ty = Type::ElicitAck;        
+        auto preparenum = record2ack_pktnum.size();
+        if(record2ack_pktnum.empty()){
+            return -1;
+        }
+
+        size_t pktlen = 0;
+
+        uint64_t start_pktnum = record2ack_pktnum[0];
+        
+        size_t sent_num = std::min(preparenum, MAX_ACK_NUM_PKTNUM);
+
+        uint64_t end_pktnum = record2ack_pktnum[sent_num - 1];
+
+        auto pn = pkt_num_spaces.at(1).updatepktnum();
+        Header* hdr = new Header(ty, pn, 0, 0, pktlen);
+
+        out.resize(HEADER_LENGTH + 2 * sizeof(uint64_t));
+
+        hdr->to_bytes(out);
+        memcpy(out.data() + HEADER_LENGTH, &start_pktnum, sizeof(uint64_t));
+        memcpy(out.data() + HEADER_LENGTH + sizeof(uint64_t), &end_pktnum, sizeof(uint64_t));
+        if(sent_num == record2ack_pktnum.size()){
+            record2ack_pktnum.clear();
+        }else{
+            record2ack_pktnum.erase(record2ack_pktnum.begin(), record2ack_pktnum.begin() + sent_num);
+        }
+
+        delete hdr; 
+        hdr = nullptr; 
+        ack_set.insert(pn);
+        keyToValues[pn].push_back(pn);
+        valueToKeys[pn] = pn;
+        ack_point += sent_num;
+        std::vector<uint8_t> wait_ack(out.begin()+ HEADER_LENGTH, out.end());
+        std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        retransmission_ack[pn] = std::make_pair(wait_ack, now);
+        send_pkt_duration[pn] = std::make_pair(start_pktnum, end_pktnum);
+        pktlen += HEADER_LENGTH;
+        return pktlen;
+    }
+
     // Time our occurs, timerfd triger this function and send retranmssion elicit ack.
     ssize_t send_timeout_elicit_ack_message(std::vector<std::vector<uint8_t>> &out, std::set<std::chrono::high_resolution_clock::time_point> &timestamps){
         auto ty = Type::ElicitAck;
@@ -1212,27 +1465,40 @@ class Connection{
             out_buffer.resize(pktlen);
             hdr->to_bytes(out_buffer);
             std::vector<uint8_t> wait_ack(retransmission_ack.at(n).first.begin(), retransmission_ack.at(n).first.end());
+            ////
             std::copy(wait_ack.begin(), wait_ack.end(), out_buffer.begin() + HEADER_LENGTH);
+            // memcpy(out_buffer.begin() + HEADER_LENGTH, wait_ack.data(), wait_ack.size());
+            ///
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             auto initial_pn = valueToKeys[n];
             keyToValues[initial_pn].push_back(pktnum);
             valueToKeys[pktnum] = initial_pn;
             auto it = retransmission_ack.find(n);
             if (it != retransmission_ack.end()) {
+                /// remove?
                 timeout_ack.insert(*it);
+                ///
                 retransmission_ack.erase(it);
             }
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
 
+            uint64_t start_send_pn;
+            uint64_t end_send_pn;
+            memcpy(&start_send_pn, wait_ack.data(), sizeof(uint64_t));
+            memcpy(&end_send_pn, wait_ack.data()+sizeof(uint64_t), sizeof(uint64_t))
+            send_pkt_duration[pktnum] = std::make_pair(start_send_pn, end_send_pn);
             delete hdr; 
             hdr = nullptr; 
             out.push_back(out_buffer);
         }
+
+        // remove?
         if (timestamps.empty()){
             std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
             std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
             timestamps.insert(now + duration);
         }
+        ////
         return pn_list.size(); 
     }
 
@@ -1387,9 +1653,32 @@ class Connection{
         }
     
         //send the received packet condtion
+        // if (ty == Type::ACK){
+        //     feed_back = false;
+        //     psize = (uint64_t)(recv_hashmap.size()*9);
+        //     hdr->ty = ty;
+        //     hdr->pkt_num = send_num;
+        //     hdr->offset = 0;
+        //     hdr->priority = 0;
+        //     hdr->pkt_length = psize;
+        //     hdr->to_bytes(out);
+
+        //     // pkt_length may not be 8
+        //     size_t off = 26;
+        //     for (const auto& pair : recv_hashmap) {
+        //         put_u64(out, pair.first, (int)off);
+        //         off += 8;
+        //         put_u8(out, pair.second, (int)off);
+        //         off += 1;
+        //     }
+        //     ///// remove 1/29/2024
+        //     recv_hashmap.clear();
+        //     /////
+        // }
+
         if (ty == Type::ACK){
             feed_back = false;
-            psize = (uint64_t)(recv_hashmap.size()*9);
+            psize = (uint64_t)(receive_result.size());
             hdr->ty = ty;
             hdr->pkt_num = send_num;
             hdr->offset = 0;
@@ -1397,17 +1686,9 @@ class Connection{
             hdr->pkt_length = psize;
             hdr->to_bytes(out);
 
-            // pkt_length may not be 8
             size_t off = 26;
-            for (const auto& pair : recv_hashmap) {
-                put_u64(out, pair.first, (int)off);
-                off += 8;
-                put_u8(out, pair.second, (int)off);
-                off += 1;
-            }
-            ///// remove 1/29/2024
-            recv_hashmap.clear();
-            /////
+            memcpy(out.data() + HEADER_LENGTH, receive_result.data(), receive_result.size());
+            receive_result.clear();
         }
 
         // chekc is_ack condition is correct or not.
@@ -1666,20 +1947,40 @@ class Connection{
         send_buffer.clear();
     };
 
-    void check_loss(std::vector<uint8_t> b){
-        int start = 0;
-        while (b.size()>0) {
-            auto offset = Header::get_u64(b, start);
-            start += sizeof(uint64_t);
-            if (recv_dic.find(offset)!= recv_dic.end()){
-                recv_hashmap.insert(std::make_pair(offset, 0));
+    // void check_loss(std::vector<uint8_t> b){
+    //     int start = 0;
+    //     while (b.size()>0) {
+    //         auto offset = Header::get_u64(b, start);
+    //         start += sizeof(uint64_t);
+    //         if (recv_dic.find(offset)!= recv_dic.end()){
+    //             recv_hashmap.insert(std::make_pair(offset, 0));
+    //         }else{
+    //             recv_hashmap.insert(std::make_pair(offset, 1));
+    //         }
+    //         if (start >= b.size()){
+    //             break;
+    //         }
+    //     }
+    // }
+
+    void check_loss_pktnum(std::vector<uint8_t> b){
+        uint64_t start;
+        uint64_t end;
+        memcpy(&start, b.data(), sizeof(uint64_t));
+        memcpy(&end, b.data() + sizeof(uint64_t), sizeof(uint64_t));
+        std::map<uint64_t, uint8_t> ack_record;
+
+        for (auto pn = start; pn <= end; pn++){
+            if (receive_pktnum2offset.find(pn) != receive_pktnum2offset.end()){
+                receive_result.push_back(0);
+                ack_record[pn] = 0;
             }else{
-                recv_hashmap.insert(std::make_pair(offset, 1));
-            }
-            if (start >= b.size()){
-                break;
-            }
+                receive_result.push_back(1);
+                ack_record[pn] = 1;
+            }          
         }
+
+        RRD.add_acknowledeg_info(send_num, std::move(ack_record));
     }
 
     void set_handshake(){

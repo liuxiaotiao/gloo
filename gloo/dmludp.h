@@ -147,7 +147,8 @@ inline ssize_t dmludp_send_timeout_elicit_ack_message(std::shared_ptr<Connection
 
 inline ssize_t dmludp_send_elicit_ack_message(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
     std::vector<uint8_t> out_vector(1500);
-    ssize_t written = conn->send_elicit_ack_message(out_vector);
+    // ssize_t written = conn->send_elicit_ack_message(out_vector);
+    ssize_t written = conn->send_elicit_ack_message_pktnum(out_vector);
     if ( written > 0)
         out = std::move(out_vector);
     return written;
