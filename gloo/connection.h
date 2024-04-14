@@ -1485,7 +1485,7 @@ class Connection{
             uint64_t start_send_pn;
             uint64_t end_send_pn;
             memcpy(&start_send_pn, wait_ack.data(), sizeof(uint64_t));
-            memcpy(&end_send_pn, wait_ack.data()+sizeof(uint64_t), sizeof(uint64_t))
+            memcpy(&end_send_pn, wait_ack.data()+sizeof(uint64_t), sizeof(uint64_t));
             send_pkt_duration[pktnum] = std::make_pair(start_send_pn, end_send_pn);
             delete hdr; 
             hdr = nullptr; 
@@ -1498,7 +1498,6 @@ class Connection{
             std::chrono::nanoseconds duration((uint64_t)(1.2 * get_rtt()));
             timestamps.insert(now + duration);
         }
-        ////
         return pn_list.size(); 
     }
 
