@@ -136,7 +136,7 @@ class Received_Record_Debug{
         std::cout<<"[Receive Error]"<<std::endl;
         std::cout<<"[Info] Application packet info"<<std::endl;
         for (const auto& [key, value] : pktnum2offset){
-            std::cout << "Application: " << key << ", offset: (" << value.first << ", length:" << value.second << ")" << std::endl;
+            std::cout << "Application: " << key << ", offset: " << value.first << ", length:" << value.second << std::endl;
         }
         std::cout<<std::endl;
         std::cout<<"[Info] Acknowledge info"<<std::endl;
@@ -665,7 +665,7 @@ class Connection{
             if (sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
                     send_buffer.ack_and_drop(unack);
-		            std::cout<<" remove condition 1";
+		            std::cout<<"pn:"<<check_pn<<" remove condition 1";
                 }
             }else{
                 continue;
@@ -684,7 +684,7 @@ class Connection{
                 weights += 0.25;
             }else{
                 send_buffer.ack_and_drop(unack);
-		        std::cout<<" remove condition 2";
+		        std::cout<<"pn:"<<check_pn<<" remove condition 2";
             }
             auto real_priority = priority_calculation(unack);
             if (priority != 0 && real_priority == 3){
@@ -797,6 +797,7 @@ class Connection{
         ack_point = 0;
 
         if (!send_pkt_duration.empty()){
+            std::cout<<"[Error] send_pkt_duration is not empty!"<<std::endl;
             _Exit(0);
         }
 
