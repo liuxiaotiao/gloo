@@ -529,6 +529,14 @@ class Connection{
         }
         update_rtt();
         uint64_t ini = 0;
+        std::cout<<"retransmission_ack"<<std::endl;
+        for (auto it = retransmission_ack.begin(); it != retransmission_ack.end(); ++it) {
+            std::cout << "Key: " << it->first << std::endl;
+        }
+        std::cout<<"send_pkt_duration"<<std::endl;
+        for (auto it = send_pkt_duration.begin(); it != send_pkt_duration.end(); ++it) {
+            std::cout << "Key: " << it->first << std::endl;
+        }
         if (initial_ack != valueToKeys.end()){
             ini = valueToKeys[received_ack];
             ack_set.erase(ini);
