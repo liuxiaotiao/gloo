@@ -145,7 +145,7 @@ class Received_Record_Debug{
 
             // iterate inner map
             for (const auto& inner_pair : outer_pair.second) {
-                std::cout << "Application num: " << inner_pair.first << ", offset: " << inner_pair.second << std::endl;
+                std::cout << "Application num: " << inner_pair.first << ", received: " << (int)inner_pair.second << std::endl;
             }
         }
         std::cout<<std::endl;
@@ -857,162 +857,6 @@ class Connection{
         vec.at(position)= input;
     };
 
-    // send_mmsg will merge multiple message to a big messge flow.
-    // If data all is already in the send_buffer, the return is 0.🌟🌟🌟
-    // -1: waiting for ack, cannot send new data.
-    // 0: not received data is more than new cwnd.
-    // ssize_t send_mmsg(std::vector<uint8_t> &padding, 
-    //     std::vector<struct mmsghdr> &messages, 
-    //     std::vector<struct iovec> &iovecs, 
-    //     int pkt_size)
-    // {
-    //     auto sbuf = data_buffer.at(current_buffer_pos);
-    //     size_t congestion_window = 0;
-    //     ssize_t written_len = 0;
-
-    //     if(!retransmission_ack.empty()){
-    //         return -1;
-    //     }
-
-    //     if (get_dmludp_error() != 11){
-    //         auto high_ratio = 0.0;
-    //         if (high_priority == 0 && sent_number){
-    //             high_ratio = 0;
-    //         }else{
-    //             high_ratio = (double)high_priority  / (double)sent_number;
-    //         }
-    //         high_priority = 0;
-    //         sent_number = 0;
-    //         if (high_ratio > CONGESTION_THREAHOLD){
-    //             congestion_window = recovery.rollback();
-    //         }else{
-    //             congestion_window = recovery.cwnd();
-    //         };
-    //         record_win = congestion_window;
-
-            
-    //         for (auto i = current_buffer_pos ; i < data_buffer.size() ;){
-    //             auto wlen = nwrite(data_buffer.at(current_buffer_pos), congestion_window);
-    //             if (wlen == -2){
-    //                 written_len = 0;
-    //                 break;
-    //             }
-    //             written_len += wlen;
-    //             if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
-    //                 break;
-    //             if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
-    //                 current_buffer_pos += 1;
-    //             }
-    //             if (written_len >= congestion_window)
-    //                 break;
-                
-    //             if (send_buffer.cap()<=0){
-    //                 break;
-    //             }
-    //         }
-    //     }else{
-    //         send_buffer.sent = 0;
-    //     }
-       
-
-
-    //     // consider add ack message at the end of the flow.
-    //     iovecs.resize(send_buffer.data.size() * 2);
-    //     messages.resize(send_buffer.data.size());
-
-    //     // unlock memory allocation, and consider move this to function parameter.
-    //     std::vector<std::shared_ptr<Header>> hdrs;
-    //     for (auto i = 0; ; ++i){
-    //         size_t out_len = 0; 
-    //         uint64_t out_off = 0;
-    //         bool s_flag = false;
-    //         auto pn = 0;
-    //         auto priority = 0;
-
-    //         if (get_dmludp_error() == 0){
-    //             s_flag = send_buffer.emit(iovecs[i*2+1], out_len, out_off);
-    //             out_off -= (uint64_t)out_len;
-    //             sent_count += 1;
-    //             sent_number += 1;
-    //             auto pn = pkt_num_spaces.at(0).updatepktnum();
-    //             auto priority = priority_calculation(out_off);
-    //             Type ty = Type::Application;
-   
-    //             std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
-    //             hdrs.push_back(hdr);
-    //             iovecs[2*i].iov_base = (void *)hdr.get();
-    //             iovecs[2*i].iov_len = 26;
-    //         }else{
-    //             if (i < dmludp_error_sent){
-	// 		        send_buffer.emit(iovecs[0], out_len, out_off);
-    //                 continue;
-    //             }
-
-    //             s_flag = send_buffer.emit(iovecs[(i-dmludp_error_sent)*2+1], out_len, out_off);
-    //             out_off -= (uint64_t)out_len;
-
-    //             pn = pkt_num_spaces.at(0).updatepktnum();
-    //             priority = priority_calculation(out_off);
-    //             Type ty = Type::Application;
-
-    //             std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
-    //             hdrs.push_back(hdr);
-    //             iovecs[2*(i-dmludp_error_sent)].iov_base = (void *)hdr.get();
-    //             iovecs[2*(i-dmludp_error_sent)].iov_len = 26;
-    //         }
-            
-
-    //         auto offset = out_off;
-    //         if (sent_dic.find(out_off) != sent_dic.end()){
-    //             if (sent_dic[out_off] != 3 && ((get_dmludp_error() != 11))){
-    //                 sent_dic[out_off] -= 1;
-    //             }
-    //         }else{
-    //             sent_dic[out_off] = priority;
-    //         }
-
-    //         std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
-
-    //         if (get_dmludp_error() == 0){
-    //             record_send.push_back(offset);
-    //             record2ack.push_back(offset);
-    //             messages[i].msg_hdr.msg_iov = &iovecs[2*i];
-    //             messages[i].msg_hdr.msg_iovlen = 2;
-    //         }else{
-    //             messages[i-dmludp_error_sent].msg_hdr.msg_iov = &iovecs[2*(i-dmludp_error_sent)];
-    //             messages[i-dmludp_error_sent].msg_hdr.msg_iovlen = 2;
-    //         }
-
-    //         if (s_flag){
-    //             stop_flag = true;
-    //             if ((i+1) < send_buffer.data.size()){
-    //                 if (get_dmludp_error() == 0){
-    //                     iovecs.resize((i+1) * 2);
-    //                     messages.resize(i+1);
-    //                 }else{
-    //                     iovecs.resize((i + 1 - dmludp_error_sent) * 2);
-    //                     messages.resize(i + 1 - dmludp_error_sent);
-    //                 }
-    //             }
-    //             else{
-    //                 if (get_dmludp_error() == 11){
-    //                     iovecs.resize((i + 1 - dmludp_error_sent) * 2);
-    //                     messages.resize(i + 1 - dmludp_error_sent);
-    //                 }
-    //             }
-    //             break;
-    //         }
-
-    //     }
-    //     if (written_len){
-    //         stop_ack = false;
-    //     }
-
-    //     written_data_len += written_len;
-
-    //     return written_len;
-
-    // };
     ssize_t send_mmsg(std::vector<uint8_t> &padding, 
         std::vector<struct mmsghdr> &messages, 
         std::vector<struct iovec> &iovecs)
@@ -1480,12 +1324,17 @@ class Connection{
                 ///
                 retransmission_ack.erase(it);
             }
+
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
 
             uint64_t start_send_pn;
             uint64_t end_send_pn;
             memcpy(&start_send_pn, wait_ack.data(), sizeof(uint64_t));
             memcpy(&end_send_pn, wait_ack.data()+sizeof(uint64_t), sizeof(uint64_t));
+            auto idx = send_pkt_duration.find(n);
+            if (idx != send_pkt_duration.end()) {
+                send_pkt_duration.erase(idx);
+            }
             send_pkt_duration[pktnum] = std::make_pair(start_send_pn, end_send_pn);
             delete hdr; 
             hdr = nullptr; 
