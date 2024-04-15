@@ -939,7 +939,6 @@ bool Pair::protocal2send(){
     }
     sent += retval;
   }
- // device_->registerDescriptor(fd_, EPOLLIN, this);
   // if(dmludp_get_dmludp_error(dmludp_connection) == 11){
   //   std::cout<<"sent:"<<sent<<std::endl;
   // }
@@ -947,26 +946,7 @@ bool Pair::protocal2send(){
     dmludp_set_error(dmludp_connection, 0, 0);
   }
 
-  size_t timer_counter = 0;
   while (true){
-    timer_counter += 1;
-    if(timer_counter == 1){
-      std::chrono::nanoseconds duration((long)(1.2*dmludp_get_rtt(dmludp_connection)));
-
-      auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-      auto nanoseconds_part = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - seconds);
-
-      struct itimerspec new_value;
-      std::memset(&new_value, 0, sizeof(new_value));
-      new_value.it_value.tv_sec = seconds.count(); 
-      new_value.it_value.tv_nsec = nanoseconds_part.count(); 
-
-     /* if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
-          perror("timerfd_settime 3");
-          exit(EXIT_FAILURE);
-      }*/
-      // timerfd_settime(timer_fd, 0, &new_value, NULL);
-    }
     std::vector<uint8_t> out;
     ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out);
     if (ack_len == -1){

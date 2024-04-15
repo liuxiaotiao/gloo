@@ -201,8 +201,8 @@ class Connection{
     // Record sent application packet num
     std::vector<uint64_t> record2ack_pktnum;
     
-    // Record sent application packet num
-    std::vector<uint64_t> record_send_pktnum;
+    // // Record sent application packet num
+    // std::vector<uint64_t> record_send_pktnum;
 
     // Key: sent packet number, value: correspoind offset
     std::map<uint64_t, uint64_t> pktnum2offset;
@@ -413,13 +413,10 @@ class Connection{
         // All side can send data.
         if (hdr->ty == Type::ACK){
             std::cout<<std::endl;
-            std::cout<<"[Start] start ACK"<<std::endl;
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
             }
-	        std::cout<<"[End] end ACK"<<std::endl;
-            std::cout<<std::endl;
 	    }
 
         // if (hdr->ty == Type::ElicitAck){
@@ -510,6 +507,7 @@ class Connection{
             stop_ack = true;
             return;
         }
+
         auto received_ack = hd->pkt_num;
 
         auto initial_ack = valueToKeys.find(received_ack);
@@ -565,13 +563,14 @@ class Connection{
         float weights = 0;        
         
         for (auto check_pn = start_pn ; check_pn <= end_pn ; check_pn++){
+            std::cout<<"pn:"<<check_pn;        
             auto real_index = check_pn - start_pn;
             uint8_t priority = unackbuf[real_index];
             auto unack = pktnum2offset[check_pn];
             if (sent_dic.find(unack) != sent_dic.end()){
                 if (sent_dic.at(unack) == 0){
                     send_buffer.ack_and_drop(unack);
-		            std::cout<<"pn:"<<check_pn<<" remove condition 1";
+		            std::cout<<" remove condition 1"<<std::endl;
                 }
             }else{
                 continue;
@@ -590,7 +589,7 @@ class Connection{
                 weights += 0.25;
             }else{
                 send_buffer.ack_and_drop(unack);
-		        std::cout<<"pn:"<<check_pn<<" remove condition 2";
+		        std::cout<<" remove condition 2"<<std::endl;
             }
             auto real_priority = priority_calculation(unack);
             if (priority != 0 && real_priority == 3){
@@ -605,7 +604,6 @@ class Connection{
                 recovery.update_win(weights, pnum);
                 weights = 0;
             }
-	        std::cout<<std::endl;
         }
         if (send_buffer.pos == 0){
             send_buffer.recv_and_drop();
@@ -700,6 +698,7 @@ class Connection{
 	    dmludp_error_sent = 0;
         record_send.clear();
         sent_dic.clear();
+        pktnum2offset.clear();
         ack_point = 0;
 
         if (!send_pkt_duration.empty()){
@@ -815,6 +814,7 @@ class Connection{
             }
         }else{
             send_buffer.sent = 0;
+            record2ack_pktnum.erase(record2ack_pktnum.begin() + dmludp_error_sent, record2ack_pktnum.end());
         }
 
 
@@ -876,7 +876,7 @@ class Connection{
             if (get_dmludp_error() == 0){
                 record_send.push_back(offset);
                 record2ack.push_back(offset);
-                record_send_pktnum.push_back(pn);
+                // record_send_pktnum.push_back(pn);
                 record2ack_pktnum.push_back(pn);
                 pktnum2offset[pn] = out_off;
                 messages[i].msg_hdr.msg_iov = &iovecs[2*i];
@@ -884,6 +884,8 @@ class Connection{
             }else{
                 messages[i-dmludp_error_sent].msg_hdr.msg_iov = &iovecs[2*(i-dmludp_error_sent)];
                 messages[i-dmludp_error_sent].msg_hdr.msg_iovlen = 2;
+                record2ack_pktnum.push_back(pn);
+                pktnum2offset[pn] = out_off;
             }
 
 
