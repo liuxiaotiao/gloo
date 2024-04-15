@@ -1173,6 +1173,8 @@ class Connection{
         std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
         retransmission_ack[pn] = std::make_pair(wait_ack, now);
         send_pkt_duration[pn] = std::make_pair(start_pktnum, end_pktnum);
+        std::cout<<"retransmission_ack.size:"<<retransmission_acks.size()<<" send_pkt_duration.size:"<<send_pkt_duration.size()<<std::endl;
+
         pktlen += HEADER_LENGTH;
         return pktlen;
     }
@@ -1221,6 +1223,10 @@ class Connection{
             auto initial_pn = valueToKeys[n];
             keyToValues[initial_pn].push_back(pktnum);
             valueToKeys[pktnum] = initial_pn;
+            std::cout<<"1 pktnum:"<<pktnum<<" send_timeout_elicit_ack_message retransmission_ack"<<std::endl;
+            for (auto it = retransmission_ack.begin(); it != retransmission_ack.end(); ++it) {
+                std::cout << "Key: " << it->first << std::endl;
+            }
             auto it = retransmission_ack.find(n);
             if (it != retransmission_ack.end()) {
                 /// remove?
@@ -1230,7 +1236,7 @@ class Connection{
             }
 
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
-            std::cout<<"pktnum:"<<pktnum<<"send_timeout_elicit_ack_message retransmission_ack"<<std::endl;
+            std::cout<<"2 pktnum:"<<pktnum<<" send_timeout_elicit_ack_message retransmission_ack"<<std::endl;
             for (auto it = retransmission_ack.begin(); it != retransmission_ack.end(); ++it) {
                 std::cout << "Key: " << it->first << std::endl;
             }
@@ -1239,13 +1245,17 @@ class Connection{
             uint64_t end_send_pn;
             memcpy(&start_send_pn, wait_ack.data(), sizeof(uint64_t));
             memcpy(&end_send_pn, wait_ack.data()+sizeof(uint64_t), sizeof(uint64_t));
+            std::cout<<"1 pktnum:"<<pktnum<<" send_timeout_elicit_ack_message send_pkt_duration"<<std::endl;
+            for (auto it = send_pkt_duration.begin(); it != send_pkt_duration.end(); ++it) {
+                std::cout << "Key: " << it->first << std::endl;
+            }
             auto idx = send_pkt_duration.find(n);
             if (idx != send_pkt_duration.end()) {
                 send_pkt_duration.erase(idx);
             }
             send_pkt_duration[pktnum] = std::make_pair(start_send_pn, end_send_pn);
 
-            std::cout<<"pktnum:"<<pktnum<<"send_timeout_elicit_ack_message send_pkt_duration"<<std::endl;
+            std::cout<<"2 pktnum:"<<pktnum<<" send_timeout_elicit_ack_message send_pkt_duration"<<std::endl;
             for (auto it = send_pkt_duration.begin(); it != send_pkt_duration.end(); ++it) {
                 std::cout << "Key: " << it->first << std::endl;
             }
