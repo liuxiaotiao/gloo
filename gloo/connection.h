@@ -469,6 +469,7 @@ class Connection{
 
             // Debug
             if (recv_dic.find(hdr->offset) != recv_dic.end()){
+                std::cout<<"[Error] same offset:"<<hdr->offset<<std::endl;
                 RRD.show();
                 _Exit(0);
             }
@@ -526,8 +527,9 @@ class Connection{
         }
         update_rtt();
 
-        uint64_t start_pn = send_pkt_duration[received_ack].first;
-        uint64_t end_pn = send_pkt_duration[received_ack].second;
+        auto last_index = keyToValues[valueToKeys[received_ack]].back();
+        uint64_t start_pn = send_pkt_duration[last_index].first;
+        uint64_t end_pn = send_pkt_duration[last_index].second;
         
         uint64_t ini = 0;
         // std::cout<<"retransmission_ack"<<std::endl;
