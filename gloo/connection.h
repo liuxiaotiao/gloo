@@ -501,111 +501,6 @@ class Connection{
         return feed_back;
     };
 
-    //Get unack offset. 
-    // void process_ack(std::vector<uint8_t> buf){
-    //     std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + 26);
-    //     auto hd = Header::from_slice(ack_header);
-    //     //// 1/28/2024
-    //     if (ack_set.empty()){
-    //         stop_ack = true;
-    //         return;
-    //     }
-    //     auto received_ack = hd->pkt_num;
-    //     auto initial_ack = valueToKeys.find(received_ack);
-        
-    //     auto check_ack = retransmission_ack.find(received_ack);
-    //     if(check_ack!=retransmission_ack.end()){
-    //         handshake = retransmission_ack.at(hd->pkt_num).second;
-    //     }else{
-    //         auto timeout_check = timeout_ack.find(received_ack);
-    //         if(timeout_check != timeout_ack.end()){
-    //             handshake = timeout_ack.at(hd->pkt_num).second;
-    //         }else{
-    //             return;
-    //         }
-    //     }
-    //     update_rtt();
-    //     uint64_t ini = 0;
-    //     if (initial_ack != valueToKeys.end()){
-    //         ini = valueToKeys[received_ack];
-    //         ack_set.erase(ini);
-    //         for (int key : keyToValues[ini]) {
-    //             retransmission_ack.erase(key);
-    //             valueToKeys.erase(key);
-    //             timeout_ack.erase(key);
-    //         }
-    //     }else{
-    //         return;
-    //     }
-    //     keyToValues.erase(ini);
-
-    //     std::vector<uint8_t> unackbuf(buf.begin() + 26, buf.begin() + 26 + hd->pkt_length);
-
-    //     std::vector<uint8_t> ackvector(unackbuf.begin(), unackbuf.begin()+8);
-
-    //     size_t len = unackbuf.size();
-    //     size_t start = 0;
-    //     float weights = 0;
-    //     size_t count = 1;
-    //     while (start < len){
-    //         std::copy(unackbuf.begin() + start, unackbuf.begin() + start + 8, ackvector.begin());
-    //         uint64_t unack = convertToUint64(ackvector);
-	//         std::cout<<"[ACK] offset:"<<unack;
-    //         start += 8;
-    //         uint8_t priority = unackbuf[start];
-	//         std::cout<<" received:"<<(int)priority;
-    //         start += 1;
-    //         if (sent_dic.find(unack) != sent_dic.end()){
-    //             if (sent_dic.at(unack) == 0){
-    //                 // Remove from send_buffer
-    //                 send_buffer.ack_and_drop(unack);
-	// 	            std::cout<<" remove condition 1";
-    //             }
-    //         }else{
-    //             continue;
-    //         }
-
-    //         // received 0 or not received 1
-    //         // Note: Reconsider priority and real_priority to avoid redundant operation.🌟🌟
-    //         // Note: Merge insert_ack and ack_and_drop into one function to reduce twice size computation.🌟🌟
-    //         // 0 received, 1 not received.
-    //         if (priority != 0){
-    //             // convert the result of priority_calculation to uint64
-    //             priority = priority_calculation(unack);
-    //         }
-    //         // start += 1;
-    //         if (priority == 1){
-    //             weights += 0.15;
-    //         }else if (priority == 2) {
-    //             weights += 0.2;
-    //         }else if (priority == 3) {
-    //             weights += 0.25;
-    //         }else{
-    //             send_buffer.ack_and_drop(unack);
-	// 	        std::cout<<" remove condition 2";
-    //         }
-    //         auto real_priority = priority_calculation(unack);
-    //         if (priority != 0 && real_priority == 3){
-    //             high_priority += 1;
-    //         }
-            
-    //         if (count % 8 == 0 || start == len){
-    //             double pnum = count % 8;
-    //             if (pnum == 0){
-    //                 pnum = 8;
-    //             }
-    //             recovery.update_win(weights, pnum);
-    //             weights = 0;
-    //         }
-    //         count += 1;
-	//         std::cout<<std::endl;
-
-    //     }
-    //     if (send_buffer.pos == 0){
-    //         send_buffer.recv_and_drop();
-    //     }    
-    // };
-
     void process_ack(std::vector<uint8_t> buf){
         std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + HEADER_LENGTH);
         auto hd = Header::from_slice(ack_header);
@@ -1327,6 +1222,10 @@ class Connection{
             }
 
             retransmission_ack[pktnum] = std::make_pair(wait_ack, now);
+            std::cout<<"pktnum:"<<pktnum<<"send_timeout_elicit_ack_message retransmission_ack"<<std::endl;
+            for (auto it = retransmission_ack.begin(); it != retransmission_ack.end(); ++it) {
+                std::cout << "Key: " << it->first << std::endl;
+            }
 
             uint64_t start_send_pn;
             uint64_t end_send_pn;
@@ -1337,6 +1236,12 @@ class Connection{
                 send_pkt_duration.erase(idx);
             }
             send_pkt_duration[pktnum] = std::make_pair(start_send_pn, end_send_pn);
+
+            std::cout<<"pktnum:"<<pktnum<<"send_timeout_elicit_ack_message send_pkt_duration"<<std::endl;
+            for (auto it = send_pkt_duration.begin(); it != send_pkt_duration.end(); ++it) {
+                std::cout << "Key: " << it->first << std::endl;
+            }
+            
             delete hdr; 
             hdr = nullptr; 
             out.push_back(out_buffer);
