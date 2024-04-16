@@ -157,7 +157,7 @@ class Received_Record_Debug{
 
         std::cout<<"[Info] Application packet received"<<std::endl;
         for (auto it = received_complete_record.begin(); it != received_complete_record.end(); ++it) {
-            std::cout << "[Compare] rx_length:" << it->first << " "<<(rx_length == rlen)<< " rlen:" << it->second << std::endl;
+            std::cout << "[Compare] rx_length:" << it->first << " "<<(it->first == it->second)<< " rlen:" << it->second << std::endl;
         }   
         std::cout<<std::endl;
 
@@ -467,7 +467,7 @@ class Connection{
         // }
 
         if (hdr->ty == Type::Application){
-            std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
+            std::cout<<"[Debug] application offset:"<<hdr->offset<<", pn:"<<hdr->pkt_num<<std::endl;
             if (receive_pktnum2offset.find(hdr->pkt_num) != receive_pktnum2offset.end()){
                 std::cout<<"[Error] Duplicate application packet"<<std::endl;
                 _Exit(0);
