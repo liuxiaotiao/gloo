@@ -180,12 +180,12 @@ void Loop::run() {
     }
 
     GLOO_ENFORCE_NE(nfds, -1);
-    /*std::cout<<std::endl;
+    std::cout<<std::endl;
     std::cout << "[Debug] Current time: "
               << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
               << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
-    std::cout<<" nfds: "<<nfds<<std::endl;*/
+    std::cout<<" nfds: "<<nfds<<std::endl;
     for (int i = 0; i < nfds; i++) {
 	  //  std::cout<<"[Debug] Active fd:"<<(int)events[i].data.fd<<std::endl;
       Handler* h = reinterpret_cast<Handler*>(events[i].data.ptr);
