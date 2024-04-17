@@ -231,6 +231,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             // close(outerPtr.timer_fd);
             exit(EXIT_FAILURE);
         }
+        return;
       }
 
       while(true){

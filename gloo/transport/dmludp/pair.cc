@@ -755,12 +755,12 @@ bool Pair::protocal2read(){
       else if (rv == 5){
         if (dmludp_conn_check_retransmission_empty(dmludp_connection)){
           struct itimerspec new_value = {};
-          timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+          timerfd_settime(timer_fd, 0, &new_value, NULL);
         }
         if (tx_.empty()) {
             continue;
           } 
-        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+        // device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
@@ -956,9 +956,9 @@ bool Pair::protocal2send(){
     dmludp_set_error(dmludp_connection, 0, 0);
   }
 
-  if (sent == messages.size()){
-    device_->registerDescriptor(fd_, EPOLLIN, this);
-  }
+  // if (sent == messages.size()){
+  //   device_->registerDescriptor(fd_, EPOLLIN, this);
+  // }
 
   size_t timer_counter = 0;
   while (true){
@@ -968,7 +968,7 @@ bool Pair::protocal2send(){
       break;
     }
     if (ack_len > 0){
-      auto socketwrite = ::send(fd_, out_elicit_ack.data(), out_elicit_ackvim.size(), 0);
+      auto socketwrite = ::send(fd_, out_elicit_ack.data(), out_elicit_ack.size(), 0);
       if(socketwrite == -1 && errno == EAGAIN){
 	     // std::cout<<"ack EAGAIN"<<std::endl;
        // TO DO: process EAGAIN.
