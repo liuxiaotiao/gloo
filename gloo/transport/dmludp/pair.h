@@ -228,7 +228,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
         } else {
             perror("read");
-            close(outerPtr.timer_fd);
+            // close(outerPtr.timer_fd);
             exit(EXIT_FAILURE);
         }
       }

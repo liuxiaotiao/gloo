@@ -635,7 +635,9 @@ class Connection{
         }    
     }
 
-
+    bool check_retransmission_empty(){
+        return retransmission_ack.empty();
+    }
 
     uint8_t findweight(uint64_t unack){
         return prioritydic.at(unack);

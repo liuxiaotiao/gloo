@@ -65,7 +65,7 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr){
+      ex_(nullptr),
       innertimer(*this) {
         timer_fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK);
         device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
@@ -753,6 +753,10 @@ bool Pair::protocal2read(){
       }
       // Acknowledge packet
       else if (rv == 5){
+        if (dmludp_conn_check_retransmission_empty(dmludp_connection)){
+          struct itimerspec new_value = {};
+          timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
+        }
         if (tx_.empty()) {
             continue;
           } 
@@ -964,7 +968,7 @@ bool Pair::protocal2send(){
       break;
     }
     if (ack_len > 0){
-      auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
+      auto socketwrite = ::send(fd_, out_elicit_ack.data(), out_elicit_ackvim.size(), 0);
       if(socketwrite == -1 && errno == EAGAIN){
 	     // std::cout<<"ack EAGAIN"<<std::endl;
        // TO DO: process EAGAIN.

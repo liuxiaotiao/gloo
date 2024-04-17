@@ -353,3 +353,7 @@ inline void dmludp_conn_rx_len(std::shared_ptr<Connection> conn, size_t expected
 inline void dmludp_conn_reset_rx_len(std::shared_ptr<Connection> conn){
     conn->reset_rx_len();
 }
+
+inline bool dmludp_conn_check_retransmission_empty(std::shared_ptr<Connection> conn){
+    return conn->check_retransmission_empty();
+}
