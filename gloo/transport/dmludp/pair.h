@@ -160,11 +160,11 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   void close() override;
 
   /*std::map<std::chrono::steady_clock::time_point, retry_message> message;
-  std::map<int, std::chrono::steady_clock::time_point> message_time;
+  std::map<int, std::chrono::steady_clock::time_point> message_time;*/
 
   int timer_fd;
 
-  void remove_retrymessage_by_pktnum(int pkt_num) {
+  /*void remove_retrymessage_by_pktnum(int pkt_num) {
     if (message_time.count(pkt_num) > 0 ) {
       auto time = message_time[pkt_num];
       message.erase(time);
@@ -211,7 +211,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         update_timerfd(message.begin()->first);
       }
     }
-  }
+  }*/
 
 
   class dmludptimer: public Handler{
@@ -223,6 +223,15 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     void handleEvents(int events){
       uint64_t expirations;
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
+      if (timer_read == -1) {
+        if (errno == EAGAIN) {
+            printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
+        } else {
+            perror("read");
+            close(outerPtr.timer_fd);
+            exit(EXIT_FAILURE);
+        }
+      }
 
       while(true){
         std::vector<std::vector<uint8_t>> out;
@@ -232,7 +241,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         if (result == -1){
           struct itimerspec new_value = {};
           timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
-	  std::cout<<"[timerfd] return 0"<<std::endl;
+	        std::cout<<"[timerfd] return 0"<<std::endl;
           return;
         }
         else if(result == 0){
@@ -252,13 +261,13 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
                 continue;
             }else{
-		    std::cout<<"[timerfd] return 1"<<std::endl;
+		          std::cout<<"[timerfd] return 1"<<std::endl;
               return;
             }
           }else{
             struct itimerspec new_value = {};
             timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
-	    std::cout<<"[timerfd] return 2"<<std::endl;
+	          std::cout<<"[timerfd] return 2"<<std::endl;
             return;
           }
         }
@@ -284,14 +293,14 @@ class Pair : public ::gloo::transport::Pair, public Handler {
             if (timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL) == -1) {
                 continue;
             }else{
-		    std::cout<<"[timerfd] return 3"<<std::endl;
+		          std::cout<<"[timerfd] return 3"<<std::endl;
               return;
             }
           }
           else{
             struct itimerspec new_value = {};
             timerfd_settime(outerPtr.timer_fd, 0, &new_value, NULL);
-	    std::cout<<"[timerfd] return 4"<<std::endl;
+	          std::cout<<"[timerfd] return 4"<<std::endl;
             return;
           }
         }
@@ -300,7 +309,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   };
   friend class dmludptimer;
 
-  dmludptimer innertimer;*/
+  dmludptimer innertimer;
 
  protected:
   // Refer to parent context using raw pointer. This could be a

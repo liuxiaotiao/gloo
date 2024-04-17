@@ -66,9 +66,9 @@ Pair::Pair(
       sendBufferSize_(0),
       self_(device_->nextAddress()),
       ex_(nullptr){
-      //innertimer(*this) {
-//        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-//        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+      innertimer(*this) {
+        timer_fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK);
+        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
@@ -756,7 +756,7 @@ bool Pair::protocal2read(){
         if (tx_.empty()) {
             continue;
           } 
-//        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
@@ -773,7 +773,7 @@ bool Pair::protocal2read(){
             writeComplete(op, sbuf, opcode);
             dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
-	    std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+	          std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
           }
 
           if (tx_.empty()) {
@@ -851,15 +851,19 @@ bool Pair::protocal2send(){
   std::array<struct iovec, 2> iov;
   int ioc;
   ssize_t rv;
-  std::vector<std::vector<uint8_t>> out;
-  std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
-  auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
-  auto now = std::chrono::high_resolution_clock::now();
-  if (result > 0){
-    for(auto e : out){
-      auto sent = ::send(fd_, e.data(), e.size(), 0);
-    }
-  }  
+
+  ///
+  // Temperay discard, reuse timer_fd to retransmission elicit acknowledge packet
+  // std::vector<std::vector<uint8_t>> out;
+  // std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+  // auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
+  // auto now = std::chrono::high_resolution_clock::now();
+  // if (result > 0){
+  //   for(auto e : out){
+  //     auto sent = ::send(fd_, e.data(), e.size(), 0);
+  //   }
+  // }
+  ///  
   auto &op = tx_.front();
 
   // Read data to protocal 
@@ -926,7 +930,7 @@ bool Pair::protocal2send(){
     auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
 
     if (retval == -1){
-      // Date: solve data cannot send out one time.
+      // Note: solve data cannot send out one time.
       // Move errno == EINTR out of while(1)
       if (errno == EINTR){
         continue;
@@ -934,6 +938,8 @@ bool Pair::protocal2send(){
 
       if (errno == EAGAIN){
       	dmludp_set_error(dmludp_connection, EAGAIN, sent);
+        struct itimerspec new_value = {};
+        timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
       return false;
     }
@@ -946,9 +952,14 @@ bool Pair::protocal2send(){
     dmludp_set_error(dmludp_connection, 0, 0);
   }
 
+  if (sent == messages.size()){
+    device_->registerDescriptor(fd_, EPOLLIN, this);
+  }
+
+  size_t timer_counter = 0;
   while (true){
-    std::vector<uint8_t> out;
-    ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out);
+    std::vector<uint8_t> out_elicit_ack;
+    ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out_elicit_ack);
     if (ack_len == -1){
       break;
     }
@@ -956,8 +967,31 @@ bool Pair::protocal2send(){
       auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
       if(socketwrite == -1 && errno == EAGAIN){
 	     // std::cout<<"ack EAGAIN"<<std::endl;
+       // TO DO: process EAGAIN.
       }
     }
+
+    ///
+    // Reuse timer to avoid EPOLLIN being monitored all the time.
+    timer_counter += 1;
+    if(timer_counter == 1){
+      std::chrono::nanoseconds duration((long)(dmludp_get_rtt(dmludp_connection)));
+
+      auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+      auto nanoseconds_part = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - seconds);
+
+      struct itimerspec new_value;
+      std::memset(&new_value, 0, sizeof(new_value));
+      new_value.it_value.tv_sec = seconds.count(); 
+      new_value.it_value.tv_nsec = nanoseconds_part.count(); 
+
+      if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
+          perror("timerfd_settime 3");
+          _Exit(0);
+      }
+      // timerfd_settime(timer_fd, 0, &new_value, NULL);
+    }
+    /////
   }
 
   return true;
