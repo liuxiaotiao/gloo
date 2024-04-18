@@ -827,15 +827,22 @@ class Connection{
                     break;
                 }
                 written_len += wlen;
-                if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1))
+                if (data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1)){
+                    std::cout<<"data_buffer[current_buffer_pos].left == 0 && (current_buffer_pos == data_buffer.size() - 1)"<<std::endl;
                     break;
+                }
+                    
                 if (data_buffer.at(current_buffer_pos).sent() == data_buffer.at(current_buffer_pos).len && (current_buffer_pos < data_buffer.size())){
                     current_buffer_pos += 1;
                 }
-                if (written_len >= congestion_window)
+                if (written_len >= congestion_window){
+                    std::cout<<"written_len: "<<written_len<<" >= congestion_window"<<congestion_window<<std::endl;
                     break;
+                }
+                    
                 
                 if (send_buffer.cap()<=0){
+                    std::cout<<"send_buffer.cap() <=0"<<std::endl;
                     break;
                 }
             }
@@ -843,7 +850,6 @@ class Connection{
             send_buffer.sent = 0;
             record2ack_pktnum.erase(record2ack_pktnum.begin() + dmludp_error_sent, record2ack_pktnum.end());
         }
-
 
         // consider add ack message at the end of the flow.
         iovecs.resize(send_buffer.data.size() * 2);
