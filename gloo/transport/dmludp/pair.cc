@@ -675,8 +675,8 @@ bool Pair::protocal2read(){
       // }
       // Elicit ack
       if(rv == 4){
-        std::vector<int> out(1500, 0);
-        ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out);
+        std::vector<uint8_t> out(1500, 0);
+        ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out.data());
         ssize_t socketwrite = ::send(fd_, out.data(), dmludpwrite, 0);
         if(socketwrite == -1 && errno == EAGAIN){
         //	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
@@ -686,7 +686,7 @@ bool Pair::protocal2read(){
       // Packet completes tranmission and start to iov.
       else if (rv == 6){
         std::vector<uint8_t> out(1500, 0);
-        auto stopsize = dmludp_send_data_stop(dmludp_connection, out);
+        auto stopsize = dmludp_send_data_stop(dmludp_connection, out.data());
         ssize_t socket_write = ::send(fd_, out.data(), stopsize, 0);
         ispadding = true;
         break;
@@ -899,7 +899,7 @@ bool Pair::protocal2send(){
   // auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
   // No data needs to send.
   if (messages.size() == 0){
-    std::cout<<"messages.size() = 0, wlen = "<<wlen<<std::endl;
+    std::cout<<"messages.size() = 0, wlen = "<<wlen<<wlen<<std::endl;
     return false;
   }
 	/* if(dmludp_get_dmludp_error(dmludp_connection) == 11){
