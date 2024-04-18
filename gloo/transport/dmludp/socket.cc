@@ -252,7 +252,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
 
   ssize_t written = dmludp_send_data_handshake(temp_connection, out);
   auto start = std::chrono::high_resolution_clock::now();
-  ssize_t sent = sendto(fd_, out, written, 0, (struct sockaddr *) &ss, peer_addr_len);
+  ssize_t sent = sendto(fd_, out.data(), written, 0, (struct sockaddr *) &ss, peer_addr_len);
 
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
@@ -294,7 +294,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     dmludp_set_rtt(dmludp_connection, duration.count());
     ssize_t dmludp_recv = dmludp_conn_recv(dmludp_connection, buffer, received);
     written = dmludp_conn_send(dmludp_connection, out);
-    sent = write(out, written);
+    sent = write(out.data(), written);
     new_socket = false;
     break;
   }

@@ -191,14 +191,14 @@ inline long dmludp_is_empty(std::shared_ptr<Connection> conn){
 }
 
 // inline ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
-inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
-    if (out_len <= 0 ){
+inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
+    if (out.size() <= 0 ){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
-    std::vector<uint8_t> out_vector(out_len);
-    size_t written = conn->send_data_stop(out_vector);
-    memcpy(out, out_vector.data(), written);
+    // std::vector<uint8_t> out_vector(out_len);
+    size_t written = conn->send_data_stop(out);
+    // memcpy(out, out_vector.data(), written);
     return static_cast<ssize_t>(written);
 }
 
@@ -217,7 +217,7 @@ inline bool dmludp_is_waiting(std::shared_ptr<Connection> conn){
 }
 
 // inline ssize_t dmludp_send_data_handshake(Connection* conn, uint8_t* out, size_t out_len){
-inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, std::cout<uint8_t> &out){
+inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out){
     if (out.size() <= 0 ){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
