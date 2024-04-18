@@ -249,18 +249,18 @@ inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
 }
 
 // inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
-inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len) {
+inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, std::vector &out) {
     if(out_len <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
 
-    std::vector<uint8_t> buf(out_len);
+    // std::vector<uint8_t> buf(out_len);
 
-    size_t written = conn->send_data(buf);
-    if (written){
-        memcpy(out, buf.data(), out_len);
-        return static_cast<ssize_t>(written);
-    }
+    size_t written = conn->send_data(out);
+    // if (written){
+    //     memcpy(out, buf.data(), out_len);
+    //     return static_cast<ssize_t>(written);
+    // }
 
     if (conn->is_stopped()) {
         return dmludp_error::DMLUDP_ERR_DONE;
