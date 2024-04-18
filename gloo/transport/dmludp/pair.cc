@@ -693,7 +693,7 @@ bool Pair::protocal2read(){
       }
       // Application packet
       else if (rv == 3){
-	      std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
+	      // std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
         if ((read - 26) == sizeof(rx_.preamble)&&(offset == 0)){
          // if (offset == 0){
             NonOwningPtr<UnboundBuffer> rbuf;

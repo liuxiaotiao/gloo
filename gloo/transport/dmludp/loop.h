@@ -77,7 +77,7 @@ class Loop final : public std::enable_shared_from_this<Loop> {
 
  private:
   static constexpr auto capacity_ = 64;
-
+int counter{0};
   int fd_{-1};
   std::atomic<bool> done_{false};
   Deferrables deferrables_;

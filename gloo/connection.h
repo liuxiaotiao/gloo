@@ -115,6 +115,8 @@ class Received_Record_Debug{
     // key: acknowledge packet num, value: (application num, received or not)
     std::map<uint64_t, std::map<uint64_t, uint8_t>> acknowledege_record;
 
+    std::vector<std::pair<uint64_t, uint64_t>> received_complete_record;
+
     Received_Record_Debug(){};
 
     ~Received_Record_Debug(){};
@@ -125,6 +127,10 @@ class Received_Record_Debug{
 
     void add_acknowledeg_info(uint64_t ack_pn, std::map<uint64_t, uint8_t> received){
         acknowledege_record[ack_pn] = std::move(received);
+    }
+
+    void add_recevie(uint64_t rx_excepted, uint64_t received_len){
+        received_complete_record.emplace_back(rx_excepted, received_len);
     }
 
     void clear(){
@@ -148,6 +154,11 @@ class Received_Record_Debug{
                 std::cout << "Application num: " << inner_pair.first << ", received: " << (int)inner_pair.second << std::endl;
             }
         }
+
+        std::cout<<"[Info] Application packet received"<<std::endl;
+        for (auto it = received_complete_record.begin(); it != received_complete_record.end(); ++it) {
+            std::cout << "[Compare] rx_length:" << it->first << " "<<(it->first == it->second)<< " rlen:" << it->second << std::endl;
+        }   
         std::cout<<std::endl;
 
     }
@@ -430,6 +441,7 @@ class Connection{
 
         if (hdr->ty == Type::ElicitAck){
             recv_flag = true;
+            std::cout<<"[Receive] ElicitAck packet number:"<<hdr->pkt_num<<std::endl;
             std::vector<uint8_t> subbuf(buf.begin() + 1, buf.begin()+ 1 + sizeof(uint64_t));
             send_num = convertToUint64(subbuf);
             std::vector<uint8_t> checkbuf(buf.begin() + 26, buf.end());
@@ -455,6 +467,7 @@ class Connection{
         // }
 
         if (hdr->ty == Type::Application){
+            std::cout<<"[Debug] application offset:"<<hdr->offset<<", pn:"<<hdr->pkt_num<<std::endl;
             if (receive_pktnum2offset.find(hdr->pkt_num) != receive_pktnum2offset.end()){
                 std::cout<<"[Error] Duplicate application packet"<<std::endl;
                 _Exit(0);
@@ -562,8 +575,11 @@ class Connection{
         size_t start = 0;
         float weights = 0;        
         
-        for (auto check_pn = start_pn ; check_pn <= end_pn ; check_pn++){
-            std::cout<<"pn:"<<check_pn;        
+        bool non_sent = true;
+        for (auto check_pn = start_pn ; check_pn <= end_pn ; check_pn++){   
+            if (check_pn == start_pn){
+                std::cout<<"[Debug] ACK first packet num:"<<check_pn<<std::endl;
+            }   
             auto real_index = check_pn - start_pn;
             uint8_t priority = unackbuf[real_index];
             auto unack = pktnum2offset[check_pn];
@@ -571,6 +587,7 @@ class Connection{
                 if (sent_dic.at(unack) == 0){
                     send_buffer.ack_and_drop(unack);
 		            std::cout<<" remove condition 1"<<std::endl;
+                    non_sent = true;
                 }
             }else{
                 continue;
@@ -589,7 +606,8 @@ class Connection{
                 weights += 0.25;
             }else{
                 send_buffer.ack_and_drop(unack);
-		        std::cout<<" remove condition 2"<<std::endl;
+                non_sent = true;
+		        // std::cout<<" remove condition 2"<<std::endl;
             }
             auto real_priority = priority_calculation(unack);
             if (priority != 0 && real_priority == 3){
@@ -603,6 +621,13 @@ class Connection{
                 }
                 recovery.update_win(weights, pnum);
                 weights = 0;
+            }
+            if (!non_sent){
+                std::cout<<"[Loss] pn:"<<check_pn<<" not receive"<<std::endl;  
+            }
+
+            if (check_pn == end_pn){
+                std::cout<<"[Debug] ACK last packet num:"<<check_pn<<std::endl;
             }
         }
         if (send_buffer.pos == 0){
@@ -656,7 +681,7 @@ class Connection{
     //  no loss scenario, no stop packet.
     bool receive_complete(){
         auto rlen = rec_buffer.receive_length();
-	    std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
+	    // std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
         if (rx_length == rlen){
             RRD.clear();
             return true;
@@ -871,7 +896,19 @@ class Connection{
             }else{
                 sent_dic[out_off] = priority;
             }
-            std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+
+            if ((i == 0) && (get_dmludp_error() == 0)){
+                std::cout<<"[Send] start application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            }
+
+            if ((i == dmludp_error_sent) && (get_dmludp_error() != 0)){
+                std::cout<<"[Send] start application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            }
+            
+            
+            if (out_len != MAX_SEND_UDP_PAYLOAD_SIZE){
+                std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            }
 
             if (get_dmludp_error() == 0){
                 record_send.push_back(offset);
@@ -890,6 +927,12 @@ class Connection{
 
 
             if (s_flag){
+                if (get_dmludp_error() == 0){
+                    std::cout<<"[Send] End application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+                }else{
+                    std::cout<<"[Send] End application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+                }
+                
                 stop_flag = true;
                 if ((i+1) < send_buffer.data.size()){
                     if (get_dmludp_error() == 0){
@@ -1027,7 +1070,11 @@ class Connection{
             }else{
                 sent_dic[out_off] = priority;
             }
-            std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+
+            if (out_len != MAX_SEND_UDP_PAYLOAD_SIZE){
+                std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            }
+            
 
             if (get_dmludp_error() == 0){
                 record_send.push_back(offset);
@@ -1156,7 +1203,7 @@ class Connection{
 
         auto pn = pkt_num_spaces.at(1).updatepktnum();
         Header* hdr = new Header(ty, pn, 0, 0, pktlen);
-
+        std::cout<<"[Elicit] Elicit acknowledge packet num:"<<pn<<std::endl;
         out.resize(HEADER_LENGTH + 2 * sizeof(uint64_t));
 
         hdr->to_bytes(out);
@@ -1213,6 +1260,7 @@ class Connection{
         for(auto n : pn_list){
             std::vector<uint8_t> out_buffer;
             uint64_t pktnum = pkt_num_spaces.at(1).updatepktnum();
+            std::cout<<"[Elicit] Elicit acknowledge packet(time out) num:"<<pktnum<<std::endl;
             auto ty = Type::ElicitAck;
             pktlen = retransmission_ack.at(n).first.size();
             Header* hdr = new Header(ty, pktnum, 0, 0, pktlen);
@@ -1464,6 +1512,7 @@ class Connection{
             size_t off = 26;
             memcpy(out.data() + HEADER_LENGTH, receive_result.data(), receive_result.size());
             receive_result.clear();
+            std::cout<<"[Send] ACK packet number:"<<send_num<<std::endl;
         }
 
         // chekc is_ack condition is correct or not.

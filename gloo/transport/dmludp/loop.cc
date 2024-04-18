@@ -167,11 +167,11 @@ void Loop::run() {
     auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
 
     // 输出
-    /*std::cout << "[Debug] Current time: "
+    std::cout << "[Debug] Current time: "
               << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
               << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
-    std::cout<<" nfds: "<<nfds<<std::endl;*/
+    std::cout<<" nfds: "<<nfds<<std::endl;
     if (nfds == 0) {
       continue;
     }
@@ -180,8 +180,9 @@ void Loop::run() {
     }
 
     GLOO_ENFORCE_NE(nfds, -1);
+   	counter++;
     std::cout<<std::endl;
-    std::cout << "[Debug] Current time: "
+    std::cout << "[Debug] counter:"<<counter<<" Current time: "
               << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
               << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
