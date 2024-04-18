@@ -258,7 +258,7 @@ inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, uint8_t* out, 
 
     size_t written = conn->send_data(buf);
     if (written){
-        memcpy(out, buf.data(), out_len);
+        memcpy(out, buf.data(), written);
         return static_cast<ssize_t>(written);
     }
 
