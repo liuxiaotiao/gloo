@@ -65,10 +65,10 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr),
-      innertimer(*this) {
-        timer_fd = timerfd_create(CLOCK_MONOTONIC,TFD_NONBLOCK);
-        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+      ex_(nullptr){
+      //innertimer(*this) {
+//        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+//        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
@@ -675,9 +675,9 @@ bool Pair::protocal2read(){
       // }
       // Elicit ack
       if(rv == 4){
-        std::vector<uint8_t> out(1500, 0);
-        ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out.data());
-        ssize_t socketwrite = ::send(fd_, out.data(), dmludpwrite, 0);
+        uint8_t out[1500];
+        ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
+        ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
         if(socketwrite == -1 && errno == EAGAIN){
         //	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
         }
@@ -685,15 +685,15 @@ bool Pair::protocal2read(){
 
       // Packet completes tranmission and start to iov.
       else if (rv == 6){
-        std::vector<uint8_t> out(1500, 0);
-        auto stopsize = dmludp_send_data_stop(dmludp_connection, out.data());
-        ssize_t socket_write = ::send(fd_, out.data(), stopsize, 0);
+        uint8_t out[1500];
+        auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
+        ssize_t socket_write = ::send(fd_, out, stopsize, 0);
         ispadding = true;
         break;
       }
       // Application packet
       else if (rv == 3){
-	      // std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
+	      std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
         if ((read - 26) == sizeof(rx_.preamble)&&(offset == 0)){
          // if (offset == 0){
             NonOwningPtr<UnboundBuffer> rbuf;
@@ -753,14 +753,10 @@ bool Pair::protocal2read(){
       }
       // Acknowledge packet
       else if (rv == 5){
-        if (dmludp_conn_check_retransmission_empty(dmludp_connection)){
-          struct itimerspec new_value = {};
-          timerfd_settime(timer_fd, 0, &new_value, NULL);
-        }
         if (tx_.empty()) {
             continue;
           } 
-        // device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+//        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 
         if (dmludp_transmission_complete(dmludp_connection)){
           auto &op = tx_.front();
@@ -777,7 +773,7 @@ bool Pair::protocal2read(){
             writeComplete(op, sbuf, opcode);
             dmludp_conn_clear_sent_once(dmludp_connection);
             tx_.pop_front();
-	          std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+	    std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
           }
 
           if (tx_.empty()) {
@@ -851,24 +847,19 @@ bool Pair::protocal2send(){
   if (state_ == CLOSED) {
     return false;
   }
-  std::cout<<"protocal2send"<<std::endl;
   NonOwningPtr<UnboundBuffer> buf;
   std::array<struct iovec, 2> iov;
   int ioc;
   ssize_t rv;
-
-  ///
-  // Temperay discard, reuse timer_fd to retransmission elicit acknowledge packet
-  // std::vector<std::vector<uint8_t>> out;
-  // std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
-  // auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
-  // auto now = std::chrono::high_resolution_clock::now();
-  // if (result > 0){
-  //   for(auto e : out){
-  //     auto sent = ::send(fd_, e.data(), e.size(), 0);
-  //   }
-  // }
-  ///  
+  std::vector<std::vector<uint8_t>> out;
+  std::set<std::chrono::high_resolution_clock::time_point> timestamps;      
+  auto result = dmludp_send_timeout_elicit_ack_message(dmludp_connection, out, timestamps);
+  auto now = std::chrono::high_resolution_clock::now();
+  if (result > 0){
+    for(auto e : out){
+      auto sent = ::send(fd_, e.data(), e.size(), 0);
+    }
+  }  
   auto &op = tx_.front();
 
   // Read data to protocal 
@@ -899,7 +890,6 @@ bool Pair::protocal2send(){
   // auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
   // No data needs to send.
   if (messages.size() == 0){
-    std::cout<<"messages.size() = 0, wlen = "<<wlen<<wlen<<std::endl;
     return false;
   }
 	/* if(dmludp_get_dmludp_error(dmludp_connection) == 11){
@@ -936,7 +926,7 @@ bool Pair::protocal2send(){
     auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
 
     if (retval == -1){
-      // Note: solve data cannot send out one time.
+      // Date: solve data cannot send out one time.
       // Move errno == EINTR out of while(1)
       if (errno == EINTR){
         continue;
@@ -944,8 +934,6 @@ bool Pair::protocal2send(){
 
       if (errno == EAGAIN){
       	dmludp_set_error(dmludp_connection, EAGAIN, sent);
-        struct itimerspec new_value = {};
-        timerfd_settime(timer_fd, 0, &new_value, NULL);
       }
       return false;
     }
@@ -958,46 +946,18 @@ bool Pair::protocal2send(){
     dmludp_set_error(dmludp_connection, 0, 0);
   }
 
-  // if (sent == messages.size()){
-  //   device_->registerDescriptor(fd_, EPOLLIN, this);
-  // }
-
-  size_t timer_counter = 0;
   while (true){
-    std::vector<uint8_t> out_elicit_ack;
-    ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out_elicit_ack);
+    std::vector<uint8_t> out;
+    ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out);
     if (ack_len == -1){
       break;
     }
     if (ack_len > 0){
-      auto socketwrite = ::send(fd_, out_elicit_ack.data(), out_elicit_ack.size(), 0);
+      auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
       if(socketwrite == -1 && errno == EAGAIN){
 	     // std::cout<<"ack EAGAIN"<<std::endl;
-       // TO DO: process EAGAIN.
       }
     }
-
-    ///
-    // Reuse timer to avoid EPOLLIN being monitored all the time.
-    timer_counter += 1;
-    if(timer_counter == 1){
-      std::chrono::nanoseconds duration((long)(dmludp_get_rtt(dmludp_connection)));
-
-      auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-      auto nanoseconds_part = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - seconds);
-
-      struct itimerspec new_value;
-      std::memset(&new_value, 0, sizeof(new_value));
-      new_value.it_value.tv_sec = seconds.count(); 
-      new_value.it_value.tv_nsec = nanoseconds_part.count(); 
-
-      if (timerfd_settime(timer_fd, 0, &new_value, nullptr) == -1) {
-          perror("timerfd_settime 3");
-          _Exit(0);
-      }
-      // timerfd_settime(timer_fd, 0, &new_value, NULL);
-    }
-    /////
   }
 
   return true;

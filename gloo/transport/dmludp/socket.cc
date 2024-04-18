@@ -162,11 +162,11 @@ std::shared_ptr<Socket> Socket::accept() {
 
     accept_socket->connect(peer);
 
-    std::vector<uint8_t> out(1500,0);
+    uint8_t out[1500];
     uint8_t buffer[1500];
-    ssize_t written = dmludp_conn_send(connection, out);
+    ssize_t written = dmludp_conn_send(connection, out, sizeof(out));
     // auto start = std::chrono::high_resolution_clock::now();
-    ssize_t sent = accept_socket->write(out.data(), written);
+    ssize_t sent = accept_socket->write(out, written);
 
     // struct sockaddr *tmp_local;
     // // struct sockaddr *local_addr tmp_peer;
@@ -245,14 +245,14 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   struct sockaddr *tmp_local;
   struct sockaddr_storage tmp_peer_addr;
   socklen_t peer_addr_len = sizeof(tmp_peer_addr);
-  std::vector<uint8_t> out(1500,0);
+  uint8_t out[1500];
   uint8_t buffer[1500];
 
   auto temp_connection = dmludp_conn_connect(local, ss);
 
-  ssize_t written = dmludp_send_data_handshake(temp_connection, out);
+  ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
   auto start = std::chrono::high_resolution_clock::now();
-  ssize_t sent = sendto(fd_, out.data(), written, 0, (struct sockaddr *) &ss, peer_addr_len);
+  ssize_t sent = sendto(fd_, out, written, 0, (struct sockaddr *) &ss, peer_addr_len);
 
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
@@ -293,8 +293,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     dmludp_connection = connection;
     dmludp_set_rtt(dmludp_connection, duration.count());
     ssize_t dmludp_recv = dmludp_conn_recv(dmludp_connection, buffer, received);
-    written = dmludp_conn_send(dmludp_connection, out);
-    sent = write(out.data(), written);
+    written = dmludp_conn_send(dmludp_connection, out, sizeof(out));
+    sent = write(out, written);
     new_socket = false;
     break;
   }
