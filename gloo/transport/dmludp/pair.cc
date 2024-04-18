@@ -677,7 +677,7 @@ bool Pair::protocal2read(){
       if(rv == 4){
         std::vector<int> out(1500, 0);
         ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out.data(), out.size());
-        ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
+        ssize_t socketwrite = ::send(fd_, out.data(), dmludpwrite, 0);
         if(socketwrite == -1 && errno == EAGAIN){
         //	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
         }
@@ -687,7 +687,7 @@ bool Pair::protocal2read(){
       else if (rv == 6){
         std::vector<int> out(1500, 0);
         auto stopsize = dmludp_send_data_stop(dmludp_connection, out.data(), out.size());
-        ssize_t socket_write = ::send(fd_, out, stopsize, 0);
+        ssize_t socket_write = ::send(fd_, out.data(), stopsize, 0);
         ispadding = true;
         break;
       }
