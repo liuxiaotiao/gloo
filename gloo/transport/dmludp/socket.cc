@@ -162,11 +162,11 @@ std::shared_ptr<Socket> Socket::accept() {
 
     accept_socket->connect(peer);
 
-    uint8_t out[1500];
+    std::vector<uint8_t> out(1500,0);
     uint8_t buffer[1500];
-    ssize_t written = dmludp_conn_send(connection, out, sizeof(out));
+    ssize_t written = dmludp_conn_send(connection, out.data());
     // auto start = std::chrono::high_resolution_clock::now();
-    ssize_t sent = accept_socket->write(out, written);
+    ssize_t sent = accept_socket->write(out.data(), written);
 
     // struct sockaddr *tmp_local;
     // // struct sockaddr *local_addr tmp_peer;

@@ -249,7 +249,7 @@ inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
 }
 
 // inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
-inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, std::vector &out) {
+inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, std::vector<uint8_t> &out) {
     if(out.size() <= 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
     }
