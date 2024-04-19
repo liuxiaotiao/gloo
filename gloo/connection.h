@@ -427,7 +427,7 @@ class Connection{
         
         // All side can send data.
         if (hdr->ty == Type::ACK){
-            std::cout<<std::endl;
+            // std::cout<<std::endl;
             process_ack(buf);
             if (ack_set.size() == 0){
                 stop_ack = true;
@@ -471,7 +471,7 @@ class Connection{
         // }
 
         if (hdr->ty == Type::Application){
-            std::cout<<"[Debug] application offset:"<<hdr->offset<<", pn:"<<hdr->pkt_num<<std::endl;
+            // std::cout<<"[Debug] application offset:"<<hdr->offset<<", pn:"<<hdr->pkt_num<<std::endl;
             if (receive_pktnum2offset.find(hdr->pkt_num) != receive_pktnum2offset.end()){
                 std::cout<<"[Error] Duplicate application packet"<<std::endl;
                 _Exit(0);
@@ -627,7 +627,7 @@ class Connection{
                 weights = 0;
             }
             if (!non_sent){
-                std::cout<<"[Loss] pn:"<<check_pn<<" not receive"<<std::endl;  
+                // std::cout<<"[Loss] pn:"<<check_pn<<" not receive"<<std::endl;  
             }
 
             if (check_pn == end_pn){
@@ -909,13 +909,13 @@ class Connection{
                 sent_dic[out_off] = priority;
             }
 
-            if ((i == 0) && (get_dmludp_error() == 0)){
-                std::cout<<"[Send] start application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
-            }
+            // if ((i == 0) && (get_dmludp_error() == 0)){
+            //     std::cout<<"[Send] start application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            // }
 
-            if ((i == dmludp_error_sent) && (get_dmludp_error() != 0)){
-                std::cout<<"[Send] start application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
-            }
+            // if ((i == dmludp_error_sent) && (get_dmludp_error() != 0)){
+            //     std::cout<<"[Send] start application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            // }
             
             
             if (out_len != MAX_SEND_UDP_PAYLOAD_SIZE){
