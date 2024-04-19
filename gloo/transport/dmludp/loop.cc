@@ -154,6 +154,7 @@ void Loop::run() {
 
   while (!done_) {
     // Wakeup everyone waiting for a loop tick to finish.
+    std::cout << "[Debug] notify_all() "<<std::endl;
     cv_.notify_all();
 
     // Wait for something to happen
@@ -166,7 +167,7 @@ void Loop::run() {
     // 获取当前时间的微秒部分
     auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
 
-    // 输出
+    // // 输出
     std::cout << "[Debug] Current time: "
               << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
               << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
@@ -180,13 +181,13 @@ void Loop::run() {
     }
 
     GLOO_ENFORCE_NE(nfds, -1);
-   	counter++;
-    std::cout<<std::endl;
-    std::cout << "[Debug] counter:"<<counter<<" Current time: "
-              << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
-              << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
+   	// counter++;
+    // std::cout<<std::endl;
+    // std::cout << "[Debug] counter:"<<counter<<" Current time: "
+    //           << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
+    //           << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
-    std::cout<<" nfds: "<<nfds<<std::endl;
+    // std::cout<<" nfds: "<<nfds<<std::endl;
     for (int i = 0; i < nfds; i++) {
 	  //  std::cout<<"[Debug] Active fd:"<<(int)events[i].data.fd<<std::endl;
       Handler* h = reinterpret_cast<Handler*>(events[i].data.ptr);

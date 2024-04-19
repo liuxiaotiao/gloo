@@ -909,18 +909,18 @@ class Connection{
                 sent_dic[out_off] = priority;
             }
 
-            // if ((i == 0) && (get_dmludp_error() == 0)){
-            //     std::cout<<"[Send] start application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
-            // }
-
-            // if ((i == dmludp_error_sent) && (get_dmludp_error() != 0)){
-            //     std::cout<<"[Send] start application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
-            // }
-            
-            
-            if (out_len != MAX_SEND_UDP_PAYLOAD_SIZE){
-                std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            if ((i == 0) && (get_dmludp_error() == 0)){
+                std::cout<<"[Send] start application packet, offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
             }
+
+            if ((i == dmludp_error_sent) && (get_dmludp_error() != 0)){
+                std::cout<<"[Send] start application packet(EAGAIN), offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            }
+            
+            
+            // if (out_len != MAX_SEND_UDP_PAYLOAD_SIZE){
+            //     std::cout<<"[Send] offset: "<<offset<<", len:"<<out_len<<", pn:"<<pn<<std::endl;
+            // }
 
             if (get_dmludp_error() == 0){
                 record_send.push_back(offset);
