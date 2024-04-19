@@ -308,6 +308,9 @@ class Connection{
 
     std::unordered_map<uint64_t, std::pair<std::vector<uint8_t>, std::chrono::high_resolution_clock::time_point>> retransmission_ack;
 
+    // Record first application packet number in each cwnd
+    uint64_t first_application_pktnum;
+
     // sender record the map relationship between acknowledege packet number and (start application packet number and end application packet number)
     std::map<uint64_t, std::pair<uint64_t, uint64_t>> send_pkt_duration;
 
@@ -362,7 +365,8 @@ class Connection{
     dmludp_error(0),
     rx_length(0),
     dmludp_error_sent(0),
-    start_receive_offset(0)
+    start_receive_offset(0),
+    first_application_pktnum(0)
     {};
 
     ~Connection(){
@@ -839,6 +843,7 @@ class Connection{
             }
         }else{
             send_buffer.sent = 0;
+            // consider using same packet number for not sent packet
             record2ack_pktnum.erase(record2ack_pktnum.begin() + dmludp_error_sent, record2ack_pktnum.end());
         }
 
@@ -863,6 +868,10 @@ class Connection{
                 pn = pkt_num_spaces.at(0).updatepktnum();
                 priority = priority_calculation(out_off);
                 Type ty = Type::Application;
+
+                if (i == 0){
+                    first_application_pktnum = pn;
+                }
                 // counter?
                 // print address?
                 std::shared_ptr<Header> hdr= std::make_shared<Header>(ty, pn, priority, out_off , (uint64_t)out_len);
@@ -878,7 +887,10 @@ class Connection{
                 s_flag = send_buffer.emit(iovecs[(i-dmludp_error_sent)*2+1], out_len, out_off);
                 out_off -= (uint64_t)out_len;
 
-                pn = pkt_num_spaces.at(0).updatepktnum();
+                // 
+                pn = first_application_pktnum + i;
+
+                // pn = pkt_num_spaces.at(0).updatepktnum();
                 priority = priority_calculation(out_off);
                 Type ty = Type::Application;
                 // counter?
