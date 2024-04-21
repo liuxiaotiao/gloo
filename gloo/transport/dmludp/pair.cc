@@ -329,7 +329,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	std::cout<<"writeComplete:"<<opcode<<std::endl;
+	// std::cout<<"writeComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -515,7 +515,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  std::cout<<"readComplete:"<<opcode<<std::endl;
+  // std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -788,7 +788,7 @@ bool Pair::protocal2read(){
               writeComplete(op, sbuf, opcode);
               dmludp_conn_clear_sent_once(dmludp_connection);
               tx_.pop_front();
-              std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+              // std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
             }
 
             if (tx_.empty()) {
@@ -1244,7 +1244,7 @@ void Pair::sendAsyncMode(Op& op) {
   ////////////////////////////////////////
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
-    std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+    // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
     return;
   }
   // Write may have resulted in an error.
@@ -1252,7 +1252,7 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
-  std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+  // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 
