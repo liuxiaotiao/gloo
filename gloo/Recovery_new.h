@@ -25,8 +25,6 @@ enum CongestionControlAlgorithm {
 
 class RecoveryConfig {
     public:
-    size_t max_send_udp_payload_size;
-
     RecoveryConfig(){
 
     };
@@ -47,10 +45,11 @@ class Recovery{
     size_t bytes_in_flight;
 
     size_t max_datagram_size;
-    // k:f64,
-    size_t incre_win;
 
-    size_t decre_win;
+    // k:f64,
+    double incre_win;
+
+    double decre_win;
 
     std::set<size_t> former_win_vecter;
 
@@ -66,9 +65,7 @@ class Recovery{
 
     Recovery():
     app_limit(false),
-    // congestion_window(INI_WIN),
     bytes_in_flight(0),
-    // max_datagram_size(PACKET_SIZE);
     incre_win(0),
     decre_win(0),
     roll_back_flag(false),
@@ -97,39 +94,43 @@ class Recovery{
         double winadd = 0;
         roll_back_flag = false;
         if (weights > 0){
-            winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
+            // winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4) * (double)max_datagram_size;
+            // winadd = (3 * pow((double)weights, 2) - 12 * (double)weights + 4);
+            winadd = (4 * pow((double)weights, 2) - 16 * (double)weights + 8);
             roll_back_flag = true;
         }else{
-            winadd = num * (double)max_datagram_size; 
+            // winadd = num * (double)max_datagram_size; 
+            winadd = num;
         }
 
         if (winadd > 0){
-            incre_win += (size_t)winadd;
+            incre_win += winadd;
         }else {
-            decre_win += (size_t)(-winadd);
+            decre_win += (-winadd);
         }
     };
 
     size_t cwnd(){
-        size_t tmp_win = 0;
-        if (2*incre_win > decre_win){
-            tmp_win = 2*incre_win - decre_win;
+        double tmp_win = 0;
+        if ((2 * incre_win) > decre_win){
+            tmp_win = 2 * incre_win - decre_win;
         }else{
             tmp_win = 0;
         }
         
-        if (!roll_back_flag && (tmp_win > INI_WIN)) {
-            former_win_vecter.insert(tmp_win);
-            if (tmp_win > last_cwnd){
+        if (!roll_back_flag && ((size_t)tmp_win > INITIAL_WINDOW_PACKETS)) {
+            size_t record_cwnd = (size_t)tmp_win * PACKET_SIZE;
+            former_win_vecter.insert(record_cwnd);
+            if (record_cwnd > last_cwnd){
                 former_win_vecter.insert(last_cwnd);
             }
         }
 
-        congestion_window = tmp_win;
-        last_cwnd = tmp_win;
+        congestion_window = (size_t)tmp_win * PACKET_SIZE;
+        last_cwnd = (size_t)tmp_win * PACKET_SIZE;
         parameter_reset();
         if (congestion_window < INI_WIN){
-            /* // Fix every time, cwnd will start from initial window;
+            // Fix every time, cwnd will start from initial window;
             if (!former_win_vecter.empty()){
                 congestion_window = former_win_vecter.back();
             }else{
@@ -137,10 +138,9 @@ class Recovery{
                 tmp_win = INI_WIN;
             }
             return congestion_window;
-            */
-            congestion_window = INI_WIN;
-            tmp_win = INI_WIN;
-            return congestion_window;
+            // congestion_window = INI_WIN;
+            // tmp_win = INI_WIN;
+            // return congestion_window;
         }
         return congestion_window;
     };

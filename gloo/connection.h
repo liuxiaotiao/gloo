@@ -516,6 +516,8 @@ class Connection{
         return feed_back;
     };
 
+
+    // remove unnessary vectore construct
     void process_ack(std::vector<uint8_t> buf){
         std::vector<uint8_t> ack_header(buf.begin(), buf.begin() + HEADER_LENGTH);
         auto hd = Header::from_slice(ack_header);
@@ -626,9 +628,9 @@ class Connection{
                 recovery.update_win(weights, pnum);
                 weights = 0;
             }
-            if (!non_sent){
-                // std::cout<<"[Loss] pn:"<<check_pn<<" not receive"<<std::endl;  
-            }
+            // if (!non_sent){
+            //     std::cout<<"[Loss] pn:"<<check_pn<<" not receive"<<std::endl;  
+            // }
 
             if (check_pn == end_pn){
                 std::cout<<"[Debug] ACK last packet num:"<<check_pn<<std::endl;
@@ -700,6 +702,7 @@ class Connection{
     void reset_rx_len(){
         rx_length = 0;
     }
+
     // nwrite() is used to write data to congestion control window
     // return represents if current_buffer_pos should add 1.
     ssize_t nwrite(sbuffer &send_data, size_t congestion_window) {
@@ -720,7 +723,7 @@ class Connection{
     
     // Used to get pointer owner and length
     // get_data() is used after get(op) in gloo.
-    bool get_data(struct iovec* iovecs, int iovecs_len){
+    bool get_data(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         bool completed = true;
         written_data_once = 0;
         written_data_len = 0;

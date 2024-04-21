@@ -35,6 +35,7 @@
 #include "gloo/transport/dmludp/unbound_buffer.h"
 
 #define FD_INVALID (-1)
+#define MAX_PACKETS 100
 
 namespace gloo {
 namespace transport {
@@ -660,7 +661,146 @@ bool Pair::protocal2read(){
 
   ssize_t dmludpread = 0;
   bool ispadding = false;
+
+  struct mmsghdr msgs[MAX_PACKETS];
+  struct iovec iovecs[MAX_PACKETS];
+  uint8_t bufs[MAX_PACKETS][1500];
+
+  for (int i = 0; i < MAX_PACKETS; i++) {
+    iovecs[i].iov_base = bufs[i];
+    iovecs[i].iov_len = sizeof(bufs[i]);
+    msgs[i].msg_hdr.msg_iov = &iovecs[i];
+    msgs[i].msg_hdr.msg_iovlen = 1;
+    msgs[i].msg_hdr.msg_name = NULL;
+    msgs[i].msg_hdr.msg_namelen = 0;
+  }
+
   while(true){
+    auto retval = recvmmsg(fd_, msgs, MAX_PACKETS, 0, NULL);
+    if (retval == -1){
+      if (errno == EAGAIN) {
+        break;
+      }
+      if (errno == EINTR){
+        continue;
+      }
+    }
+    for (auto index = 0; index < retval; index++){
+      auto read = msgs[index].msg_len;
+      if (read > 0){
+        dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>msgs[index].msg_hdr.msg_iov, read);
+        int offset;
+        int pkt_num;
+        rv = dmludp_header_info(static_cast<uint8_t *>msgs[index].msg_hdr.msg_iov, 26, offset, pkt_num);
+        // Elicit ack
+        if(rv == 4){
+          uint8_t out[1500];
+          ssize_t dmludpwrite = dmludp_conn_send(dmludp_connection, out, sizeof(out));
+          ssize_t socketwrite = ::send(fd_, out, dmludpwrite, 0);
+          // if(socketwrite == -1 && errno == EAGAIN){
+          // 	std::cout<<"[ERROR] acknowlegde packet sent fail"<<std::endl;
+          // }
+        }
+        else if (rv == 6){
+          // Packet completes tranmission and start to iov.
+          uint8_t out[1500];
+          auto stopsize = dmludp_send_data_stop(dmludp_connection, out, sizeof(out));
+          ssize_t socket_write = ::send(fd_, out, stopsize, 0);
+          ispadding = true;
+          break;
+        }
+        else if (rv == 3){
+          // Application packet
+          // std::cout<<"[Debug] application offset:"<<offset<<", pn:"<<pkt_num<<std::endl;
+          if ((read - 26) == sizeof(rx_.preamble) && (offset == 0)){
+            NonOwningPtr<UnboundBuffer> rbuf;
+            while(true){
+              struct iovec riov = {
+                .iov_base = nullptr,
+                .iov_len = 0,
+              };
+              const auto rnbytes = prepareRead(rx_, rbuf, riov);
+              if (rnbytes == 0){
+                readComplete(rbuf);
+                dmludp_conn_recv_reset(dmludp_connection);
+                break;
+              }
+
+              if (rbuf){
+                dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
+                break;
+              }
+              
+              bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+      
+              if (check_result){
+                dmludp2read(rx_, rbuf, rnbytes);
+                rx_.nread += rnbytes;
+              }
+            }      
+          }
+          else{
+            if(dmludp_conn_receive_complete(dmludp_connection)){
+              NonOwningPtr<UnboundBuffer> rbuf;
+              while(true){
+                struct iovec riov = {
+                  .iov_base = nullptr,
+                  .iov_len = 0,
+                };
+                const auto rnbytes = prepareRead(rx_, rbuf, riov);
+
+                if (rnbytes == 0){
+                  readComplete(rbuf);
+                  dmludp_conn_recv_reset(dmludp_connection);
+                  dmludp_conn_reset_rx_len(dmludp_connection);
+                  break;
+                }
+
+                if (rbuf){
+                  dmludp2read(rx_, rbuf, rnbytes);
+                  rx_.nread += rnbytes;
+                }
+
+              }
+
+            }
+          }
+        }
+        else if (rv == 5){
+           // Acknowledge packet
+          if (tx_.empty()){
+            continue;
+          } 
+  //        device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+
+          if (dmludp_transmission_complete(dmludp_connection)){
+            auto &op = tx_.front();
+            const auto opcode = op.getOpcode();
+            if (opcode == Op::SEND_UNBOUND_BUFFER) {
+              sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+              if (!sbuf) {
+                return false;
+              }
+            }
+            // const auto nbytes = prepareWrite(op, sbuf, siov.data(), sioc);
+            op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
+            if (op.nwritten == op.preamble.nbytes){
+              writeComplete(op, sbuf, opcode);
+              dmludp_conn_clear_sent_once(dmludp_connection);
+              tx_.pop_front();
+              std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+            }
+
+            if (tx_.empty()) {
+              device_->registerDescriptor(fd_, EPOLLIN, this);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*while(true){
     uint8_t buffer[1500];
     ssize_t read = ::recv(fd_, buffer, sizeof(buffer) , 0);
     dmludpread = 0;
@@ -789,7 +929,7 @@ bool Pair::protocal2read(){
         continue;
       }
     }
-  }
+  }*/
 
   // Process readComplete
   /*if (!dmludp_conn_has_recv(dmludp_connection)){   
