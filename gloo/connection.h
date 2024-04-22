@@ -473,7 +473,7 @@ public:
                 std::cout<<"[Error] Duplicate application packet"<<std::endl;
                 _Exit(0);
             }
-            RRD.add_offset_and_pktnum(hdr->pkt_num, hdr->offset, hdr->pkt_length);
+            // RRD.add_offset_and_pktnum(hdr->pkt_num, hdr->offset, hdr->pkt_length);
             if (hdr->offset == 0){
                 clear_recv_setting();
             }
@@ -481,7 +481,7 @@ public:
             // Debug
             if (recv_dic.find(hdr->offset) != recv_dic.end()){
                 std::cout<<"[Error] same offset:"<<hdr->offset<<std::endl;
-                RRD.show();
+                // RRD.show();
                 _Exit(0);
             }
             recv_count += 1;
@@ -686,7 +686,7 @@ public:
         auto rlen = rec_buffer.receive_length();
 	    // std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
         if (rx_length == rlen){
-            RRD.clear();
+            // RRD.clear();
             return true;
         }
         return false;
@@ -1816,7 +1816,7 @@ public:
             }          
         }
 
-        RRD.add_acknowledeg_info(send_num, std::move(ack_record));
+        // RRD.add_acknowledeg_info(send_num, std::move(ack_record));
     }
 
     void set_handshake(){
