@@ -688,10 +688,10 @@ bool Pair::protocal2read(){
     for (auto index = 0; index < retval; index++){
       auto read = msgs[index].msg_len;
       if (read > 0){
-        dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>msgs[index].msg_hdr.msg_iov, read);
+        dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), read);
         int offset;
         int pkt_num;
-        rv = dmludp_header_info(static_cast<uint8_t *>msgs[index].msg_hdr.msg_iov, 26, offset, pkt_num);
+        rv = dmludp_header_info(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), 26, offset, pkt_num);
         // Elicit ack
         if(rv == 4){
           uint8_t out[1500];

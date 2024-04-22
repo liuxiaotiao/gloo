@@ -129,18 +129,17 @@ class Recovery{
         last_cwnd = tmp_win;
         parameter_reset();
         if (congestion_window < INI_WIN){
-            /* // Fix every time, cwnd will start from initial window;
-            if (!former_win_vecter.empty()){
+            /// Fix every time, cwnd will start from initial window;
+            if (!former_win_vecter.empty()  && incre_win == 1){
                 congestion_window = former_win_vecter.back();
             }else{
                 congestion_window = INI_WIN;
                 tmp_win = INI_WIN;
             }
             return congestion_window;
-            */
-            congestion_window = INI_WIN;
-            tmp_win = INI_WIN;
-            return congestion_window;
+            // congestion_window = INI_WIN;
+            // tmp_win = INI_WIN;
+            // return congestion_window;
         }
         return congestion_window;
     };

@@ -61,7 +61,7 @@ struct RecvInfo {
 };
 
 class sbuffer{
-    public:
+public:
     uint8_t * src;
 
     size_t len;
@@ -86,7 +86,7 @@ class sbuffer{
 };
 
 class Config {
-    public:
+public:
     size_t max_send_udp_payload_size;
 
     uint64_t max_idle_timeout;
@@ -108,7 +108,7 @@ class Config {
 };
 
 class Received_Record_Debug{
-    public:
+public:
     // key: #packet, value: (offset, length)
     std::map<uint64_t, std::pair<uint64_t, uint64_t>> pktnum2offset;
 
@@ -166,7 +166,7 @@ class Received_Record_Debug{
 };
 
 class Connection{
-    public: 
+public: 
     size_t recv_count;
 
     /// Total number of sent packets.
@@ -322,10 +322,7 @@ class Connection{
         return std::make_shared<Connection>(local, peer, config, true);
     };
 
-    Connection(sockaddr_storage local, 
-    sockaddr_storage peer, 
-    Config config,
-    bool server):    
+    Connection(sockaddr_storage local, sockaddr_storage peer, Config config, bool server):    
     recv_count(0),
     sent_count(0),
     is_server(server),
@@ -373,7 +370,7 @@ class Connection{
 
     };
 
-    void update_rtt(){
+    void update_rtt() {
         auto arrive_time = std::chrono::high_resolution_clock::now();
         if (rtt.count() == 0 ){
             rtt = arrive_time - handshake;
