@@ -7,12 +7,12 @@
 #include <stdlib.h>
 namespace dmludp{
 
-    class RecvBuf{
+     class RecvBuf{
         public:
         // std::map<uint64_t, std::shared_ptr<RangeBuf>> data;
         std::vector<uint8_t> data;
 
-        void * src;
+        void * src = nullptr;
 
         // Used to judge the new coming data stored at data or src;
         bool convert_flag;
@@ -31,109 +31,27 @@ namespace dmludp{
 
         ~RecvBuf(){};
 
-       /*void write(std::vector<uint8_t> &out, uint64_t out_off){
+	    void write(uint8_t* out, size_t out_len, uint64_t out_off){
             auto data_len = data.size();
+
             if(out_off > data_len){
-                data.resize(out_off);
-                data.insert(data.end(), 
-                            std::make_move_iterator(out.begin()), 
-                            std::make_move_iterator(out.end()));
+		        data.resize(out_off + out_len);
+		        memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
             }
             else if(out_off == data_len){
-                data.insert(data.end(), 
-                            std::make_move_iterator(out.begin()), 
-                            std::make_move_iterator(out.end()));
-            }
-            else{
-                size_t startPos = out_off; 
-                size_t endPos = out_off+out.size();  
-
-                auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
-
-                data.insert(it, 
-                            std::make_move_iterator(out.begin()), 
-                            std::make_move_iterator(out.end()));
-            }
-            len += out.size();
-        }*/
-	    void write(std::vector<uint8_t> &out, uint64_t out_off){
-            auto data_len = data.size();
-            // if(out_off == 0){
-            //     std::cout<<"recv out_ofr = 0"<<std::endl;
-            // }
-            if(out_off > data_len){
-                //data.resize(out_off);
-		        //std::cout<<"point 2"<<std::endl;
-                // data.insert(data.end(),
-                //             std::make_move_iterator(out.begin()),
-                //             std::make_move_iterator(out.end()));
-		        data.resize(out_off+out.size());
-		        memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
-            }
-            else if(out_off == data_len){
-                // data.insert(data.end(),
-                //             std::make_move_iterator(out.begin()),
-                //             std::make_move_iterator(out.end()));
-		        data.resize(out_off + out.size());
-                memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
+		        data.resize(out_off + out_len);
+                memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
             }
             else{
                 size_t startPos = out_off;
-                size_t endPos = out_off+out.size();
-                // auto it = data.erase(data.begin() + startPos, data.begin() + endPos);
-
-                // data.insert(it,
-                //             std::make_move_iterator(out.begin()),
-                //             std::make_move_iterator(out.end()));
-                memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
+                memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
             }
-            len += out.size();
-    	    // std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+            len += out_len;
 	        if (len > data.size()){
 				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
                 _Exit(0);
             }
         }
-
-        // void write_instant(const uint8_t* input, size_t input_len, uint64_t out_off){
-        //     auto data_len = len;
-
-        //     if (out_off == 0){
-        //         memcpy(src, data.data() + 48, (data.size() - 48));
-        //         convert_flag = true;
-        //     }
-
-        //     if (convert_flag){
-        //         memcpy(src + out_off, input, input_len);
-        //         len += input_len;
-        //     }else{
-        //         // TODO
-        //         // When convert_flag is false, the packet will be stored at data vector first
-        //         // make sure that offset written data cannot be larger than maximum offset.
-        //         // reset convert_flag after emiiting.
-
-        //     }
-
-        //     if(out_off > data_len){
-		//         data.resize(out_off+out.size());
-		//         memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
-        //     }
-        //     else if(out_off == data_len){
-		//         data.resize(out_off + out.size());
-        //         memcpy(data.data() + data.size() - out.size(), out.data(), out.size() * sizeof(uint8_t));
-        //     }
-        //     else{
-        //         size_t startPos = out_off;
-        //         size_t endPos = out_off+out.size();
-
-        //         memcpy(data.data() + startPos, out.data(), out.size() * sizeof(uint8_t));
-        //     }
-        //     len += out.size();
-	    //     if (len > data.size()){
-		// 		std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
-        //         _Exit(0);
-        //     }
-        // }
 
         size_t receive_length(){
             return len;
@@ -173,7 +91,6 @@ namespace dmludp{
             size_t emitLen = 0;
             if (iscopy){
                 if (output_len == 0){
-                    // out = static_cast<uint8_t*>(data.data() + removed);
                     memcpy(out, data.data() + removed, data.size());
                     convert_flag = false;
                     emitLen = data.size() - removed;

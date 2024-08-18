@@ -179,6 +179,48 @@ namespace dmludp{
 
         };
 
+        // Pointer version
+        void to_bytes_pointer(uint8_t* out){
+            uint8_t first = 0;
+            int off = 0;
+            if (ty == Type::Retry){
+                first = 0x01;
+            }else if (ty == Type::Handshake){
+                first = 0x02;
+            }else if (ty == Type::Application){
+                first = 0x03;
+            }else if (ty == Type::ElicitAck){
+                first = 0x04;
+            }else if (ty == Type::ACK){
+                first = 0x05;
+            }else if (ty == Type::Stop){
+                first = 0x06;
+            }else if (ty == Type::Fin){
+                first = 0x07;
+            }else if (ty == Type::StartAck){
+                first = 0x08;
+            }else{
+                first = 0x09;
+            }
+            memcpy(out, &first, sizeof(uint8_t));
+            // put_u8(out, first, off);
+            
+            off += sizeof(uint8_t);
+            memcpy(out + off, &pkt_num, sizeof(uint64_t));
+            // put_u64(out, pkt_num, off);
+            off += sizeof(uint64_t);
+            memcpy(out + off, &priority, sizeof(uint8_t));
+            // put_u8(out, priority, off);
+            off += sizeof(uint8_t);
+            memcpy(out + off, &offset, sizeof(uint64_t));
+            // put_u64(out, offset, off);
+            off += sizeof(uint64_t);
+            memcpy(out + off, &pkt_length, sizeof(uint64_t));
+            // put_u64(out, pkt_length, off);
+        };
+
+
+
         static uint64_t get_u64(std::vector<uint8_t> vec, int start){
             uint64_t value = 0;
             std::vector data_slice(vec.begin() + start, vec.begin() + start + sizeof(uint64_t));
@@ -245,4 +287,3 @@ namespace dmludp{
     };
 }
 #pragma pack(pop)
-
