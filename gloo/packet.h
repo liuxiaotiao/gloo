@@ -15,6 +15,23 @@
 #endif
 
 namespace dmludp{
+
+using Type_len = uint8_t;
+
+using Packet_num_len = uint64_t;
+
+using Priority_len = uint8_t;
+
+using Offset_len = uint32_t;
+
+using Acknowledge_sequence_len = uint64_t;
+
+using Acknowledge_time_len = uint8_t;
+
+using Difference_len = uint8_t;
+
+using Packet_len = uint16_t;
+
     enum Type : uint8_t {
         /// Retry packet.
         Retry = 0x01,
@@ -37,10 +54,11 @@ namespace dmludp{
         /// Fin
         Fin = 0x07,
 
-        // StartACK
         StartAck = 0x08,
 
-        Unknown = 0x09,
+        FastAck = 0x09,
+
+        Unknown = 0x10,
     };
 
 // Avoid memory alignment
@@ -50,101 +68,52 @@ namespace dmludp{
         /// The type of the packet.
         Type ty;
 
-        uint64_t pkt_num;
+        // Unique for each packet
+        Packet_num_len pkt_num;
 
-        uint8_t priority;
-        ///This offset is different from TCP offset. It refers to the last position in the 
-        uint64_t offset;
+        // Used to assign retransmission time and other function.
+        Priority_len priority;
 
-        uint64_t pkt_length;
+        // Current packet offset in data flow.
+        Offset_len offset;
+
+        // Corresponding to acknowledge packet number. 
+        Acknowledge_sequence_len seq;
+        
+        // To indentify acknowledge packet is partial or all data.
+        Acknowledge_time_len ack_time;
+
+        // To differentiate data flow.
+        Difference_len difference;
+
+        // The data length of the application packet
+        Packet_len pkt_length;
 
 
         Header(
             Type first, 
-            uint64_t pktnum, 
-            uint8_t priority, 
-            uint64_t off, 
-            uint64_t len) 
+            Packet_num_len pktnum, 
+            Priority_len priority, 
+            Offset_len off,
+            Acknowledge_sequence_len seq,
+            Acknowledge_time_len ack_time,
+            Difference_len difference,
+            Packet_len len) 
             : ty(first), 
             pkt_num(pktnum), 
             priority(priority), 
             offset(off), 
+            seq(seq),
+            ack_time(ack_time),
+            difference(difference),
             pkt_length(len) {};
 
         ~Header() {};
 
 
-        static std::shared_ptr<Header> from_slice(std::vector<uint8_t> b){
-            int off = 0;
-            auto first = get_u8(b, off);
-            off += sizeof(uint8_t);
-
-            Type ty;
-            if (first == 0x01) {
-                ty = Type::Retry;
-            }else if (first == 0x02){
-                ty = Type::Handshake;
-            }else if (first == 0x03){
-                ty = Type::Application;
-            }else if (first == 0x04){
-                ty = Type::ElicitAck;
-            }else if (first == 0x05){
-                ty = Type::ACK;
-            }else if (first == 0x06){
-                ty = Type::Stop;
-            }else if (first == 0x07){
-                ty = Type::Fin;
-            }else if (first = 0x08){
-                ty = Type::StartAck;
-            }else{
-                ty = Type::Unknown;
-            }
-
-            uint64_t second = get_u64(b, off);
-            off += sizeof(uint64_t);
-            uint8_t third = get_u8(b, off);
-            off += sizeof(uint8_t);
-            uint64_t forth = get_u64(b, off);
-            off += sizeof(uint64_t);
-            uint64_t fifth = get_u64(b, off);
-
-            return std::make_shared<Header>(ty, second, third, forth, fifth);
-        };
-
-        static std::shared_ptr<Header> from_bytes(std::vector<uint8_t> &b){
-            int off = 0;
-            auto first = get_u8(b, off);
-            Type ty;
-            if (first == 0x01) {
-                ty = Type::Retry;
-            }else if (first == 0x02){
-                ty = Type::Handshake;
-            }else if (first == 0x03){
-                ty = Type::Application;
-            }else if (first == 0x04){
-                ty = Type::ElicitAck;
-            }else if (first == 0x05){
-                ty = Type::ACK;
-            }else if (first == 0x06){
-                ty = Type::Stop;
-            }else if (first == 0x07){
-                ty = Type::Fin;
-            }else if (first = 0x08){
-                ty = Type::StartAck;
-            }else{
-                ty = Type::Unknown;
-            }
-            uint64_t second = *reinterpret_cast<const uint64_t*>(b.data() + 1);
-            uint8_t third = b[9];
-            uint64_t forth = *reinterpret_cast<const uint64_t*>(b.data() + 10);
-            uint64_t fifth = *reinterpret_cast<const uint64_t*>(b.data() + 18);
-
-            return std::make_shared<Header>(ty, second, third, forth, fifth);
-        };
-
         void to_bytes(std::vector<uint8_t> &out){
             uint8_t first = 0;
-            int off = 0;
+            size_t off = 0;
             if (ty == Type::Retry){
                 first = 0x01;
             }else if (ty == Type::Handshake){
@@ -164,102 +133,49 @@ namespace dmludp{
             }else{
                 first = 0x09;
             }
-
-            put_u8(out, first, off);
+            put_u8(out, first, off); // Type
             
             off += sizeof(uint8_t);
-            put_u64(out, pkt_num, off);
-            off += sizeof(uint64_t);
+            put_u64(out, pkt_num, off); // packet number
 
-            put_u8(out, priority, off);
-            off += sizeof(uint8_t);
-            put_u64(out, offset, off);
-            off += sizeof(uint64_t);
-            put_u64(out, pkt_length, off);
+            off += sizeof(Packet_num_len);
+            put_u8(out, priority, off); // priority
 
-        };
+            off += sizeof(Priority_len);
+            put_u32(out, offset, off); // packet offset
 
-        // Pointer version
-        void to_bytes_pointer(uint8_t* out){
-            uint8_t first = 0;
-            int off = 0;
-            if (ty == Type::Retry){
-                first = 0x01;
-            }else if (ty == Type::Handshake){
-                first = 0x02;
-            }else if (ty == Type::Application){
-                first = 0x03;
-            }else if (ty == Type::ElicitAck){
-                first = 0x04;
-            }else if (ty == Type::ACK){
-                first = 0x05;
-            }else if (ty == Type::Stop){
-                first = 0x06;
-            }else if (ty == Type::Fin){
-                first = 0x07;
-            }else if (ty == Type::StartAck){
-                first = 0x08;
-            }else{
-                first = 0x09;
-            }
-            memcpy(out, &first, sizeof(uint8_t));
-            // put_u8(out, first, off);
+            off += sizeof(Offset_len);
+            put_u64(out, seq, off); // acknowledge sequence
+
+            off += sizeof(Acknowledge_sequence_len);
+            put_u8(out, seq, off); // acknowledge time for one sequcence number.
             
-            off += sizeof(uint8_t);
-            memcpy(out + off, &pkt_num, sizeof(uint64_t));
-            // put_u64(out, pkt_num, off);
-            off += sizeof(uint64_t);
-            memcpy(out + off, &priority, sizeof(uint8_t));
-            // put_u8(out, priority, off);
-            off += sizeof(uint8_t);
-            memcpy(out + off, &offset, sizeof(uint64_t));
-            // put_u64(out, offset, off);
-            off += sizeof(uint64_t);
-            memcpy(out + off, &pkt_length, sizeof(uint64_t));
-            // put_u64(out, pkt_length, off);
+            off += sizeof(Acknowledge_time_len);
+            put_u8(out, difference, off); // flow difference
+
+            off += sizeof(Difference_len);
+            put_u16(out, pkt_length, off); // packet length
+
         };
 
-
-
-        static uint64_t get_u64(std::vector<uint8_t> vec, int start){
-            uint64_t value = 0;
-            std::vector data_slice(vec.begin() + start, vec.begin() + start + sizeof(uint64_t));
-            #if IS_BIG_ENDIAN
-                for (int i = 0; i < 8; ++i) {
-                    value |= static_cast<uint64_t>(data_slice[i]) << ((7 - i) * 8);
-                }
-            #else
-                for (int i = 0; i < 8; ++i) {
-                    value |= static_cast<uint64_t>(data_slice[i]) << (i * 8);
-                }
-            #endif
-            return value;
+        void put_u64(std::vector<uint8_t> &vec, uint64_t &input, size_t position){
+            memcpy(vec.data() + position, &input, sizeof(uint64_t));
         };
 
-        static uint8_t get_u8(std::vector<uint8_t> vec, int position){
-            return vec[position];
-        };
+        void put_u32(std::vector<uint8_t> &vec, uint32_t &input, size_t position){
+            memcpy(vec.data() + position, &input, sizeof(uint16_t));
+        }
 
-        void put_u64(std::vector<uint8_t> &vec, uint64_t input, int position){
-            std::vector<uint8_t> data_slice(sizeof(uint64_t));
-            #if IS_BIG_ENDIAN
-                for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[i] = static_cast<uint8_t>(input >> ((7 - i) * 8));
-                }
-            #else 
-                for (int i = 0; i < sizeof(uint64_t); ++i) {
-                    data_slice[i] = static_cast<uint8_t>(input >> (i * 8));
-                }
-            #endif
-            std::copy(data_slice.begin(), data_slice.end(), vec.begin() + position);
-        };
+        void put_u16(std::vector<uint8_t> &vec, uint16_t &input, size_t position){
+            memcpy(vec.data() + position, &input, sizeof(uint16_t));
+        }
 
-        void put_u8(std::vector<uint8_t> &vec, uint8_t input, int position){
+        void put_u8(std::vector<uint8_t> &vec, uint8_t input, size_t position){
             vec.at(position)= input;
         };
 
         size_t len(){
-            return 26;
+            return sizeof(Type) + sizeof(Packet_num_len) + sizeof(Priority_len) + sizeof(Offset_len) + sizeof(Acknowledge_sequence_len) + sizeof(Difference_len) + sizeof(pkt_length) + sizeof(Acknowledge_time_len);
         };
     };
 
