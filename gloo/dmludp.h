@@ -275,10 +275,6 @@ inline void dmludp_conn_reset_rx_len(std::shared_ptr<Connection> conn){
     conn->reset_rx_len();
 }
 
-inline ssize_t dmludp_conn_check_status(std::shared_ptr<Connection> conn){
-    return conn->check_status();
-}
-
 inline std::vector<struct mmsghdr> dmludp_connection_get_mmsghdr(std::shared_ptr<Connection> conn){
     return conn->get_mmsghdr();
 }
