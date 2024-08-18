@@ -686,6 +686,7 @@ bool Pair::protocal2read(){
   }
 
   while(true){
+    uint8_t out[9000];
     auto retval = recvmmsg(fd_, msgs + receive_number, MAX_PACKETS, 0, NULL);
 
     if (retval == -1){
@@ -779,32 +780,30 @@ bool Pair::protocal2read(){
             dmludp2read(rx_, rbuf, rnbytes);
             rx_.nread += rnbytes;
           }
-        }else{
-          if (dmludp_conn_receive_complete(dmludp_connection)){
-            NonOwningPtr<UnboundBuffer> rbuf;
-            while(true){
-              struct iovec riov = {
-                .iov_base = nullptr,
-                .iov_len = 0,
-              };
-              const auto rnbytes = prepareRead(rx_, rbuf, riov);
+        }
+      }else{
+        if (dmludp_conn_receive_complete(dmludp_connection)){
+          NonOwningPtr<UnboundBuffer> rbuf;
+          while(true){
+            struct iovec riov = {
+              .iov_base = nullptr,
+              .iov_len = 0,
+            };
+            const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
-              if (rnbytes == 0){
-                readComplete(rbuf);
-                dmludp_conn_recv_reset(dmludp_connection);
-                dmludp_conn_reset_rx_len(dmludp_connection);
-                break;
-              }
+            if (rnbytes == 0){
+              readComplete(rbuf);
+              dmludp_conn_recv_reset(dmludp_connection);
+              dmludp_conn_reset_rx_len(dmludp_connection);
+              break;
+            }
 
-              if (rbuf){
-                dmludp2read(rx_, rbuf, rnbytes);
-                rx_.nread += rnbytes;
-              }
+            if (rbuf){
+              dmludp2read(rx_, rbuf, rnbytes);
+              rx_.nread += rnbytes;
             }
           }
         }
-      }else{
-
       }
     }else if (rv == 5){
       auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
