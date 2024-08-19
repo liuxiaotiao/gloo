@@ -115,9 +115,9 @@ void Socket::listen(int backlog) {
   int rv = 0;
   rv = ::recvfrom(fd_, buf, sizeof(buf), 0, (struct sockaddr *) &peer_addr, &peer_addr_len);
   if(rv > -1){
-    int type;
-    int pkt_num;
-    auto header = dmludp_header_info(buf, 26, type, pkt_num);
+    uint32_t off;
+    uint64_t pkt_num;
+    auto header = dmludp_header_info(buf, 26, off, pkt_num);
     if (header == 2){
       peer = std::move(peer_addr);
       new_socket = true;
@@ -138,10 +138,7 @@ std::shared_ptr<Socket> Socket::accept() {
     // Bind random port in local and remote node.
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
-    // sockaddr_in* addr = (struct sockaddr_in*)&storage;
-    // addr->sin_family = AF_INET;
-    // addr->sin_addr.s_addr = htonl(INADDR_ANY);
-    // addr->sin_port = htons(0); 
+    
     if ((&local)->ss_family == AF_INET) {
       // IPv4
       const sockaddr_in* src_addr = reinterpret_cast<const sockaddr_in*>(&local);
@@ -165,22 +162,14 @@ std::shared_ptr<Socket> Socket::accept() {
     uint8_t out[1500];
     uint8_t buffer[1500];
     ssize_t written = dmludp_conn_send(connection, out, sizeof(out));
-    // auto start = std::chrono::high_resolution_clock::now();
     ssize_t sent = accept_socket->write(out, written);
 
-    // struct sockaddr *tmp_local;
-    // // struct sockaddr *local_addr tmp_peer;
-    // struct sockaddr_storage tmp_peer_addr;
-    // struct sockaddr_storage *local_addr = &local;
     for (;;){
       ssize_t received = accept_socket->read(buffer, 1500);
       if(received < 1){
         continue;
       }
       ssize_t dmludp_recv = dmludp_conn_recv(connection, buffer, received);
-      // auto end = std::chrono::high_resolution_clock::now();
-      // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      // dmludp_set_rtt(connection, duration.count());
       new_socket = false;
       break;
     }
@@ -188,20 +177,6 @@ std::shared_ptr<Socket> Socket::accept() {
   }else{
     return std::shared_ptr<Socket>();
   }
-  // for (;;) {
-  //   rv = ::accept(fd_, (struct sockaddr*)&addr, &addrlen);
-  //   if (rv == -1) {
-  //     if (errno == EINTR) {
-  //       continue;
-  //     }
-  //     // Return empty shared_ptr to indicate failure.
-  //     // The caller can assume errno has been set.
-  //     return std::shared_ptr<Socket>();
-  //   }
-  //   new_socket = false;
-  //   break;
-  // }
-  // return std::make_shared<Socket>(rv);
 }
 
 std::shared_ptr<Connection> Socket::dmludp_conn_connect(struct sockaddr_storage local, struct sockaddr_storage peer){
@@ -281,9 +256,9 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
           continue;
         }
     }
-    int type = 0;
-    int pktnum = 0;
-    auto header = dmludp_header_info(buffer, 26, type, pktnum);
+    uint32_t off = 0;
+    uint64_t pktnum = 0;
+    auto header = dmludp_header_info(buffer, 26, off, pktnum);
     if(header != 2){
       continue;
     }
@@ -291,8 +266,8 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect(local, peer);
     dmludp_connection = connection;
-    dmludp_set_rtt(dmludp_connection, duration.count());
     ssize_t dmludp_recv = dmludp_conn_recv(dmludp_connection, buffer, received);
+    dmludp_set_rtt(dmludp_connection, duration.count());
     written = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     sent = write(out, written);
     new_socket = false;
