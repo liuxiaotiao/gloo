@@ -391,6 +391,8 @@ public:
     bool difference_flag;
 
     bool start_transmission;
+
+    size_t receive_stat;
     ///////////////////////////////
 
     Connection(sockaddr_storage local, sockaddr_storage peer, Config config, bool server):    
@@ -449,7 +451,8 @@ public:
     real_sent(0),
     expect_sent(0),
     has_prepared(false),
-    start_transmission(false)
+    start_transmission(false),
+    receive_stat(0)
     {
         send_ack.reserve(42);
         init();
@@ -881,6 +884,8 @@ public:
         real_sent = 0;
         expect_sent = 0;
         start_transmission = true;
+        send_phrase = true;
+        dmludp_error = 0;
         return completed;
     }
 

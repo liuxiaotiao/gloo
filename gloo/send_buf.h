@@ -311,6 +311,9 @@ const size_t MIN_SENDBUF_INITIAL_LEN = SEND_BUFFER_SIZE;
         };
 
         void manage_recovery(){
+            if(data.empty()){
+                return;
+            }
             data_restore();
             recovery_data();
             reset_iterator();

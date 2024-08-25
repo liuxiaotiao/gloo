@@ -678,7 +678,7 @@ bool Pair::protocal2read(){
   bool is_application = false;
   bool has_elicit_packet = false;
   int receive_number = 0;
-  size_t elicit_index = 0;
+  ssize_t elicit_index = -1;
   size_t elicit_len = 0;
 
   if (receive_number == 0){
@@ -690,11 +690,13 @@ bool Pair::protocal2read(){
     auto retval = recvmmsg(fd_, msgs + receive_number, MAX_PACKETS, 0, NULL);
 
     if (retval == -1){
-      if (errno == EAGAIN) {
-        break;
-      }
+      // if (errno == EAGAIN) {
+      //   break;
+      // }
       if (errno == EINTR){
         continue;
+      }else{
+        break;
       }
     }
 
@@ -726,6 +728,8 @@ bool Pair::protocal2read(){
       }
     }
     receive_number += retval;
+    has_elicit_packet = false;
+    elicit_index = -1
   }
 
   // No Elicit ack, send acknowledge packet.
@@ -735,6 +739,7 @@ bool Pair::protocal2read(){
     auto sent_result = ::send(fd_, ack, result, 0);
   }
 
+  bool complete_flag = false;
   for (auto index = 0; index < receive_number; index++){
     uint32_t offset;
     uint64_t pkt_num;
@@ -742,7 +747,6 @@ bool Pair::protocal2read(){
     rv = static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base)[0];
     auto read = dmludp_packet_length(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
     if (rv == 3){
-      auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
       uint8_t tmp_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
       uint8_t connection_difference = dmludp_receive_connection_difference(dmludp_connection);
       if (tmp_difference != connection_difference){
@@ -752,7 +756,7 @@ bool Pair::protocal2read(){
           continue;
         }
       }
-
+      auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
       if (offset == 0){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
@@ -766,6 +770,7 @@ bool Pair::protocal2read(){
             readComplete(rbuf);
             dmludp_conn_recv_reset(dmludp_connection);
             dmludp_conn_update_receive_info(dmludp_connection);
+            dmludp_clear_recv_setting(dmludp_connection);
             break;
           }
 
@@ -808,8 +813,10 @@ bool Pair::protocal2read(){
     }else if (rv == 5){
       auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
       auto pkt_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
-      
-      if (pkt_difference == dmludp_connection->receive_connection_difference){
+      if (complete_flag){
+        continue;
+      }
+      if (pkt_difference == dmludp_connection->send_connection_difference){
         if (dmludp_connection->send_buffer.total_packets == dmludp_connection->send_buffer.received_offset.size()){
           bool transmission_flag = true;
           for (auto e : dmludp_connection->data_buffer){
@@ -833,6 +840,7 @@ bool Pair::protocal2read(){
               writeComplete(op, sbuf, opcode);
               dmludp_conn_clear_sent_once(dmludp_connection);
               tx_.pop_front();
+              complete_flag = true;
               std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
             }
 
