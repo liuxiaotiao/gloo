@@ -729,7 +729,7 @@ bool Pair::protocal2read(){
     }
     receive_number += retval;
     has_elicit_packet = false;
-    elicit_index = -1
+    elicit_index = -1;
   }
 
   // No Elicit ack, send acknowledge packet.
