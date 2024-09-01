@@ -113,63 +113,6 @@ public:
     };
 };
 
-class Received_Record_Debug{
-public:
-    // key: #packet, value: (offset, length)
-    std::map<uint64_t, std::pair<uint64_t, uint64_t>> pktnum2offset;
-
-    // key: acknowledge packet num, value: (application num, received or not)
-    std::map<uint64_t, std::map<uint64_t, uint8_t>> acknowledege_record;
-
-    std::vector<std::pair<uint64_t, uint64_t>> received_complete_record;
-
-    Received_Record_Debug(){};
-
-    ~Received_Record_Debug(){};
-
-    void add_offset_and_pktnum(uint64_t pn, uint64_t offset, uint16_t len){
-        pktnum2offset.emplace(pn, std::make_pair(offset, len));
-    };
-
-    void add_acknowledeg_info(uint64_t ack_pn, std::map<uint64_t, uint8_t> received){
-        acknowledege_record[ack_pn] = std::move(received);
-    }
-
-    void add_recevie(uint64_t rx_excepted, uint64_t received_len){
-        received_complete_record.emplace_back(rx_excepted, received_len);
-    }
-
-    void clear(){
-        pktnum2offset.clear();
-        acknowledege_record.clear();
-    };
-
-    void show(){
-        std::cout<<"[Receive Error]"<<std::endl;
-        std::cout<<"[Info] Application packet info"<<std::endl;
-        for (const auto& [key, value] : pktnum2offset){
-            std::cout << "Application: " << key << ", offset: " << value.first << ", length:" << value.second << std::endl;
-        }
-        std::cout<<std::endl;
-        std::cout<<"[Info] Acknowledge info"<<std::endl;
-        for (const auto& outer_pair : acknowledege_record) {
-            std::cout << "Acknowledge pktnum: " << outer_pair.first << std::endl;
-
-            // iterate inner map
-            for (const auto& inner_pair : outer_pair.second) {
-                std::cout << "Application num: " << inner_pair.first << ", received: " << (int)inner_pair.second << std::endl;
-            }
-        }
-
-        std::cout<<"[Info] Application packet received"<<std::endl;
-        for (auto it = received_complete_record.begin(); it != received_complete_record.end(); ++it) {
-            std::cout << "[Compare] rx_length:" << it->first << " "<<(it->first == it->second)<< " rlen:" << it->second << std::endl;
-        }   
-        std::cout<<std::endl;
-    }
-
-};
-
 class Connection{
 public: 
     size_t recv_count;
@@ -252,8 +195,6 @@ public:
     SendBuf send_buffer;
 
     RecvBuf rec_buffer;
-
-    Received_Record_Debug RRD;
 
     // Date: 7th Jan 2024
     std::vector<sbuffer> data_buffer;
@@ -395,6 +336,8 @@ public:
     size_t receive_stat;
     ///////////////////////////////
 
+    uint8_t next_differece;
+
     Connection(sockaddr_storage local, sockaddr_storage peer, Config config, bool server):    
     recv_count(0),
     sent_count(0),
@@ -452,7 +395,8 @@ public:
     expect_sent(0),
     has_prepared(false),
     start_transmission(false),
-    receive_stat(0)
+    receive_stat(0),
+    next_differece(1)
     {
         send_ack.reserve(42);
         init();
@@ -529,6 +473,14 @@ public:
         rto = srtt + 4 * rttvar;
         //std::cout<<", rto:"<<std::chrono::duration<double, std::nano>(rto).count()<<std::endl;
     };
+
+    bool is_next_difference(uint8_t packet_differnce_){
+        return packet_differnce_ == next_differece;
+    }
+
+    void update_next_difference(){
+        next_differece = next_differece + 1;
+    }
 
     void set_rtt(uint64_t inter){
         rtt = std::chrono::nanoseconds(inter);

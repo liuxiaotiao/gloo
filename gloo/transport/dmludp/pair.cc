@@ -757,7 +757,7 @@ bool Pair::protocal2read(){
         }
       }
       auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
-      if (offset == 0){
+      if (offset == 0 && is_next_difference(tmp_difference)){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
           struct iovec riov = {
@@ -786,6 +786,7 @@ bool Pair::protocal2read(){
             rx_.nread += rnbytes;
           }
         }
+        dmludp_connection->update_next_difference();
       }else{
         if (dmludp_conn_receive_complete(dmludp_connection)){
           NonOwningPtr<UnboundBuffer> rbuf;
