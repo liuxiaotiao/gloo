@@ -418,26 +418,19 @@ public:
     void initial_rtt() {
         auto arrive_time = std::chrono::high_resolution_clock::now();
         srtt = arrive_time - handshake;
-        // std::cout<<"Initial rtt:"<<std::chrono::duration<double, std::nano>(srtt).count();
         rttvar = srtt / 2;
-        // std::cout<<", rttvar:"<<std::chrono::duration<double, std::nano>(rttvar).count();
         rto = srtt + 4 * rttvar;
-        //std::cout<<"rto:"<<std::chrono::duration<double, std::nano>(rto).count()<<std::endl;
     }
 
     void update_rtt2(std::chrono::high_resolution_clock::time_point tmp_handeshake){
         auto arrive_time = std::chrono::high_resolution_clock::now();
         rtt = arrive_time - tmp_handeshake;
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(arrive_time.time_since_epoch()).count();
-        // std::cout << "update_rtt: " << now_ns << " ns" << ", srtt:"<<srtt.count()<<", rtt:"<<rtt.count()<<std::endl;
         auto tmp_srtt = std::chrono::duration<double, std::nano>(srtt.count() * alpha + (1 - alpha) * rtt.count());
-        // std::cout<<"tmp_srtt:"<<tmp_srtt.count();
         srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_srtt);
         auto diff = srtt - rtt;
         auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
-        // std::cout<<", tmp_rttvar:"<<tmp_rttvar.count();
         srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
-        // std::cout<<", new srtt:"<<srtt.count();
         rto = srtt + 4 * rttvar;
     }
 
@@ -571,10 +564,7 @@ public:
                 recv_dic.insert(std::make_pair(pkt_offset, pkt_priorty));
             }
 
-            receive_pktnum2offset.insert(std::make_pair(pkt_num, std::make_pair(pkt_offset, 1)));
-            
-            // std::cout<<"receive buffer size:"<<rec_buffer.data.size()<<std::endl;
-                     
+            receive_pktnum2offset.insert(std::make_pair(pkt_num, std::make_pair(pkt_offset, 1)));                     
         }
 
         // In dmludp.h
@@ -603,7 +593,6 @@ public:
                 return 0;
             }
                 
-            // RRD.add_offset_and_pktnum(hdr->pkt_num, hdr->offset, hdr->pkt_length);
             uint8_t tmp_send = pkt_difference + 1;
             uint8_t tmp_received = receive_connection_difference + 1;
             if (tmp_send == receive_connection_difference){
@@ -1553,7 +1542,8 @@ public:
 
         auto pn = elicit_acknowledege_packet_number;
 	    // std::cout<<"acknowledge pn:"<<pn<<std::endl;
-        Header* hdr = new Header(ty, pn, 0, 0, pn, 0, send_connection_difference, pktlen);
+        // Header* hdr = new Header(ty, pn, 0, 0, pn, 0, send_connection_difference, pktlen);
+        auto hdr = std::make_unique<Header>(ty, pn, 0, 0, pn, 0, send_connection_difference, pktlen);
 	    // std::cout<<"ack send_connection_difference:"<<(int)send_connection_difference<<std::endl;
         // std::cout<<"[Elicit] Elicit acknowledge packet num:"<<pn<<std::endl;
         send_ack.resize(HEADER_LENGTH + 2 * sizeof(uint64_t));
@@ -1562,8 +1552,8 @@ public:
         memcpy(send_ack.data() + HEADER_LENGTH, &start_pktnum, sizeof(uint64_t));
         memcpy(send_ack.data() + HEADER_LENGTH + sizeof(uint64_t), &end_pktnum, sizeof(uint64_t));
 
-        delete hdr; 
-        hdr = nullptr; 
+        // delete hdr; 
+        // hdr = nullptr; 
 
         pktlen += HEADER_LENGTH;
         return pktlen;
@@ -1667,19 +1657,20 @@ public:
         if (ty == Type::ACK){
             feed_back = false;
             psize = (uint64_t)(receive_result.size()) + 2 * sizeof(uint64_t);
-            Header* hdr = new Header(ty, send_num, 0, 0, send_num, 1, receive_connection_difference, psize);
+            // Header* hdr = new Header(ty, send_num, 0, 0, send_num, 1, receive_connection_difference, psize);
+            auto hdr = std::make_unique<Header>(ty, send_num, 0, 0, send_num, 1, receive_connection_difference, psize);
             if (difference_flag){
                 uint8_t tmp = receive_connection_difference - 1;
                 hdr->difference = tmp;
             }
-            memcpy(out, hdr, HEADER_LENGTH);
+            memcpy(out, hdr.get(), HEADER_LENGTH);
             memcpy(out + HEADER_LENGTH, &receive_range.first, sizeof(uint64_t));
             memcpy(out + HEADER_LENGTH + sizeof(uint64_t), &receive_range.second, sizeof(uint64_t));
             memcpy(out + HEADER_LENGTH + 2 * sizeof(uint64_t), receive_result.data(), receive_result.size());
             receive_result.clear();
             difference_flag = false;
-            delete hdr; 
-            hdr = nullptr; 
+            // delete hdr; 
+            // hdr = nullptr; 
         }      
 
         if (ty == Type::Fin){
@@ -1703,12 +1694,13 @@ public:
         auto start = current_loop_min;
         auto end = current_loop_max;
         uint64_t psize = end - start + 1;
-        Header* hdr = new Header(ty, send_num, 0, 0, send_num, 0, receive_connection_difference, psize);
+        // Header* hdr = new Header(ty, send_num, 0, 0, send_num, 0, receive_connection_difference, psize);
+        auto hdr = std::make_unique<Header>(ty, send_num, 0, 0, send_num, 0, receive_connection_difference, psize);
         if(difference_flag){
             uint8_t tmp = receive_connection_difference - 1;
             hdr->difference = tmp;
         }
-        memcpy(src, hdr, HEADER_LENGTH);
+        memcpy(src, hdr.get(), HEADER_LENGTH);
         memcpy(src + HEADER_LENGTH, &start, sizeof(Packet_num_len));
         memcpy(src + HEADER_LENGTH + sizeof(Packet_num_len), &end, sizeof(Packet_num_len));
 
@@ -1740,11 +1732,12 @@ public:
 
         auto ty = Type::Stop; 
 
-        Header* hdr = new Header(ty, pn, offset, priority, 0, 0, send_connection_difference, psize);
+        // Header* hdr = new Header(ty, pn, offset, priority, 0, 0, send_connection_difference, psize);
+        auto hdr = std::make_unique<Header>(ty, pn, offset, priority, 0, 0, send_connection_difference, psize);
 
-        memcpy(out, hdr, HEADER_LENGTH);
-        delete hdr; 
-        hdr = nullptr; 
+        memcpy(out, hdr.get(), HEADER_LENGTH);
+        // delete hdr; 
+        // hdr = nullptr; 
 
         return total_len;
     };
