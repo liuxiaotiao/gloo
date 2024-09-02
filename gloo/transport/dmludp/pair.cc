@@ -707,12 +707,13 @@ bool Pair::protocal2read(){
       if (read > 0){
         uint32_t offset;
         uint64_t pkt_num;
-
+        ///
         uint8_t tmp_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
         uint8_t connection_difference = dmludp_receive_connection_difference(dmludp_connection);
         uint8_t tmp_difference2 = tmp_difference + 1;
         if (tmp_difference2 == connection_difference){
           initial_index = index;
+          bool complete_flag = false;
           for (auto index = 0; index < initial_index; index++){
             uint32_t offset;
             uint64_t pkt_num;
@@ -835,6 +836,7 @@ bool Pair::protocal2read(){
             }
           }
         }
+        ///
 
         rv = dmludp_process_header_info(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), 26, offset, pkt_num);
 
