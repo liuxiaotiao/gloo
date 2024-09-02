@@ -31,25 +31,54 @@ namespace dmludp{
 
         ~RecvBuf(){};
 
-	    void write(uint8_t* out, size_t out_len, uint64_t out_off){
-            auto data_len = data.size();
+	    void write(uint8_t* out, size_t out_len, uint64_t out_off, void * target_ = nullptr){
+            if (!convert_flag){
+                auto data_len = data.size();
 
-            if(out_off > data_len){
-		        data.resize(out_off + out_len);
-		        memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
+                if(out_off > data_len){
+                    data.resize(out_off + out_len);
+                    memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
+                }
+                else if(out_off == data_len){
+                    data.resize(out_off + out_len);
+                    memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
+                }
+                else{
+                    size_t startPos = out_off;
+                    memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
+                }
+                len += out_len;
+                if (len > data.size()){
+                    std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+                    _Exit(0);
+                }
+            }else{
+                auto data_len = last_maxoff;
+                if(out_off > data_len){
+                    last_maxoff = out_off + out_len;
+                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
+                }
+                else if(out_off == data_len){
+                    last_maxoff = out_off + out_len;
+                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
+                }else{
+                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
+                }
+
+                len += out_len;
+                if (len > last_maxoff){
+                    std::cout<<"[Debug] receive len:"<<len<<" last_maxoff:"<<last_maxoff<std::endl;
+                    _Exit(0);
+                }
             }
-            else if(out_off == data_len){
-		        data.resize(out_off + out_len);
-                memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
-            }
-            else{
-                size_t startPos = out_off;
-                memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
-            }
-            len += out_len;
-	        if (len > data.size()){
-				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
-                _Exit(0);
+        }
+
+        void get_target(void * target_){
+            src = target_;
+            convert_flag = true;
+            if(data.size() > 48){
+                memcpy(src, data.data() + 48, data.size() - 48);
+                data.resize(48);
             }
         }
 
@@ -89,15 +118,15 @@ namespace dmludp{
         // when output_len is 0, left data will be emiited.
         size_t emit(uint8_t* out, bool iscopy, size_t output_len = 0){
             size_t emitLen = 0;
-            if (iscopy){
-                if (output_len == 0){
-                    memcpy(out, data.data() + removed, data.size());
-                    convert_flag = false;
-                    emitLen = data.size() - removed;
-                    removed = data.size();
-                    return emitLen;
-                }
-
+            // if (iscopy){
+            // if (output_len == 0){
+            //     memcpy(out, data.data() + removed, data.size());
+            //     convert_flag = false;
+            //     emitLen = data.size() - removed;
+            //     removed = data.size();
+            //     return emitLen;
+            // }
+            if (!convert_flag){
                 if ((output_len + removed) > data.size()){
                     return emitLen;
                 }
@@ -111,36 +140,43 @@ namespace dmludp{
                 emitLen = output_len;
                 removed += output_len;
             }else{
-                if (output_len == 0){
-                    out = static_cast<uint8_t*>(data.data() + removed);
-                    emitLen = data.size() - removed;
-                    removed = data.size();
-                    return emitLen;
-                }
-
-                if ((output_len + removed) > data.size()){
-                    return emitLen;
-                }
-
-                if (removed == data.size()){
-                    return emitLen;
-                }
-
-                out = static_cast<uint8_t*>(data.data() + removed);
-                emitLen = output_len;
-                removed += output_len;
+                emitLen = last_maxoff - 48;
             }
+            
+            // }else{
+            //     if (output_len == 0){
+            //         out = static_cast<uint8_t*>(data.data() + removed);
+            //         emitLen = data.size() - removed;
+            //         removed = data.size();
+            //         return emitLen;
+            //     }
+
+            //     if ((output_len + removed) > data.size()){
+            //         return emitLen;
+            //     }
+
+            //     if (removed == data.size()){
+            //         return emitLen;
+            //     }
+
+            //     out = static_cast<uint8_t*>(data.data() + removed);
+            //     emitLen = output_len;
+            //     removed += output_len;
+            // }
             return emitLen;
         }
 
         void reset() {
-            data.clear();
+            data.resize(0);
             removed = 0;
             len = 0;
+            src = nullptr;
+            last_maxoff = 0;
+            convert_flag = false;
         };
 
         void shutdown()  {
-            data.clear();
+            data.resize(0);
             len = 0;
         };
 

@@ -757,7 +757,7 @@ bool Pair::protocal2read(){
         }
       }
       auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
-      if (offset == 0 && is_next_difference(tmp_difference)){
+      if (offset == 0 && dmludp_connection->is_next_difference(tmp_difference)){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
           struct iovec riov = {
@@ -776,6 +776,7 @@ bool Pair::protocal2read(){
 
           if (rbuf){
             dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
+            dmludp_connection->dmludp_conn_recv_target(iov.iov_base);
             break;
           }
           
@@ -933,57 +934,6 @@ bool Pair::protocal2send(){
   device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
 
   return true;
-
-  // std::vector<uint8_t> padding(1446, 0);
-  // std::vector<struct mmsghdr> messages;
-  // std::vector<struct iovec> iovecs;
-  // auto wlen= dmludp_data_send_mmsg(dmludp_connection, padding, messages, iovecs);
-  // // auto wlen= dmludp_data_send_msg(dmludp_connection, padding, messages, iovecs); 
-  // // No data needs to send.
-  // if (messages.size() == 0){
-  //   return false;
-  // }
-
-  // size_t sent = 0;
-  // auto has_error = dmludp_get_dmludp_error(dmludp_connection);
-
-  // while(messages.size() > sent){
-  //   auto retval = sendmmsg(fd_, messages.data() + sent, messages.size() - sent, 0);
-
-  //   if (retval == -1){
-  //     // Date: solve data cannot send out one time.
-  //     // Move errno == EINTR out of while(1)
-  //     if (errno == EINTR){
-  //       continue;
-  //     }
-
-  //     if (errno == EAGAIN){
-  //     	dmludp_set_error(dmludp_connection, EAGAIN, sent);
-  //     }
-  //     return false;
-  //   }
-  //   sent += retval;
-  // }
- 
-  // if (has_error == 11 && (sent == messages.size())){
-  //   dmludp_set_error(dmludp_connection, 0, 0);
-  // }
-
-  // while (true){
-  //   std::vector<uint8_t> out;
-  //   ssize_t ack_len = dmludp_send_elicit_ack_message(dmludp_connection, out);
-  //   if (ack_len == -1){
-  //     break;
-  //   }
-  //   if (ack_len > 0){
-  //     auto socketwrite = ::send(fd_, out.data(), out.size(), 0);
-  //     if(socketwrite == -1 && errno == EAGAIN){
-	//      // std::cout<<"ack EAGAIN"<<std::endl;
-  //     }
-  //   }
-  // }
-
-  // return true;
 }
 
 void Pair::handleReadWrite(int events){

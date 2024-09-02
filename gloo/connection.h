@@ -461,17 +461,12 @@ public:
         auto arrive_time = std::chrono::high_resolution_clock::now();
         rtt = arrive_time - handshake;    
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(arrive_time.time_since_epoch()).count();
-       // std::cout << "update_rtt: " << now_ns << " ns" << ", srtt:"<<srtt.count()<<", rtt:"<<rtt.count();
         auto tmp_srtt = std::chrono::duration<double, std::nano>(srtt.count() * alpha + (1 - alpha) * rtt.count());
-        // std::cout<<"tmp_srtt:"<<tmp_srtt.count();
         srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_srtt);
         auto diff = srtt - rtt;
         auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
-        // std::cout<<", tmp_rttvar:"<<tmp_rttvar.count();
         srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
-        // std::cout<<", new srtt:"<<srtt.count();
         rto = srtt + 4 * rttvar;
-        //std::cout<<", rto:"<<std::chrono::duration<double, std::nano>(rto).count()<<std::endl;
     };
 
     bool is_next_difference(uint8_t packet_differnce_){
@@ -535,9 +530,6 @@ public:
         
         // All side can send data.
         if (pkt_ty == Type::ACK){
-            // handshake = std::chrono::high_resolution_clock::now();
-            // auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(handshake.time_since_epoch()).count();
-            //std::cout << "ack ts: " << now_ns << " ns" << std::endl;
             process_acknowledge(src, src_len);
 	    }
 
@@ -549,27 +541,17 @@ public:
                 All elicit acknowledge should be responsed with all 1
             */
             recv_flag = true;
-            // std::cout<<"[Receive] ElicitAck packet number:"<<hdr->pkt_num<<std::endl;
             send_num = pkt_num;
             check_loss_pktnum(src, src_len);
             feed_back = true;
         }
 
         if (pkt_ty == Type::Application){
-            // std::cout<<"[Debug] application offset:"<<pkt_offset<<", pn:"<<pkt_num<<std::endl;
             if (receive_pktnum2offset.find(pkt_num) != receive_pktnum2offset.end()){
                 if(receive_pktnum2offset.at(pkt_num).second == 1){
                     return 0;
 		        }
             }
-            // std::cout<<"[Error] Duplicate application packet"<<std::endl;
-            //     _Exit(0);
-            // }
-            
-            // RRD.add_offset_and_pktnum(hdr->pkt_num, hdr->offset, hdr->pkt_length);
-            // if (pkt_offset == 0){
-            //     clear_recv_setting();
-            // }
 
             if (pkt_difference != receive_connection_difference){
                 clear_recv_setting();
@@ -644,11 +626,7 @@ public:
 
             // Debug
             if (recv_dic.find(off) != recv_dic.end()){
-                // std::cout<<"[Error] same offset:"<<off<<std::endl;
-                // _Exit(0);
                 receive_pktnum2offset.insert(std::make_pair(pn, std::make_pair(off,0)));
-                // // Debug
-                // recv_dic.insert(std::make_pair(off, pkt_priorty));
             }else{
                 recv_count += 1;
                 // optimize to reduce copy time.
@@ -734,7 +712,6 @@ public:
                     }else{
                         recovery.update_win(true);
                     }
-                    // send_unack_packet_record.clear();
                     send_signal = true;
                 }else{
                     // Just cover partial received info.
@@ -774,6 +751,10 @@ public:
             return true;
         }
         return false;
+    }
+
+    void dmludp_conn_recv_target(void * target_){
+        rec_buffer.get(target_);
     }
 
     void rx_len(size_t expected){
@@ -996,40 +977,6 @@ public:
 	        std::cout<<"send buffer data size:"<<send_buffer.data.size()<<std::endl;
             _Exit(0);
         }
-        /*std::cout<<"ssend_message_start:"<<send_message_start<<", end_message_end:"<<send_message_end<<std::endl;
-        if(send_message_end%2==0){
-            for(auto i = 0; i < send_message_end; i++){
-                for (size_t j = 0; j < send_iovecs[2*i].iov_len; ++j) {
-                    std::cout << (int)static_cast<uint8_t*>(send_iovecs[2*i].iov_base)[j]<<" ";
-                }
-                std::cout << std::endl;
-            }
-        }else{
-            for(auto i = 0; i < send_message_end - 1; i++){
-                for (size_t j = 0; j < send_iovecs[2*i].iov_len; ++j) {
-                    std::cout << (int)static_cast<uint8_t*>(send_iovecs[2*i].iov_base)[j]<<" ";
-                }
-                std::cout << std::endl;
-            }
-        }*/
-        // for (auto i = send_message_start; i < send_message_end; i++){
-        //     if (send_messages.at(i).msg_hdr.msg_iovlen == 2){
-        //         std::cout<<"packet_number:"<<reinterpret_cast<Header *>(static_cast<uint8_t*>(send_messages[i].msg_hdr.msg_iov[0].iov_base))->pkt_num
-        //             <<", offser:"<<reinterpret_cast<Header *>(static_cast<uint8_t*>(send_messages[i].msg_hdr.msg_iov[0].iov_base))->offset
-        //             <<", difference:"<<(int)reinterpret_cast<Header *>(static_cast<uint8_t*>(send_messages[i].msg_hdr.msg_iov[0].iov_base))->difference<<std::endl;
-        //     }
-        // }
-        /*for (auto k =send_message_start; k<send_messages.size();k++) {
-            for (size_t i = 0; i < send_messages[k].msg_hdr.msg_iovlen; ++i) {
-                if (send_messages[k].msg_hdr.msg_iov[i].iov_len == 26){
-			    std::cout<<"k:"<<k<<" ";
-                    for(auto j = 0; j < 26; j++){
-                        std::cout << (int)(static_cast<uint8_t*>(send_messages[k].msg_hdr.msg_iov[i].iov_base))[j]<< " ";
-                    }
-                    std::cout<<std::endl;
-                }
-            }
-        }*/
         return send_messages;
     }
 
@@ -1116,8 +1063,6 @@ public:
             // Data preparation phrase.
             return 0;
         }else{
-            //	std::cout<<"send_buffer.size:"<<send_buffer.data.size()<<std::endl;
-            //	std::cout<<"send_buffer.offset.size:"<<send_buffer.received_offset.size()<<std::endl;
             // TODO
             // Recheck cwnd <=>? real data in buffer
             last_elicit_ack_pktnum = pkt_num_spaces.at(1).updatepktnum();
@@ -1234,19 +1179,7 @@ public:
         if (err_ != 0){
             return;
         }
-        /*std::cout<<"++++++++++++++++++++++++++++++"<<std::endl;
-        for (auto k =send_message_start; k<send_message_end;k++) {
-            for (size_t i = 0; i < send_messages[k].msg_hdr.msg_iovlen; ++i) {
-                if (send_messages[k].msg_hdr.msg_iov[i].iov_len == 26){
-                        std::cout<<"k:"<<k<<" ";
-                    for(auto j = 0; j < 26; j++){
-                        std::cout << (int)(static_cast<uint8_t*>(send_messages[k].msg_hdr.msg_iov[i].iov_base))[j]<< " ";
-                    }
-                    std::cout<<std::endl;
-                }
-            }
-        }
-	    std::cout<<"------------------------------"<<std::endl;*/
+    
         if(!send_phrase){
             received_packets = 0;
 	        partial_send = false;
@@ -1256,14 +1189,9 @@ public:
         set_handshake();
         send_phrase = true;
 
-        // sent_packet_range.first = send_hdrs.at(0)->pkt_num;
-        // auto end_index = std::min((send_message_end - 2), (ssize_t)(send_hdrs.size() - 1));
-        // sent_packet_range.second = send_hdrs.at(end_index)->pkt_num;
-        //std::cout<<"first:"<<sent_packet_range.first<<", second:"<<sent_packet_range.second<<std::endl;
         if (data_gotten){
             data_gotten = false;
         }
-	    // std::cout<<"last_elicit_ack_pktnum:"<<last_elicit_ack_pktnum<<std::endl;
         
         if (send_message_end >= send_messages.size()){
             send_hdrs.clear();
@@ -1271,9 +1199,7 @@ public:
             send_iovecs.clear(); 
         }else{
             mmsg_rearrange();
-            // std::cout<<"mmsg_rearrange(), send_messages.size:"<<send_messages.size()<<std::endl;
         }
-
         
         received_packets = 0;
         partial_send_packets = 0;
@@ -1323,16 +1249,13 @@ public:
         size_t remove_size = send_message_end;  
         //TODO
         // Didn't consider acknowldege in this structure. Rethinkg send_hdrs, send_iovecs.
-	    //std::cout<<"send_hdrs.size():"<<send_hdrs.size()<<", remove_size:"<<remove_size<<std::endl;
         if(remove_size >= 0 && remove_size <= send_hdrs.size()){
             send_hdrs.erase(send_hdrs.begin(), send_hdrs.begin() + remove_size - 1);
         }
-        //std::cout<<"send_messages.size():"<<send_messages.size()<<", remove_size:"<<remove_size<<std::endl;
         if(remove_size >= 0 && remove_size <= send_messages.size()){
             send_messages.erase(send_messages.begin(), send_messages.begin() + remove_size);
         }
         
-	    //std::cout<<"send_iovecs.size():"<<send_iovecs.size()<<", remove_size:"<<remove_size<<std::endl;
         if(remove_size >= 0 && remove_size < send_iovecs.size()){
             send_iovecs.erase(send_iovecs.begin(), send_iovecs.begin() + 2 * (remove_size - 1));
         }
@@ -1344,14 +1267,9 @@ public:
 
         send_messages.clear();
         send_messages.resize(send_hdrs.size());
-	    //std::cout<<"send_messages.size:"<<send_messages.size()<<", send_iovecs.size:"<<send_iovecs.size()<<", send_hdrs.size:"<<send_hdrs.size()<<std::endl;
         for (auto i = 0; i < send_messages.size(); i++){
             send_messages.at(i).msg_hdr.msg_iov = &send_iovecs.at(2*i);
             send_messages.at(i).msg_hdr.msg_iovlen = 2;
-	        /*for(auto j = 0; j < send_iovecs[2*i].iov_len ;j++){
-                std::cout<<(int)static_cast<uint8_t*>(send_iovecs[2*i].iov_base)[j]<<" ";
-            }
-            std::cout<<std::endl;*/
         }
 
         for(auto i = 0; i < send_hdrs.size(); i++){
