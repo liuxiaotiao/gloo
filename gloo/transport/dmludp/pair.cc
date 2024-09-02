@@ -776,7 +776,7 @@ bool Pair::protocal2read(){
 
           if (rbuf){
             dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
-            dmludp_connection->dmludp_conn_recv_target(iov.iov_base);
+            dmludp_connection->dmludp_conn_recv_target(riov.iov_base);
             break;
           }
           

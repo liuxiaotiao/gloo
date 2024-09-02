@@ -67,7 +67,7 @@ namespace dmludp{
 
                 len += out_len;
                 if (len > last_maxoff){
-                    std::cout<<"[Debug] receive len:"<<len<<" last_maxoff:"<<last_maxoff<std::endl;
+                    std::cout<<"[Debug] receive len:"<<len<<" last_maxoff:"<<last_maxoff<<std::endl;
                     _Exit(0);
                 }
             }
