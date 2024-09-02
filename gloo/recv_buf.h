@@ -118,14 +118,6 @@ namespace dmludp{
         // when output_len is 0, left data will be emiited.
         size_t emit(uint8_t* out, bool iscopy, size_t output_len = 0){
             size_t emitLen = 0;
-            // if (iscopy){
-            // if (output_len == 0){
-            //     memcpy(out, data.data() + removed, data.size());
-            //     convert_flag = false;
-            //     emitLen = data.size() - removed;
-            //     removed = data.size();
-            //     return emitLen;
-            // }
             if (!convert_flag){
                 if ((output_len + removed) > data.size()){
                     return emitLen;
@@ -142,27 +134,6 @@ namespace dmludp{
             }else{
                 emitLen = last_maxoff - 48;
             }
-            
-            // }else{
-            //     if (output_len == 0){
-            //         out = static_cast<uint8_t*>(data.data() + removed);
-            //         emitLen = data.size() - removed;
-            //         removed = data.size();
-            //         return emitLen;
-            //     }
-
-            //     if ((output_len + removed) > data.size()){
-            //         return emitLen;
-            //     }
-
-            //     if (removed == data.size()){
-            //         return emitLen;
-            //     }
-
-            //     out = static_cast<uint8_t*>(data.data() + removed);
-            //     emitLen = output_len;
-            //     removed += output_len;
-            // }
             return emitLen;
         }
 

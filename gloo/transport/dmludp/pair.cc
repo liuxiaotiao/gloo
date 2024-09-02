@@ -680,6 +680,7 @@ bool Pair::protocal2read(){
   int receive_number = 0;
   ssize_t elicit_index = -1;
   size_t elicit_len = 0;
+  size_t initial_index = 0;
 
   if (receive_number == 0){
     dmludp_update_receive_parameters(dmludp_connection);
@@ -706,6 +707,134 @@ bool Pair::protocal2read(){
       if (read > 0){
         uint32_t offset;
         uint64_t pkt_num;
+
+        uint8_t tmp_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
+        uint8_t connection_difference = dmludp_receive_connection_difference(dmludp_connection);
+        uint8_t tmp_difference2 = tmp_difference + 1;
+        if (tmp_difference2 == connection_difference){
+          initial_index = index;
+          for (auto index = 0; index < initial_index; index++){
+            uint32_t offset;
+            uint64_t pkt_num;
+            uint8_t rv = dmludp_header_info(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), 26, offset, pkt_num);
+            rv = static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base)[0];
+            auto read = dmludp_packet_length(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
+            if (rv == 3){
+              uint8_t tmp_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
+              uint8_t connection_difference = dmludp_receive_connection_difference(dmludp_connection);
+              if (tmp_difference != connection_difference){
+                // packet_differnce < receive_difference, old packet should be dropped.
+                tmp_difference = tmp_difference + 1;
+                if (tmp_difference == connection_difference){
+                  continue;
+                }
+              }
+              auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
+              if (offset == 0 && dmludp_connection->is_next_difference(tmp_difference)){
+                NonOwningPtr<UnboundBuffer> rbuf;
+                while(true){
+                  struct iovec riov = {
+                    .iov_base = nullptr,
+                    .iov_len = 0,
+                  };
+                  const auto rnbytes = prepareRead(rx_, rbuf, riov);
+                  
+                  if (rnbytes == 0){
+                    readComplete(rbuf);
+                    dmludp_conn_recv_reset(dmludp_connection);
+                    dmludp_conn_update_receive_info(dmludp_connection);
+                    dmludp_clear_recv_setting(dmludp_connection);
+                    break;
+                  }
+
+                  if (rbuf){
+                    dmludp_conn_rx_len(dmludp_connection, sizeof(rx_.preamble) + rnbytes);
+                    dmludp_connection->dmludp_conn_recv_target(riov.iov_base);
+                    break;
+                  }
+                  
+                  bool check_result = dmludp_check_first_entry(dmludp_connection, rnbytes);
+            
+                  if (check_result){
+                    dmludp2read(rx_, rbuf, rnbytes);
+                    rx_.nread += rnbytes;
+                  }
+                }
+                dmludp_connection->update_next_difference();
+              }else{
+                if (dmludp_conn_receive_complete(dmludp_connection)){
+                  NonOwningPtr<UnboundBuffer> rbuf;
+                  while(true){
+                    struct iovec riov = {
+                      .iov_base = nullptr,
+                      .iov_len = 0,
+                    };
+                    const auto rnbytes = prepareRead(rx_, rbuf, riov);
+
+                    if (rnbytes == 0){
+                      readComplete(rbuf);
+                      dmludp_conn_recv_reset(dmludp_connection);
+                      dmludp_conn_reset_rx_len(dmludp_connection);
+                      break;
+                    }
+
+                    if (rbuf){
+                      dmludp2read(rx_, rbuf, rnbytes);
+                      rx_.nread += rnbytes;
+                    }
+                  }
+                }
+              }
+            }else if (rv == 5){
+              auto dmludpread = dmludp_conn_recv(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), msgs[index].msg_hdr.msg_iov->iov_len);
+              auto pkt_difference = dmludp_packet_difference(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base));
+              if (complete_flag){
+                continue;
+              }
+              if (pkt_difference == dmludp_connection->send_connection_difference){
+                if (dmludp_connection->send_buffer.total_packets == dmludp_connection->send_buffer.received_offset.size()){
+                  bool transmission_flag = true;
+                  for (auto e : dmludp_connection->data_buffer){
+                    if (e.left != 0){
+                        transmission_flag = false;
+                    }
+                  }
+
+                  if(transmission_flag){
+                    auto &op = tx_.front();
+                    const auto opcode = op.getOpcode();
+                    if (opcode == Op::SEND_UNBOUND_BUFFER) {
+                      sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+                      if (!sbuf) {
+                        return false;
+                      }
+                    }
+
+                    op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
+                    if (op.nwritten == op.preamble.nbytes){
+                      writeComplete(op, sbuf, opcode);
+                      dmludp_conn_clear_sent_once(dmludp_connection);
+                      tx_.pop_front();
+                      complete_flag = true;
+                      std::cout<<"[Debug] After pop_front, tx_.size:"<<tx_.size()<<std::endl;
+                    }
+
+                    dmludp_connection->data_buffer.clear();
+                    dmludp_connection->current_buffer_pos = 0;
+                    dmludp_connection->send_buffer.clear();
+                    dmludp_connection->send_messages.clear();
+                    dmludp_connection->send_iovecs.clear();
+                  }
+                }
+              }
+              if (tx_.empty()) {
+                device_->registerDescriptor(fd_, EPOLLIN, this);
+              }else{
+                device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+              }
+            }
+          }
+        }
 
         rv = dmludp_process_header_info(dmludp_connection, static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), 26, offset, pkt_num);
 
@@ -740,7 +869,7 @@ bool Pair::protocal2read(){
   }
 
   bool complete_flag = false;
-  for (auto index = 0; index < receive_number; index++){
+  for (auto index = initial_index; index < receive_number; index++){
     uint32_t offset;
     uint64_t pkt_num;
     uint8_t rv = dmludp_header_info(static_cast<uint8_t *>(msgs[index].msg_hdr.msg_iov->iov_base), 26, offset, pkt_num);

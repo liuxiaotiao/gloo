@@ -754,7 +754,7 @@ public:
     }
 
     void dmludp_conn_recv_target(void * target_){
-        rec_buffer.get(target_);
+        rec_buffer.get_target(target_);
     }
 
     void rx_len(size_t expected){
