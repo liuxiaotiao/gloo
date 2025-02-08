@@ -1,15 +1,11 @@
 #pragma once
 
-#include "gloo/RangeBuf.h"
-#include <deque>
-#include <map>
 #include <vector>
 #include <stdlib.h>
 namespace dmludp{
 
-     class RecvBuf{
+    class RecvBuf{
         public:
-        // std::map<uint64_t, std::shared_ptr<RangeBuf>> data;
         std::vector<uint8_t> data;
 
         void * src = nullptr;
@@ -21,56 +17,42 @@ namespace dmludp{
 
         uint64_t len;
 
-        uint64_t last_maxoff;
-
-        uint64_t max_recv_off;
-
         size_t removed;
 
-        RecvBuf():off(0), len(0), last_maxoff(0), max_recv_off(0), removed(0), convert_flag(false){};
+        RecvBuf():off(0), len(0), removed(0), convert_flag(false), data(104857600, 0){};
 
         ~RecvBuf(){};
 
-	    void write(uint8_t* out, size_t out_len, uint64_t out_off, void * target_ = nullptr){
-            if (!convert_flag){
-                auto data_len = data.size();
+        void reg(size_t out_len){
+            len += out_len;
+        }
 
-                if(out_off > data_len){
-                    data.resize(out_off + out_len);
-                    memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
-                }
-                else if(out_off == data_len){
-                    data.resize(out_off + out_len);
-                    memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
-                }
-                else{
-                    size_t startPos = out_off;
-                    memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
-                }
-                len += out_len;
-                if (len > data.size()){
-                    std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
-                    _Exit(0);
-                }
-            }else{
-                auto data_len = last_maxoff;
-                if(out_off > data_len){
-                    last_maxoff = out_off + out_len;
-                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
-                }
-                else if(out_off == data_len){
-                    last_maxoff = out_off + out_len;
-                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
-                }else{
-                    memcpy(src + out_off - 48, out, out_len * sizeof(uint8_t));
-                }
+	    void write(uint8_t* out, size_t out_len, uint64_t out_off){
+            auto data_len = data.size();
 
-                len += out_len;
-                if (len > last_maxoff){
-                    std::cout<<"[Debug] receive len:"<<len<<" last_maxoff:"<<last_maxoff<<std::endl;
-                    _Exit(0);
-                }
+            if(out_off > data_len){
+		        data.resize(out_off + out_len);
+		        memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
             }
+            else if(out_off == data_len){
+		        data.resize(out_off + out_len);
+                memcpy(data.data() + data.size() - out_len, out, out_len * sizeof(uint8_t));
+            }
+            else{
+                size_t startPos = out_off;
+                // size_t endPos = out_off + out_len;
+                memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
+            }
+            // len += out_len;
+    	    // std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+	        if (len > data.size()){
+				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
+                _Exit(0);
+            }
+        }
+
+        size_t receive_length(){
+            return len;
         }
 
         void get_target(void * target_){
@@ -80,13 +62,6 @@ namespace dmludp{
                 memcpy(src, data.data() + 48, data.size() - 48);
                 data.resize(48);
             }
-        }
-
-        size_t receive_length(){
-            return len;
-        }
-        uint64_t max_ack(){
-            return max_recv_off;
         }
 
         bool is_empty(){
@@ -118,7 +93,16 @@ namespace dmludp{
         // when output_len is 0, left data will be emiited.
         size_t emit(uint8_t* out, bool iscopy, size_t output_len = 0){
             size_t emitLen = 0;
-            if (!convert_flag){
+            if (iscopy){
+                if (output_len == 0){
+                    // out = static_cast<uint8_t*>(data.data() + removed);
+                    memcpy(out, data.data() + removed, data.size());
+                    convert_flag = false;
+                    emitLen = data.size() - removed;
+                    removed = data.size();
+                    return emitLen;
+                }
+
                 if ((output_len + removed) > data.size()){
                     return emitLen;
                 }
@@ -132,22 +116,36 @@ namespace dmludp{
                 emitLen = output_len;
                 removed += output_len;
             }else{
-                emitLen = last_maxoff - 48;
+                if (output_len == 0){
+                    out = static_cast<uint8_t*>(data.data() + removed);
+                    emitLen = data.size() - removed;
+                    removed = data.size();
+                    return emitLen;
+                }
+
+                if ((output_len + removed) > data.size()){
+                    return emitLen;
+                }
+
+                if (removed == data.size()){
+                    return emitLen;
+                }
+
+                out = static_cast<uint8_t*>(data.data() + removed);
+                emitLen = output_len;
+                removed += output_len;
             }
             return emitLen;
         }
 
         void reset() {
-            data.resize(0);
+            data.clear();
             removed = 0;
             len = 0;
-            src = nullptr;
-            last_maxoff = 0;
-            convert_flag = false;
         };
 
         void shutdown()  {
-            data.resize(0);
+            data.clear();
             len = 0;
         };
 

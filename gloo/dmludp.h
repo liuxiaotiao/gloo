@@ -2,10 +2,10 @@
 #include <cstring>
 #include <chrono>
 #include "gloo/connection.h"
-#include "gloo/RangeBuf.h"
 #include "gloo/recv_buf.h"
 #include "gloo/send_buf.h"
 #include "gloo/packet.h"
+
 
 using namespace dmludp;
 
@@ -69,8 +69,8 @@ inline void dmludp_config_free(Config* config){
     delete config;
 }
 
-inline uint8_t dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
-    uint8_t result = reinterpret_cast<Header *>(data)->ty;
+inline int dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
+    auto result = reinterpret_cast<Header *>(data)->ty;
     pn = reinterpret_cast<Header *>(data)->pkt_num;
     // auto pkt_priorty = reinterpret_cast<Header *>(data)->priority;
     off = reinterpret_cast<Header *>(data)->offset;
@@ -78,13 +78,9 @@ inline uint8_t dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, 
     return result;
 }
 
-inline uint16_t dmludp_packet_length(uint8_t* data){
-    return reinterpret_cast<Header *>(data)->pkt_length;
-}
-
-inline int dmludp_process_header_info(std::shared_ptr<Connection> conn, uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
-    return conn->pre_process_application_packet(data, buf_len, off, pn);
-}
+// inline int dmludp_process_header_info(std::shared_ptr<Connection> conn, uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
+//     return conn->pre_process_application_packet(data, buf_len, off, pn);
+// }
 
 // inline Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
 inline std::shared_ptr<Connection> dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
@@ -117,23 +113,42 @@ inline size_t dmludp_get_error_sent(std::shared_ptr<Connection> conn){
     return conn->get_error_sent();
 }
 
+// inline ssize_t dmludp_data_send_msg(std::shared_ptr<Connection> conn, 
+//     std::vector<std::shared_ptr<Header>> &hdrs, 
+//     std::vector<struct msghdr> &messages, 
+//     std::vector<struct iovec> &iovecs,
+//     std::vector<std::vector<uint8_t>> &out_ack){
+//     return conn->send_mmsg(hdrs, messages, iovecs, out_ack);
+// }
+
+// inline ssize_t dmludp_data_send_msg(std::shared_ptr<Connection> conn, 
+//     std::vector<std::shared_ptr<Header>> &hdrs, 
+//     std::vector<struct msghdr> &messages, 
+//     std::vector<struct iovec> &iovecs,
+//     std::vector<std::vector<uint8_t>> &out_ack){
+//     return conn->send_msg(hdrs, messages, iovecs, out_ack);
+// }
+
+// inline ssize_t dmludp_data_send_partial_msg(std::shared_ptr<Connection> conn, 
+//     std::vector<std::shared_ptr<Header>> &hdrs, 
+//     std::vector<struct msghdr> &messages, 
+//     std::vector<struct iovec> &iovecs){
+//     return conn->send_partial_mmsg(hdrs, messages, iovecs);
+// }
 
 inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
     return conn->transmission_complete();
 }
 
-inline bool dmludp_transmission_complete2(std::shared_ptr<Connection> conn, uint8_t pkt_difference){
-    return conn->transmission_complete2(pkt_difference);
-}
+// inline ssize_t dmludp_send_data_acknowledge(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
+//     return conn->send_data_acknowledge(out, out_len);
 
-inline ssize_t dmludp_send_data_acknowledge(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
-    return conn->send_data_acknowledge(out, out_len);
+// }
 
-}
 
-inline void dmludp_conn_recovery(std::shared_ptr<Connection> conn){
-    conn->recovery_send_buffer();
-}
+// inline void dmludp_conn_recovery(std::shared_ptr<Connection> conn){
+//     conn->recovery_send_buffer();
+// }
 
 inline long dmludp_get_rtt(std::shared_ptr<Connection> conn){
     return conn->get_rtt();
@@ -201,13 +216,10 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, uint8_t* buf, 
     
     if (received == 0){
         uint64_t pkt_num;
-        uint8_t pkt_priorty;
         uint32_t pkt_offset;
-        uint64_t pkt_seq;
-        uint8_t pkt_ack_time;
         uint8_t pkt_difference;
         uint16_t pkt_len;
-        auto ty = conn->header_info(buf, out_len, pkt_num, pkt_priorty, pkt_offset, pkt_seq, pkt_ack_time, pkt_difference, pkt_len);
+        auto ty = conn->header_info(buf, out_len, pkt_num, pkt_offset, pkt_difference, pkt_len);
         if (ty == Type::Stop){
             return dmludp_error::DMLUDP_ERR_STOP;
         }
@@ -275,30 +287,3 @@ inline void dmludp_conn_reset_rx_len(std::shared_ptr<Connection> conn){
     conn->reset_rx_len();
 }
 
-inline std::vector<struct mmsghdr> dmludp_connection_get_mmsghdr(std::shared_ptr<Connection> conn){
-    return conn->get_mmsghdr();
-}
-
-inline ssize_t dmludp_connection_send_messages(std::shared_ptr<Connection> conn, size_t &start_){
-    return conn->send_message(start_);
-}
-
-inline void dmludp_connection_send_message_complete(std::shared_ptr<Connection> conn, size_t err_ = 0, size_t error_sent = 0){
-    conn->send_message_complete(err_, error_sent);
-}
-
-inline size_t dmludp_receive_connection_difference(std::shared_ptr<Connection> conn){
-    return conn->receive_connection_difference;
-}
-
-inline size_t dmludp_packet_difference(uint8_t* data){
-    return reinterpret_cast<Header *>(data)->difference;
-}
-
-inline bool dmludp_conn_start_transmission(std::shared_ptr<Connection> conn){
-    return conn->has_start_transmission();
-}
-
-inline void dmludp_conn_update_receive_info(std::shared_ptr<Connection> conn){
-    conn->update_receive_info();
-}

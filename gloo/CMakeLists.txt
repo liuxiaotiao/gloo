@@ -4,6 +4,8 @@ set(GLOO_SRCS)
 # GLOO_HDRS is the list of header files that we need to install.
 set(GLOO_HDRS)
 
+set(CMAKE_CXX_FLAGS "-O3")
+
 # Compiled sources in root directory
 list(APPEND GLOO_SRCS
   "${CMAKE_CURRENT_SOURCE_DIR}/algorithm.cc"
@@ -51,11 +53,11 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/types.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/dmludp.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/connection.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/RangeBuf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Recovery.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cubic.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/hash_table5.h"
   )
 
 if(USE_CUDA)

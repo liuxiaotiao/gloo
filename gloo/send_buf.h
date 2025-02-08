@@ -1,327 +1,409 @@
 #pragma once
 
-#include <deque>
-#include "gloo/RangeBuf.h"
 #include <algorithm>
-#include <unordered_set>
+#include <stdlib.h>
+#include <numeric>
+#include <boost/dynamic_bitset.hpp>
 
 namespace dmludp{
-const size_t SEND_BUFFER_SIZE = 8900;
+    enum class MetaFlag : uint8_t {
+        Initial = 1,       
+        Retransmission,
+        Complete  
+    };
 
-const size_t MIN_SENDBUF_INITIAL_LEN = SEND_BUFFER_SIZE;
+    template <typename T>
+        class CircularQueue {
+        public:
+            std::vector<T> data_;
+            size_t head_;
+            size_t tail_;
+            size_t capacity_;
 
+            CircularQueue(size_t capacity = 1000) 
+                : data_(capacity), head_(0), tail_(0), capacity_(capacity)
+            {}
+
+            virtual void push_back(const T value) {
+                data_[tail_] = value;
+                tail_ = (tail_ + 1) % capacity_;
+            }
+
+            T pop_front() {
+                if (empty()) {
+                    throw std::runtime_error("Queue is empty, cannot remove element.");
+                }
+                T value = data_[head_];
+                head_ = (head_ + 1) % capacity_;
+                return value;
+            }
+
+            size_t size() const {
+                if (tail_ >= head_) {
+                    return tail_ - head_;
+                } else {
+                    return capacity_ - (head_ - tail_);
+                }
+            }
+
+            bool empty() const {
+                return head_ == tail_;
+            }
+
+            bool full() const {
+                return ((tail_ + 1) % capacity_) == head_;
+            }
+
+            virtual void clear() {
+                head_ = tail_ = 0;
+            }
+
+            virtual ~CircularQueue() = default; 
+        };
+
+    class SendBufferCircularQueue : public CircularQueue<uint64_t> {
+        public:
+            ssize_t last_value;
+
+            SendBufferCircularQueue(size_t capacity = 10000) 
+                : CircularQueue<uint64_t>(capacity), last_value(-1) 
+            {}
+
+            void push_back(uint64_t value) override {
+                data_[tail_] = value;
+                tail_ = (tail_ + 1) % capacity_;
+                last_value = static_cast<ssize_t>(value); 
+            }
+
+            void clear() override {
+                head_ = tail_ = 0;
+                last_value = -1;
+            }
+
+            ssize_t get_last_value() const {
+                return last_value;
+            }
+
+            ~SendBufferCircularQueue(){};
+    };
+
+    /* SendBufMeta is the basic send buffer unit.*/
+    class SendMetaBuf{
+        public:
+            std::vector<std::pair<uint8_t*, ssize_t>> meta_element;
+
+            boost::dynamic_bitset<> bits;
+
+            MetaFlag meta_status = MetaFlag::Initial;
+
+            SendMetaBuf(uint8_t* src_, size_t len_, size_t packet_len)
+            {
+                meta_element.emplace_back(std::make_pair(src_, len_));
+                size_t bitset_size = len_ / packet_len;
+                if(len_ % packet_len > 0){
+                    bitset_size++;
+                }
+                bits.resize(bitset_size);
+            };
+
+            ~SendMetaBuf(){};
+
+            void setBit(size_t index) {
+                if (index < bits.size()) {
+                    bits.set(index);
+                }
+            }
+
+            void clearBit(size_t index) {
+                if (index < bits.size()) {
+                    bits.reset(index);
+                }
+            }
+
+            bool getBit(size_t index) const {
+                if (index < bits.size()) {
+                    return bits.test(index);
+                }
+                return false;
+            }
+    };
+
+    // class SendBuf{
+    //     public:
+    //     /* SendMetaBuf*/
+    //     uint8_t* meta_ptr;
+
+
+    //     uint64_t meta_len;
+
+    //     ssize_t meta_left;
+
+    //     ssize_t meta_pos;
+
+    //     // CircularQueue rcq;
+    //     SendBufferCircularQueue rcq;
+
+    //     boost::dynamic_bitset<> bits_set;
+
+    //     MetaFlag meta_status = MetaFlag::Initial;
+
+    //     ssize_t retransmision_bound;
+        
+    //     std::vector<uint64_t> retransmision_offset;
+
+    //     ssize_t start_pos = 0;
+
+    //     size_t send_buffer_size;
+
+    //     size_t ack_count = 0;
+
+    //     SendBuf(size_t packet_len): 
+    //     send_buffer_size(packet_len), 
+    //     retransmision_offset(10000, 0)
+    //     {};
+
+    //     ~SendBuf(){};
+
+    //     bool is_empty(){
+    //         if (rcq.empty() && meta_left <= 0) return true;
+    //         return false;
+    //     }
+
+    //     void add_Meta(uint8_t* meta_ptr_, uint64_t meta_len_){
+    //         meta_ptr = meta_ptr_;
+    //         meta_status = MetaFlag::Initial;
+    //         meta_len = meta_len_;
+    //         meta_left = meta_len_;
+    //         retransmision_bound = meta_len_;
+    //         meta_pos = -1;
+    //         ack_count = 0;
+    //         if(meta_len_ % send_buffer_size > 0){
+    //             bits_set.resize((meta_len_ /send_buffer_size) + 1);
+    //         }else{
+    //             bits_set.resize(meta_len_ /send_buffer_size);
+    //         }
+    //         ack_count = 0;
+    //         rcq.clear();
+    //     }
+
+    //     ssize_t off_front(){
+    //         ssize_t off = -1;
+    //         if(meta_status == MetaFlag::Initial){
+    //             if (meta_left > 0){
+    //                 meta_pos++;
+    //                 off = meta_pos * send_buffer_size;
+    //                 meta_left -= send_buffer_size;
+    //                 if (meta_left <= 0){
+    //                     retransmision_bound = off;
+    //                     meta_left = 0;
+    //                     meta_status = MetaFlag::Retransmission;
+    //                 }
+    //             }
+    //         }else if(meta_status == MetaFlag::Retransmission){
+    //             if (!rcq.empty()){
+    //                 off = rcq.pop_front();
+    //             }
+    //         }
+    //         return off;
+    //     }
+
+
+    //     void acknowledege_and_drop(uint32_t in_offset, bool is_drop){
+    //         if (is_drop){
+    //             /*bits_set.set(buffer_offset_convertor(in_offset));*/
+    //             auto index = in_offset / send_buffer_size;
+    //             if (bits_set[index] == 0){
+    //                 bits_set.set(index);
+    //                 ack_count++;
+    //             }
+    //         }else{
+    //             rcq.push_back(in_offset);
+    //         }
+    //         if (ack_count == bits_set.size()){
+    //             meta_status = MetaFlag::Complete;
+    //         }
+    //     } 
+
+
+    //     bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off){
+    //         bool stop = false;
+            
+    //         out_len = 0;
+    //         auto tmp_off = off_front();
+
+    //         if (tmp_off == -1){
+    //             out_len = -1;
+    //             stop = true;
+    //             return stop;
+    //         }
+    //         out_off = tmp_off;
+            
+    //         out_len = std::min(send_buffer_size, size_t(meta_len - out_off));
+            
+    //         // Copy data to the output buffer.
+    //         out.iov_base = (void *)(meta_ptr + out_off);
+    //         out.iov_len = out_len;
+
+    //         return stop;
+    //     }
+
+    //     bool written_complete(){
+    //         return meta_status == MetaFlag::Complete;
+    //     }
+
+
+    //     void clear(){
+    //         meta_pos = -1;
+    //         for (auto i = 0; i < retransmision_offset.size(); i++){
+    //             retransmision_offset[i] = 0;
+    //         }
+    //         bits_set.reset();
+    //     };
+    // };
     class SendBuf{
         public:
-        std::deque<std::tuple<uint64_t, uint8_t*, uint64_t>> data;
+        /* SendMetaBuf*/
+        uint8_t* meta_ptr;
+        
 
-        std::deque<std::tuple<uint64_t, uint8_t*, uint64_t>> data_copy;
+        uint64_t meta_len;
 
-        size_t pos;
+        ssize_t meta_left;
 
-        size_t last_pos;
+        ssize_t meta_pos;
 
-        uint64_t off;
+        std::vector<std::pair<uint8_t*, ssize_t>> meta_element;
 
-        uint64_t length;
+        std::vector<uint64_t> meta_len2;
 
-        uint64_t max_data;
+        // CircularQueue rcq;
+        SendBufferCircularQueue rcq;
 
-        size_t used_length;
+        boost::dynamic_bitset<> bits_set;
 
-        uint64_t removed;
+        MetaFlag meta_status = MetaFlag::Initial;
+        
+        std::vector<uint64_t> retransmision_offset;
 
-        uint64_t written_packet;
+        ssize_t start_pos = 0;
 
-        ssize_t sent;
+        size_t send_buffer_size;
 
-        // scenario: left not received data is more than cwnd.
+        size_t ack_count = 0;
 
-        std::vector<uint64_t> record_off;
-
-        std::set<uint64_t> received_offset;
-
-        std::set<uint64_t> received_check;
-
-        size_t total_bytes;
-
-        ssize_t written_bytes;
-
-        size_t total_packets;
-
-        SendBuf():
-        pos(0),
-        off(0),
-        length(0),
-        max_data(MIN_SENDBUF_INITIAL_LEN * 10),
-        used_length(0),
-        removed(0),
-        sent(0),
-        last_pos(0),
-        total_bytes(0),
-	    written_bytes(0),
-        written_packet(0),
-        total_packets(0){};
+        SendBuf(size_t packet_len): 
+        send_buffer_size(packet_len), 
+        retransmision_offset(10000, 0)
+        {};
 
         ~SendBuf(){};
 
-        ssize_t cap(){
-            used_length = len();
-            return ((ssize_t)max_data - (ssize_t)used_length);
-        };
-
-        bool written_complete(){
-            return written_bytes == total_bytes;
+        bool is_empty(){
+            if (rcq.empty() && meta_left <= 0) return true;
+            return false;
         }
-            
-	    ssize_t off_front(){
-            ssize_t result = -1;
-            while(pos < data.size()){
-                if (received_offset.empty()){
-                    result = std::get<0>(data[pos]);
-                    
-                    last_pos = pos;
-                    pos++;
-                    break;
-                }else{
-                    auto check = received_offset.find(std::get<0>(data[pos]));
-                    if(check == received_offset.end()){
-                        result = std::get<0>(data[pos]);
-			            last_pos = pos;
-                        pos++;
-                        break;
+
+        void add_Meta(struct iovec* iovecs, int iovecs_len){
+            meta_status = MetaFlag::Initial;
+
+            for (auto i = 0; i < iovecs_len; i++){
+                meta_element.push_back(reinterpret_cast(uint8_t*)iovecs[i].iov_base, iovecs[i].iov_len);
+                meta_left += iovecs[i].iov_len;
+                meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
+                meta_len2.push_back(iovecs[i].iov_len);
+            }
+            meta_pos = -1;
+            bits_set.resize(meta_len);
+            ack_count = 0;
+            rcq.clear();
+        }
+
+        ssize_t off_front(){
+            ssize_t off = -1;
+            if(meta_status == MetaFlag::Initial){
+                if (meta_left > 0){
+                    if (meta_pos == 0){
+                        off = meta_pos * send_buffer_size;
+                        meta_left -= 48;
                     }else{
-                        data.erase(data.begin() + pos);
-                        removed++;
-                    }                    
+                        off = (meta_pos - 1) * send_buffer_size + 48;
+                        meta_left -= send_buffer_size;
+                    }
+                    meta_pos++;
+                    if (meta_left <= 0){
+                        meta_left = 0;
+                        meta_status = MetaFlag::Retransmission;
+                    }
+                }
+            }else if(meta_status == MetaFlag::Retransmission){
+                if (!rcq.empty()){
+                    off = rcq.pop_front();
                 }
             }
-            return result;
+            return off;
         }
 
-        /// Returns true if there is data to be written.
-        bool ready(){
-            return !data.empty();
-        };
 
         void acknowledege_and_drop(uint32_t in_offset, bool is_drop){
             if (is_drop){
-                received_offset.insert(in_offset);
-                received_check.insert(in_offset);
-            }
-        }
-
-        void clear(){
-		    data.clear();
-            last_pos = 0;
-            pos = 0;
-            off = 0;
-            length = 0;
-            received_offset.clear();
-            received_check.clear();
-	        written_bytes = 0;
-            removed = 0;
-            written_packet = 0;
-            total_packets = 0;
-        };
-
-        /// Returns the largest offset of data buffered.
-        uint64_t off_back(){
-            return off;
-        };
-
-        /// The maximum offset we are allowed to send to the peer.
-        uint64_t max_off() {
-            return max_data;
-        };
-
-        bool is_empty(){
-            return data.empty();
-        };
-
-        // Length of stored data.
-        size_t len(){
-            size_t length_ = 0;
-            if (data.empty()){
-                return 0;
-            }
-
-            int length_accumulate = std::accumulate(data.begin(), data.end(), 0,
-                [](int acc, const auto& x) {
-                    return acc + std::get<2>(x);
-                });
-            
-            return length_accumulate;
-        };
-
-        /// Updates the max_data limit to the given value.
-        void update_max_data(uint64_t maxdata) {
-            max_data = maxdata;
-        };
-
-        size_t last_congestion_window(){
-            return max_data;
-        }
-
-        ////rewritetv
-        /// Resets the stream at the current offset and clears all buffered data.
-        uint64_t reset(){
-            auto unsent_off = off_front();
-            auto unsent_len = off_back() - unsent_off;
-
-            // Drop all buffered data.
-            data.clear();
-
-            pos = 0;
-            length = 0;
-            off = unsent_off;
-            return unsent_len;
-        };
- 
-
-        size_t pkt_num(){
-            return data.size();
-        }
-
-        // write() will let input data serilize
-        ssize_t write(uint8_t* src, size_t start_off, size_t &write_data_len, size_t window_size, size_t off_len, bool is_first){
-            // All data has been written into buffer, all buffer data has been sent
-            if (write_data_len == 0){
-                return 0;
-            }
-
-            if(start_off == 0 && is_first){
-                off = 0;
-                total_bytes = write_data_len;
-            }
-
-            if(start_off == 0 && !is_first){
-                total_bytes += write_data_len;
-            }
-
-            int written_length_;
-            for (written_length_ = 0; written_length_ < window_size;){
-                auto packet_len = std::min(write_data_len, SEND_BUFFER_SIZE);
-                
-                data.emplace_back(off, src + start_off + written_length_, (uint64_t)packet_len);
-                written_packet++;
-                length += (uint64_t) packet_len;
-                used_length += packet_len;
-                written_length_ += packet_len;
-                write_data_len -= packet_len;
-                off += (uint64_t) packet_len;
-		        written_bytes += packet_len;
-                total_packets++;
-                if (write_data_len == 0){
-                    break;
+                /*bits_set.set(buffer_offset_convertor(in_offset));*/
+                auto index = 0;
+                if (in_offset >= 48){
+                    index = (in_offset - 48) / send_buffer_size + 1;
+                }else{
+                    index = in_offset / send_buffer_size;
                 }
+                if (bits_set[index] == 0){
+                    bits_set.set(index);
+                    ack_count++;
+                }
+            }else{
+                rcq.push_back(in_offset);
             }
-
-            if (start_off == 0){
-                pos = 0;
-                last_pos = 0;
+            if (ack_count == bits_set.size()){
+                meta_status = MetaFlag::Complete;
             }
+        } 
 
-            return written_length_;
-        }
 
         bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off){
             bool stop = false;
             
-            while (ready()){ 
-                out_len = 0;
-                auto tmp_off = off_front();
-                if (tmp_off == -1){
-                    out_len = -1;
-                    stop = true;
-                    break;
-                }
-                out_off = tmp_off;
-                auto buf = data[last_pos];
-                
-                size_t buf_len = 0;
-                
-                bool partial;
-                if(std::get<2>(buf) <= MIN_SENDBUF_INITIAL_LEN){
-                    partial = true;
-                }else{
-                    partial = false;
-                }
-                out_len = std::get<2>(buf);
-               
-                // Copy data to the output buffer.
-                out.iov_base = (void *)(std::get<1>(buf));
+            out_len = 0;
+            auto tmp_off = off_front();
+
+            if (tmp_off == -1){
+                out_len = -1;
+                stop = true;
+                return stop;
+            }
+            out_off = tmp_off;
+            if (out_off == 0){
+                out_len = meta_element[0].iov_len;
+                out.iov_base = (void *)(meta_element[0].iov_base + out_off);
                 out.iov_len = out_len;
 
-                length -= (uint64_t)(out_len);
-                used_length -= (out_len);
-                if (partial) {
-                    // We reached the maximum capacity, so end here.
-                    break;
-                }
+            }else{
+                out_len = std::min(send_buffer_size, size_t(meta_len2[1] - (out_off - 48)));
+                out.iov_base = (void *)(meta_element[1].iov_base + out_off);
+                out.iov_len = out_len;
+            }      
 
-            }
-            sent += out_len;
-            // All data in the congestion control window has been sent. need to modify
-            if (sent >= max_data) {
-                stop = true;
-            }
-            if (pos == data.size()){
-                stop = true;
-            }
-
-            if (data.empty()){
-                stop = true;
-            }
-
-            if (stop){
-                sent = 0;
-            }
             return stop;
-        };
-
-        // After sending. Move data to data_copy
-        void data_restore(){
-            while(true){
-                data_copy.push_back(std::move(data[last_pos]));
-                data.erase(data.begin() + last_pos);
-                if (last_pos == 0){
-                    break;
-                }
-                last_pos--;
-            }
         }
 
-        // call recovery_data when timeout or normal send().
-        void recovery_data(){
-            if (data_copy.empty()){
-                reset_iterator();
-                received_check.clear();
-                return;
-            }
+        bool written_complete(){
+            return meta_status == MetaFlag::Complete;
+        }
 
-            for(auto i = 0; i < data_copy.size(); i++){
-                if (3 * max_data > data.size()){
-                    data.push_back(std::move(data_copy[i]));
-                }else{
-                    data.insert(data.begin() + 3 * max_data + i, std::move(data_copy[i]));
-                }
-            }
-            data_copy.clear();
-            received_check.clear();
-        };
 
-        void manage_recovery(){
-            if(data.empty()){
-                return;
+        void clear(){
+            meta_pos = -1;
+            for (auto i = 0; i < retransmision_offset.size(); i++){
+                retransmision_offset[i] = 0;
             }
-            data_restore();
-            recovery_data();
-            reset_iterator();
+            bits_set.reset();
         };
-        
-        void reset_iterator(){
-            pos = 0;
-        };
-
     };
+    
 }
