@@ -662,7 +662,7 @@ class metarecebuf{
 
         RCset receive_offset;
 
-        std::vector<uint16_t> expectlen(2, 0);
+        std::vector<uint16_t> targetlen(2, 0);
 
         bool complete_flag = false;
 
@@ -688,13 +688,13 @@ class metarecebuf{
             received = 0;
             has_zero = false;
             srcset = 0;
-            for (auto &e:expectlen){
+            for (auto &e:targetlen){
                 e = 0;
             }
         }
 
         void addexplen(size_t exp_){
-            for(auto &e: expectlen){
+            for(auto &e: targetlen){
                 if (e == 0){
                     e = exp_;
                 }
@@ -720,7 +720,7 @@ class metarecebuf{
 
         bool is_complete(){
             size_t total = 0;
-            for(auto e:expectlen){
+            for(auto e:targetlen){
                 total += e;
             }
             if (received == total || complete_flag){
