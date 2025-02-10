@@ -628,27 +628,27 @@ class SCircularQueue {
             return index_;
         }
 
-        size_t partial_check() {
-            ssize index_ = -1;
-            for (auto i = start() ; i < end(); i++){
-                if (data_[i].status == 2){
-                    index_ = i;
-                    break;
-                }
-            }
-            return index_;
-        }
+        // size_t partial_check() {
+        //     ssize_t index_ = -1;
+        //     for (auto i = start() ; i < end(); i++){
+        //         if (data_[i].status == 2){
+        //             index_ = i;
+        //             break;
+        //         }
+        //     }
+        //     return index_;
+        // }
 
-        ssize_t first_transmit_check() {
-            ssize index_ = -1;
-            for (auto i = start() ; i < end(); i++){
-                if (data_[i].status == 1){
-                    index_ = i;
-                    break;
-                }
-            }
-            return index_;
-        }
+        // ssize_t first_transmit_check() {
+        //     ssize_t index_ = -1;
+        //     for (auto i = start() ; i < end(); i++){
+        //         if (data_[i].status == 1){
+        //             index_ = i;
+        //             break;
+        //         }
+        //     }
+        //     return index_;
+        // }
 
         // void push_back(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         //     data_[tail_].set_buffer(iovecs, iovecs_len, priotity_list);
@@ -1043,7 +1043,7 @@ public:
     */
     ssize_t expected_offset;
 
-    std::vector<std::pair<ssize_t, uint32_t>> rangemap(RX_CONST, {-1, 0});
+    std::vector<std::pair<ssize_t, uint32_t>> rangemap(RX_CONST, std::make_pair(-1, 0));
 
     size_t record_index;
 
