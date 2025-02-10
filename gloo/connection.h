@@ -168,7 +168,9 @@ class Message{
 
 class RCMessage : public Message {
     public:
-        RCMessage(void *ptr, size_t ptr_len){
+        RCMessage(){}
+            
+        set_receive_message(void *ptr, size_t ptr_len){
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
@@ -1342,7 +1344,7 @@ public:
                     rangemap[record_index].first = index - 1;
                     rangemap[record_index].second = accumulate_len;
                     record_index = index;
-                    accumulate_len = pkt_len;
+                    accumulate_len = pkt_length;
                     record_offset = pkt_offset;
                     record_len = pkt_len;
                     record_difference = pkt_difference;
@@ -1537,7 +1539,7 @@ public:
             }
         }
 
-        auto sendts = timespecToChrono(ts);
+        auto sendts = timespecToChrono(*ts);
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
         update_rtt3(sendts, ackts);
 
@@ -1605,7 +1607,7 @@ public:
 
     bool receive_complete(){
         if (receive_connection_difference == zerolist[0].first){
-            return receiveSQ.iscomplete(zerolist[0].first);
+            return recvCQ.iscomplete(zerolist[0].first);
         }
         return false;
     }
@@ -1618,7 +1620,7 @@ public:
     }
 
     void rx_len(size_t expected){
-        receiveSQ.rx_len(zerolist(0).first, expected);
+        recvCQ.rx_len(zerolist[0].first, expected);
     }
 
     void reset_rx_len(){
@@ -1674,7 +1676,7 @@ public:
             return 0;
         }
 
-        size_t sent_limit = std::min(send_message.size(), cwnd_limit);
+        size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
         ssize_t sent = 0;
         for (auto i = sendbufferqueue.start() ; i <= sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.size()) {
             while (true){
@@ -1684,7 +1686,7 @@ public:
                 }
 
                 auto pn = pkt_num_spaces[0].updatepktnum();
-                send_message[sent].setMessageHeader(pn, out_off, tramssitting_index, (Packet_num_len)out_len);
+                send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
                 if (sendbufferqueue.data_[i].meta_status == MetaFlag::Initial){
                     sendbufferqueue.data_[i].add_transmission(pn, out_off);
