@@ -964,9 +964,9 @@ public:
         return std::make_shared<Connection>(local, peer, config, true);
     };
 
-    const static uint8_t handshake_header[sizeof(Header)];
+    uint8_t handshake_header[sizeof(Header)];
 
-    const static uint8_t fin_header[sizeof(Header)];
+    // const static uint8_t fin_header[sizeof(Header)];
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1129,6 +1129,8 @@ public:
         for(auto i = 0; i < RX_CONST; i++){
             rangemap.push_back(std::make_pair(-1, 0));
         }
+
+        handshake_header[] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     };
 
     ~Connection(){};
@@ -2061,7 +2063,4 @@ public:
     
 };
 
-const uint8_t Connection::handshake_header[] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-const uint8_t Connection::fin_header[] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 }
