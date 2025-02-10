@@ -264,8 +264,8 @@ public:
         return result;
     }
 
-    void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts1) {
-        enqueue({{key1, ts1}, {key2, ts1}});
+    void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
+        enqueue({{key1, ts1}, {key2, ts2}});
     }
 
     void printQueue() const {
@@ -278,6 +278,7 @@ public:
     }
 };
 
+/*Check usage*/
 class RCset{
     public:
         boost::dynamic_bitset<> RCset_body;
@@ -288,7 +289,7 @@ class RCset{
 
         size_t dataload_index = 0;
 
-        RCset(size_t pkt_info, size_t capacity_ = 80000): 
+        RCset(size_t pkt_info = MAX_SEND_UDP_PAYLOAD_SIZE, size_t capacity_ = 80000): 
         RCset_body(capacity_),
         payload_len(pkt_info){
             dataload_len.reserve(10);
@@ -661,7 +662,7 @@ class metarecebuf{
 
         RCset receive_offset;
 
-        std::vector<uint16_t> explen(2, 0);
+        std::vector<uint16_t> expectlen(2, 0);
 
         bool complete_flag = false;
 
@@ -682,18 +683,18 @@ class metarecebuf{
         void clear(){
             receive_offset.clear();
             metabuf.reset();
-            metabuf.src = null;
+            metabuf.src = nullptr;
             complete_flag = false;
             received = 0;
             has_zero = false;
             srcset = 0;
-            for (auto &e:explen){
+            for (auto &e:expectlen){
                 e = 0;
             }
         }
 
         void addexplen(size_t exp_){
-            for(auto &e: explen){
+            for(auto &e: expectlen){
                 if (e == 0){
                     e = exp_;
                 }
@@ -719,7 +720,7 @@ class metarecebuf{
 
         bool is_complete(){
             size_t total = 0;
-            for(auto e:explen){
+            for(auto e:expectlen){
                 total += e;
             }
             if (received == total || complete_flag){
@@ -743,7 +744,7 @@ class RCircularQueue {
         size_t tail_;
         size_t capacity_;
 
-        CircularQueue(size_t capacity = 256) 
+        RCircularQueue(size_t capacity = 256) 
             : head_(0), tail_(0), capacity_(capacity)
         {
             data_.resize(capacity);
@@ -805,7 +806,7 @@ class RCircularQueue {
             data_[difference_].set_src(src);
         }
 
-        bool rx_len(uint8_t difference, size_t expected){
+        void rx_len(uint8_t difference, size_t expected){
             data_[difference].addexplen(expected);
         }
 
@@ -815,7 +816,7 @@ class RCircularQueue {
 
         void indexcheck(uint8_t index_){
             bool check_ = false;
-            if (head < tail) {
+            if (head_ < tail_) {
                 // 没有环绕，队列有效区间是 [head, tail)
                 check_ = (index_ >= head_ && index_ < tail_);
             } else {
@@ -833,7 +834,7 @@ class RCircularQueue {
             }
         }
 
-        ~CircularQueue() = default; 
+        ~RCircularQueue() = default; 
 };
 
 class Config {
@@ -1115,7 +1116,7 @@ public:
         send_message.resize(ONCE_SEND_LIMIT);
 
         // receive_message.resize(ONCE_RECEIVE_LIMINT);
-        receive_message.resize(RX_CONST)
+        receive_message.resize(RX_CONST);
 
         receive_offset.add_rule(100 * 1024 * 1024);
 
@@ -1395,8 +1396,8 @@ public:
 
     };
 
-    bool received(size_t explen){
-        return recvCQ.isreceived(zerolist[0].first, explen);
+    bool received(size_t explen_){
+        return recvCQ.isreceived(zerolist[0].first, explen_);
     }
 
 
@@ -1801,7 +1802,7 @@ public:
             pkt_difference = receive_message[index].get_difference();
             auto copy_len = rangemap[index].second;
             if(receive_connection_difference == pkt_difference){
-                if(recvCQ.data_[pkt_difference].metabuf.src != null){
+                if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
                     if (pkt_offset >= 48){
                         memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, receive_message[index].iov[1].iov_base, copy_len);
                     }else{
