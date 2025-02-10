@@ -4,21 +4,15 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
-#include <sys/socket.h>
 #include <set>
 #include <sys/uio.h>
 #include <stdlib.h>
 #include <numeric>
-#include <linux/filter.h>
-#include <linux/in6.h>
 #include "packet.h"
 #include "cubic.h"
 #include "recv_buf.h"
 #include "send_buf.h"
 #include <cmath>
-#include <unordered_set>
-#include <mutex>
-#include <condition_variable>
 #include <unordered_map>
 
 namespace dmludp {
