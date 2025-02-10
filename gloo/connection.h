@@ -617,16 +617,16 @@ class SCircularQueue {
             return head_;
         }
 
-        ssize_t retransmision_available() {
-            ssize_t index_ = -1;
-            for (auto i = start() ; i < end(); i++){
-                if (data_[i].transmission_status == 4){
-                    index_ = i;
-                    break;
-                }
-            }
-            return index_;
-        }
+        // ssize_t retransmision_available() {
+        //     ssize_t index_ = -1;
+        //     for (auto i = start() ; i < end(); i++){
+        //         if (data_[i].transmission_status == 4){
+        //             index_ = i;
+        //             break;
+        //         }
+        //     }
+        //     return index_;
+        // }
 
         // size_t partial_check() {
         //     ssize_t index_ = -1;
@@ -1043,7 +1043,7 @@ public:
     */
     ssize_t expected_offset;
 
-    std::vector<std::pair<ssize_t, uint32_t>> rangemap(RX_CONST, std::make_pair(-1, 0));
+    std::vector<std::pair<ssize_t, uint32_t>> rangemap;
 
     size_t record_index;
 
@@ -1125,6 +1125,9 @@ public:
         acknowldge_header.resize(sizeof(Header));
         pktnum2offset.reserve(100000);
         set_receive_message();
+        for(auto i = 0; i < RX_CONST; i++){
+            rangemap.push_back(std::make_pair(-1, 0));
+        }
     };
 
     ~Connection(){};
@@ -1575,10 +1578,10 @@ public:
         
         if (loss){
             recovery.check_point();
-            recovery.congestion_event(timespecToChrono(ts));
-            recovery.on_packet_ack(total_send, timespecToChrono(ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(timespecToChrono(*ts));
+            recovery.on_packet_ack(total_send, timespecToChrono(*ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }else{
-            recovery.on_packet_ack(total_send, timespecToChrono(ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, timespecToChrono(*ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
     }
