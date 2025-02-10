@@ -874,8 +874,8 @@ bool Pair::protocal2read(){
 
   ssize_t receive_number = -1;
   while(true){
-    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available())
-      auto retval = recvmsg(server_fd, &dmludp_connection->receive_message[receive_number].message_body, 0);
+    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
+      auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
 
       if (retval == -1){
         if (errno == EAGAIN) {
@@ -893,7 +893,7 @@ bool Pair::protocal2read(){
     auto flag4send = dmludp_connection->recv_slice2(receive_number);
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
-      auto sent_result = sendmsg(server_fd, &dmludp_connection->acknowldge_msghdr, 0);
+      auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
       if (dmludp_connection->zerocheck()){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
@@ -912,8 +912,8 @@ bool Pair::protocal2read(){
           }
           
           if (rbuf){
-            dmludp_connection->rx_len(rnbytes)
-            dmludp_connection->get_recv_target(riov.iov_base);
+            dmludp_connection->rx_len(rnbytes);
+            dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>riov.iov_base);
             if (!dmludp_connection->received(sizeof(rx_.preamble) + rnbytes)){
               dmludp_connection->send_packet_complete();
               break;
@@ -921,7 +921,7 @@ bool Pair::protocal2read(){
           }
 
           dmludp_connection->rx_len(rnbytes);
-          dmludp_connection->get_recv_target(riov.iov_base);
+          dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>riov.iov_base);
           dmludp_connection->send_packet_complete();
           rx_.nread += rnbytes;
         }
@@ -969,7 +969,7 @@ bool Pair::protocal2read(){
               // dmludp2read(rx_, rbuf, rnbytes);
               dmludp_connection->send_packet_complete();
               GLOO_ENFORCE_LE(dmludp_connection->receive4once, rnbytes);
-              rx_.nread += dmludp_connection->receive4once;
+              // rx_.nread += dmludp_connection->receive4once;
               break;
             }
           }
@@ -977,7 +977,7 @@ bool Pair::protocal2read(){
       }
     }else{
       for (auto i = dmludp_connection->sendbufferqueue.start(); i < dmludp_connection->sendbufferqueue.end(); i = (i + 1)%256){
-        if(dmludp_connection->sendbufferqueue[i].iscomplete()){
+        if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
           if (opcode == Op::SEND_UNBOUND_BUFFER) {
@@ -1092,7 +1092,7 @@ bool Pair::protocal2read(){
     //       tx_.pop_front();
     //     }
     //   }
-    }
+    
   }
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
