@@ -249,7 +249,7 @@ public:
             size_t actualIndex = (head + i) % capacity;
             const auto& item = buffer[actualIndex];
             if (item.first.first == value || item.second.first == value) {
-                result = (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+                result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
                 indexToDeleteUpTo = i; 
                 break;
             }
@@ -264,8 +264,8 @@ public:
         return result;
     }
 
-    void updateQueue(uint64_t key1, std::chrono::high_resolution_clock::time_point ts1, uint64_t key2, std::chrono::high_resolution_clock::time_point ts2) {
-        enqueue({{key1, timestamp}, {key2, timestamp}});
+    void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts1) {
+        enqueue({{key1, ts1}, {key2, ts1}});
     }
 
     void printQueue() const {
@@ -379,6 +379,10 @@ class ReTransmissionMap{
             }
             return ((start_packet == end_packet) && (start_packet == -1));
         }
+
+        bool inrange(size_t PacketNum){
+            return (PacketNum >= start_packet && PacketNum <= end_packet);
+        }
 };
 
 class TransmissionMap{
@@ -397,7 +401,7 @@ class TransmissionMap{
             }
             if(startmap.first == -1){
                 std::cerr << "Error: startmap.first is -1" << std::endl;
-                _Exit();
+                _Exit(0);
             }
             endmap = std::make_pair(packetnum, packetoffset);
         }
@@ -429,6 +433,11 @@ class TransmissionMap{
             }else{
                 offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
             }
+            return offset_;
+        }
+
+        bool inrange(size_t PacketNum){
+            return (PacketNum >= startmap.first && PacketNum <= endmap.first);
         }
 };
 
@@ -454,7 +463,8 @@ class MetaInfo{
 
         MetaInfo(size_t difference_flag_ = 0): 
         difference_flag(difference_flag_), 
-        MetaDifference(difference_flag_){};
+        MetaDifference(difference_flag_),
+        metabuf(MAX_SEND_UDP_PAYLOAD_SIZE){};
 
         ~MetaInfo(){};
 
@@ -489,17 +499,19 @@ class MetaInfo{
         }
 
         bool intransmissionmap(uint64_t PacketNum){
-            if (PacketNum >= transmission_map.startmap.first && PacketNum <= PacketNum.endmap.first){
-                return true;
-            }
-            return false;
+            return transmission_map.inrange(PacketNum);
+            // if (PacketNum >= transmission_map.startmap.first && PacketNum <= PacketNum.endmap.first){
+            //     return true;
+            // }
+            // return false;
         }
 
         bool inretransmissionmap(uint64_t PacketNum){
-            if (PacketNum >= retransmission_map.start_packet && PacketNum <= retransmission_map.end_packet){
-                return true;
-            }
-            return false;
+            return retransmission_map.inrange(PacketNum);
+            // if (PacketNum >= retransmission_map.start_packet && PacketNum <= retransmission_map.end_packet){
+            //     return true;
+            // }
+            // return false;
         }
 
         ssize_t offset_calculate(uint64_t PacketNum) {
@@ -514,7 +526,7 @@ class MetaInfo{
         }
 
         void ack4offset(uint64_t PacketNum, bool isloss, uint32_t offset_ = 0){
-            auto offset = offset_calculate(PacketNum);
+            auto packet_offset_ = offset_calculate(PacketNum);
             if (isloss){
                 metabuf.acknowledege_and_drop(packet_offset_, false);
             }else{
@@ -538,7 +550,7 @@ class MetaInfo{
             return metabuf.written_complete();
         }
 
-        bool clear(){
+        void clear(){
 
         }
 

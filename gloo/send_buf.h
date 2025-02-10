@@ -134,7 +134,7 @@ namespace dmludp{
             meta_status = MetaFlag::Initial;
 
             for (auto i = 0; i < iovecs_len; i++){
-                meta_element.push_back(reinterpret_cast<uint8_t*>iovecs[i].iov_base, iovecs[i].iov_len);
+                meta_element.push_back(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len);
                 meta_left += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
                 meta_len2.push_back(iovecs[i].iov_len);
@@ -206,7 +206,7 @@ namespace dmludp{
             }
             out_off = tmp_off;
             if (out_off == 0){
-                out_len = meta_element[0].iov_len;
+                out_len = meta_element[0].second;
                 out.iov_base = (void *)(meta_element[0].first + out_off);
                 out.iov_len = out_len;
 
