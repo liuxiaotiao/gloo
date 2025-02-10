@@ -1552,7 +1552,7 @@ public:
         auto end_pn = pkt_num;
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = *reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base + sizeof(uint64_t));
+        auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t));
 
         size_t byte_index = 0;
         size_t bit_index = 0;
