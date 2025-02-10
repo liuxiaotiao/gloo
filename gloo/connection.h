@@ -170,7 +170,7 @@ class RCMessage : public Message {
     public:
         RCMessage(){}
             
-        set_receive_message(void *ptr, size_t ptr_len){
+        void set_receive_message(void *ptr, size_t ptr_len){
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
@@ -560,14 +560,14 @@ class MetaInfo{
 };
 
 
-class CircularQueue {
+class SCircularQueue {
     public:
         std::vector<MetaInfo> data_;
         size_t head_;
         size_t tail_;
         size_t capacity_;
 
-        CircularQueue(size_t capacity = 256) 
+        SCircularQueue(size_t capacity = 256) 
             : head_(0), tail_(0), capacity_(capacity)
         {
             data_.resize(capacity);
@@ -655,7 +655,7 @@ class CircularQueue {
         //     tail_ = (tail_ + 1) % capacity_;
         // }
 
-        ~CircularQueue() = default; 
+        ~SCircularQueue() = default; 
 };
 
 class metarecebuf{
@@ -664,7 +664,7 @@ class metarecebuf{
 
         RCset receive_offset;
 
-        std::vector<uint16_t> targetlen(2, 0);
+        std::vector<uint16_t> source_len(2, 0);
 
         bool complete_flag = false;
 
@@ -690,13 +690,13 @@ class metarecebuf{
             received = 0;
             has_zero = false;
             srcset = 0;
-            for (auto &e:targetlen){
+            for (auto &e:source_len){
                 e = 0;
             }
         }
 
         void addexplen(size_t exp_){
-            for(auto &e: targetlen){
+            for(auto &e: source_len){
                 if (e == 0){
                     e = exp_;
                 }
@@ -722,7 +722,7 @@ class metarecebuf{
 
         bool is_complete(){
             size_t total = 0;
-            for(auto e:targetlen){
+            for(auto e:source_len){
                 total += e;
             }
             if (received == total || complete_flag){
@@ -1061,7 +1061,7 @@ public:
 
     TSCircularQueue tsInfo;
 
-    CircularQueue sendbufferqueue;
+    SCircularQueue sendbufferqueue;
 
     std::deque<std::pair<uint8_t, uint16_t>> zerolist;
 
