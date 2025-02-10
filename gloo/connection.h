@@ -716,7 +716,7 @@ class metarecebuf{
                     has_zero = true;
                 }
                 receive_offset.insert(pkt_offset);
-                rec_buffer.reg(pkt_length);
+                metabuf.reg(pkt_length);
                 received += pkt_length;
             }
             return exist;
@@ -1339,7 +1339,7 @@ public:
             if (index == receive_upper_bound - 1){
                 rangemap[record_index].first = index;
                 rangemap[record_index].second = accumulate_len;
-                record_index = i + 1;
+                record_index = index + 1;
                 accumulate_len = 0;
             }else{
                 /*
@@ -1351,7 +1351,7 @@ public:
                     record_index = index;
                     accumulate_len = pkt_length;
                     record_offset = pkt_offset;
-                    record_len = pkt_len;
+                    record_len = pkt_length;
                     record_difference = pkt_difference;
                 }else{
                     accumulate_len += pkt_length;
@@ -1552,7 +1552,7 @@ public:
         auto end_pn = pkt_num;
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base + sizeof(uint64_t));
+        auto ack_src = *reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base + sizeof(uint64_t));
 
         size_t byte_index = 0;
         size_t bit_index = 0;
@@ -1562,17 +1562,17 @@ public:
             if (pn > end_pn){
                 break;
             }
-            auto sendpair = sendbufferqueue[i].get_packet_range();
+            auto sendpair = sendbufferqueue.data_[i].get_packet_range();
             while(true){
                 if (pn >= pnpair.first && pn <= pnpair.second){
                     byte_index = (pn - first_pn) / 8;
                     bit_index = (pn - first_pn) % 8;
                     size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                    sendbufferqueue[i].ack4offset(pn, (bool)value);
+                    sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
                     pn++;
                 }else{
                     break;
-                    sendbufferqueue[i].reset_packet_range();
+                    sendbufferqueue.data_[i].reset_packet_range();
                 }
             }
         }
@@ -1693,9 +1693,9 @@ public:
                 auto pn = pkt_num_spaces[0].updatepktnum();
                 send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
-                if (sendbufferqueue.data_[i].meta_status == MetaFlag::Initial){
+                if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
                     sendbufferqueue.data_[i].add_transmission(pn, out_off);
-                }else if(sendbufferqueue.data_[i].meta_status == MetaFlag::Retransmission){
+                }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
                     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
                 }
                 sent++;
@@ -1806,7 +1806,7 @@ public:
                 continue;
             }
             pkt_offset = receive_message[index].get_packet_offset();
-            pkt_difference = receive_message[index].get_difference();
+            pkt_difference = receive_message[index].get_packet_difference();
             auto copy_len = rangemap[index].second;
             if(receive_connection_difference == pkt_difference){
                 if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
@@ -1860,7 +1860,7 @@ public:
     }
 
     bool transmission_complete(){
-        if (sendbufferqueue[sendbufferqueue.start()].iscomplete()){
+        if (sendbufferqueue.data_[sendbufferqueue.start()].iscomplete()){
             sendbufferqueue.pop_front();
             return true;
         }
