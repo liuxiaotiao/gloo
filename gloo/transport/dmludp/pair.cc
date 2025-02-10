@@ -913,7 +913,7 @@ bool Pair::protocal2read(){
           
           if (rbuf){
             dmludp_connection->rx_len(rnbytes);
-            dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>riov.iov_base);
+            dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>(riov.iov_base));
             if (!dmludp_connection->received(sizeof(rx_.preamble) + rnbytes)){
               dmludp_connection->send_packet_complete();
               break;
@@ -921,7 +921,7 @@ bool Pair::protocal2read(){
           }
 
           dmludp_connection->rx_len(rnbytes);
-          dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>riov.iov_base);
+          dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>(riov.iov_base));
           dmludp_connection->send_packet_complete();
           rx_.nread += rnbytes;
         }
@@ -968,7 +968,7 @@ bool Pair::protocal2read(){
             if (rbuf){
               // dmludp2read(rx_, rbuf, rnbytes);
               dmludp_connection->send_packet_complete();
-              GLOO_ENFORCE_LE(dmludp_connection->receive4once, rnbytes);
+              // GLOO_ENFORCE_LE(dmludp_connection->receive4once, rnbytes);
               // rx_.nread += dmludp_connection->receive4once;
               break;
             }
@@ -1145,7 +1145,7 @@ bool Pair::protocal2send(){
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
     for ( ;i < packet_.second; i++){
-      auto retval = sendmsg(server_fd, &dmludp_connection->send_message[i].message_body, 0);
+      auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
       if(retval == -1){
         if (errno == EINTR){
             continue;

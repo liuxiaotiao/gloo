@@ -1208,18 +1208,18 @@ public:
     };
 
     
-    void socket_set(int sock){
-        // Set send with GSO and receive with GRO
-        uint16_t gso_size = MAX_SEND_UDP_PAYLOAD_SIZE;
-        setsockopt(sock, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size));
+    // void socket_set(int sock){
+    //     // Set send with GSO and receive with GRO
+    //     uint16_t gso_size = MAX_SEND_UDP_PAYLOAD_SIZE;
+    //     setsockopt(sock, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size));
 
-        int gro_enabled = 1;
-        if (setsockopt(sock, SOL_UDP, UDP_GRO, &gro_enabled, sizeof(gro_enabled)) < 0) {
-            perror("setsockopt UDP_GRO failed");
-            close(sock);
-            exit(EXIT_FAILURE);
-        }
-    }
+    //     int gro_enabled = 1;
+    //     if (setsockopt(sock, SOL_UDP, UDP_GRO, &gro_enabled, sizeof(gro_enabled)) < 0) {
+    //         perror("setsockopt UDP_GRO failed");
+    //         close(sock);
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
 
     // Check timeout or not
     bool on_timeout(){
@@ -1551,8 +1551,7 @@ public:
         auto end_pn = pkt_num;
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t)vim ;
-
+        auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
         size_t byte_index = 0;
         size_t bit_index = 0;
 
