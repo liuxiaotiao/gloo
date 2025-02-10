@@ -802,6 +802,26 @@ class RCircularQueue {
             return data_[difference].is_complete();
         }
 
+        void indexcheck(uint8_t index_){
+            bool check_ = false;
+            if (head < tail) {
+                // 没有环绕，队列有效区间是 [head, tail)
+                check_ = (index_ >= head_ && index_ < tail_);
+            } else {
+                // 环绕了，队列有效区间是 [head, capacity) ∪ [0, tail)
+                check_ = (index_ >= head_ || index_ < tail_);
+            }
+
+            if(check_){
+                while(true){
+                    push_back();
+                    if (tail_ == index_){
+                        break;
+                    }
+                }
+            }
+        }
+
         ~CircularQueue() = default; 
 };
 
@@ -1283,6 +1303,9 @@ public:
         Offset_len pkt_offset = receive_message[index].get_packet_offset();
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
         auto pkt_length = receive_message[index].get_packet_length();
+
+        
+        recvCQ.indexcheck(pkt_difference);
 
         if (index == 0){
             accumulate_len = pkt_length;

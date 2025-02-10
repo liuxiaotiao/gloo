@@ -907,6 +907,7 @@ bool Pair::protocal2read(){
             readComplete(rbuf);
             dmludp_connection->recv_reset();
             dmludp_connection->clear_recv_setting();
+            dmludp_connection->recvCQ.pop_front();
             break;
           }
           
@@ -938,6 +939,7 @@ bool Pair::protocal2read(){
               readComplete(rbuf);
               dmludp_conn_recv_reset(dmludp_connection);
               dmludp_conn_reset_rx_len(dmludp_connection);
+              dmludp_connection->recvCQ.pop_front();
               break;
             }
 
