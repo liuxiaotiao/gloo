@@ -570,7 +570,7 @@ class SCircularQueue {
         SCircularQueue(size_t capacity = 256) 
             : head_(0), tail_(0), capacity_(capacity)
         {
-            data_.resize(capacity);
+            data_.reserve(capacity);
             for (auto i = 0; i < capacity ; i++){
                 data_.emplace_back(i);
             }
@@ -751,7 +751,7 @@ class RCircularQueue {
         RCircularQueue(size_t capacity = 256) 
             : head_(0), tail_(0), capacity_(capacity)
         {
-            data_.resize(capacity);
+            data_.reserve(capacity);
             for (auto i = 0; i < capacity ; i++){
                 data_.emplace_back(i);
             }
@@ -1564,7 +1564,7 @@ public:
             }
             auto sendpair = sendbufferqueue.data_[i].get_packet_range();
             while(true){
-                if (pn >= pnpair.first && pn <= pnpair.second){
+                if (pn >= sendpair.first && pn <= sendpair.second){
                     byte_index = (pn - first_pn) / 8;
                     bit_index = (pn - first_pn) % 8;
                     size_t value = (ack_src[byte_index] >> bit_index) & 1;
