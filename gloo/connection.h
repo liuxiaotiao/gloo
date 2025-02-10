@@ -664,7 +664,7 @@ class metarecebuf{
 
         RCset receive_offset;
 
-        std::vector<uint16_t> source_len(2, 0);
+        std::vector<uint16_t> source_len;
 
         bool complete_flag = false;
 
@@ -677,7 +677,9 @@ class metarecebuf{
         size_t srcset = 0;
 
         metarecebuf(uint8_t difference_): rdifference(difference_){
-
+            for(auto i = 0; i < 2 ; i++){
+                source_len.push_back(0);
+            }
         }
 
         ~metarecebuf(){}
