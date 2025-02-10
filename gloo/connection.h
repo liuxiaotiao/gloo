@@ -19,7 +19,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <condition_variable>
-#include "hash_table5.h"
+#include <unordered_map>
 
 namespace dmludp {
 
@@ -892,7 +892,7 @@ public:
     bool stop_ack;
 
     // Key: sent packet number, value: correspoind offset
-    emhash5::HashMap<uint64_t, uint64_t> pktnum2offset;
+    std::unordered_map<uint64_t, uint64_t> pktnum2offset;
 
     // map for received application pktnum and corresponding offset
     std::vector<uint8_t> receivevector;
@@ -966,7 +966,7 @@ public:
 
     const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header)] = ;
+    const uint8_t fin_header[sizeof(Header)] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};;
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
