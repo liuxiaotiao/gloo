@@ -67,9 +67,6 @@ Pair::Pair(
       sendBufferSize_(0),
       self_(device_->nextAddress()),
       ex_(nullptr){
-      //innertimer(*this) {
-//        timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-//        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
@@ -875,30 +872,29 @@ bool Pair::protocal2read(){
   int sioc;
   ssize_t rv;
 
-  int receive_number = 0;
+  ssize_t receive_number = -1;
   while(true){
-    receive_number = 0;
-    for(; receive_number < dmludp_connection->receive_message.size(); ){
-        auto retval = recvmsg(server_fd, &dmludp_connection->receive_message[receive_number].message_body, 0);
+    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available())
+      auto retval = recvmsg(server_fd, &dmludp_connection->receive_message[receive_number].message_body, 0);
 
-        if (retval == -1){
-            if (errno == EAGAIN) {
-                break;
-            }
-            if (errno == EINTR){
-                continue;
-            }
+      if (retval == -1){
+        if (errno == EAGAIN) {
+            break;
         }
-        receive_number++;
+        if (errno == EINTR){
+            continue;
+        }
+      }
     }
-    if (receive_number == 0){
+    if (receive_number <= 0){
         break;
     }
-    int flag4send = dmludp_connection->recv_slice2(receive_number);
-    if(flag4send){
+  
+    auto flag4send = dmludp_connection->recv_slice2(receive_number);
+    if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
       auto sent_result = sendmsg(server_fd, &dmludp_connection->acknowldge_msghdr, 0);
-      if (flag4send == 2){
+      if (dmludp_connection->zerocheck()){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
           struct iovec riov = {
@@ -913,20 +909,22 @@ bool Pair::protocal2read(){
             dmludp_connection->clear_recv_setting();
             break;
           }
-
-          if (rbuf){
-            dmludp_connection->rx_len(sizeof(rx_.preamble) + rnbytes)
-            dmludp_connection->get_recv_target(riov.iov_base);
-            break;
-          }
           
+          if (rbuf){
+            dmludp_connection->rx_len(rnbytes)
+            dmludp_connection->get_recv_target(riov.iov_base);
+            if (!dmludp_connection->received(sizeof(rx_.preamble) + rnbytes)){
+              dmludp_connection->send_packet_complete();
+              break;
+            }
+          }
+
           dmludp_connection->rx_len(rnbytes);
           dmludp_connection->get_recv_target(riov.iov_base);
-          // dmludp2read(rx_, rbuf, rnbytes);
           dmludp_connection->send_packet_complete();
           rx_.nread += rnbytes;
         }
-      }else if(flag4send == 1){
+      }else{
         if(dmludp_connection->receive_complete()){
           NonOwningPtr<UnboundBuffer> rbuf;
           while(true){
@@ -944,7 +942,6 @@ bool Pair::protocal2read(){
             }
 
             if (rbuf){
-              // dmludp2read(rx_, rbuf, rnbytes);
               dmludp_connection->send_packet_complete();
               rx_.nread += rnbytes;
             }
@@ -975,21 +972,124 @@ bool Pair::protocal2read(){
             }
           }
         }
-      }else if(lag4send == 3){
-        auto &op = tx_.front();
-        const auto opcode = op.getOpcode();
-        if (opcode == Op::SEND_UNBOUND_BUFFER) {
-          sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-          if (!sbuf) {
-            return false;
+      }
+    }else{
+      for (auto i = dmludp_connection->sendbufferqueue.start(); i < dmludp_connection->sendbufferqueue.end(); i = (i + 1)%256){
+        if(dmludp_connection->sendbufferqueue[i].iscomplete()){
+          auto &op = tx_.front();
+          const auto opcode = op.getOpcode();
+          if (opcode == Op::SEND_UNBOUND_BUFFER) {
+            sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+            if (!sbuf) {
+              return false;
+            }
           }
-        }
-        op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
-        if (op.nwritten == op.preamble.nbytes){
-          writeComplete(op, sbuf, opcode);
-          tx_.pop_front();
+          op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
+          if (op.nwritten == op.preamble.nbytes){
+            writeComplete(op, sbuf, opcode);
+            tx_.pop_front();
+            dmludp_connection->sendbufferqueue.pop_front();
+          }
+        }else{
+          break;
         }
       }
+    }
+    // if(flag4send){
+    //   auto connection_result = dmludp_connection->send_data2();
+    //   auto sent_result = sendmsg(server_fd, &dmludp_connection->acknowldge_msghdr, 0);
+    //   if (flag4send == 2){
+    //     NonOwningPtr<UnboundBuffer> rbuf;
+    //     while(true){
+    //       struct iovec riov = {
+    //         .iov_base = nullptr,
+    //         .iov_len = 0,
+    //       };
+
+    //       const auto rnbytes = prepareRead(rx_, rbuf, riov);
+    //       if (rnbytes == 0){
+    //         readComplete(rbuf);
+    //         dmludp_connection->recv_reset();
+    //         dmludp_connection->clear_recv_setting();
+    //         break;
+    //       }
+
+    //       if (rbuf){
+    //         dmludp_connection->rx_len(sizeof(rx_.preamble) + rnbytes)
+    //         dmludp_connection->get_recv_target(riov.iov_base);
+    //         break;
+    //       }
+          
+    //       dmludp_connection->rx_len(rnbytes);
+    //       dmludp_connection->get_recv_target(riov.iov_base);
+    //       // dmludp2read(rx_, rbuf, rnbytes);
+    //       dmludp_connection->send_packet_complete();
+    //       rx_.nread += rnbytes;
+    //     }
+    //   }else if(flag4send == 1){
+    //     if(dmludp_connection->receive_complete()){
+    //       NonOwningPtr<UnboundBuffer> rbuf;
+    //       while(true){
+    //         struct iovec riov = {
+    //           .iov_base = nullptr,
+    //           .iov_len = 0,
+    //         };
+    //         const auto rnbytes = prepareRead(rx_, rbuf, riov);
+
+    //         if (rnbytes == 0){
+    //           readComplete(rbuf);
+    //           dmludp_conn_recv_reset(dmludp_connection);
+    //           dmludp_conn_reset_rx_len(dmludp_connection);
+    //           break;
+    //         }
+
+    //         if (rbuf){
+    //           // dmludp2read(rx_, rbuf, rnbytes);
+    //           dmludp_connection->send_packet_complete();
+    //           rx_.nread += rnbytes;
+    //         }
+    //       }
+    //       dmludp_connection->recv_reset();
+    //     }else{
+    //       NonOwningPtr<UnboundBuffer> rbuf;
+    //       while(true){
+    //         struct iovec riov = {
+    //           .iov_base = nullptr,
+    //           .iov_len = 0,
+    //         };
+    //         const auto rnbytes = prepareRead(rx_, rbuf, riov);
+
+    //         if (rnbytes == 0){
+    //           readComplete(rbuf);
+    //           dmludp_conn_recv_reset(dmludp_connection);
+    //           dmludp_conn_reset_rx_len(dmludp_connection);
+    //           break;
+    //         }
+
+    //         if (rbuf){
+    //           // dmludp2read(rx_, rbuf, rnbytes);
+    //           dmludp_connection->send_packet_complete();
+    //           GLOO_ENFORCE_LE(dmludp_connection->receive4once, rnbytes);
+    //           rx_.nread += dmludp_connection->receive4once;
+    //           break;
+    //         }
+    //       }
+    //     }
+    //   }else if(lag4send == 3){
+    //     auto &op = tx_.front();
+    //     const auto opcode = op.getOpcode();
+    //     if (opcode == Op::SEND_UNBOUND_BUFFER) {
+    //       sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+    //       if (!sbuf) {
+    //         return false;
+    //       }
+    //     }
+    //     op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
+    //     if (op.nwritten == op.preamble.nbytes){
+    //       writeComplete(op, sbuf, opcode);
+    //       tx_.pop_front();
+    //     }
+    //   }
     }
   }
   if (tx_.empty()) {
@@ -1005,50 +1105,34 @@ bool Pair::protocal2send(){
   if (state_ == CLOSED) {
     return false;
   }
-  NonOwningPtr<UnboundBuffer> buf;
-  std::array<struct iovec, 2> iov;
-  int ioc;
+  
   ssize_t rv;
   
-  auto &op = tx_.front();
+  if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
+    std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
+    _Exit(0);
+  }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
+    for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
+      NonOwningPtr<UnboundBuffer> buf;
+      std::array<struct iovec, 2> iov;
+      int ioc;
+      auto &op = tx_[i];
 
-  // Read data to protocal 
-  if (dmludp_transmission_complete(dmludp_connection)){
-    const auto opcode = op.getOpcode();
-    op.nwritten = 0;
-    if (opcode == Op::SEND_UNBOUND_BUFFER) {
-      buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-      if (!buf) {
+      const auto opcode = op.getOpcode();
+      if (opcode == Op::SEND_UNBOUND_BUFFER) {
+        buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+        if (!buf) {
+          return false;
+        }
+      }
+      const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
+
+      bool connection_written = dmludp_connection->get_data(iov.data(), ioc);
+      if (!connection_written){
         return false;
       }
     }
-    const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-
-    bool write2dmludp = dmludp_get_data(dmludp_connection, iov.data(), ioc);
-
-    if (!write2dmludp){
-      return false;
-    }
-  }
-  /*
-  if (dmludp_connection->transmission_complete()){
-    const auto opcode = op.getOpcode();
-    op.nwritten = 0;
-    if (opcode == Op::SEND_UNBOUND_BUFFER) {
-      buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-      if (!buf) {
-        return false;
-      }
-    }
-    dmludp_connection->clear_sent_once();
-    const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-
-    bool w2dmludp = dmludp_connection->get_data(siov.data(), iovecs_len);
-    if (!w2dmludp){
-      return false;
-    }
-  }
-  */
+  }else{}
 
   while(true){
     if(!dmludp_connection->check_status()){
@@ -1058,7 +1142,7 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    for (;i < packet_.second; i++){
+    for ( ;i < packet_.second; i++){
       auto retval = sendmsg(server_fd, &dmludp_connection->send_message[i].message_body, 0);
       if(retval == -1){
         if (errno == EINTR){
@@ -1214,11 +1298,9 @@ void Pair::sendSyncMode(Op& op) {
 void Pair::sendAsyncMode(Op& op) {
   GLOO_ENFORCE(!sync_);
 
-  // // If an earlier operation hasn't finished transmitting,
-  // // add this operation to the transmit queue.
-  ////////////////////////////////////////
+  // If an earlier operation hasn't finished transmitting,
+  // add this operation to the transmit queue.
   op.nwritten = 0;
-  ////////////////////////////////////////
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
     // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;

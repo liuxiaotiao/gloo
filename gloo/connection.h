@@ -29,7 +29,7 @@ const size_t HEADER_LENGTH = sizeof(Header);
 // The default max_datagram_size used in congestion control.
 const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
 
-const size_t RX_CONST = 2000;
+const size_t RX_CONST = 6000;
 
 const size_t ONCE_LIMIT = 1300;
 
@@ -636,13 +636,174 @@ class CircularQueue {
             return index_;
         }
 
-        void push_back(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
-            data_[tail_].set_buffer(iovecs, iovecs_len, priotity_list);
+        // void push_back(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+        //     data_[tail_].set_buffer(iovecs, iovecs_len, priotity_list);
+        //     tail_ = (tail_ + 1) % capacity_;
+        // }
+
+        ~CircularQueue() = default; 
+};
+
+class metarecebuf{
+    public:
+        RecvBuf metabuf;
+
+        RCset receive_offset;
+
+        std::vector<uint16_t> explen(2, 0);
+
+        bool complete_flag = false;
+
+        uint8_t rdifference;
+
+        size_t received = 0;
+
+        bool has_zero = false;
+
+        size_t srcset = 0;
+
+        metarecebuf(uint8_t difference_): rdifference(difference_){
+
+        }
+
+        ~metarecebuf(){}
+
+        void clear(){
+            receive_offset.clear();
+            metabuf.reset();
+            metabuf.src = null;
+            complete_flag = false;
+            received = 0;
+            has_zero = false;
+            srcset = 0;
+            for (auto &e:explen){
+                e = 0;
+            }
+        }
+
+        void addexplen(size_t exp_){
+            for(auto &e: explen){
+                if (e == 0){
+                    e = exp_;
+                }
+            }
+        }
+
+        void set_complete(){
+            complete_flag = true;
+        }
+
+        bool find(uint64_t pkt_offset, uint32_t pkt_length){
+            auto exist = receive_offset.find(pkt_offset);
+            if (!exist){
+                if (pkt_offset == 0){
+                    has_zero = true;
+                }
+                receive_offset.insert(pkt_offset);
+                rec_buffer.reg(pkt_length);
+                received += pkt_length;
+            }
+            return exist;
+        }
+
+        bool is_complete(){
+            size_t total = 0;
+            for(auto e:explen){
+                total += e;
+            }
+            if (received == total || complete_flag){
+                return true;
+            }
+            return false;
+        }
+
+        void set_src(uint8_t* src_){
+            if(srcset < 2){
+                metabuf.src = src_;
+                srcset++;
+            }
+        }
+}  
+
+class RCircularQueue {
+    public:
+        std::vector<metarecebuf> data_;
+        size_t head_;
+        size_t tail_;
+        size_t capacity_;
+
+        CircularQueue(size_t capacity = 256) 
+            : head_(0), tail_(0), capacity_(capacity)
+        {
+            data_.resize(capacity);
+            for (auto i = 0; i < capacity ; i++){
+                data_.emplace_back(i);
+            }
+        }
+
+        void push_back() {
+            data_[tail_].clear();
             tail_ = (tail_ + 1) % capacity_;
         }
 
+        void pop_front() {
+            if (empty()) {
+                throw std::runtime_error("Queue is empty, cannot remove element.");
+            }
+            data_[head_].clear();
+            head_ = (head_ + 1) % capacity_;
+        }
+
+        size_t size() const {
+            if (tail_ >= head_) {
+                return tail_ - head_;
+            } else {
+                return capacity_ - (head_ - tail_);
+            }
+        }
+
+        bool empty() const {
+            return head_ == tail_;
+        }
+
+        bool full() const {
+            return ((tail_ + 1) % capacity_) == head_;
+        }
+
+        void clear() {
+            head_ = tail_ = 0;
+        }
+
+        size_t end(){
+            return tail_;
+        }
+
+        size_t start(){
+            return head_;
+        }
+
+        void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length){
+            data_[difference].find(pkt_offset, pkt_length);
+        }
+
+        bool iscomplete(uint8_t difference_){
+            return data_[difference_].is_complete();
+        }
+
+        void set_recv_pointer(uint8_t difference_, uint8_t* src){
+            data_[difference_].set_src(src);
+        }
+
+        bool rx_len(uint8_t difference, size_t expected){
+            data_[difference].addexplen(expected);
+        }
+
+        bool isreceived(uint8_t difference, size_t expected){
+            return data_[difference].is_complete();
+        }
+
         ~CircularQueue() = default; 
-    };
+};
 
 class Config {
 public:
@@ -848,7 +1009,7 @@ public:
     */
     ssize_t expected_offset;
 
-    std::vector<std::pair<uint32_t, uint32_t>> rangemap;
+    std::vector<std::pair<ssize_t, uint32_t>> rangemap(RX_CONST, {-1, 0});
 
     size_t record_index;
 
@@ -867,6 +1028,10 @@ public:
     TSCircularQueue tsInfo;
 
     CircularQueue sendbufferqueue;
+
+    std::deque<std::pair<uint8_t, uint16_t>> zerolist;
+
+    RCircularQueue recvCQ;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, Config config, bool server):    
     recv_count(0),
@@ -918,7 +1083,8 @@ public:
     {
         send_message.resize(ONCE_SEND_LIMIT);
 
-        receive_message.resize(ONCE_RECEIVE_LIMINT);
+        // receive_message.resize(ONCE_RECEIVE_LIMINT);
+        receive_message.resize(RX_CONST)
 
         receive_offset.add_rule(100 * 1024 * 1024);
 
@@ -1155,7 +1321,7 @@ public:
         }
 
         if (pkt_offset == 0){
-            zero_packet_index = 0;
+            zerolist.push_back(std::make_pair(pkt_difference, index));
         }
      
         if (min_received == -1){
@@ -1183,11 +1349,21 @@ public:
             receivequeue[pkt_difference].rec_buffer.reg(pkt_length);
         }
         */
-        if(!receive_offset.find(pkt_offset) && pkt_difference == receive_connection_difference){
-            receive_offset.insert(pkt_offset);
-            rec_buffer.reg(pkt_length);
-        }
+        // if(!receive_offset.find(pkt_offset) && pkt_difference == receive_connection_difference){
+        //     receive_offset.insert(pkt_offset);
+        //     rec_bufferp[].reg(pkt_length);
+        // }
+        // if(!receive_offset[pkt_difference].find(pkt_offset)){
+        //     receive_offset[pkt_difference].insert(pkt_offset);
+        //     rec_buffer[pkt_difference].reg(pkt_length);
+        // }
+        recvCQ.insert(pkt_difference, pkt_offset, pkt_length);
+
     };
+
+    bool received(size_t explen){
+        return recvCQ.isreceived(zerolist[0].first, explen);
+    }
 
 
     void process_application_packet(uint8_t* src, size_t src_len){
@@ -1380,19 +1556,34 @@ public:
     }
 
     //  no loss scenario, no stop packet.
+    // bool receive_complete(){
+    //     auto rlen = rec_buffer.receive_length();
+	//     // std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
+    //     if (rx_length == rlen){
+    //         receive_connection_difference++;
+    //         zerolist.pop_front();
+    //         clear_recv_setting();
+    //         return true;
+    //     }
+    //     return false;
+    // }
+
     bool receive_complete(){
-        auto rlen = rec_buffer.receive_length();
-	    // std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
-        if (rx_length == rlen){
-            receive_connection_difference++;
-            clear_recv_setting();
+        if (receive_connection_difference == zerolist[0].first){
+            return receiveSQ.iscomplete(zerolist[0].first);
+        }
+        return false;
+    }
+
+    bool zerocheck(){
+        if(receive_connection_difference == zerolist[0].first){
             return true;
         }
         return false;
     }
 
     void rx_len(size_t expected){
-        rx_length = expected;
+        receiveSQ.rx_len(zerolist(0).first, expected);
     }
 
     void reset_rx_len(){
@@ -1450,7 +1641,7 @@ public:
 
         size_t sent_limit = std::min(send_message.size(), cwnd_limit);
         ssize_t sent = 0;
-        for (auto i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.size()) {
+        for (auto i = sendbufferqueue.start() ; i <= sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.size()) {
             while (true){
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[i].iov[1], out_len, out_off);
                 if (out_len == -1) {
@@ -1538,6 +1729,15 @@ public:
         return -1;
     }
 
+    size_t get_end(){
+        return receive_message.size();
+    }
+
+    void get_recv_target(uint8_t * target_){
+        /*check top poiner is null or not*/
+        recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    }
+
     ssize_t next_available(size_t index){
         auto idx = index + 1;
         while(true){
@@ -1561,18 +1761,27 @@ public:
         size_t index = 0;
         while (true){
             if (rangemap[index].first == -1){
-                break;
+                continue;
             }
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_difference();
             auto copy_len = rangemap[index].second;
             if(receive_connection_difference == pkt_difference){
-                memcpy(rec_buffer.data.data() + pkt_offset, receive_message[index].iov[1].iov_base, copy_len);
+                if(recvCQ.data_[pkt_difference].metabuf.src != null){
+                    if (pkt_offset >= 48){
+                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, receive_message[index].iov[1].iov_base, copy_len);
+                    }else{
+                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, receive_message[index].iov[1].iov_base, copy_len);
+                    }
+                }
             }
             auto record_index = index;
             index = rangemap[index].first + 1;
             rangemap[record_index].first = -1;
             rangemap[record_index].second = 0;
+            if (index == -1){
+                index = record_index + 1;
+            }
         }
         /*Before receive, check if the buffer is available*/
         receive_upper_bound = 0;
