@@ -964,9 +964,9 @@ public:
         return std::make_shared<Connection>(local, peer, config, true);
     };
 
-    uint8_t handshake_header[sizeof(Header)];
+    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    // const static uint8_t fin_header[sizeof(Header)];
+    const uint8_t fin_header[sizeof(Header)] = ;
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1129,8 +1129,6 @@ public:
         for(auto i = 0; i < RX_CONST; i++){
             rangemap.push_back(std::make_pair(-1, 0));
         }
-
-        handshake_header[] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     };
 
     ~Connection(){};
@@ -1811,9 +1809,9 @@ public:
             if(receive_connection_difference == pkt_difference){
                 if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
                     if (pkt_offset >= 48){
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, receive_message[index].iov[1].iov_base, copy_len);
+                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
                     }else{
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, receive_message[index].iov[1].iov_base, copy_len);
+                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
                     }
                 }
             }
@@ -1936,10 +1934,10 @@ public:
         }      
 
 
-        if (ty == Type::Fin){
-            memcpy(out, fin_header, HEADER_LENGTH);
-            return total_len;
-        }
+        // if (ty == Type::Fin){
+        //     memcpy(out, fin_header, HEADER_LENGTH);
+        //     return total_len;
+        // }
 
         total_len += (size_t)psize;
 
