@@ -97,7 +97,7 @@ class RecordInfo{
         record_len = 0;
         record_difference = -1;
     }
-}
+};
 
 
 /*
@@ -122,8 +122,8 @@ class Message{
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-            msg.msg_control = control;     
-            msg.msg_controllen = sizeof(control);
+            message_body.msg_control = control;     
+            message_body.msg_controllen = sizeof(control);
         }
 
         ~Message(){};
@@ -168,7 +168,7 @@ class Message{
 
 class RCMessage : public Message {
     public:
-        RCMessage(void *ptr, size_t ptr_len):{
+        RCMessage(void *ptr, size_t ptr_len){
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
@@ -188,7 +188,7 @@ private:
     size_t count;                 
 
 public:
-    explicit TSCircularQueue(size_t capacity = 15)
+    explicit TSCircularQueue(size_t capacity = 25)
         : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
 
     ~TSCircularQueue(){}
@@ -348,9 +348,9 @@ class ReTransmissionMap{
         std::vector<uint32_t> offsets;
 
     public:
-        RetransmissionMap():offsets(100){};
+        ReTransmissionMap():offsets(100){};
 
-        ~RetransmissionMap(){};
+        ~ReTransmissionMap(){};
 
         void clear(){
             start_packet = end_packet = -1;
@@ -366,7 +366,7 @@ class ReTransmissionMap{
             }
             if (start_packet == -1){
                 std::cerr << "Error: start_packet is -1" << std::endl;
-                _Exit();
+                _Exit(0);
             }
             end_packet = packetnum;
             offsets[end_packet - start_packet] = packetoffset;
@@ -375,11 +375,11 @@ class ReTransmissionMap{
         bool empty(){
             if (start_packet == -1 && end_packet != -1) {
                 std::cerr << "Error: start == -1, end != -1" << std::endl;
-                _Exit();
+                _Exit(0);
             }
             return ((start_packet == end_packet) && (start_packet == -1));
         }
-}
+};
 
 class TransmissionMap{
     private:
@@ -405,7 +405,7 @@ class TransmissionMap{
         bool empty() {
             if (startmap.first == -1 && endmap.first != -1) {
                 std::cerr << "Error: start == -1, end != -1" << std::endl;
-                _Exit();
+                _Exit(0);
             }
             return ((startmap.first == endmap.first) && (endmap.first == -1));
         }  
@@ -430,7 +430,7 @@ class TransmissionMap{
                 offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
             }
         }
-}
+};
 
 
 class MetaInfo{
@@ -439,7 +439,7 @@ class MetaInfo{
 
         const uint8_t MetaDifference;
 
-        RetransmissionMap retransmission_map;
+        ReTransmissionMap retransmission_map;
 
         std::vector<uint32_t> priority_offset;
 
@@ -450,14 +450,13 @@ class MetaInfo{
         size_t range_len;
 
 
-        std::pair<ssize_t, ssize_t> packet_range;
+        std::pair<ssize_t, ssize_t> packet_range{-1, -1};
 
         MetaInfo(size_t difference_flag_ = 0): 
         difference_flag(difference_flag_), 
-        MetaDifference(difference_flag_), 
-        packet_range(-1, -1){}
+        MetaDifference(difference_flag_){};
 
-        ~MetaInfo(){}
+        ~MetaInfo(){};
 
         void add_transmission(uint64_t packetnum_, uint32_t packetoffset_){
             retransmission_map.add(packetnum_, packetoffset_);
@@ -543,7 +542,7 @@ class MetaInfo{
 
         }
 
-}
+};
 
 
 class CircularQueue {
@@ -723,7 +722,7 @@ class metarecebuf{
                 srcset++;
             }
         }
-}  
+};  
 
 class RCircularQueue {
     public:
