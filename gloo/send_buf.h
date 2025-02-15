@@ -139,7 +139,7 @@ namespace dmludp{
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
                 meta_len2.push_back(iovecs[i].iov_len);
             }
-            meta_pos = -1;
+            meta_pos = 0;
             bits_set.resize(meta_len);
             ack_count = 0;
             rcq.clear();

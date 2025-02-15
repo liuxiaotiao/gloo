@@ -1,3 +1,5 @@
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/pair.cc PROPERTIES COMPILE_FLAGS "-O2")
+
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     message(WARNING "Gloo TCP transport is supported only on Linux(uses epoll API)")
 else()

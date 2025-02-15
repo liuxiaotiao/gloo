@@ -654,7 +654,7 @@ bool Pair::protocal2read(){
   int sioc;
   ssize_t rv;
 
-  ssize_t receive_number = -1;
+  ssize_t received = 0;
   while(true){
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
@@ -667,12 +667,13 @@ bool Pair::protocal2read(){
             continue;
         }
       }
+      received++;
     }
-    if (receive_number <= 0){
+    if (received <= 0){
         break;
     }
   
-    auto flag4send = dmludp_connection->recv_slice2(receive_number);
+    auto flag4send = dmludp_connection->recv_slice2(received);
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
@@ -832,7 +833,8 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    for ( ;i < packet_.second; i++){
+    auto sent = 0;
+    for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
       if(retval == -1){
         if (errno == EINTR){
@@ -846,9 +848,14 @@ bool Pair::protocal2send(){
         }
         break;
       }
+      sent++;
     }
-    
-    dmludp_connection->send_packet_complete(0, packet_.second, start_time);
+    if(sent == 0){
+      device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+      return true;
+    }else{
+      dmludp_connection->send_packet_complete(0, packet_.second, start_time);
+    }
   }
 
   // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);

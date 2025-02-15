@@ -4,10 +4,10 @@ set(GLOO_SRCS)
 # GLOO_HDRS is the list of header files that we need to install.
 set(GLOO_HDRS)
 
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/connection.h PROPERTIES COMPILE_FLAGS "-O3")
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h PROPERTIES COMPILE_FLAGS "-O3")
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h PROPERTIES COMPILE_FLAGS "-O3")
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/packet.h PROPERTIES COMPILE_FLAGS "-O3")
+# set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/connection.h PROPERTIES COMPILE_FLAGS "-O3")
+# set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h PROPERTIES COMPILE_FLAGS "-O3")
+# set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h PROPERTIES COMPILE_FLAGS "-O3")
+# set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/packet.h PROPERTIES COMPILE_FLAGS "-O3")
 
 # Compiled sources in root directory
 list(APPEND GLOO_SRCS

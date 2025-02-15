@@ -104,7 +104,7 @@ class Message{
 
         Header message_header;
 
-        char control[CMSG_SPACE(sizeof(struct timespec))]; 
+        // char control[CMSG_SPACE(sizeof(struct timespec))]; 
 
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
@@ -115,8 +115,8 @@ class Message{
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-            message_body.msg_control = control;     
-            message_body.msg_controllen = sizeof(control);
+            // message_body.msg_control = control;     
+            // message_body.msg_controllen = sizeof(control);
         }
 
         ~Message(){};
@@ -610,6 +610,10 @@ class SCircularQueue {
             return head_;
         }
 
+        size_t max(){
+            return capacity_;
+        }
+
         // ssize_t retransmision_available() {
         //     ssize_t index_ = -1;
         //     for (auto i = start() ; i < end(); i++){
@@ -1005,9 +1009,9 @@ public:
     std::vector<RCMessage> receive_message;
     
     // EAGAIN recovery.
-    ssize_t start_index;
+    ssize_t start_index = -1;
 
-    ssize_t end_index;
+    ssize_t end_index = -1;
 
     uint64_t ACKrange;
 
@@ -1681,9 +1685,9 @@ public:
 
         size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
         ssize_t sent = 0;
-        for (auto i = sendbufferqueue.start() ; i <= sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.size()) {
+        for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
             while (true){
-                auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[i].iov[1], out_len, out_off);
+                auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
                 if (out_len == -1) {
                     break;
                 }
@@ -1704,22 +1708,37 @@ public:
             }
         }
 
-        return (i - 1);
+        // return (i - 1);
+        return sent;
     }
 
+    // std::pair<ssize_t, ssize_t> send_packet(){
+    //     if (get_dmludp_error()){
+    //         return std::make_pair(start_index, (end_index - start_index + 1));
+    //     }
+
+    //     if (end_index == -1){
+    //         end_index = prepareData();
+    //         if(end_index != -1){
+    //             start_index = 0;
+    //         }
+    //         send_packet_type = Type::Application;
+    //     }
+    //     return std::make_pair(start_index, (end_index - start_index + 1));
+    // }
     std::pair<ssize_t, ssize_t> send_packet(){
         if (get_dmludp_error()){
-            return std::make_pair(start_index, (end_index - start_index + 1));
+            return std::make_pair(start_index, end_index);
         }
 
         if (end_index == -1){
-            end_index = prepareData();
+            end_index = prepareData() - 1;
             if(end_index != -1){
                 start_index = 0;
             }
             send_packet_type = Type::Application;
         }
-        return std::make_pair(start_index, (end_index - start_index + 1));
+        return std::make_pair(start_index, end_index);
     }
 
     void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::system_clock::time_point& start_ts = std::chrono::system_clock::time_point{}){
