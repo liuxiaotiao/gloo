@@ -825,6 +825,7 @@ bool Pair::protocal2send(){
 
   while(true){
     if(!dmludp_connection->check_status()){
+      device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
     
@@ -840,6 +841,8 @@ bool Pair::protocal2send(){
 
         if (errno == EAGAIN){
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
+            device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+            return true;
         }
         break;
       }
@@ -848,7 +851,7 @@ bool Pair::protocal2send(){
     dmludp_connection->send_packet_complete(0, packet_.second, start_time);
   }
 
-  device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+  // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
 
   return true;
 }

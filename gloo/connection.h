@@ -1248,6 +1248,7 @@ public:
 
             if (pkt_ty == Type::ACK){
                 process_acknowledge2(i);
+                transmission_complete_check();
             }
 
             if (pkt_ty == Type::Application){
@@ -1454,8 +1455,13 @@ public:
     }
     
 
+    // bool check_status(){
+    //     if (recovery.cwnd_available() && !send_buffer.is_empty()) return true;
+    //     return false;
+    // }
+
     bool check_status(){
-        if (recovery.cwnd_available() && !send_buffer.is_empty()) return true;
+        if (recovery.cwnd_available() && !sendbufferqueue.empty()) return true;
         return false;
     }
 
@@ -1857,6 +1863,14 @@ public:
             return true;
         }
         return false;
+    }
+
+    bool transmission_complete_check(){
+        bool transmission_complte = false;
+        while(transmission_complete()){
+            transmission_complte = true;
+        }
+        return transmission_complte;
     }
 
     //Send single packet
