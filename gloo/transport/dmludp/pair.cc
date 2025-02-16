@@ -655,6 +655,7 @@ bool Pair::protocal2read(){
   ssize_t rv;
 
   ssize_t received = 0;
+  size_t receive_check = 0;
   while(true){
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
@@ -668,15 +669,17 @@ bool Pair::protocal2read(){
         }
       }
       received++;
+      receive_check = receive_number;
     }
     if (received <= 0){
         break;
     }
   
-    auto flag4send = dmludp_connection->recv_slice2(received);
+    auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
+      /*---------------------TODO:multiple zero packet-----------------------------*/
       if (dmludp_connection->zerocheck()){
         NonOwningPtr<UnboundBuffer> rbuf;
         while(true){
