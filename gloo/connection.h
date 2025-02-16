@@ -594,8 +594,8 @@ class SCircularQueue {
                 return false;
             }
             bool isReady = false;
-            for(auto i = start(); i < end() ; i = (i + 1) % /capacity_){
-                isReady |= !data_[i].is_empty();
+            for(auto i = start(); i < end() ; i = (i + 1) % capacity_){
+                isReady |= !data_[i].metabuf.is_empty();
             }
             return isReady;
         }
@@ -1855,7 +1855,7 @@ public:
         size_t index = 0;
         ssize_t index_check = -1;
         while (true) {
-            if (index == receive_message.boundary()){
+            if (index == boundary()){
                 break;
             }
             
@@ -1869,7 +1869,7 @@ public:
             }else{
                 index_check = -1;
             }
-            ssize_t record_index = -1;
+            // ssize_t record_index = -1;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
             auto copy_len = rangemap[index].second;
