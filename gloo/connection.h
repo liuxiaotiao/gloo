@@ -824,10 +824,10 @@ class RCircularQueue {
         void indexcheck(uint8_t index_){
             bool check_ = false;
             if (head_ < tail_) {
-                // 没有环绕，队列有效区间是 [head, tail)
+                // Without wrapping, the valid range of arrangement is [head, tail)
                 check_ = (index_ >= head_ && index_ < tail_);
             } else {
-                // 环绕了，队列有效区间是 [head, capacity) ∪ [0, tail)
+                // Surrounded, the effective queue is [head,capacity) ∪ [0,tail)
                 check_ = (index_ >= head_ || index_ < tail_);
             }
 
@@ -1628,22 +1628,13 @@ public:
         rec_buffer.reset();
     }
 
-    //  no loss scenario, no stop packet.
-    // bool receive_complete(){
-    //     auto rlen = rec_buffer.receive_length();
-	//     // std::cout<<"[Compare] rx_length:"<<rx_length<<" "<<(rx_length == rlen)<<" rlen:"<<rlen<<std::endl;
-    //     if (rx_length == rlen){
-    //         receive_connection_difference++;
-    //         zerolist.pop_front();
-    //         clear_recv_setting();
-    //         return true;
-    //     }
-    //     return false;
-    // }
+    void update_receive_difference(){
+        receive_connection_difference += 1;
+    }
 
-    bool receive_complete(){
-        if (receive_connection_difference == zerolist[0].first){
-            return recvCQ.iscomplete(zerolist[0].first);
+     bool receive_complete(){
+        if (receive_connection_difference == recvCQ.start()){
+            return recvCQ.iscomplete(receive_connection_difference);
         }
         return false;
     }
@@ -1851,6 +1842,14 @@ public:
         Offset_len pkt_offset;
         Packet_len pkt_len;
         Difference_len pkt_difference;
+        if (receive_connection_difference == zerolist[0].first){
+            auto index = zerolist[0].second;
+            pkt_offset = receive_message[index].get_packet_offset();
+            pkt_difference = receive_message[index].get_packet_difference();
+            memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
+            rangemap[index] = {-1, 0};
+            return;
+        }
 
         size_t index = 0;
         ssize_t index_check = -1;
@@ -1881,6 +1880,7 @@ public:
                         memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
                     }
                 }
+                /*TODO: ADD fast check to stop copy earlier, no need to iterate all element*/
             }
             auto record_index = index;
             index = rangemap[index].first + 1;
