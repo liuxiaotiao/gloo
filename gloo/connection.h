@@ -304,16 +304,26 @@ class RCset{
             dataload_len.push_back(load_len);
         }
 
+        // size_t get_index(size_t offset_){
+        //     ssize_t index = -1;
+        //     if (dataload_len.size() == 1){
+        //         index = offset_ / payload_len;
+        //     }else{
+        //         if(offset_ <= dataload_len[0]){
+        //             index = offset_ / payload_len;
+        //         }else{
+        //             index = round_up(dataload_len[0] , payload_len) - 1 + round_up((offset_ - dataload_len[0]), payload_len);
+        //         }
+        //     }
+        //     return index;
+        // }
+
         size_t get_index(size_t offset_){
             ssize_t index = -1;
-            if (dataload_len.size() == 1){
-                index = offset_ / payload_len;
+            if (offset_ <= 48){
+                index = 0;
             }else{
-                if(offset_ <= dataload_len[0]){
-                    index = offset_ / payload_len;
-                }else{
-                    index = round_up(dataload_len[0] , payload_len) - 1 + round_up((offset_ - dataload_len[0]), payload_len);
-                }
+                index = round_up((offset_ - 48), payload_len);
             }
             return index;
         }
@@ -516,12 +526,12 @@ class MetaInfo{
             return -1;
         }
 
-        void ack4offset(uint64_t PacketNum, bool isloss, uint32_t offset_ = 0){
+        void ack4offset(uint64_t PacketNum, bool isReceived, uint32_t offset_ = 0){
             auto packet_offset_ = offset_calculate(PacketNum);
-            if (isloss){
-                metabuf.acknowledege_and_drop(packet_offset_, false);
-            }else{
+            if (isReceived){
                 metabuf.acknowledege_and_drop(packet_offset_, true);
+            }else{
+                metabuf.acknowledege_and_drop(packet_offset_, false);
             }
         }
 
@@ -725,7 +735,7 @@ class metarecebuf{
             return exist;
         }
 
-        bool is_complete(){
+        bool is_complete() const{
             size_t total = 0;
             for(auto e:source_len){
                 total += e;
@@ -1731,15 +1741,16 @@ public:
         auto pkt_len = receive_message[index_].get_packet_length();
 
         /*To acknowledge packet receive ts*/
-        struct cmsghdr *cmsg;
-        struct timespec *ts;
-        for (cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); cmsg != nullptr; cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
-            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
-                ts = (struct timespec *) CMSG_DATA(cmsg);
-            }
-        }
+        // struct cmsghdr *cmsg;
+        // struct timespec *ts;
+        // for (cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); cmsg != nullptr; cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
+        //         ts = (struct timespec *) CMSG_DATA(cmsg);
+        //     }
+        // }
 
-        auto sendts = timespecToChrono(*ts);
+
+        auto sendts = std::chrono::high_resolution_clock::now();
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
         update_rtt3(sendts, ackts);
 
@@ -1765,8 +1776,8 @@ public:
                     sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
                     pn++;
                 }else{
-                    break;
                     sendbufferqueue.data_[i].reset_packet_range();
+                    break;
                 }
             }
         }

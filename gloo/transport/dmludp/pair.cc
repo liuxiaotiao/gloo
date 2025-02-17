@@ -869,6 +869,9 @@ bool Pair::protocal2read(){
                 break;
               }
             }
+            if(dmludp_connection->send_packet_type == 0){
+              dmludp_connection->send_packet_type = 5;
+            }
 
             dmludp_connection->rx_len(rnbytes);
             dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>(riov.iov_base));
@@ -933,7 +936,7 @@ bool Pair::protocal2read(){
         }
       }    
     }
-    
+    is t
     {
       for (auto i = dmludp_connection->sendbufferqueue.start(); i < dmludp_connection->sendbufferqueue.end(); i = (i + 1) % 256){
         if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
