@@ -744,104 +744,267 @@ class metarecebuf{
         }
 };  
 
+// class RCircularQueue {
+//     public:
+//         std::vector<metarecebuf> data_;
+//         size_t head_;
+//         size_t tail_;
+//         size_t capacity_;
+
+//         RCircularQueue(size_t capacity = 256) 
+//             : head_(0), tail_(0), capacity_(capacity)
+//         {
+//             data_.reserve(capacity);
+//             for (auto i = 0; i < capacity ; i++){
+//                 data_.emplace_back(i);
+//             }
+//         }
+
+//         void push_back() {
+//             data_[tail_].clear();
+//             tail_ = (tail_ + 1) % capacity_;
+//         }
+
+//         void pop_front() {
+//             if (empty()) {
+//                 throw std::runtime_error("Queue is empty, cannot remove element.");
+//             }
+//             data_[head_].clear();
+//             head_ = (head_ + 1) % capacity_;
+//         }
+
+//         size_t size() const {
+//             if (tail_ >= head_) {
+//                 return tail_ - head_;
+//             } else {
+//                 return capacity_ - (head_ - tail_);
+//             }
+//         }
+
+//         bool empty() const {
+//             return head_ == tail_;
+//         }
+
+//         bool full() const {
+//             return ((tail_ + 1) % capacity_) == head_;
+//         }
+
+//         void clear() {
+//             head_ = tail_ = 0;
+//         }
+
+//         size_t end(){
+//             return tail_;
+//         }
+
+//         size_t start(){
+//             return head_;
+//         }
+
+//         void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length){
+//             data_[difference].find(pkt_offset, pkt_length);
+//         }
+
+//         bool iscomplete(uint8_t difference_){
+//             return data_[difference_].is_complete();
+//         }
+
+//         void set_recv_pointer(uint8_t difference_, uint8_t* src){
+//             data_[difference_].set_src(src);
+//         }
+
+//         void rx_len(uint8_t difference, size_t expected){
+//             data_[difference].addexplen(expected);
+//         }
+
+//         bool isreceived(uint8_t difference, size_t expected){
+//             return data_[difference].is_complete();
+//         }
+
+//         void indexcheck(uint8_t index_){
+//             bool check_ = false;
+//             if (head_ < tail_) {
+//                 // Without wrapping, the valid range of arrangement is [head, tail)
+//                 check_ = (index_ >= head_ && index_ < tail_);
+//             } else if(head_ = tail_){
+
+//             }
+//             else {
+//                 // Surrounded, the effective queue is [head,capacity) ∪ [0,tail)
+//                 check_ = (index_ >= head_ || index_ < tail_);
+//             }
+
+//             if(!check_){
+//                 while(true){
+//                     push_back();
+//                     if (tail_ == (index_ + 1)%capacity_){
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+
+//         ~RCircularQueue() = default; 
+// };
+
 class RCircularQueue {
-    public:
-        std::vector<metarecebuf> data_;
-        size_t head_;
-        size_t tail_;
-        size_t capacity_;
+public:
+    std::vector<metarecebuf> data_; // 存储所有 metarecebuf 对象
+    size_t head_;      // 指向队头元素（最旧的数据）
+    size_t tail_;      // 指向下一个写入位置
+    size_t capacity_;  // 队列总容量
+    size_t count_;     // 当前有效元素个数
 
-        RCircularQueue(size_t capacity = 256) 
-            : head_(0), tail_(0), capacity_(capacity)
-        {
-            data_.reserve(capacity);
-            for (auto i = 0; i < capacity ; i++){
-                data_.emplace_back(i);
+    // 构造函数，默认容量为256
+    RCircularQueue(size_t capacity = 256)
+        : head_(0), tail_(0), capacity_(capacity), count_(0)
+    {
+        data_.reserve(capacity_);
+        // 初始化每个元素（例如：根据下标初始化）
+        for (size_t i = 0; i < capacity_; i++) {
+            data_[i] = metarecebuf(static_cast<int>(i));
+        }
+    }
+
+    // push_back 操作：复位 tail_ 指向的对象，并推进 tail_ 指针。
+    // 如果队列已满，则覆盖最旧数据，同时 head_ 前进。
+    void push_back() {
+        // 在写入前先复位目标对象
+        data_[tail_].clear();
+
+        // 写入后推进 tail_
+        tail_ = (tail_ + 1) % capacity_;
+
+        // 如果队列已满，则覆盖旧数据：head_ 同步推进
+        if (count_ == capacity_) {
+            head_ = tail_;
+        } else {
+            ++count_;
+        }
+    }
+
+    // pop_front 操作：移除队头数据（复位对象并推进 head_ 指针）
+    void pop_front() {
+        if (empty()) {
+            throw std::runtime_error("Queue is empty, cannot remove element.");
+        }
+        data_[head_].clear();
+        head_ = (head_ + 1) % capacity_;
+        --count_;
+    }
+
+    // 返回当前队列中的元素个数
+    size_t size() const {
+        return count_;
+    }
+
+    // 队列为空则返回 true
+    bool empty() const {
+        return count_ == 0;
+    }
+
+    // 队列满则返回 true
+    bool full() const {
+        return count_ == capacity_;
+    }
+
+    // 清空队列，复位 head_、tail_、count_，并复位所有数据
+    void clear() {
+        for (size_t i = 0; i < capacity_; i++) {
+            data_[i].clear();
+        }
+        head_ = tail_ = count_ = 0;
+    }
+
+    // 返回当前 tail_（下一个写入位置）的下标
+    size_t end() const {
+        return tail_;
+    }
+
+    // 返回当前 head_（最旧元素）的下标
+    size_t start() const {
+        return head_;
+    }
+
+    // 基于下标对指定 metarecebuf 调用 find 操作
+    // difference 作为下标参数，要求在 [0, capacity_) 范围内
+    void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length) {
+        if (difference >= capacity_) {
+            throw std::out_of_range("insert: difference index out of range");
+        }
+        data_[difference].find(pkt_offset, pkt_length);
+    }
+
+    // 判断指定下标的 metarecebuf 是否接收完整
+    bool iscomplete(uint8_t difference) const {
+        if (difference >= capacity_) {
+            throw std::out_of_range("iscomplete: difference index out of range");
+        }
+        return data_[difference].is_complete();
+    }
+
+    // 设置指定下标 metarecebuf 的接收指针
+    void set_recv_pointer(uint8_t difference, uint8_t* src) {
+        if (difference >= capacity_) {
+            throw std::out_of_range("set_recv_pointer: difference index out of range");
+        }
+        data_[difference].set_src(src);
+    }
+
+    // 设置指定下标 metarecebuf 的预期长度
+    void rx_len(uint8_t difference, size_t expected) {
+        if (difference >= capacity_) {
+            throw std::out_of_range("rx_len: difference index out of range");
+        }
+        data_[difference].addexplen(expected);
+    }
+
+    // 判断指定下标的 metarecebuf 是否接收完整
+    // 注意：此处 expected 参数未被使用，可根据需要调整逻辑
+    bool isreceived(uint8_t difference, size_t expected) const {
+        if (difference >= capacity_) {
+            throw std::out_of_range("isreceived: difference index out of range");
+        }
+        return data_[difference].is_complete();
+    }
+
+    // 检查给定下标 index 是否在当前有效数据区间内。
+    // 如果不在区间内，则通过多次调用 push_back() 推进 tail_，
+    // 直至 index 成为有效数据的一部分。
+    void indexcheck(uint8_t index) {
+        // 如果队列为空，必须先调用一次 push_back() 添加一个元素，
+        // 这样才能让有效区间不再为空，从而将 index 纳入有效区间
+        if (empty()) {
+            size_t desiredTail = (index + 1) % capacity_;
+            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
+            size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
+            for (size_t i = 0; i < pushes; ++i) {
+                push_back();
+            }
+            return;
+        }
+        
+        bool inRange = false;
+        if (head_ < tail_) {
+            // 无环绕情况：有效区间为 [head_, tail_)
+            inRange = (index >= head_ && index < tail_);
+        } else {
+            // 环绕情况：有效区间为 [head_, capacity_) ∪ [0, tail_)
+            inRange = (index >= head_ || index < tail_);
+        }
+        
+        if (!inRange) {
+            // 计算期望的 tail_ 值：为了让 index 成为有效数据的一部分，应使 tail_ = (index + 1) % capacity_
+            size_t desiredTail = (index + 1) % capacity_;
+            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
+            size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
+            for (size_t i = 0; i < pushes; ++i) {
+                push_back();
             }
         }
+    }
 
-        void push_back() {
-            data_[tail_].clear();
-            tail_ = (tail_ + 1) % capacity_;
-        }
-
-        void pop_front() {
-            if (empty()) {
-                throw std::runtime_error("Queue is empty, cannot remove element.");
-            }
-            data_[head_].clear();
-            head_ = (head_ + 1) % capacity_;
-        }
-
-        size_t size() const {
-            if (tail_ >= head_) {
-                return tail_ - head_;
-            } else {
-                return capacity_ - (head_ - tail_);
-            }
-        }
-
-        bool empty() const {
-            return head_ == tail_;
-        }
-
-        bool full() const {
-            return ((tail_ + 1) % capacity_) == head_;
-        }
-
-        void clear() {
-            head_ = tail_ = 0;
-        }
-
-        size_t end(){
-            return tail_;
-        }
-
-        size_t start(){
-            return head_;
-        }
-
-        void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length){
-            data_[difference].find(pkt_offset, pkt_length);
-        }
-
-        bool iscomplete(uint8_t difference_){
-            return data_[difference_].is_complete();
-        }
-
-        void set_recv_pointer(uint8_t difference_, uint8_t* src){
-            data_[difference_].set_src(src);
-        }
-
-        void rx_len(uint8_t difference, size_t expected){
-            data_[difference].addexplen(expected);
-        }
-
-        bool isreceived(uint8_t difference, size_t expected){
-            return data_[difference].is_complete();
-        }
-
-        void indexcheck(uint8_t index_){
-            bool check_ = false;
-            if (head_ < tail_) {
-                // Without wrapping, the valid range of arrangement is [head, tail)
-                check_ = (index_ >= head_ && index_ < tail_);
-            } else {
-                // Surrounded, the effective queue is [head,capacity) ∪ [0,tail)
-                check_ = (index_ >= head_ || index_ < tail_);
-            }
-
-            if(check_){
-                while(true){
-                    push_back();
-                    if (tail_ == index_){
-                        break;
-                    }
-                }
-            }
-        }
-
-        ~RCircularQueue() = default; 
+    ~RCircularQueue() = default;
 };
 
 class Config {

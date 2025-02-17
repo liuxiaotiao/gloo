@@ -853,6 +853,9 @@ bool Pair::protocal2read(){
               dmludp_connection->recvCQ.pop_front();
               dmludp_connection->zerolist.pop_front();
               dmludp_connection->update_receive_difference();
+              if (dmludp_connection->recvCQ.empty()){
+                stop = true;
+              }
               break;
             }
             
