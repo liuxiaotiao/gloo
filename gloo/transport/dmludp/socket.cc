@@ -233,11 +233,11 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
  
-  int enable = 1;
-  if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
-      perror("setsockopt SO_TIMESTAMPNS failed");
-      exit(EXIT_FAILURE);
-  }
+  // int enable = 1;
+  // if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
+  //     perror("setsockopt SO_TIMESTAMPNS failed");
+  //     exit(EXIT_FAILURE);
+  // }
 
   for (;;){
     ssize_t received = recvfrom(fd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
@@ -298,10 +298,11 @@ void Socket::connect(const struct sockaddr* addr, socklen_t addrlen) {
 
 ssize_t Socket::read(void* buf, size_t count) {
   ssize_t rv = -1;
-  if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
-      perror("setsockopt SO_TIMESTAMPNS failed");
-      exit(EXIT_FAILURE);
-  }
+  // int enable = 1;
+  // if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
+  //     perror("setsockopt SO_TIMESTAMPNS failed");
+  //     exit(EXIT_FAILURE);
+  // }
   for (;;) {
     rv = ::read(fd_, buf, count);
     if (rv == -1 && errno == EINTR) {
@@ -314,10 +315,11 @@ ssize_t Socket::read(void* buf, size_t count) {
 
 ssize_t Socket::write(const void* buf, size_t count) {
   ssize_t rv = -1;
-  if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
-      perror("setsockopt SO_TIMESTAMPNS failed");
-      exit(EXIT_FAILURE);
-  }
+  // int enable = 1;
+  // if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPNS, &enable, sizeof(enable)) < 0) {
+  //     perror("setsockopt SO_TIMESTAMPNS failed");
+  //     exit(EXIT_FAILURE);
+  // }
   for (;;) {
     rv = ::write(fd_, buf, count);
     if (rv == -1 && errno == EINTR) {
