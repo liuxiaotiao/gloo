@@ -936,7 +936,7 @@ bool Pair::protocal2read(){
         }
       }    
     }
-    is t
+
     {
       for (auto i = dmludp_connection->sendbufferqueue.start(); i < dmludp_connection->sendbufferqueue.end(); i = (i + 1) % 256){
         if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){

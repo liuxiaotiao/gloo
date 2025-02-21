@@ -104,7 +104,7 @@ class Message{
 
         Header message_header;
 
-        // char control[CMSG_SPACE(sizeof(struct timespec))]; 
+        char control[CMSG_SPACE(sizeof(struct timespec))]; 
 
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
@@ -113,10 +113,10 @@ class Message{
             iov[1] = {nullptr, 0};
 
             memset(&message_body, 0, sizeof(msghdr));
-            message_body.msg_iov = iov;
+            message_body.msg_iov = &iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-            // message_body.msg_control = control;     
-            // message_body.msg_controllen = sizeof(control);
+            message_body.msg_control = control;     
+            message_body.msg_controllen = sizeof(control);
         }
 
         ~Message(){};
@@ -1741,16 +1741,16 @@ public:
         auto pkt_len = receive_message[index_].get_packet_length();
 
         /*To acknowledge packet receive ts*/
-        // struct cmsghdr *cmsg;
-        // struct timespec *ts;
-        // for (cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); cmsg != nullptr; cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
-        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
-        //         ts = (struct timespec *) CMSG_DATA(cmsg);
-        //     }
-        // }
+        struct cmsghdr *cmsg;
+        struct timespec *ts;
+        for (cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); cmsg != nullptr; cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
+                ts = (struct timespec *) CMSG_DATA(cmsg);
+            }
+        }
 
-
-        auto sendts = std::chrono::high_resolution_clock::now();
+        auto sendts = timespecToChrono(*ts);
+        // auto sendts = std::chrono::high_resolution_clock::now();
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
         update_rtt3(sendts, ackts);
 
