@@ -97,6 +97,8 @@ namespace dmludp{
 
         ssize_t meta_left;
 
+        size_t meta_sent = 0;;
+
         ssize_t meta_pos;
 
         std::vector<std::pair<uint8_t*, ssize_t>> meta_element;
@@ -130,12 +132,18 @@ namespace dmludp{
             return false;
         }
 
+        size_t sentComplete(){
+            return meta_sent;
+        }
+
         void add_Meta(struct iovec* iovecs, int iovecs_len){
             meta_status = MetaFlag::Initial;
+            meta_sent = 0;
 
             for (auto i = 0; i < iovecs_len; i++){
                 meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
                 meta_left += iovecs[i].iov_len;
+                meta_sent += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
                 meta_len2.push_back(iovecs[i].iov_len);
             }
@@ -226,6 +234,7 @@ namespace dmludp{
 
         void clear(){
             meta_pos = -1;
+            meta_sent = 0;
             for (auto i = 0; i < retransmision_offset.size(); i++){
                 retransmision_offset[i] = 0;
             }

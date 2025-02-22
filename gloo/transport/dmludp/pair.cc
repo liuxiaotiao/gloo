@@ -948,7 +948,8 @@ bool Pair::protocal2read(){
               return false;
             }
           }
-          op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
+          op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
+          // op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
@@ -1003,6 +1004,7 @@ bool Pair::protocal2send(){
     }
   }else{}
 
+  auto sent = 0;
   while(true){
     if(!dmludp_connection->check_status()){
       device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -1012,7 +1014,7 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    auto sent = 0;
+    
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
       if(retval == -1){

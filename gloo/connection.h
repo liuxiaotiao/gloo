@@ -551,6 +551,10 @@ class MetaInfo{
             return metabuf.written_complete();
         }
 
+        size_t sent(){
+            return metabuf.sentComplete();
+        }
+
         void clear(){
 
         }
@@ -564,6 +568,7 @@ class SCircularQueue {
         size_t head_;
         size_t tail_;
         size_t capacity_;
+        size_t count_ = 0;
 
         SCircularQueue(size_t capacity = 256) 
             : head_(0), tail_(0), capacity_(capacity)
@@ -577,6 +582,7 @@ class SCircularQueue {
         void push_back(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
             data_[tail_].set_buffer(iovecs, iovecs_len, priotity_list);
             tail_ = (tail_ + 1) % capacity_;
+            count_++;
         }
 
         void pop_front() {
@@ -585,9 +591,11 @@ class SCircularQueue {
             }
             data_[head_].clear();
             head_ = (head_ + 1) % capacity_;
+            count_--;
         }
 
         size_t size() const {
+            return count_;
             if (tail_ >= head_) {
                 return tail_ - head_;
             } else {
@@ -596,6 +604,7 @@ class SCircularQueue {
         }
 
         bool empty() const {
+            return count_ == 0;
             return head_ == tail_;
         }
 
@@ -611,11 +620,13 @@ class SCircularQueue {
         }
 
         bool full() const {
+            return count_ == capacity_;
             return ((tail_ + 1) % capacity_) == head_;
         }
 
         void clear() {
             head_ = tail_ = 0;
+            count_ = 0;
         }
 
         size_t end(){
@@ -628,6 +639,10 @@ class SCircularQueue {
 
         size_t max(){
             return capacity_;
+        }
+
+        size_t frontsent(){
+            return data_[head_].sent();
         }
 
         // ssize_t retransmision_available() {
@@ -878,7 +893,10 @@ public:
 
     // push_back 操作：复位 tail_ 指向的对象，并推进 tail_ 指针。
     // 如果队列已满，则覆盖最旧数据，同时 head_ 前进。
-    void push_back() {
+    bool push_back() {
+        if (count_ == capacity_){
+            return false
+        }
         // 在写入前先复位目标对象
         data_[tail_].clear();
 
@@ -886,11 +904,14 @@ public:
         tail_ = (tail_ + 1) % capacity_;
 
         // 如果队列已满，则覆盖旧数据：head_ 同步推进
-        if (count_ == capacity_) {
-            head_ = tail_;
-        } else {
-            ++count_;
-        }
+        // if (count_ == capacity_) {
+        //     head_ = tail_;
+        // } else {
+        //     ++count_;
+        // }
+        ++count_;
+
+        return true;
     }
 
     // pop_front 操作：移除队头数据（复位对象并推进 head_ 指针）
@@ -1386,20 +1407,6 @@ public:
         }
     };
 
-    
-    // void socket_set(int sock){
-    //     // Set send with GSO and receive with GRO
-    //     uint16_t gso_size = MAX_SEND_UDP_PAYLOAD_SIZE;
-    //     setsockopt(sock, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size));
-
-    //     int gro_enabled = 1;
-    //     if (setsockopt(sock, SOL_UDP, UDP_GRO, &gro_enabled, sizeof(gro_enabled)) < 0) {
-    //         perror("setsockopt UDP_GRO failed");
-    //         close(sock);
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
-
     // Check timeout or not
     bool on_timeout(){
         bool timeout_;
@@ -1434,7 +1441,7 @@ public:
 
             if (pkt_ty == Type::ACK){
                 process_acknowledge2(i);
-                transmission_complete_check();
+                // transmission_complete_check();
             }
 
             if (pkt_ty == Type::Application){
@@ -1667,7 +1674,8 @@ public:
     // }
 
     bool check_status(){
-        if (recovery.cwnd_available() && !sendbufferqueue.empty()) return true;
+        // if (recovery.cwnd_available() && !sendbufferqueue.empty()) return true;
+        if (recovery.cwnd_available() && sendbufferqueue.ready()) return true;
         return false;
     }
 
@@ -1885,6 +1893,7 @@ public:
         for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
             while (true){
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
+                std::cout<<"[Debug] out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 if (out_len == -1) {
                     break;
                 }
