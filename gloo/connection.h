@@ -243,8 +243,12 @@ public:
         for (size_t i = 0; i < count; ++i) {
             size_t actualIndex = (head + i) % capacity;
             const auto& item = buffer[actualIndex];
-            if (item.first.first == value || item.second.first == value) {
-                result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+            if (item.first.first <= value || item.second.first >= value) {
+                if (item.first.first == item.second.first){
+                    result = item.first.second;
+                }else{
+                    result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+                }
                 indexToDeleteUpTo = i; 
                 break;
             }
@@ -320,10 +324,10 @@ class RCset{
 
         size_t get_index(size_t offset_){
             ssize_t index = -1;
-            if (offset_ <= 48){
+            if (offset_ < 48){
                 index = 0;
             }else{
-                index = round_up((offset_ - 48), payload_len);
+                index = round_up((offset_ - 48), payload_len) + 1;
             }
             return index;
         }
@@ -729,6 +733,7 @@ class metarecebuf{
             for(auto &e: source_len){
                 if (e == 0){
                     e = exp_;
+                    break;
                 }
             }
         }
