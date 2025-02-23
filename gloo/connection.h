@@ -895,7 +895,7 @@ public:
     // 如果队列已满，则覆盖最旧数据，同时 head_ 前进。
     bool push_back() {
         if (count_ == capacity_){
-            return false
+            return false;
         }
         // 在写入前先复位目标对象
         data_[tail_].clear();
@@ -1892,7 +1892,8 @@ public:
         ssize_t sent = 0;
         for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
             while (true){
-                auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
+                size_t send_status = 0;
+                auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
                 std::cout<<"[Debug] out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 if (out_len == -1) {
                     break;
@@ -1901,9 +1902,14 @@ public:
                 auto pn = pkt_num_spaces[0].updatepktnum();
                 send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
-                if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
+                // if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
+                //     sendbufferqueue.data_[i].add_transmission(pn, out_off);
+                // }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
+                //     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
+                // }
+                if (send_status == 1){
                     sendbufferqueue.data_[i].add_transmission(pn, out_off);
-                }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
+                }else if(send_status == 0){
                     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
                 }
                 sent++;

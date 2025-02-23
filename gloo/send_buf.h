@@ -153,7 +153,7 @@ namespace dmludp{
             rcq.clear();
         }
 
-        ssize_t off_front(){
+        ssize_t off_front(size_t &status){
             ssize_t off = -1;
             if(meta_status == MetaFlag::Initial){
                 if (meta_left > 0){
@@ -164,6 +164,7 @@ namespace dmludp{
                         off = (meta_pos - 1) * send_buffer_size + 48;
                         meta_left -= send_buffer_size;
                     }
+                    status = 1;
                     meta_pos++;
                     if (meta_left <= 0){
                         meta_left = 0;
@@ -173,6 +174,7 @@ namespace dmludp{
             }else if(meta_status == MetaFlag::Retransmission){
                 if (!rcq.empty()){
                     off = rcq.pop_front();
+                    status = 0;
                 }
             }
             return off;
@@ -201,11 +203,11 @@ namespace dmludp{
         } 
 
 
-        bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off){
+        bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off, size_t & status){
             bool stop = false;
             
             out_len = 0;
-            auto tmp_off = off_front();
+            auto tmp_off = off_front(status);
 
             if (tmp_off == -1){
                 out_len = -1;
