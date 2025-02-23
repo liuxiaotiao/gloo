@@ -774,109 +774,6 @@ class metarecebuf{
         }
 };  
 
-// class RCircularQueue {
-//     public:
-//         std::vector<metarecebuf> data_;
-//         size_t head_;
-//         size_t tail_;
-//         size_t capacity_;
-
-//         RCircularQueue(size_t capacity = 256) 
-//             : head_(0), tail_(0), capacity_(capacity)
-//         {
-//             data_.reserve(capacity);
-//             for (auto i = 0; i < capacity ; i++){
-//                 data_.emplace_back(i);
-//             }
-//         }
-
-//         void push_back() {
-//             data_[tail_].clear();
-//             tail_ = (tail_ + 1) % capacity_;
-//         }
-
-//         void pop_front() {
-//             if (empty()) {
-//                 throw std::runtime_error("Queue is empty, cannot remove element.");
-//             }
-//             data_[head_].clear();
-//             head_ = (head_ + 1) % capacity_;
-//         }
-
-//         size_t size() const {
-//             if (tail_ >= head_) {
-//                 return tail_ - head_;
-//             } else {
-//                 return capacity_ - (head_ - tail_);
-//             }
-//         }
-
-//         bool empty() const {
-//             return head_ == tail_;
-//         }
-
-//         bool full() const {
-//             return ((tail_ + 1) % capacity_) == head_;
-//         }
-
-//         void clear() {
-//             head_ = tail_ = 0;
-//         }
-
-//         size_t end(){
-//             return tail_;
-//         }
-
-//         size_t start(){
-//             return head_;
-//         }
-
-//         void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length){
-//             data_[difference].find(pkt_offset, pkt_length);
-//         }
-
-//         bool iscomplete(uint8_t difference_){
-//             return data_[difference_].is_complete();
-//         }
-
-//         void set_recv_pointer(uint8_t difference_, uint8_t* src){
-//             data_[difference_].set_src(src);
-//         }
-
-//         void rx_len(uint8_t difference, size_t expected){
-//             data_[difference].addexplen(expected);
-//         }
-
-//         bool isreceived(uint8_t difference, size_t expected){
-//             return data_[difference].is_complete();
-//         }
-
-//         void indexcheck(uint8_t index_){
-//             bool check_ = false;
-//             if (head_ < tail_) {
-//                 // Without wrapping, the valid range of arrangement is [head, tail)
-//                 check_ = (index_ >= head_ && index_ < tail_);
-//             } else if(head_ = tail_){
-
-//             }
-//             else {
-//                 // Surrounded, the effective queue is [head,capacity) ∪ [0,tail)
-//                 check_ = (index_ >= head_ || index_ < tail_);
-//             }
-
-//             if(!check_){
-//                 while(true){
-//                     push_back();
-//                     if (tail_ == (index_ + 1)%capacity_){
-//                         break;
-//                     }
-//                 }
-//             }
-//         }
-
-//         ~RCircularQueue() = default; 
-// };
-
 class RCircularQueue {
 public:
     std::vector<metarecebuf> data_; // 存储所有 metarecebuf 对象
@@ -2039,7 +1936,7 @@ public:
         Offset_len pkt_offset;
         Packet_len pkt_len;
         Difference_len pkt_difference;
-        if (receive_connection_difference == zerolist[0].first){
+        if (receive_connection_difference == zerolist[0].first && recvCQ.data_[receive_connection_difference].srcset == 1){
             auto index = zerolist[0].second;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
@@ -2090,54 +1987,6 @@ public:
             receive_upper_limit = index_check - 1;
         }
     }
-
-    // void process_application_copy(){
-    //     Offset_len pkt_offset;
-    //     Packet_len pkt_len;
-    //     Difference_len pkt_difference;
-
-    //     size_t index = 0;
-    //     ssize_t index_check = -1;
-    //     while (true){
-    //         if (index == receive_message.boundary()){
-    //             break;
-    //         }
-    //         if (index == -1){
-    //             if(index_check != -1){
-    //                 index_check = index;
-    //             }
-    //             index++;
-    //             continue;
-    //         }else{
-    //             index_check = -1;
-    //         }
-    //         // if (rangemap[index].first == -1){
-    //         //     continue;
-    //         // }
-    //         ssize_t record_index = -1;
-    //         pkt_offset = receive_message[index].get_packet_offset();
-    //         pkt_difference = receive_message[index].get_packet_difference();
-    //         auto copy_len = rangemap[index].second;
-    //         if(receive_connection_difference == pkt_difference){
-    //             if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
-    //                 if (pkt_offset >= 48){
-    //                     memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
-    //                 }else{
-    //                     memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
-    //                 }
-    //             }
-    //         }
-    //         auto record_index = index;
-    //         index = rangemap[index].first + 1;
-    //         rangemap[record_index].first = -1;
-    //         rangemap[record_index].second = 0;
-    //         // if (index == -1){
-    //         //     index++;
-    //         // }
-    //     }
-    //     /*Before receive, check if the buffer is available*/
-    //     receive_upper_bound = 0;
-    // }
 
 
     void set_send_status(int status_){
