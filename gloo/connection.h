@@ -1932,6 +1932,73 @@ public:
         return idx;
     }
 
+    // void process_application_copy(){
+    //     Offset_len pkt_offset;
+    //     Packet_len pkt_len;
+    //     Difference_len pkt_difference;
+    //     if (receive_connection_difference == zerolist[0].first && recvCQ.data_[receive_connection_difference].srcset == 1){
+    //         auto index = zerolist[0].second;
+    //         pkt_offset = receive_message[index].get_packet_offset();
+    //         pkt_difference = receive_message[index].get_packet_difference();
+    //         memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
+    //         rangemap[index] = {-1, 0};
+    //         return;
+    //     }
+
+    //     size_t index = 0;
+    //     ssize_t index_check = -1;
+    //     bool stop = false;
+    //     while (true) {
+    //         if (index > boundary()){
+    //             break;
+    //         }
+            
+    //         /*rangemap check and resize boundary*/
+    //         if (rangemap[index].first == -1){
+    //             if(index_check == -1){
+    //                 index_check = index;
+    //             } 
+    //             index++;
+    //             continue;
+    //         }else{
+    //             index_check = -1;
+    //         }
+    //         // ssize_t record_index = -1;
+    //         ssize_t record_index = -1;
+    //         pkt_offset = receive_message[index].get_packet_offset();
+    //         pkt_difference = receive_message[index].get_packet_difference();
+    //         auto copy_len = rangemap[index].second;
+    //         if(receive_connection_difference == pkt_difference){
+    //             if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
+    //                 record_index = index;
+    //                 if (pkt_offset >= 48){
+    //                     memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
+    //                 }else{
+    //                     memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
+    //                 }
+    //                 if(recvCQ.isreceived(pkt_difference)){
+    //                     stop = true;
+    //                 }
+    //             }
+    //             /*TODO: ADD fast check to stop copy earlier, no need to iterate all element*/
+    //         }
+    //         // auto record_index = index;
+    //         index = rangemap[index].first + 1;
+    //         if(record_index != -1){
+    //             rangemap[record_index].first = -1;
+    //             rangemap[record_index].second = 0;
+    //         }
+    //         if(stop){
+                
+    //         }
+    //     }
+    //     /*Before receive, check if the buffer is available*/
+    //     receive_upper_bound = 0;
+    //     if(index_check > 0){
+    //         receive_upper_limit = index_check - 1;
+    //     }
+    // }
+
     void process_application_copy(){
         Offset_len pkt_offset;
         Packet_len pkt_len;
@@ -1946,24 +2013,25 @@ public:
         }
 
         size_t index = 0;
-        ssize_t index_check = -1;
+        // ssize_t index_check = -1;
+        bool stop = false;
         while (true) {
-            if (index == boundary()){
+            if (index > boundary()){
                 break;
             }
             
             /*rangemap check and resize boundary*/
-            if (rangemap[index].first == -1){
-                if(index_check == -1){
-                    index_check = index;
-                } 
-                index++;
-                continue;
-            }else{
-                index_check = -1;
-            }
+            // if (rangemap[index].first == -1){
+            //     if(index_check == -1){
+            //         index_check = index;
+            //     } 
+            //     index++;
+            //     continue;
+            // }else{
+            //     index_check = -1;
+            // }
             // ssize_t record_index = -1;
-            ssize_t record_index = -1
+            ssize_t record_index = -1;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
             auto copy_len = rangemap[index].second;
@@ -1975,6 +2043,9 @@ public:
                     }else{
                         memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
                     }
+                    if(recvCQ.isreceived(pkt_difference)){
+                        stop = true;
+                    }
                 }
                 /*TODO: ADD fast check to stop copy earlier, no need to iterate all element*/
             }
@@ -1984,8 +2055,35 @@ public:
                 rangemap[record_index].first = -1;
                 rangemap[record_index].second = 0;
             }
+            if(stop){
+                break;
+            }
         }
-        /*Before receive, check if the buffer is available*/
+        // /*Before receive, check if the buffer is available*/
+        // receive_upper_bound = 0;
+        // if(index_check > 0){
+        //     receive_upper_limit = index_check - 1;
+        // }
+    }
+
+    void copy_buffer_review(){
+        size_t index = 0;
+        ssize_t index_check = -1;
+        while(true){
+            if (index > boundary()){
+                break;
+            }
+            
+            if (rangemap[index].first == -1){
+                if(index_check == -1){
+                    index_check = index;
+                } 
+                index++;
+                continue;
+            }else{
+                index_check = -1;
+            }
+        }
         receive_upper_bound = 0;
         if(index_check > 0){
             receive_upper_limit = index_check - 1;

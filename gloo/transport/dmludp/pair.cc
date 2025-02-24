@@ -775,7 +775,8 @@ bool Pair::protocal2read(){
         if(stop){
           break;
         }
-      }    
+      }  
+      dmludp_connection->copy_buffer_review();  
     }
 
     {
