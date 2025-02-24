@@ -1226,7 +1226,7 @@ public:
         receive_offset.add_rule(100 * 1024 * 1024);
 
         acknowldge_header.resize(sizeof(Header));
-        pktnum2offset.reserve(100000);
+        pktnum2offset.reserve(1);
         set_receive_message();
         for(auto i = 0; i < RX_CONST; i++){
             rangemap.push_back(std::make_pair(-1, 0));
@@ -1963,11 +1963,13 @@ public:
                 index_check = -1;
             }
             // ssize_t record_index = -1;
+            ssize_t record_index = -1
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
             auto copy_len = rangemap[index].second;
             if(receive_connection_difference == pkt_difference){
                 if(recvCQ.data_[pkt_difference].metabuf.src != nullptr){
+                    record_index = index;
                     if (pkt_offset >= 48){
                         memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), copy_len);
                     }else{
@@ -1976,10 +1978,12 @@ public:
                 }
                 /*TODO: ADD fast check to stop copy earlier, no need to iterate all element*/
             }
-            auto record_index = index;
+            // auto record_index = index;
             index = rangemap[index].first + 1;
-            rangemap[record_index].first = -1;
-            rangemap[record_index].second = 0;
+            if(record_index != -1){
+                rangemap[record_index].first = -1;
+                rangemap[record_index].second = 0;
+            }
         }
         /*Before receive, check if the buffer is available*/
         receive_upper_bound = 0;

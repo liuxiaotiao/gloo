@@ -222,7 +222,7 @@ namespace dmludp{
 
             }else{
                 out_len = std::min(send_buffer_size, size_t(meta_len2[1] - (out_off - 48)));
-                out.iov_base = (void *)(meta_element[1].first + out_off);
+                out.iov_base = (void *)(meta_element[1].first + out_off - 48);
                 out.iov_len = out_len;
             }      
 
