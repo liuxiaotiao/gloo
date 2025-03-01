@@ -1099,7 +1099,7 @@ public:
 
     // SendBuf send_buffer;
 
-    // RecvBuf rec_buffer;
+    RecvBuf rec_buffer;
 
     size_t current_buffer_pos;
 
@@ -1610,9 +1610,9 @@ public:
         receive_offset.clear();
     }
 
-    // void recv_reset(){
-    //     rec_buffer.reset();
-    // }
+    void recv_reset(){
+        rec_buffer.reset();
+    }
 
     void update_receive_difference(){
         receive_connection_difference += 1;
@@ -1823,7 +1823,7 @@ public:
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
                     if (pkt_offset >= 48){
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        memcpy(reinterpret_cast<uint8_t*>(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48), reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
                         memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
@@ -1862,7 +1862,7 @@ public:
                     continue;
                 }
 
-                receive_record.update(index);
+                receive_record.update(index, pkt_offset, pkt_len);
             }else{
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
