@@ -237,13 +237,13 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, uint8_t* buf, 
 //     return conn->check_first_entry(check_len);
 // }
 
-inline void dmludp_conn_recv_padding(std::shared_ptr<Connection> conn, size_t total_len){
-    return conn->recv_padding(total_len);
-}
+// inline void dmludp_conn_recv_padding(std::shared_ptr<Connection> conn, size_t total_len){
+//     return conn->recv_padding(total_len);
+// }
 
-inline void dmludp_conn_recv_reset(std::shared_ptr<Connection> conn){
-    conn->recv_reset();
-}
+// inline void dmludp_conn_recv_reset(std::shared_ptr<Connection> conn){
+//     conn->recv_reset();
+// }
 
 // inline size_t dmludp_conn_recv_len(std::shared_ptr<Connection> conn){
 //     return conn->recv_len();

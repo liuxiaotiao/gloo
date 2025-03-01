@@ -66,31 +66,31 @@ struct RecvInfo {
     sockaddr_storage to;
 };
 
-class RecordInfo{
-    private:
-        ssize_t record_offset = 0;
+// class RecordInfo{
+//     private:
+//         ssize_t record_offset = 0;
 
-        size_t record_len = 0;
+//         size_t record_len = 0;
 
-        ssize_t record_difference = -1;
+//         ssize_t record_difference = -1;
 
-    public:
-    RecordInfo(){};
+//     public:
+//     RecordInfo(){};
 
-    ~RecordInfo(){};
+//     ~RecordInfo(){};
 
-    void updateInfo(ssize_t offset, size_t len, ssize_t diff){
-        record_offset = offset;
-        record_len = len;
-        record_difference = diff;
-    }
+//     void updateInfo(ssize_t offset, size_t len, ssize_t diff){
+//         record_offset = offset;
+//         record_len = len;
+//         record_difference = diff;
+//     }
 
-    void clear(){
-        record_offset = 0;
-        record_len = 0;
-        record_difference = -1;
-    }
-};
+//     void clear(){
+//         record_offset = 0;
+//         record_len = 0;
+//         record_difference = -1;
+//     }
+// };
 
 
 /*
