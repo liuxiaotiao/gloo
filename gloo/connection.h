@@ -1097,9 +1097,9 @@ public:
     
     std::chrono::high_resolution_clock::time_point handshake;
 
-    SendBuf send_buffer;
+    // SendBuf send_buffer;
 
-    RecvBuf rec_buffer;
+    // RecvBuf rec_buffer;
 
     size_t current_buffer_pos;
 
@@ -1241,7 +1241,7 @@ public:
     difference_flag(false),
     send_status_flag(0),
     acknowldge_iov(3),
-    send_buffer(MAX_SEND_UDP_PAYLOAD_SIZE),
+    // send_buffer(MAX_SEND_UDP_PAYLOAD_SIZE),
     receivevector(3000, 0),
     receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
@@ -1610,9 +1610,9 @@ public:
         receive_offset.clear();
     }
 
-    void recv_reset(){
-        rec_buffer.reset();
-    }
+    // void recv_reset(){
+    //     rec_buffer.reset();
+    // }
 
     void update_receive_difference(){
         receive_connection_difference += 1;
@@ -1664,7 +1664,7 @@ public:
         recovery.bytes_in_flight = 0;
         set_handshake();
         pktnum2offset.clear();
-        send_buffer.clear();
+        // send_buffer.clear();
         data_gotten = 0;
         return completed;
     }
@@ -2079,30 +2079,30 @@ public:
     };
 
     // Check if fixed length of first entry in received buffer exist.
-    bool check_first_entry(size_t check_len){
-        auto fst_len = rec_buffer.first_item_len(check_len);
-        if (fst_len != check_len){
-            return false;
-        }
-        return true;
-    };
+    // bool check_first_entry(size_t check_len){
+    //     auto fst_len = rec_buffer.first_item_len(check_len);
+    //     if (fst_len != check_len){
+    //         return false;
+    //     }
+    //     return true;
+    // };
 
-    void recv_padding(size_t total_len){
-        rec_buffer.data_padding(total_len);
-    }
+    // void recv_padding(size_t total_len){
+    //     rec_buffer.data_padding(total_len);
+    // }
 
-    size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
-        return rec_buffer.emit(out, iscopy, output_len);
-    };
+    // size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
+    //     return rec_buffer.emit(out, iscopy, output_len);
+    // };
 
 
-    bool has_recv(){
-        return rec_buffer.is_empty();
-    }
+    // bool has_recv(){
+    //     return rec_buffer.is_empty();
+    // }
     
-    size_t recv_len(){
-        return rec_buffer.length();
-    }
+    // size_t recv_len(){
+    //     return rec_buffer.length();
+    // }
 
     uint8_t priority_calculation(uint64_t off){
         auto real_index = (uint64_t)(off / MAX_SEND_UDP_PAYLOAD_SIZE);
@@ -2114,7 +2114,7 @@ public:
 
     void reset(){
         norm2_vec.clear();
-        send_buffer.clear();
+        // send_buffer.clear();
     };
 
     void set_handshake(){
