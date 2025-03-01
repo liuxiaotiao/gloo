@@ -2091,9 +2091,9 @@ public:
     //     rec_buffer.data_padding(total_len);
     // }
 
-    // size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
-    //     return rec_buffer.emit(out, iscopy, output_len);
-    // };
+    size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
+        return rec_buffer.emit(out, iscopy, output_len);
+    };
 
 
     // bool has_recv(){

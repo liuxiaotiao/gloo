@@ -13,6 +13,7 @@
         "unordered_map": "cpp",
         "unordered_set": "cpp",
         "vector": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "istream": "cpp"
     }
 }
