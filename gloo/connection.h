@@ -1875,7 +1875,7 @@ public:
             auto index = zerolist[0].second;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
-            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, copy_len);
             // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
             receive_available_map[index] = 0;
             recvCQ.data_[pkt_difference].processdlen(48);
@@ -1920,7 +1920,7 @@ public:
                         // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
                     recvCQ.data_[pkt_difference].processdlen(copy_len);
-                    receive_record.set(index, pkt_len, pkt_offset);
+                    receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
                     if(recvCQ.processComplete(pkt_difference)){
                         return;
                     }
@@ -1938,14 +1938,14 @@ public:
                         // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
                     recvCQ.data_[pkt_difference].processdlen(copy_len);
-                    receive_record.set(index, pkt_len, pkt_offset);
+                    receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
                     if(recvCQ.processComplete(pkt_difference)){
                         return;
                     }
                     continue;
                 }
 
-                receive_record.update(index, pkt_offset, pkt_len);
+                receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
