@@ -1875,7 +1875,7 @@ public:
             auto index = zerolist[0].second;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
-            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, copy_len);
+            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, 48);
             // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
             receive_available_map[index] = 0;
             recvCQ.data_[pkt_difference].processdlen(48);
