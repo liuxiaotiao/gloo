@@ -19,7 +19,7 @@ namespace dmludp{
 
         size_t removed;
 
-        RecvBuf():off(0), len(0), removed(0), convert_flag(false), data(104857600, 0){};
+        RecvBuf():off(0), len(0), removed(0), convert_flag(false), data(10, 0){};
 
         ~RecvBuf(){};
 

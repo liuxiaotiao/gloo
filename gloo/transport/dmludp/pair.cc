@@ -630,6 +630,7 @@ void Pair::handleEvents(int events) {
   GLOO_ENFORCE(false, "Unexpected state: ", state_);
 }
 
+__attribute__((optimize("O2")))
 bool Pair::protocal2read(){
   if (state_ == CLOSED) {
     return false;

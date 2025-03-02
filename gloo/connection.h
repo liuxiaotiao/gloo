@@ -66,32 +66,6 @@ struct RecvInfo {
     sockaddr_storage to;
 };
 
-// class RecordInfo{
-//     private:
-//         ssize_t record_offset = 0;
-
-//         size_t record_len = 0;
-
-//         ssize_t record_difference = -1;
-
-//     public:
-//     RecordInfo(){};
-
-//     ~RecordInfo(){};
-
-//     void updateInfo(ssize_t offset, size_t len, ssize_t diff){
-//         record_offset = offset;
-//         record_len = len;
-//         record_difference = diff;
-//     }
-
-//     void clear(){
-//         record_offset = 0;
-//         record_len = 0;
-//         record_difference = -1;
-//     }
-// };
-
 
 /*
 Redesign Message with GSO(40), RCMessage for GRO(45))
@@ -160,6 +134,8 @@ class Message{
 };
 
 class RCMessage : public Message {
+    private:
+        // bool use_status = true;
     public:
         RCMessage(){}
             
@@ -167,6 +143,18 @@ class RCMessage : public Message {
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
+
+        // bool available(){
+        //     return !use_status;
+        // }
+
+        // void used(){
+        //     use_status = true;
+        // }
+
+        // void reset(){
+        //     use_status = false;
+        // }
 
         ~RCMessage(){};
 };
@@ -692,62 +680,81 @@ class SCircularQueue {
 
 class RecordInfo
 {
-private:
-    /* data */
-    uint8_t record_diffference = 0;
+    private:
+        /* data */
+        uint8_t record_diffference = 0;
 
-    uint32_t record_acumulate = 0;
+        uint32_t record_acumulate = 0;
 
-    /*Continuous end index*/
-    ssize_t end_index = -1;
+        /*Continuous end index*/
+        ssize_t end_index = -1;
 
-    /*Continuous start index*/
-    ssize_t start_index = -1;
+        /*Continuous start index*/
+        ssize_t start_index = -1;
 
-    uint32_t record_offset = 0;
-public:
-    RecordInfo(/* args */);
-    ~RecordInfo();
-    void set(uint16_t index_, uint32_t len_, uint32_t offset_){
-        start_index = end_index = index_;
-        record_acumulate = len_;
-        record_offset = offset_;
-    } 
+        uint32_t record_offset = 0;
+    public:
+        RecordInfo(/* args */){};
+        ~RecordInfo();
+        void set(uint16_t index_, uint32_t len_, uint32_t offset_, uint8_t difference_){
+            start_index = end_index = index_;
+            record_acumulate = len_;
+            record_offset = offset_;
+            record_diffference = difference_;
+        } 
 
-    void reset(){
-        start_index = end_index = -1;
-        record_acumulate = 0;
-    }
-
-    bool empty(){
-        return (end_index == -1) && (start_index == -1);
-    }
-
-    void update(uint32_t index_, size_t offset_, size_t len_){
-        if (get_start_index() == -1){
-            set(index_, len_, index_);
-        }else{
-            end_index = index_;
-            record_acumulate += len_;
-            /*Add check for record len_*/
+        void reset(){
+            start_index = end_index = -1;
+            record_acumulate = 0;
+            record_diffference = 0;
         }
-    }
 
-    size_t get_target_offset(){
-        return (record_offset + record_acumulate);
-    }
+        bool empty(){
+            return (end_index == -1) && (start_index == -1);
+        }
 
-    size_t get_acumulation(){
-        return record_acumulate;
-    }
+        void update(uint32_t index_, size_t offset_, size_t len_, uint8_t difference_){
+            /*Check difference*/
+            if (get_start_index() == -1){
+                set(index_, len_, index_, difference_);
+            }else{
+                if (difference_ != record_diffference){
+                    std::cerr << "RecordInfo: record_diffference(" << (int)record_diffference << " ), difference_(" << (int)difference_ <<")" <<std::endl;
+                    _Exit(0);
+                }
+                end_index = index_;
+                record_acumulate += len_;
+                /*Add check for record len_*/
+            }
+        }
 
-    size_t get_start_index(){
-        return start_index;
-    }
+        size_t get_target_offset(){
+            return (record_offset + record_acumulate);
+        }
 
-    size_t get_end_index(){
-        return end_index;
-    }
+        size_t get_acumulation(){
+            return record_acumulate;
+        }
+
+        size_t get_start_index(){
+            return start_index;
+        }
+
+        size_t get_end_index(){
+            return end_index;
+        }
+
+        void print_log(){
+            std::cout<<"[RecordInfo]:\n record_diffference: " <<(int)record_diffference 
+                <<", record_acumulate:" <<record_acumulate
+                <<", end_index:" << end_index
+                <<", start_index:" << start_index
+                <<", record_offset:" << record_offset << std::endl;
+        }
+
+        uint8_t get_record_difference(){
+            return record_diffference;
+        }
 };
 
 class metarecebuf{
@@ -763,6 +770,10 @@ class metarecebuf{
         uint8_t rdifference;
 
         size_t received = 0;
+
+        size_t processd = 0;
+
+        size_t expected = 0;
 
         bool has_zero = false;
 
@@ -784,6 +795,8 @@ class metarecebuf{
             received = 0;
             has_zero = false;
             srcset = 0;
+            processd = 0;
+            expected = 0;
             for (auto &e:source_len){
                 e = 0;
             }
@@ -792,6 +805,7 @@ class metarecebuf{
         void addexplen(size_t exp_){
             for(auto &e: source_len){
                 if (e == 0){
+                    expected += exp_;
                     e = exp_;
                     break;
                 }
@@ -831,6 +845,22 @@ class metarecebuf{
                 metabuf.src = src_;
                 srcset++;
             }
+        }
+
+        void processdlen(size_t len_){
+            processd += len_;
+        }
+
+        bool processComplete(){
+            return processd == expected;
+        }
+
+        void copy(size_t offset_, void * src, size_t copy_len){
+            if(!metabuf.src){
+                std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
+                _Exit(0);
+            }
+            memcpy(reinterpret_cast<uint8_t*>(metabuf.src + offset_), reinterpret_cast<uint8_t*>(src), copy_len);
         }
 };  
 
@@ -995,6 +1025,10 @@ public:
                 push_back();
             }
         }
+    }
+
+    bool processComplete(uint8_t difference_){
+        return data_[difference_].processComplete();
     }
 
     ~RCircularQueue() = default;
@@ -1458,8 +1492,9 @@ public:
         size_t bit_index = pos % 8;
 
         if (byte_index > receivevector.size()){
-            std::cerr << "Error: Bit position out of range." << std::endl;
-            return;
+            std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
+            <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
+            _Exit(0);
         }
         receivevector[byte_index] |= (1 << bit_index);  
 
@@ -1724,6 +1759,35 @@ public:
         return sent;
     }
 
+    void log_print(void* src_, size_t len_) {
+        if (!src_) {
+            std::cerr << "Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  // 使用 static_cast 更符合 C++ 风格
+
+        for (size_t i = 0; i < len_; i++) {
+            std::cout << static_cast<int>(data[i]) << " ";  // 明确类型转换
+        }
+        std::cout << std::endl;
+    }
+
+    void log_print_fun(const char* func_name, void* src_, size_t len_) {
+        if (!src_) {
+            std::cerr <<"[" << func_name << "] Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  
+        std::cout << "[" << func_name << "]" << std::endl;
+        for (size_t i = 0; i < len_; i++) {
+            std::cout << static_cast<int>(data[i]) << " ";  
+        }
+        std::cout << std::endl;
+    }
+
+
     std::pair<ssize_t, ssize_t> send_packet(){
         if (get_dmludp_error()){
             return std::make_pair(start_index, end_index);
@@ -1811,22 +1875,29 @@ public:
             auto index = zerolist[0].second;
             pkt_offset = receive_message[index].get_packet_offset();
             pkt_difference = receive_message[index].get_packet_difference();
-            memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
+            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+            // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
             receive_available_map[index] = 0;
+            recvCQ.data_[pkt_difference].processdlen(48);
             return;
         }
         
         /*TODO: record ahead index consumption to reduce iterations*/
+        /*MAXCopyIndex*/
         for (auto index = 0; index < boundary(); index++){
+            pkt_difference = receive_message[index].get_packet_difference();
             if (receive_available_map[index] == 0){
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
                     if (pkt_offset >= 48){
-                        memcpy(reinterpret_cast<uint8_t*>(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48), reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(reinterpret_cast<uint8_t*>(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48), reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
+                    recvCQ.data_[pkt_difference].processdlen(copy_len);
                     receive_record.reset();
                 }   
                 continue;
@@ -1842,23 +1913,35 @@ public:
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
                     if (pkt_offset >= 48){
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
+                    recvCQ.data_[pkt_difference].processdlen(copy_len);
                     receive_record.set(index, pkt_len, pkt_offset);
+                    if(recvCQ.processComplete(pkt_difference)){
+                        return;
+                    }
                     continue;
                 }
 
-                if (receive_record.get_target_offset() != pkt_offset){
+                if (receive_record.get_target_offset() != pkt_offset && receive_record.get_target_offset() != 0){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
                     if (pkt_offset >= 48){
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
+                    recvCQ.data_[pkt_difference].processdlen(copy_len);
                     receive_record.set(index, pkt_len, pkt_offset);
+                    if(recvCQ.processComplete(pkt_difference)){
+                        return;
+                    }
                     continue;
                 }
 
@@ -1867,12 +1950,19 @@ public:
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
+                    auto copy_difference = receive_record.get_record_difference();
                     if (pkt_offset >= 48){
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
-                        memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                        recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
+                    recvCQ.data_[copy_difference].processdlen(copy_len);
                     receive_record.reset();
+                    if(recvCQ.processComplete(pkt_difference)){
+                        return;
+                    }
                 }   
             }
         }
@@ -1882,10 +1972,13 @@ public:
             auto copy_len = receive_record.get_acumulation();
             auto copy_index = receive_record.get_start_index();
             if (pkt_offset >= 48){
-                memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
             }else{
-                memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
+                recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
             }
+            recvCQ.data_[pkt_difference].processdlen(copy_len);
             receive_record.reset();
         }   
 
