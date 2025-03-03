@@ -695,7 +695,7 @@ class RecordInfo
         uint32_t record_offset = 0;
     public:
         RecordInfo(/* args */){};
-        ~RecordInfo();
+        ~RecordInfo(){};
         void set(uint16_t index_, uint32_t len_, uint32_t offset_, uint8_t difference_){
             start_index = end_index = index_;
             record_acumulate = len_;
@@ -716,7 +716,7 @@ class RecordInfo
         void update(uint32_t index_, size_t offset_, size_t len_, uint8_t difference_){
             /*Check difference*/
             if (get_start_index() == -1){
-                set(index_, len_, index_, difference_);
+                set(index_, len_, offset_, difference_);
             }else{
                 if (difference_ != record_diffference){
                     std::cerr << "RecordInfo: record_diffference(" << (int)record_diffference << " ), difference_(" << (int)difference_ <<")" <<std::endl;
@@ -1056,7 +1056,6 @@ public:
     };
 };
 
-
 class Connection{
 public: 
     size_t recv_count;
@@ -1221,6 +1220,8 @@ public:
     size_t receive_upper_bound = 0;
 
     size_t receive_upper_limit = 0;
+
+    size_t receive_upper_check = 0;
 
     /*Receive buffer*/
     std::vector<uint8_t> rx_buffer;
@@ -1464,13 +1465,21 @@ public:
         return read_;
     };
 
+    /*
+    TODO（3/2）:
+    1. skip pakcet older than this round minimum packet
+    2. add new flag to shrink receive message queue.
+    */
     void process_application_packet2(size_t index){
         Packet_num_len pkt_num = receive_message[index].get_packet_number();
         Offset_len pkt_offset = receive_message[index].get_packet_offset();
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
         auto pkt_length = receive_message[index].get_packet_length();
 
-        
+        /* no operation on old packet*/
+        if (pkt_num < current_loop_min){
+            return;
+        }
         recvCQ.indexcheck(pkt_difference);
         receive_available_map[index] = 1;
         /*TODO(2.24): break index, new parameter: index_check*/
@@ -1881,7 +1890,7 @@ public:
             recvCQ.data_[pkt_difference].processdlen(48);
             return;
         }
-        
+
         /*TODO: record ahead index consumption to reduce iterations*/
         /*MAXCopyIndex*/
         for (auto index = 0; index < boundary(); index++){
@@ -1890,14 +1899,15 @@ public:
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
+                    auto copy_difference = receive_record.get_record_difference();
                     if (pkt_offset >= 48){
-                        recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                         // memcpy(reinterpret_cast<uint8_t*>(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48), reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }else{
-                        recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                        recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
                         // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
                     }
-                    recvCQ.data_[pkt_difference].processdlen(copy_len);
+                    recvCQ.data_[copy_difference].processdlen(copy_len);
                     receive_record.reset();
                 }   
                 continue;
@@ -1947,6 +1957,7 @@ public:
 
                 receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
+                receive_upper_check = index;
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
@@ -1963,7 +1974,7 @@ public:
                     if(recvCQ.processComplete(pkt_difference)){
                         return;
                     }
-                }   
+                }  
             }
         }
 
@@ -1971,14 +1982,15 @@ public:
         if (!receive_record.empty()){
             auto copy_len = receive_record.get_acumulation();
             auto copy_index = receive_record.get_start_index();
+            auto copy_difference = receive_record.get_record_difference();
             if (pkt_offset >= 48){
-                recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                 // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
             }else{
-                recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
                 // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
             }
-            recvCQ.data_[pkt_difference].processdlen(copy_len);
+            recvCQ.data_[copy_difference].processdlen(copy_len);
             receive_record.reset();
         }   
 
@@ -2015,6 +2027,15 @@ public:
        
     }
 
+    void shrink_boundary(){
+        for(auto i == receive_upper_check; i < boundary(); i++){
+            if(receive_available_map[i] == 1){
+                receive_upper_check = i;
+            }
+        }
+        receive_upper_limit = receive_upper_check + 1;
+        receive_upper_check = 0;
+    }
 
     void set_send_status(int status_){
         send_status_flag = status_;
