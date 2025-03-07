@@ -58,6 +58,7 @@
         "system_error": "cpp",
         "tuple": "cpp",
         "typeinfo": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "type_traits": "cpp"
     }
 }
