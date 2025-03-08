@@ -280,7 +280,7 @@ class RCset{
 
         bool find(uint64_t offset_){
             auto index = get_index(offset_);
-            if (index > capacity_){
+            if (index >= RCset_body.size()){
                 throw std::underflow_error("[RCset]: find index beyond capacity_");
             }
             return RCset_body[index] == 1;
@@ -288,8 +288,8 @@ class RCset{
 
         void insert(uint64_t offset_){
             auto index = get_index(offset_);
-            if (index > capacity_){
-                throw std::underflow_error("[RCset]: inset index beyond capacity_");
+            if (index >= RCset_body.size()){
+                throw std::underflow_error("[RCset]: insert index beyond capacity_");
             }
             RCset_body[index] = 1;
         }
@@ -739,7 +739,7 @@ class metarecebuf{
         size_t srcset = 0;
 
         metarecebuf(uint8_t difference_): rdifference(difference_), 
-        receive_offset((difference_ == 9) ? 33000 : (type == 11) ? 47000 : 6000){
+        receive_offset((difference_ == 9) ? 33000 : (difference_ == 11) ? 47000 : 6000){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
