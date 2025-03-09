@@ -105,9 +105,9 @@ inline void dmludp_conn_set_send_time(std::shared_ptr<Connection> conn){
     conn->set_send_time();
 }
 
-inline bool dmludp_get_data(std::shared_ptr<Connection> conn, struct iovec *iovecs, int iovecs_len){
-    return conn->get_data(iovecs, iovecs_len);
-}
+// inline bool dmludp_get_data(std::shared_ptr<Connection> conn, struct iovec *iovecs, int iovecs_len){
+//     return conn->get_data(iovecs, iovecs_len);
+// }
 
 inline size_t dmludp_get_error_sent(std::shared_ptr<Connection> conn){
     return conn->get_error_sent();
