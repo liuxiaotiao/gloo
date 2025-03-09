@@ -153,7 +153,7 @@ namespace dmludp{
             meta_ptr = nullptr;
             meta_ptr_len = 0;
             meta_ptr2 = nullptr;
-            meta_ptr2_len = nullptr; 
+            meta_ptr2_len = 0; 
 
             if (meta_element.empty()){
                 for (auto i = 0; i < iovecs_len; i++){
@@ -303,7 +303,7 @@ namespace dmludp{
                 std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
             }else{
                 std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
-                std::cout << "\"meta_element"<< i <<"\": "<<(void*)meta_ptr << ", " << meta_ptr2_len<< "\"";
+                std::cout << "\"meta_element 1"\": "<<(void*)meta_ptr2 << ", " << meta_ptr2_len<< "\"";
             }
             std::cout << "\"bits_set\": \"" << bits_set.size() << "\"";
             std::cout << "}";
