@@ -91,8 +91,14 @@ namespace dmludp{
     class SendBuf{
         public:
         /* SendMetaBuf*/
-        // uint8_t* meta_ptr;
-        
+        void* meta_ptr;
+
+        ssize_t meta_ptr_len;
+
+        void* meta_ptr2;
+
+        ssize_t meta_ptr2_len; 
+
         uint64_t meta_len;
 
         ssize_t meta_left;
@@ -122,7 +128,8 @@ namespace dmludp{
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len), 
-        retransmision_offset(100000, 0)
+        retransmision_offset(10000, 0),
+        bits_set(330000)
         {
             meta_element.reserve(2);
             meta_len2.reserve(2);
@@ -143,6 +150,11 @@ namespace dmludp{
             meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
+            meta_ptr = nullptr;
+            meta_ptr_len = 0;
+            meta_ptr2 = nullptr;
+            meta_ptr2_len = nullptr; 
+
             if (meta_element.empty()){
                 for (auto i = 0; i < iovecs_len; i++){
                     meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
@@ -150,6 +162,13 @@ namespace dmludp{
                     meta_sent += iovecs[i].iov_len;
                     meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
                     meta_len2.push_back(iovecs[i].iov_len);
+                    if (i == 0){
+                        meta_ptr = iovecs[i].iov_base;
+                        meta_ptr_len = iovecs[i].iov_len;
+                    }else{
+                        meta_ptr2 = iovecs[i].iov_base;
+                        meta_ptr2_len = iovecs[i].iov_len;
+                    }
                 }
             }else{
                 for (auto i = 0; i < iovecs_len; i++){
@@ -158,6 +177,13 @@ namespace dmludp{
                     meta_sent += iovecs[i].iov_len;
                     meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
                     meta_len2[i] = iovecs[i].iov_len;
+                    if (i == 0){
+                        meta_ptr = iovecs[i].iov_base;
+                        meta_ptr_len = iovecs[i].iov_len;
+                    }else{
+                        meta_ptr2 = iovecs[i].iov_base;
+                        meta_ptr2_len = iovecs[i].iov_len;
+                    }
                 }
             }
             
@@ -230,13 +256,19 @@ namespace dmludp{
             }
             out_off = tmp_off;
             if (out_off == 0){
-                out_len = meta_element[0].second;
-                out.iov_base = (void *)(meta_element[0].first + out_off);
-                out.iov_len = out_len;
-
+                // out_len = meta_element[0].second;
+                // out.iov_base = (void *)(meta_element[0].first + out_off);
+                // out.iov_len = out_len;
+                out_len = meta_ptr_len;
+                out.iov_base = meta_ptr;
+                out.iov_len = meta_ptr_len;
             }else{
-                out_len = std::min(send_buffer_size, size_t(meta_len2[1] - (out_off - 48)));
-                out.iov_base = (void *)(meta_element[1].first + out_off - 48);
+                // out_len = std::min(send_buffer_size, size_t(meta_len2[1] - (out_off - 48)));
+                // out.iov_base = (void *)(meta_element[1].first + out_off - 48);
+                // out.iov_len = out_len;
+                
+                out_len = std::min(send_buffer_size, size_t(meta_ptr2_len - (out_off - 48)));
+                out.iov_base = (void *)(meta_ptr + out_off - 48);
                 out.iov_len = out_len;
             }      
 
@@ -268,11 +300,10 @@ namespace dmludp{
             std::cout << "\"meta_left\": \"" << meta_left << "\", ";
             std::cout << "\"meta_sent\": \"" << meta_sent << "\"";
             if (meta_len == 48){
-                std::cout << "\"meta_element 0\": \"" << (void*)meta_element[0].first << ", " << meta_element[0].second<< "\"";
+                std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
             }else{
-                for (auto i = 0; i < 2 ;i++){
-                    std::cout << "\"meta_element"<< i <<"\": "<<(void*)meta_element[i].first << ", " << meta_element[0].second<< "\"";
-                }
+                std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
+                std::cout << "\"meta_element"<< i <<"\": "<<(void*)meta_ptr << ", " << meta_ptr2_len<< "\"";
             }
             std::cout << "\"bits_set\": \"" << bits_set.size() << "\"";
             std::cout << "}";

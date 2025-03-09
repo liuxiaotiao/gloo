@@ -22,7 +22,7 @@ const size_t HEADER_LENGTH = sizeof(Header);
 // The default max_datagram_size used in congestion control.
 const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
 
-const size_t RX_CONST = 6000;
+const size_t RX_CONST = 4000;
 
 const size_t ONCE_LIMIT = 1300;
 
@@ -318,17 +318,17 @@ class RCset{
             return (a + b - 1) / b;
         }
 
-        void shrink(){
-            RCset_body.resize(10);  
-            boost::dynamic_bitset<> temp = RCset_body;  
-            RCset_body.swap(temp);
-        }   
+        // void shrink(){
+        //     RCset_body.resize(10);  
+        //     boost::dynamic_bitset<> temp = RCset_body;  
+        //     RCset_body.swap(temp);
+        // }   
 
         void clear(){
             if (RCset_body.size() > 6000 && used_flag == true){
                 RCset_body.resize(6000);
-                boost::dynamic_bitset<> temp = RCset_body;
-                RCset_body.swap(temp);
+                // boost::dynamic_bitset<> temp = RCset_body;
+                // RCset_body.swap(temp);
             }
             RCset_body.reset();
             dataload_len.clear();
@@ -1021,7 +1021,7 @@ public:
     }
 
     bool processComplete(uint8_t difference_){
-        return [difference_].processComplete();
+        return data_[difference_].processComplete();
     }
 
     ~RCircularQueue() = default;

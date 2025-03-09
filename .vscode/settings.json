@@ -61,6 +61,7 @@
         "algorithm": "cpp",
         "type_traits": "cpp",
         "__availability": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "condition_variable": "cpp"
     }
 }
