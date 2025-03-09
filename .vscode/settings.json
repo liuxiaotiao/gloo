@@ -59,6 +59,8 @@
         "tuple": "cpp",
         "typeinfo": "cpp",
         "algorithm": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "__availability": "cpp",
+        "functional": "cpp"
     }
 }

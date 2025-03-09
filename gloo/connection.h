@@ -273,6 +273,8 @@ class RCset{
 
         size_t dataload_index = 0;
 
+        bool used_flag = false;
+
         RCset(size_t capacity_ = 330000): 
         RCset_body(capacity_){
             dataload_len.reserve(10);
@@ -323,7 +325,7 @@ class RCset{
         }   
 
         void clear(){
-            if (RCset_body.size() > 6000){
+            if (RCset_body.size() > 6000 && used_flag == true){
                 RCset_body.resize(6000);
                 boost::dynamic_bitset<> temp = RCset_body;
                 RCset_body.swap(temp);
@@ -331,6 +333,7 @@ class RCset{
             RCset_body.reset();
             dataload_len.clear();
             dataload_index = 0;
+            used_flag = true;
         }
 
         ~RCset(){}
@@ -739,7 +742,7 @@ class metarecebuf{
         size_t srcset = 0;
 
         metarecebuf(uint8_t difference_): rdifference(difference_), 
-        receive_offset((difference_ == 9) ? 33000 : (difference_ == 11) ? 47000 : 6000){
+        receive_offset((difference_ == 9) ? 330000 : (difference_ == 11) ? 47000 : 6000){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1720,7 +1723,7 @@ public:
             while (true){
                 size_t send_status = 0;
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-                std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                // std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 if (out_len == -1) {
                     break;
                 }
