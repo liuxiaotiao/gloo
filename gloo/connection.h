@@ -1020,8 +1020,8 @@ public:
         }
     }
 
-    void processComplete(uint8_t difference_){
-        data_[difference_].processComplete();
+    bool processComplete(uint8_t difference_){
+        return [difference_].processComplete();
     }
 
     ~RCircularQueue() = default;
