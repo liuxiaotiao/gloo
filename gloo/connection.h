@@ -544,6 +544,7 @@ class MetaInfo{
         void clear(){
             transmission_map.clear();
             retransmission_map.clear();
+            metabuf.clear();
         }
 
 };
@@ -741,8 +742,14 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        metarecebuf(uint8_t difference_): rdifference(difference_), 
-        receive_offset((difference_ == 9) ? 330000 : (difference_ == 11) ? 47000 : 6000){
+        // metarecebuf(uint8_t difference_): rdifference(difference_), 
+        // receive_offset((difference_ == 9) ? 330000 : (difference_ == 11) ? 47000 : 6000){
+        //     for(auto i = 0; i < 2 ; i++){
+        //         source_len.push_back(0);
+        //     }
+        // }
+
+        metarecebuf(uint8_t difference_): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -814,8 +821,15 @@ class metarecebuf{
             processd += len_;
         }
 
-        bool processComplete(){
-            return processd == expected;
+        bool processCheck(){
+            return received == processd;
+        }
+
+        void processComplete(){
+            if (processd != expected){
+               throw std::overflow_error("processd != expected");
+            }
+            return;
         }
 
         void copy(size_t offset_, void * src, size_t copy_len){
@@ -2138,6 +2152,7 @@ public:
             receive_record.reset();
         }   
 
+        recvCQ.data_[receive_record.get_record_difference()].processCheck();
         /*
         1. Max 8 copy packets
         2. index contious breaks

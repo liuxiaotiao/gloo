@@ -859,6 +859,16 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
+
+    const auto opcode = op.getOpcode();
+    if (opcode == Op::SEND_UNBOUND_BUFFER) {
+      NonOwningPtr<UnboundBuffer> buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+      if (!buf) {
+        return false;
+      }else{
+        std::cout<<(void*)buf->ptr<<std::endl;
+      }
+    }
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);

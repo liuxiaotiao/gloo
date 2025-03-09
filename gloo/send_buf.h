@@ -91,7 +91,7 @@ namespace dmludp{
     class SendBuf{
         public:
         /* SendMetaBuf*/
-        uint8_t* meta_ptr;
+        // uint8_t* meta_ptr;
         
         uint64_t meta_len;
 
@@ -122,7 +122,7 @@ namespace dmludp{
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len), 
-        retransmision_offset(10000, 0)
+        retransmision_offset(100000, 0)
         {};
 
         ~SendBuf(){};
@@ -241,6 +241,7 @@ namespace dmludp{
                 retransmision_offset[i] = 0;
             }
             bits_set.reset();
+
         };
     };
     
