@@ -837,15 +837,15 @@ class metarecebuf{
             processd += len_;
         }
 
-        bool processCheck(){
-            return received == processd;
-        }
-
-        void processComplete(){
-            if (processd != expected){
-               throw std::overflow_error("processd != expected");
+        void processCheck(){
+            if (received != processd){
+                throw std::overflow_error("received != processd");
             }
             return;
+        }
+
+        bool processComplete(){
+            return processd == expected;
         }
 
         void copy(size_t offset_, void * src, size_t copy_len){
@@ -1020,8 +1020,8 @@ public:
         }
     }
 
-    bool processComplete(uint8_t difference_){
-        return data_[difference_].processComplete();
+    void processComplete(uint8_t difference_){
+        data_[difference_].processComplete();
     }
 
     ~RCircularQueue() = default;
