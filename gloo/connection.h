@@ -551,7 +551,7 @@ class MetaInfo{
             block_type = std::numeric_limits<size_t>::max();
         }
 
-        void MetaInfo_log(bool contain_ == false) const{
+        void MetaInfo_log(bool contain_ = false) const{
             std::cout << "{";
             std::cout << "\"class\": \"MetaInfo\", ";
             std::cout << "\"MetaDifference\": \"" << (int)MetaDifference << "\", ";
