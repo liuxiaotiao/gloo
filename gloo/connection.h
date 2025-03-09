@@ -532,6 +532,7 @@ class MetaInfo{
             range_len = 0;
             block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
+                std::cout<<"set_buffer:" << iovecs[i].iov_base<<", "<<iovecs[i].iov_len<<std::endl;
                 range_len += (iovecs[i].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
             }
         }
@@ -1752,7 +1753,9 @@ public:
             while (true){
                 size_t send_status = 0;
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-                // std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                if (out_len < 0 || out_len > 1440){
+                    std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                }
                 if (out_len == -1) {
                     break;
                 }
