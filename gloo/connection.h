@@ -454,6 +454,8 @@ class MetaInfo{
 
         size_t range_len;
 
+        size_t block_type = std::numeric_limits<size_t>::max();
+
         std::pair<ssize_t, ssize_t> packet_range{-1, -1};
 
         MetaInfo(size_t difference_flag_ = 0): 
@@ -525,9 +527,10 @@ class MetaInfo{
             return MetaDifference;
         }
 
-        void set_buffer(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
             metabuf.add_Meta(iovecs, iovecs_len);
             range_len = 0;
+            block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
                 range_len += (iovecs[i].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
             }
@@ -545,8 +548,21 @@ class MetaInfo{
             transmission_map.clear();
             retransmission_map.clear();
             metabuf.clear();
+            block_type = std::numeric_limits<size_t>::max();
         }
 
+        void MetaInfo_log(bool contain_ == false) const{
+            std::cout << "{";
+            std::cout << "\"class\": \"MetaInfo\", ";
+            std::cout << "\"MetaDifference\": \"" << (int)MetaDifference << "\", ";
+            std::cout << "\"block size\": " << range_len << ", ";
+            std::cout << "\"block_type\": " << block_type << ", ";
+            std::cout << "\"address\": ";
+            if (contain_){
+                metabuf.to_json();
+            }
+            std::cout << "}";   
+        }
 };
 
 
@@ -567,8 +583,8 @@ class SCircularQueue {
             }
         }
 
-        void push_back(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
-            data_[tail_].set_buffer(iovecs, iovecs_len, priotity_list);
+        void push_back(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
+            data_[tail_].set_buffer(iovecs, iovecs_len, type_, priotity_list);
             tail_ = (tail_ + 1) % capacity_;
             count_++;
         }
@@ -1687,7 +1703,7 @@ public:
     }
     
 
-    bool get_data(struct iovec* iovecs, int iovecs_len, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         /*
         triger data preparation
         */
@@ -1701,12 +1717,11 @@ public:
             return false;
         }
 
-        sendbufferqueue.push_back(iovecs, iovecs_len, priotity_list);
+        sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
         
         recovery.bytes_in_flight = 0;
         set_handshake();
         pktnum2offset.clear();
-        // send_buffer.clear();
         data_gotten = 0;
         return completed;
     }

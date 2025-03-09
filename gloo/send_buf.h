@@ -123,7 +123,10 @@ namespace dmludp{
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len), 
         retransmision_offset(100000, 0)
-        {};
+        {
+            meta_element.reserve(2);
+            meta_len2.reserve(2);
+        };
 
         ~SendBuf(){};
 
@@ -140,13 +143,24 @@ namespace dmludp{
             meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
-            for (auto i = 0; i < iovecs_len; i++){
-                meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
-                meta_left += iovecs[i].iov_len;
-                meta_sent += iovecs[i].iov_len;
-                meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
-                meta_len2.push_back(iovecs[i].iov_len);
+            if (meta_element.empty()){
+                for (auto i = 0; i < iovecs_len; i++){
+                    meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
+                    meta_left += iovecs[i].iov_len;
+                    meta_sent += iovecs[i].iov_len;
+                    meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
+                    meta_len2.push_back(iovecs[i].iov_len);
+                }
+            }else{
+                for (auto i = 0; i < iovecs_len; i++){
+                    meta_element[i] = std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len);
+                    meta_left += iovecs[i].iov_len;
+                    meta_sent += iovecs[i].iov_len;
+                    meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
+                    meta_len2[i] = iovecs[i].iov_len;
+                }
             }
+            
             meta_pos = 0;
             bits_set.resize(meta_len);
             ack_count = 0;
@@ -241,8 +255,28 @@ namespace dmludp{
                 retransmision_offset[i] = 0;
             }
             bits_set.reset();
-
+            meta_len = 0;
+            meta_left = 0;
+            for(auto &e :meta_len2){
+                e = 0;
+            }
         };
+
+        void to_json() const{
+            std::cout << "{";
+            std::cout << "\"class\": \"SendBuf\", ";
+            std::cout << "\"meta_left\": \"" << meta_left << "\", ";
+            std::cout << "\"meta_sent\": \"" << meta_sent << "\"";
+            if (meta_len == 48){
+                std::cout << "\"meta_element 0\": \"" << (void*)meta_element[0].first << ", " << meta_element[0].second<< "\"";
+            }else{
+                for (auto i = 0; i < 2 ;i++){
+                    std::cout << "\"meta_element"<< i <<"\": "<<(void*)meta_element[i].first << ", " << meta_element[0].second<< "\"";
+                }
+            }
+            std::cout << "\"bits_set\": \"" << bits_set.size() << "\"";
+            std::cout << "}";
+        }
     };
     
 }

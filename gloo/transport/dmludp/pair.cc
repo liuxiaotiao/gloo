@@ -325,7 +325,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	std::cout<<"writeComplete:"<<opcode<<std::endl;
+	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -860,15 +860,15 @@ bool Pair::protocal2send(){
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
 
-    const auto opcode = op.getOpcode();
-    if (opcode == Op::SEND_UNBOUND_BUFFER) {
-      NonOwningPtr<UnboundBuffer> buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-      if (!buf) {
-        return false;
-      }else{
-        std::cout<<(void*)buf->ptr<<std::endl;
-      }
-    }
+    // const auto opcode = op.getOpcode();
+    // if (opcode == Op::SEND_UNBOUND_BUFFER) {
+    //   NonOwningPtr<UnboundBuffer> buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+    //   if (!buf) {
+    //     return false;
+    //   }else{
+    //     std::cout<<(void*)buf->ptr<<std::endl;
+    //   }
+    // }
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
