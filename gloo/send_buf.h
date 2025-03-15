@@ -128,8 +128,7 @@ namespace dmludp{
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len), 
-        retransmision_offset(10000, 0),
-        bits_set(330000)
+        retransmision_offset(10000, 0)
         {
             meta_element.reserve(2);
             meta_len2.reserve(2);
@@ -189,6 +188,7 @@ namespace dmludp{
             
             meta_pos = 0;
             bits_set.resize(meta_len);
+            bits_set.reset();
             ack_count = 0;
             rcq.clear();
         }
@@ -268,7 +268,7 @@ namespace dmludp{
                 // out.iov_base = (void *)(meta_element[1].first + out_off - 48);
                 // out.iov_len = out_len;
                 out_len = std::min(send_buffer_size, size_t(meta_ptr2_len - (out_off - 48)));
-                out.iov_base = (void *)(meta_ptr + out_off - 48);
+                out.iov_base = (void *)(meta_ptr2 + out_off - 48);
                 out.iov_len = out_len;
             }      
 
@@ -286,13 +286,17 @@ namespace dmludp{
             for (auto i = 0; i < retransmision_offset.size(); i++){
                 retransmision_offset[i] = 0;
             }
-            bits_set.reset();
+            // bits_set.reset();
             meta_len = 0;
             meta_left = 0;
             for(auto &e :meta_len2){
                 e = 0;
             }
         };
+
+        size_t get_status(){
+            return static_cast<size_t>(meta_status);
+        }
 
         void to_json() const{
             std::cout << "{";
@@ -303,7 +307,7 @@ namespace dmludp{
                 std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
             }else{
                 std::cout << "\"meta_element 0\": \"" << (void*)meta_ptr << ", " << meta_ptr_len<< "\"";
-                std::cout << "\"meta_element 1"\": "<<(void*)meta_ptr2 << ", " << meta_ptr2_len<< "\"";
+                std::cout << "\"meta_element 1\": "<<(void*)meta_ptr2 << ", " << meta_ptr2_len<< "\"";
             }
             std::cout << "\"bits_set\": \"" << bits_set.size() << "\"";
             std::cout << "}";

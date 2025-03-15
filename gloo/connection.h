@@ -400,7 +400,11 @@ class TransmissionMap{
             if(startmap.first == -1){
                 throw std::underflow_error("Error: startmap.first is -1");
             }
-            endmap = std::make_pair(packetnum, packetoffset);
+            if ((endmap.first + 1) == packetnum){
+                endmap = std::make_pair(packetnum, packetoffset);
+            }else{
+                throw std::underflow_error("Error: TransmissionMap lacks enough space");
+            }      
         }
 
         bool empty() {
@@ -437,6 +441,117 @@ class TransmissionMap{
         }
 };
 
+// New TransmissionMap
+// class TransmissionMap{
+//     private:
+//         std::vector<std::pair<ssize_t, uint32_t>> startmap;
+
+//         std::vector<std::pair<ssize_t, uint32_t>> endmap;
+
+//         size_t count_ = 0; // Total elements in TransmissionMap
+
+//         size_t head_ = 0;  // Start index
+
+//         size_t tail_ = 0;  // Max available index
+
+//         ssize_t offset_ = -1; // Used for in range
+
+//         size_t capacity_; // TransmissionMap capacity
+//     public:
+//         TransmissionMap() : startmap(10), endmap(10), capacity_(10){};
+
+//         ~TransmissionMap(){};
+
+//         void add(uint64_t packetnum, uint32_t packetoffset){
+//             if (empty()){
+//                 push_back(packetnum, packetoffset);
+//             }
+
+//             for (auto i = start(); i < end();i++){
+//                 if ((endmap[i].first + 1) == packetnum){
+//                     endmap[i] = std::make_pair(packetnum, packetoffset);
+//                     return;
+//                 }else{
+//                     push_back(packetnum, packetoffset);
+//                 }
+//             }
+//         }
+
+//         size_t start(){
+//             return head_;
+//         }
+
+//         size_t end(){
+//             return tail_;
+//         }
+
+//         void push_back(uint64_t packetnum, uint32_t packetoffset) {
+//             startmap[tail_] = std::make_pair(packetnum, packetoffset);
+//             endmap[tail_] = std::make_pair(packetnum, packetoffset);
+//             tail_ = (tail_ + 1) % capacity_;
+//             count_++;
+//         }
+
+//         void pop_front() {
+//             if (empty()) {
+//                 throw std::runtime_error("TransmissionMap is empty, cannot remove element.");
+//             }
+//             startmap[tail_] = std::make_pair(-1, 0);
+//             endmap[tail_] = std::make_pair(-1, 0);
+//             head_ = (head_ + 1) % capacity_;
+//             count_--;
+//         }
+
+
+//         bool empty(){
+//             return count_ == 0;
+//         }
+
+//         bool inrange(size_t PacketNum){
+//             bool result = false;
+//             size_t index_ = 0;
+//             for (auto i = start(); i < end();i = (i + 1)%capacity_){
+//                 if (PacketNum >= startmap[i].first && PacketNum <= endmap[i].first){
+//                     index_ = i;
+//                     if (startmap[i].first == 0){
+//                         if (PacketNum == startmap[i].first){
+//                             offset_ = startmap[i].second;
+//                         }else{
+//                             offset_ = 48 + (PacketNum - startmap[i].first - 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
+//                         }
+//                     }else{
+//                         offset_ = (PacketNum - startmap[i].first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap[i].first;
+//                     }
+//                     removeBeforeValue(index_);
+//                     return true;
+//                 }
+//                 index_++;
+//             }
+//             return result;
+//         } 
+
+//         void removeBeforeValue(size_t index_){
+//             head_ = (head + index_) % capacity;
+//             count -= index_;
+//         }
+
+//         bool full() const {
+//             return count_ == capacity_;
+//         }
+
+//         uint32_t get_offset(uint64_t packetnum_){
+//             auto result = offset_;
+//             offset_ = -1;
+//             return result;
+//         }
+
+
+//         void clear(){
+//             tail_ = head_ = count_ = 0;
+//         }
+
+// };
+
 
 class MetaInfo{
     public:
@@ -466,7 +581,7 @@ class MetaInfo{
         ~MetaInfo(){};
 
         void add_transmission(uint64_t packetnum_, uint32_t packetoffset_){
-            retransmission_map.add(packetnum_, packetoffset_);
+            transmission_map.add(packetnum_, packetoffset_);
             if (packet_range.first == -1){
                 packet_range = std::make_pair(packetnum_, packetnum_);
             }else{
@@ -477,7 +592,7 @@ class MetaInfo{
         }
 
         void add_retransmission(uint64_t packetnum_, uint32_t packetoffset_){
-            transmission_map.add(packetnum_, packetoffset_);
+            retransmission_map.add(packetnum_, packetoffset_);
             if (packet_range.first == -1){
                 packet_range = std::make_pair(packetnum_, packetnum_);
             }else{
@@ -613,13 +728,30 @@ class SCircularQueue {
             return head_ == tail_;
         }
 
+        // bool ready() {
+        //     if(empty()){
+        //         return false;
+        //     }
+        //     bool isReady = false;
+        //     for(auto i = start(); i < end() ; i = (i + 1) % capacity_){
+        //         isReady |= !data_[i].metabuf.is_empty();
+        //     }
+        //     return isReady;
+        // }
+
+        size_t get_count(){
+            return count_;
+        }
+
         bool ready() {
             if(empty()){
                 return false;
             }
             bool isReady = false;
-            for(auto i = start(); i < end() ; i = (i + 1) % capacity_){
-                isReady |= !data_[i].metabuf.is_empty();
+            size_t start_index = start();
+            for (auto i = 0; i < get_count(); i++){
+                size_t pos = (start_index + i) % capacity_;
+                isReady |= !data_[pos].metabuf.is_empty();
             }
             return isReady;
         }
@@ -648,6 +780,10 @@ class SCircularQueue {
 
         size_t frontsent(){
             return data_[head_].sent();
+        }
+
+        size_t get_capacity(){
+            return capacity_;
         }
 
         ~SCircularQueue() = default; 
@@ -840,6 +976,7 @@ class metarecebuf{
 
         void processCheck(){
             if (received != processd){
+                std::cout<<"received:"<<received<<", processd:"<<processd<<std::endl;
                 throw std::overflow_error("received != processd");
             }
             return;
@@ -1026,6 +1163,75 @@ public:
     }
 
     ~RCircularQueue() = default;
+};
+
+
+class zeroQueue {
+private:
+    using PairType = std::pair<uint8_t, uint16_t>;
+    std::vector<PairType> data;  
+    int front_index;        
+    int back_index;         
+    int count;              
+    int capacity;           
+
+    void resize() {
+        std::vector<PairType> new_data(capacity * 2);
+        for (int i = 0; i < count; ++i) {
+            new_data[i] = (*this)[i];  // 重新排列元素
+        }
+        data = std::move(new_data);
+        front_index = 0;
+        back_index = count;
+        capacity *= 2;
+    }
+
+public:
+    CircularQueue(int cap = 256) : front_index(0), back_index(0), count(0), capacity(cap) {
+        data.resize(capacity);
+    }
+
+    void push_back(PairType value) {
+        if (count == capacity) {
+            resize();  
+        }
+        data[back_index] = value;
+        back_index = (back_index + 1) % capacity;
+        count++;
+    }
+
+    void pop_front() {
+        if (count == 0) {
+            throw std::runtime_error("zeroQueue is empty!");
+        }
+        front_index = (front_index + 1) % capacity;
+        count--;
+    }
+
+    PairType& operator[](int index) {
+        if (index < 0 || index >= count) {
+            throw std::out_of_range("zeroQueue index out of range");
+        }
+        return data[(front_index + index) % capacity];  
+    }
+
+    int size() const {
+        return count;
+    }
+
+    bool empty() const {
+        return count == 0;
+    }
+
+    PairType front() const {
+        if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
+        return data[front_index];
+    }
+
+    PairType back() const {
+        if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
+        return data[(back_index - 1 + capacity) % capacity];
+    }
 };
 
 class Config {
@@ -1228,7 +1434,8 @@ public:
 
     SCircularQueue sendbufferqueue;
 
-    std::deque<std::pair<uint8_t, uint16_t>> zerolist;
+    // std::deque<std::pair<uint8_t, uint16_t>> zerolist;
+    zeroQueue zerolist;
 
     RCircularQueue recvCQ;
 
@@ -1487,7 +1694,7 @@ public:
             zerolist.push_back(std::make_pair(pkt_difference, index));
         }
 
-        /*TODO(33): Rethink min_received is worth to keep*/
+        /*TODO(3.3): Rethink min_received is worth to keep*/
         if (min_received == -1){
             min_received = pkt_num;
         }else{
@@ -1600,7 +1807,7 @@ public:
     void process_acknowledge2(const size_t index_){
         auto pkt_num = receive_message[index_].get_packet_number();
         auto pkt_len = receive_message[index_].get_packet_length();
-
+        receive_available_map[index_] = 0;
         /*To acknowledge packet receive ts*/
         struct cmsghdr *cmsg;
         struct timespec *ts;
@@ -1625,12 +1832,14 @@ public:
 
         
         /*TODO: process max_ack and first_pn*/
-
+        auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
+        // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
             if (pn > end_pn){
                 break;
             }
+            auto i = (sendbufferqueue_start_index + idx)%256;
             auto sendpair = sendbufferqueue.data_[i].get_packet_range();
             while(true){
                 if (pn >= sendpair.first && pn <= sendpair.second){
@@ -1735,6 +1944,58 @@ public:
         written_data_once = 0;
     }
 
+    // ssize_t prepareData() {
+    //     Type ty = Type::Application;
+    //     ssize_t out_len = 0; 
+    //     Offset_len out_off = 0;
+    //     size_t i = 0;
+    //     ssize_t tramssioning_index = -1;
+
+    //     ssize_t cwnd_limit = (recovery.cwnd_available() + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
+    //     if (cwnd_limit <= 0){
+    //         return 0;
+    //     }
+
+    //     size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
+    //     ssize_t sent = 0;        
+    //     for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
+    //         while (true){
+    //             size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
+    //             auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
+    //             if (out_len < 0 || out_len > 1440){
+    //                 std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+    //             }
+    //             if (out_len == -1) {
+    //                 break;
+    //             }
+
+    //             auto pn = pkt_num_spaces[0].updatepktnum();
+    //             send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
+    //             recovery.on_packet_sent(out_len);
+    //             // if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
+    //             //     sendbufferqueue.data_[i].add_transmission(pn, out_off);
+    //             // }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
+    //             //     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
+    //             // }
+    //             if (send_status == 1){
+    //                 sendbufferqueue.data_[i].add_transmission(pn, out_off);
+    //             }else if(send_status == 2){
+    //                 sendbufferqueue.data_[i].add_retransmission(pn, out_off);
+    //             }
+    //             sent++;
+    //             if (sent >= sent_limit){
+    //                 /*TODO add pakcet number-offset mapping*/
+    //                 break;
+    //             }
+    //         }
+    //         if (sent >= sent_limit){
+    //             break;
+    //         }
+    //     }
+
+    //     return sent;
+    // }
+
     ssize_t prepareData() {
         Type ty = Type::Application;
         ssize_t out_len = 0; 
@@ -1748,10 +2009,12 @@ public:
         }
 
         size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
-        ssize_t sent = 0;
-        for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
+        ssize_t sent = 0;       
+        auto sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
+            i = (sendbufferqueue_start_index + idx) % get_capacity();
             while (true){
-                size_t send_status = 0;
+                size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
                 if (out_len < 0 || out_len > 1440){
                     std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
@@ -1770,7 +2033,7 @@ public:
                 // }
                 if (send_status == 1){
                     sendbufferqueue.data_[i].add_transmission(pn, out_off);
-                }else if(send_status == 0){
+                }else if(send_status == 2){
                     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
                 }
                 sent++;
@@ -1786,6 +2049,7 @@ public:
 
         return sent;
     }
+    
 
     void log_print(void* src_, size_t len_) {
         if (!src_) {
@@ -1894,159 +2158,6 @@ public:
         return idx;
     }
 
-
-    // void process_application_copy(){
-    //     Offset_len pkt_offset;
-    //     Packet_len pkt_len;
-    //     Difference_len pkt_difference;
-    //     if (receive_connection_difference == zerolist[0].first && recvCQ.data_[receive_connection_difference].srcset == 1){
-    //         auto index = zerolist[0].second;
-    //         pkt_offset = receive_message[index].get_packet_offset();
-    //         pkt_difference = receive_message[index].get_packet_difference();
-    //         recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, 48);
-    //         // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
-    //         receive_available_map[index] = 0;
-    //         recvCQ.data_[pkt_difference].processdlen(48);
-    //         return;
-    //     }
-
-    //     /*TODO: record ahead index consumption to reduce iterations*/
-    //     /*MAXCopyIndex*/
-    //     for (auto index = 0; index < boundary(); index++){
-    //         pkt_difference = receive_message[index].get_packet_difference();
-    //         if (receive_available_map[index] == 0){
-    //             if (!receive_record.empty()){
-    //                 auto copy_len = receive_record.get_acumulation();
-    //                 auto copy_index = receive_record.get_start_index();
-    //                 auto copy_difference = receive_record.get_record_difference();
-    //                 if (pkt_offset >= 48){
-    //                     recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(reinterpret_cast<uint8_t*>(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48), reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }else{
-    //                     recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }
-    //                 recvCQ.data_[copy_difference].processdlen(copy_len);
-    //                 receive_record.reset();
-    //             }   
-    //             continue;
-    //         }
-
-    //         if (receive_connection_difference == pkt_difference && recvCQ.data_[pkt_difference].metabuf.src != nullptr){
-    //             pkt_offset = receive_message[index].get_packet_offset();
-    //             pkt_len = receive_message[index].get_packet_length();
-
-    //             receive_available_map[index] = 0;
-
-    //             if(receive_record.get_end_index() - receive_record.get_start_index() == 7){ 
-    //                 auto copy_len = receive_record.get_acumulation();
-    //                 auto copy_index = receive_record.get_start_index();
-    //                 auto copy_offset = receive_record.get_offset();
-    //                 if (pkt_offset >= 48){
-    //                     recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }else{
-    //                     recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }
-    //                 recvCQ.data_[pkt_difference].processdlen(copy_len);
-    //                 receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
-    //                 if(recvCQ.processComplete(pkt_difference)){
-    //                     return;
-    //                 }
-    //                 continue;
-    //             }
-
-    //             if (receive_record.get_target_offset() != pkt_offset && receive_record.get_target_offset() != 0){
-    //                 auto copy_len = receive_record.get_acumulation();
-    //                 auto copy_index = receive_record.get_start_index();
-    //                 if (pkt_offset >= 48){
-    //                     recvCQ.data_[pkt_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }else{
-    //                     recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }
-    //                 recvCQ.data_[pkt_difference].processdlen(copy_len);
-    //                 receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
-    //                 if(recvCQ.processComplete(pkt_difference)){
-    //                     return;
-    //                 }
-    //                 continue;
-    //             }
-
-    //             receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
-    //         }else{
-    //             receive_upper_check = index;
-    //             if (!receive_record.empty()){
-    //                 auto copy_len = receive_record.get_acumulation();
-    //                 auto copy_index = receive_record.get_start_index();
-    //                 auto copy_difference = receive_record.get_record_difference();
-    //                 if (pkt_offset >= 48){
-    //                     recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }else{
-    //                     recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //                     // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //                 }
-    //                 recvCQ.data_[copy_difference].processdlen(copy_len);
-    //                 receive_record.reset();
-    //                 if(recvCQ.processComplete(pkt_difference)){
-    //                     return;
-    //                 }
-    //             }  
-    //         }
-    //     }
-
-
-    //     if (!receive_record.empty()){
-    //         auto copy_len = receive_record.get_acumulation();
-    //         auto copy_index = receive_record.get_start_index();
-    //         auto copy_difference = receive_record.get_record_difference();
-    //         if (pkt_offset >= 48){
-    //             recvCQ.data_[copy_difference].copy((pkt_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //             // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset - 48, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //         }else{
-    //             recvCQ.data_[copy_difference].copy((pkt_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-    //             // memcpy(recvCQ.data_[pkt_difference].metabuf.src + pkt_offset, reinterpret_cast<uint8_t*>(receive_message[copy_index].iov[1].iov_base), copy_len);
-    //         }
-    //         recvCQ.data_[copy_difference].processdlen(copy_len);
-    //         receive_record.reset();
-    //     }   
-
-    //     /*
-    //     1. Max 8 copy packets
-    //     2. index contious breaks
-    //     3. difference differ
-    //     */
-    //     /*
-    //     if receive_connection_difference == pkt_difference & src
-    //         if (end - start == 7)
-    //             !receive_record.empty
-    //                 copy(recordinfo)
-    //                 receive_record.set(index, pkt_len)
-    //             continue;
-            
-    //         if (receive_record.offset + packet_limit != pkt_offset)
-    //             if !receive_record.empty
-    //                 copy(record)
-    //             continue;
-    //         else
-    //             receive_record.update(end_index, pkt_len);
-    //     else
-    //         if check receive_record is not empty; other block data interupt
-    //             copy()
-    //             reset()
-    //         else
-    //             continue;
-        
-    //     if(!receive_record.empty())
-    //         copy(receive_record)
-    //         receive_record.reset;
-    //     */
-       
-    // }
-
     void process_application_copy(){
         Offset_len pkt_offset;
         Packet_len pkt_len;
@@ -2059,12 +2170,12 @@ public:
             // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
             receive_available_map[index] = 0;
             recvCQ.data_[pkt_difference].processdlen(48);
+            receive_record.reset();
             return;
         }
 
-        /*TODO: record ahead index consumption to reduce iterations*/
-        /*MAXCopyIndex*/
-        for (auto index = 0; index < boundary(); index++){
+        /*TODO: used count to reduce iteration times*/
+        for (auto index = 0; index < receive_available_map.size(); index++){
             pkt_difference = receive_message[index].get_packet_difference();
             if (receive_available_map[index] == 0){
                 if (!receive_record.empty()){
@@ -2131,6 +2242,7 @@ public:
 
                 receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
+                /*different block occurs, contious check stop and start copy*/
                 receive_upper_check = index;
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
@@ -2146,7 +2258,11 @@ public:
                     }
                     recvCQ.data_[copy_difference].processdlen(copy_len);
                     receive_record.reset();
-                    if(recvCQ.processComplete(pkt_difference)){
+                    if (copy_difference != receive_connection_difference){
+                        std::cerr << "[process_application_copy check 3]: copy_difference(" << (int)copy_difference<<"), receive_connection_difference(" << (int)receive_connection_difference<<")"<<std::endl;
+                        _Exit(0);
+                    }
+                    if(recvCQ.processComplete(copy_difference)){
                         return;
                     }
                 }  
@@ -2170,7 +2286,10 @@ public:
             receive_record.reset();
         }   
 
-        recvCQ.data_[receive_record.get_record_difference()].processCheck();
+        // recvCQ.data_[receive_record.get_record_difference()].processCheck();
+        recvCQ.data_[receive_connection_difference].processCheck();
+
+        receive_record.reset();
         /*
         1. Max 8 copy packets
         2. index contious breaks
@@ -2360,31 +2479,9 @@ public:
         return stop_flag && stop_ack && initial;
     };
 
-    // Check if fixed length of first entry in received buffer exist.
-    // bool check_first_entry(size_t check_len){
-    //     auto fst_len = rec_buffer.first_item_len(check_len);
-    //     if (fst_len != check_len){
-    //         return false;
-    //     }
-    //     return true;
-    // };
-
-    // void recv_padding(size_t total_len){
-    //     rec_buffer.data_padding(total_len);
-    // }
-
     size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
         return rec_buffer.emit(out, iscopy, output_len);
     };
-
-
-    // bool has_recv(){
-    //     return rec_buffer.is_empty();
-    // }
-    
-    // size_t recv_len(){
-    //     return rec_buffer.length();
-    // }
 
     uint8_t priority_calculation(uint64_t off){
         auto real_index = (uint64_t)(off / MAX_SEND_UDP_PAYLOAD_SIZE);

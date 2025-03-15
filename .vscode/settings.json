@@ -62,6 +62,9 @@
         "type_traits": "cpp",
         "__availability": "cpp",
         "functional": "cpp",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "iomanip": "cpp",
+        "filesystem": "cpp",
+        "fstream": "cpp"
     }
 }
