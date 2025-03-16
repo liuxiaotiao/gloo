@@ -400,7 +400,7 @@ class TransmissionMap{
             if(startmap.first == -1){
                 throw std::underflow_error("Error: startmap.first is -1");
             }
-            if ((endmap.first + 1) == packetnum){
+            if ((endmap.first + 1) == packetnum || endmap.first == -1){
                 endmap = std::make_pair(packetnum, packetoffset);
             }else{
                 throw std::underflow_error("Error: TransmissionMap lacks enough space");
@@ -1187,7 +1187,7 @@ private:
     }
 
 public:
-    CircularQueue(int cap = 256) : front_index(0), back_index(0), count(0), capacity(cap) {
+    zeroQueue(int cap = 256) : front_index(0), back_index(0), count(0), capacity(cap) {
         data.resize(capacity);
     }
 
@@ -1894,9 +1894,12 @@ public:
     }
 
     bool zerocheck(){
-        if(receive_connection_difference == zerolist[0].first){
-            return true;
+        if (!zerolist.empty()){
+            if(receive_connection_difference == zerolist[0].first){
+                return true;
+            }
         }
+       
         return false;
     }
 
@@ -2012,7 +2015,7 @@ public:
         ssize_t sent = 0;       
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
-            i = (sendbufferqueue_start_index + idx) % get_capacity();
+            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             while (true){
                 size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
@@ -2162,17 +2165,20 @@ public:
         Offset_len pkt_offset;
         Packet_len pkt_len;
         Difference_len pkt_difference;
-        if (receive_connection_difference == zerolist[0].first && recvCQ.data_[receive_connection_difference].srcset == 1){
-            auto index = zerolist[0].second;
-            pkt_offset = receive_message[index].get_packet_offset();
-            pkt_difference = receive_message[index].get_packet_difference();
-            recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, 48);
-            // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
-            receive_available_map[index] = 0;
-            recvCQ.data_[pkt_difference].processdlen(48);
-            receive_record.reset();
-            return;
+        if (!zerolist.empty()){
+            if (receive_connection_difference == zerolist[0].first && recvCQ.data_[receive_connection_difference].srcset == 1){
+                auto index = zerolist[0].second;
+                pkt_offset = receive_message[index].get_packet_offset();
+                pkt_difference = receive_message[index].get_packet_difference();
+                recvCQ.data_[pkt_difference].copy((pkt_offset), receive_message[index].iov[1].iov_base, 48);
+                // memcpy(recvCQ.data_[pkt_difference].metabuf.src, reinterpret_cast<uint8_t*>(receive_message[index].iov[1].iov_base), 48);
+                receive_available_map[index] = 0;
+                recvCQ.data_[pkt_difference].processdlen(48);
+                receive_record.reset();
+                return;
+            }
         }
+        
 
         /*TODO: used count to reduce iteration times*/
         for (auto index = 0; index < receive_available_map.size(); index++){

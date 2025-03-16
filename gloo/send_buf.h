@@ -118,7 +118,7 @@ namespace dmludp{
 
         MetaFlag meta_status = MetaFlag::Initial;
         
-        std::vector<uint64_t> retransmision_offset;
+        std::vector<uint32_t> retransmision_offset;
 
         ssize_t start_pos = 0;
 
