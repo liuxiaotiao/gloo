@@ -78,16 +78,10 @@ inline int dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint
     return result;
 }
 
-// inline int dmludp_process_header_info(std::shared_ptr<Connection> conn, uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
-//     return conn->pre_process_application_packet(data, buf_len, off, pn);
-// }
-
-// inline Connection* dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
 inline std::shared_ptr<Connection> dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
     return dmludp::Connection::accept(local, peer, config);
 }
 
-// inline Connection* dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
 inline std::shared_ptr<Connection> dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
     return dmludp::Connection::connect(local, peer, config);
 }
@@ -96,7 +90,6 @@ inline void dmludp_update_receive_parameters(std::shared_ptr<Connection> conn){
     conn->update_receive_parameter();
 }
 
-// inline void dmludp_set_rtt(Connection* conn, long interval){
 inline void dmludp_set_rtt(std::shared_ptr<Connection> conn, long interval){
     conn->set_rtt(interval);
 }
@@ -105,56 +98,20 @@ inline void dmludp_conn_set_send_time(std::shared_ptr<Connection> conn){
     conn->set_send_time();
 }
 
-// inline bool dmludp_get_data(std::shared_ptr<Connection> conn, struct iovec *iovecs, int iovecs_len){
-//     return conn->get_data(iovecs, iovecs_len);
-// }
 
 inline size_t dmludp_get_error_sent(std::shared_ptr<Connection> conn){
     return conn->get_error_sent();
 }
 
-// inline ssize_t dmludp_data_send_msg(std::shared_ptr<Connection> conn, 
-//     std::vector<std::shared_ptr<Header>> &hdrs, 
-//     std::vector<struct msghdr> &messages, 
-//     std::vector<struct iovec> &iovecs,
-//     std::vector<std::vector<uint8_t>> &out_ack){
-//     return conn->send_mmsg(hdrs, messages, iovecs, out_ack);
-// }
-
-// inline ssize_t dmludp_data_send_msg(std::shared_ptr<Connection> conn, 
-//     std::vector<std::shared_ptr<Header>> &hdrs, 
-//     std::vector<struct msghdr> &messages, 
-//     std::vector<struct iovec> &iovecs,
-//     std::vector<std::vector<uint8_t>> &out_ack){
-//     return conn->send_msg(hdrs, messages, iovecs, out_ack);
-// }
-
-// inline ssize_t dmludp_data_send_partial_msg(std::shared_ptr<Connection> conn, 
-//     std::vector<std::shared_ptr<Header>> &hdrs, 
-//     std::vector<struct msghdr> &messages, 
-//     std::vector<struct iovec> &iovecs){
-//     return conn->send_partial_mmsg(hdrs, messages, iovecs);
-// }
-
 inline bool dmludp_transmission_complete(std::shared_ptr<Connection> conn){
     return conn->transmission_complete();
 }
 
-// inline ssize_t dmludp_send_data_acknowledge(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
-//     return conn->send_data_acknowledge(out, out_len);
-
-// }
-
-
-// inline void dmludp_conn_recovery(std::shared_ptr<Connection> conn){
-//     conn->recovery_send_buffer();
-// }
 
 inline long dmludp_get_rtt(std::shared_ptr<Connection> conn){
     return conn->get_rtt();
 }
 
-// inline ssize_t dmludp_send_data_stop(Connection* conn, uint8_t* out, size_t out_len){
 inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     if (out_len == 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
@@ -173,22 +130,16 @@ inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, uint
     return static_cast<ssize_t>(written);
 }
 
-// inline bool dmludp_conn_is_closed(Connection* conn){
 inline bool dmludp_conn_is_closed(std::shared_ptr<Connection> conn){
     return conn->is_closed();
 }
 
-// check recv buffer if empty
-// inline bool dmludp_conn_has_recv(std::shared_ptr<Connection> conn){
-//     return conn->has_recv();
-// }
 
 
 inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
     return conn->get_once_data_len();
 }
 
-// inline ssize_t dmludp_conn_send(Connection* conn, uint8_t* out, size_t out_len) {
 inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len) {
     if(out_len == 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
@@ -206,7 +157,6 @@ inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, uint8_t* out, 
 }
 
 
-// inline ssize_t dmludp_conn_recv(Connection* conn, const uint8_t* buf, size_t out_len){
 inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, uint8_t* buf, size_t out_len){
     if(out_len == 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
@@ -233,23 +183,10 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, uint8_t* buf, 
 
 }
 
-// inline bool dmludp_check_first_entry(std::shared_ptr<Connection> conn, size_t check_len){
-//     return conn->check_first_entry(check_len);
-// }
-
-// inline void dmludp_conn_recv_padding(std::shared_ptr<Connection> conn, size_t total_len){
-//     return conn->recv_padding(total_len);
-// }
-
 inline void dmludp_conn_recv_reset(std::shared_ptr<Connection> conn){
     conn->recv_reset();
 }
 
-// inline size_t dmludp_conn_recv_len(std::shared_ptr<Connection> conn){
-//     return conn->recv_len();
-// }
-
-// inline ssize_t dmludp_data_read(Connection* conn, uint8_t* buf, size_t len){
 inline ssize_t dmludp_data_read(std::shared_ptr<Connection> conn, void* buf, size_t len, bool iscopy = false){
     if(len == 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;

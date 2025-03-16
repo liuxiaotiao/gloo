@@ -86,8 +86,6 @@ class Message{
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-            // message_body.msg_control = control;     
-            // message_body.msg_controllen = sizeof(control);
         }
 
         ~Message(){};
@@ -140,18 +138,6 @@ class RCMessage : public Message {
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
-
-        // bool available(){
-        //     return !use_status;
-        // }
-
-        // void used(){
-        //     use_status = true;
-        // }
-
-        // void reset(){
-        //     use_status = false;
-        // }
 
         ~RCMessage(){};
 };
@@ -318,17 +304,10 @@ class RCset{
             return (a + b - 1) / b;
         }
 
-        // void shrink(){
-        //     RCset_body.resize(10);  
-        //     boost::dynamic_bitset<> temp = RCset_body;  
-        //     RCset_body.swap(temp);
-        // }   
 
         void clear(){
             if (RCset_body.size() > 6000 && used_flag == true){
                 RCset_body.resize(6000);
-                // boost::dynamic_bitset<> temp = RCset_body;
-                // RCset_body.swap(temp);
             }
             RCset_body.reset();
             dataload_len.clear();
@@ -728,17 +707,6 @@ class SCircularQueue {
             return head_ == tail_;
         }
 
-        // bool ready() {
-        //     if(empty()){
-        //         return false;
-        //     }
-        //     bool isReady = false;
-        //     for(auto i = start(); i < end() ; i = (i + 1) % capacity_){
-        //         isReady |= !data_[i].metabuf.is_empty();
-        //     }
-        //     return isReady;
-        // }
-
         size_t get_count(){
             return count_;
         }
@@ -895,13 +863,6 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        // metarecebuf(uint8_t difference_): rdifference(difference_), 
-        // receive_offset((difference_ == 9) ? 330000 : (difference_ == 11) ? 47000 : 6000){
-        //     for(auto i = 0; i < 2 ; i++){
-        //         source_len.push_back(0);
-        //     }
-        // }
-
         metarecebuf(uint8_t difference_): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
@@ -997,25 +958,23 @@ class metarecebuf{
 
 class RCircularQueue {
 public:
-    std::vector<metarecebuf> data_; // 存储所有 metarecebuf 对象
-    size_t head_;      // 指向队头元素（最旧的数据）
-    size_t tail_;      // 指向下一个写入位置
-    size_t capacity_;  // 队列总容量
-    size_t count_;     // 当前有效元素个数
+    std::vector<metarecebuf> data_; // Store metarecebuf objects
+    size_t head_;      // point to head element(oldest element)
+    size_t tail_;      // point to next store position
+    size_t capacity_;  // Queue capacity
+    size_t count_;     // Current available elements
 
-    // 构造函数，默认容量为256
     RCircularQueue(size_t capacity = 256)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
         data_.reserve(capacity_);
-        // 初始化每个元素（例如：根据下标初始化）
         for (size_t i = 0; i < capacity_; i++) {
             data_[i] = metarecebuf(static_cast<int>(i));
         }
     }
 
-    // push_back 操作：复位 tail_ 指向的对象，并推进 tail_ 指针。
-    // 如果队列已满，则覆盖最旧数据，同时 head_ 前进。
+    // push_back operation: Reset the object pointed to by tail_ and advance the tail_ pointer.
+    // If the queue is full, overwrite the oldest data while moving the head_ forward.
     bool push_back() {
         if (count_ == capacity_){
             return false;
@@ -1026,18 +985,12 @@ public:
         // 写入后推进 tail_
         tail_ = (tail_ + 1) % capacity_;
 
-        // 如果队列已满，则覆盖旧数据：head_ 同步推进
-        // if (count_ == capacity_) {
-        //     head_ = tail_;
-        // } else {
-        //     ++count_;
-        // }
         ++count_;
 
         return true;
     }
 
-    // pop_front 操作：移除队头数据（复位对象并推进 head_ 指针）
+    // pop_front operation: Remove the front data (reset the object and advance the head_ pointer).
     void pop_front() {
         if (empty()) {
             throw std::runtime_error("Queue is empty, cannot remove element.");
@@ -1047,22 +1000,21 @@ public:
         --count_;
     }
 
-    // 返回当前队列中的元素个数
     size_t size() const {
         return count_;
     }
 
-    // 队列为空则返回 true
+    // Return true if the queue is empty.
     bool empty() const {
         return count_ == 0;
     }
 
-    // 队列满则返回 true
+    // Return true if the queue is full.
     bool full() const {
         return count_ == capacity_;
     }
 
-    // 清空队列，复位 head_、tail_、count_，并复位所有数据
+    // Clear the queue, reset head_, tail_, and count_, and reset all data.
     void clear() {
         for (size_t i = 0; i < capacity_; i++) {
             data_[i].clear();
@@ -1070,18 +1022,18 @@ public:
         head_ = tail_ = count_ = 0;
     }
 
-    // 返回当前 tail_（下一个写入位置）的下标
+    // Return the current index of tail_ (the next write position).
     size_t end() const {
         return tail_;
     }
 
-    // 返回当前 head_（最旧元素）的下标
+    // Return the current index of head_ (the oldest element).
     size_t start() const {
         return head_;
     }
 
-    // 基于下标对指定 metarecebuf 调用 find 操作
-    // difference 作为下标参数，要求在 [0, capacity_) 范围内
+    // Perform the find operation on the specified metarecebuf based on the index.
+    // The difference is used as the index parameter and must be within the range [0, capacity_).
     void insert(uint8_t difference, uint64_t pkt_offset, uint32_t pkt_length) {
         if (difference >= capacity_) {
             throw std::out_of_range("insert: difference index out of range");
@@ -1089,7 +1041,7 @@ public:
         data_[difference].find(pkt_offset, pkt_length);
     }
 
-    // 判断指定下标的 metarecebuf 是否接收完整
+    // Check whether the metarecebuf at the specified index has been completely received.
     bool iscomplete(uint8_t difference) const {
         if (difference >= capacity_) {
             throw std::out_of_range("iscomplete: difference index out of range");
@@ -1097,7 +1049,7 @@ public:
         return data_[difference].is_complete();
     }
 
-    // 设置指定下标 metarecebuf 的接收指针
+    // Set the receive pointer for the metarecebuf at the specified index.
     void set_recv_pointer(uint8_t difference, uint8_t* src) {
         if (difference >= capacity_) {
             throw std::out_of_range("set_recv_pointer: difference index out of range");
@@ -1105,7 +1057,7 @@ public:
         data_[difference].set_src(src);
     }
 
-    // 设置指定下标 metarecebuf 的预期长度
+    // Set the expected length for the metarecebuf at the specified index.
     void rx_len(uint8_t difference, size_t expected) {
         if (difference >= capacity_) {
             throw std::out_of_range("rx_len: difference index out of range");
@@ -1113,8 +1065,8 @@ public:
         data_[difference].addexplen(expected);
     }
 
-    // 判断指定下标的 metarecebuf 是否接收完整
-    // 注意：此处 expected 参数未被使用，可根据需要调整逻辑
+    // Check whether the metarecebuf at the specified index has been completely received.
+    // Note: The expected parameter is not used here and can be adjusted as needed.
     bool isreceived(uint8_t difference, size_t expected) const {
         if (difference >= capacity_) {
             throw std::out_of_range("isreceived: difference index out of range");
@@ -1122,15 +1074,16 @@ public:
         return data_[difference].is_complete();
     }
 
-    // 检查给定下标 index 是否在当前有效数据区间内。
-    // 如果不在区间内，则通过多次调用 push_back() 推进 tail_，
-    // 直至 index 成为有效数据的一部分。
+    // Check whether the given index is within the current valid data range.
+    // If it is outside the range, advance tail_ by repeatedly calling push_back()
+    // until the index becomes part of the valid data.
     void indexcheck(uint8_t index) {
-        // 如果队列为空，必须先调用一次 push_back() 添加一个元素，
-        // 这样才能让有效区间不再为空，从而将 index 纳入有效区间
+        // If the queue is empty, push_back() must be called once to add an element.
+        // This ensures that the valid range is no longer empty, allowing index to be included in the valid range.
         if (empty()) {
             size_t desiredTail = (index + 1) % capacity_;
-            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
+            // Calculate the number of push_back() calls needed 
+            // (i.e., the number of steps required to advance from the current tail_ to desiredTail).
             size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
             for (size_t i = 0; i < pushes; ++i) {
                 push_back();
@@ -1140,17 +1093,19 @@ public:
         
         bool inRange = false;
         if (head_ < tail_) {
-            // 无环绕情况：有效区间为 [head_, tail_)
+            // No wrap-around: The valid range is [head_, tail_).
             inRange = (index >= head_ && index < tail_);
         } else {
-            // 环绕情况：有效区间为 [head_, capacity_) ∪ [0, tail_)
+            // Wrap-around case: The valid range is [head_, capacity_) ∪ [0, tail_).
             inRange = (index >= head_ || index < tail_);
         }
         
         if (!inRange) {
-            // 计算期望的 tail_ 值：为了让 index 成为有效数据的一部分，应使 tail_ = (index + 1) % capacity_
+            // Calculate the expected tail_ value: 
+            // To make index part of the valid data, set tail_ = (index + 1) % capacity_.
             size_t desiredTail = (index + 1) % capacity_;
-            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
+            // Calculate the number of push_back() calls needed 
+            // (i.e., the number of steps required to advance from the current tail_ to desiredTail).
             size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
             for (size_t i = 0; i < pushes; ++i) {
                 push_back();
@@ -1178,7 +1133,7 @@ private:
     void resize() {
         std::vector<PairType> new_data(capacity * 2);
         for (int i = 0; i < count; ++i) {
-            new_data[i] = (*this)[i];  // 重新排列元素
+            new_data[i] = (*this)[i];  
         }
         data = std::move(new_data);
         front_index = 0;
@@ -1477,7 +1432,6 @@ public:
     difference_flag(false),
     send_status_flag(0),
     acknowldge_iov(3),
-    // send_buffer(MAX_SEND_UDP_PAYLOAD_SIZE),
     receivevector(3000, 0),
     receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
@@ -1485,7 +1439,6 @@ public:
     {
         send_message.resize(ONCE_SEND_LIMIT);
 
-        // receive_message.resize(ONCE_RECEIVE_LIMINT);
         receive_message.resize(RX_CONST);
 
         receive_offset.add_rule(100 * 1024 * 1024);
@@ -1602,7 +1555,6 @@ public:
             
             if (pkt_ty == Type::ACK){
                 process_acknowledge2(i);
-                // transmission_complete_check();
             }
 
             if (pkt_ty == Type::Application){
@@ -1946,58 +1898,6 @@ public:
     void clear_sent_once(){
         written_data_once = 0;
     }
-
-    // ssize_t prepareData() {
-    //     Type ty = Type::Application;
-    //     ssize_t out_len = 0; 
-    //     Offset_len out_off = 0;
-    //     size_t i = 0;
-    //     ssize_t tramssioning_index = -1;
-
-    //     ssize_t cwnd_limit = (recovery.cwnd_available() + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
-    //     if (cwnd_limit <= 0){
-    //         return 0;
-    //     }
-
-    //     size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
-    //     ssize_t sent = 0;        
-    //     for (i = sendbufferqueue.start() ; i < sendbufferqueue.end() ; i = (i + 1)%sendbufferqueue.max()) {
-    //         while (true){
-    //             size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
-    //             auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-    //             if (out_len < 0 || out_len > 1440){
-    //                 std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
-    //             }
-    //             if (out_len == -1) {
-    //                 break;
-    //             }
-
-    //             auto pn = pkt_num_spaces[0].updatepktnum();
-    //             send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
-    //             recovery.on_packet_sent(out_len);
-    //             // if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
-    //             //     sendbufferqueue.data_[i].add_transmission(pn, out_off);
-    //             // }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
-    //             //     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
-    //             // }
-    //             if (send_status == 1){
-    //                 sendbufferqueue.data_[i].add_transmission(pn, out_off);
-    //             }else if(send_status == 2){
-    //                 sendbufferqueue.data_[i].add_retransmission(pn, out_off);
-    //             }
-    //             sent++;
-    //             if (sent >= sent_limit){
-    //                 /*TODO add pakcet number-offset mapping*/
-    //                 break;
-    //             }
-    //         }
-    //         if (sent >= sent_limit){
-    //             break;
-    //         }
-    //     }
-
-    //     return sent;
-    // }
 
     ssize_t prepareData() {
         Type ty = Type::Application;
