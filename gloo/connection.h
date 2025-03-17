@@ -348,7 +348,9 @@ class ReTransmissionMap{
         std::vector<uint32_t> offsets;
 
     public:
-        ReTransmissionMap():offsets(100){};
+        ReTransmissionMap():offsets(2000){
+            offsets.resize(2000);
+        };
 
         ~ReTransmissionMap(){};
 
@@ -357,6 +359,10 @@ class ReTransmissionMap{
         }
 
         uint32_t get_offset(uint64_t packetnum){
+            if (packetnum - start_packet > 1999){
+                std::cerr << "ReTransmissionMap get_offset() out of boundary(" << start_packet << ", " << packetnum << ")" << std::endl;
+                _Exit(0);
+            } 
             return offsets[packetnum - start_packet];
         }
 
@@ -368,6 +374,10 @@ class ReTransmissionMap{
                 throw std::underflow_error("Error: start_packet is -1");
             }
             end_packet = packetnum;
+            if (end_packet - start_packet > 1999){
+                std::cerr << "ReTransmissionMap add() out of boundary(" << start_packet << ", " << end_packet << ")" << std::endl;
+                _Exit(0);
+            }   
             offsets[end_packet - start_packet] = packetoffset;
         }
 
@@ -647,7 +657,6 @@ class MetaInfo{
             range_len = 0;
             block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
-                std::cout<<"set_buffer:" << iovecs[i].iov_base<<", "<<iovecs[i].iov_len<<std::endl;
                 range_len += (iovecs[i].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
             }
         }
@@ -2019,7 +2028,7 @@ public:
             while (true){
                 size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-                if (out_len < 0 || out_len > 1440){
+                if (out_off == 0 && out_len != 0){
                     std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 }
                 if (out_len == -1) {
