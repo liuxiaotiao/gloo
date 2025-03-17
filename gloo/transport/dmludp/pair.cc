@@ -635,7 +635,6 @@ bool Pair::protocal2read(){
   if (state_ == CLOSED) {
     return false;
   }
-
   NonOwningPtr<UnboundBuffer> sbuf;
   std::array<struct iovec, 2> siov;
   int sioc;
@@ -662,10 +661,25 @@ bool Pair::protocal2read(){
         break;
       }
     }
+    
     if (received <= 0){
-        break;
+      break;
     }
-  
+
+    struct sockaddr_in peer_addr;
+    socklen_t addr_len = sizeof(peer_addr);
+    if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+        perror("getpeername failed");
+        return 1;
+    }
+
+    char ip_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+
+    std::cout << "Connected to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+
+    std::cout<<"received:"<<received<<std::endl;
+
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
@@ -913,6 +927,18 @@ bool Pair::protocal2send(){
       }
       sent++;
     }
+
+    struct sockaddr_in peer_addr;
+    socklen_t addr_len = sizeof(peer_addr);
+    if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+        perror("getpeername failed");
+        return 1;
+    }
+
+    char ip_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+
+    std::cout << "Connected to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
       return true;
@@ -928,17 +954,22 @@ bool Pair::protocal2send(){
 
 void Pair::handleReadWrite(int events){
   if (events & EPOLLOUT){
+    std::cout<<"EPOLLOUT start"<<std::endl;
     GLOO_ENFORCE(
     !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     if (!tx_.empty()){
       protocal2send();
     }
+    std::cout<<"EPOLLOUT end"<<std::endl;
   }
 
+
   if (events & EPOLLIN) {
+    std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
+    std::cout<<"EPOLLIN end"<<std::endl;
   }
 }
 

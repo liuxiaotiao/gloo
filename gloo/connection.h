@@ -2028,7 +2028,7 @@ public:
             while (true){
                 size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-                if (out_off == 0 && out_len != 0){
+                if (out_off == 0 && out_len > -1){
                     std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 }
                 if (out_len == -1) {
