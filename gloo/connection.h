@@ -327,7 +327,9 @@ class ReTransmissionMap{
         std::vector<uint32_t> offsets;
 
     public:
-        ReTransmissionMap():offsets(100){};
+        ReTransmissionMap():offsets(1000){
+            offsets.resize(2000);
+        };
 
         ~ReTransmissionMap(){};
 
@@ -336,6 +338,10 @@ class ReTransmissionMap{
         }
 
         uint32_t get_offset(uint64_t packetnum){
+            if (packetnum - start_packet > 1999){
+                std::cerr << "ReTransmissionMap access out of boundary(" << packetnum << ", " << start_packet << ")"<<std::endl;
+                _Exit(0);
+            }
             return offsets[packetnum - start_packet];
         }
 
@@ -347,6 +353,11 @@ class ReTransmissionMap{
                 throw std::underflow_error("Error: start_packet is -1");
             }
             end_packet = packetnum;
+            // offsets[end_packet - start_packet] = packetoffset;
+            if (end_packet - start_packet > 1999){
+                std::cerr << "ReTransmissionMap insert out of boundary(" << end_packet << ", " << start_packet << ")"<<std::endl;
+                _Exit(0);
+            }
             offsets[end_packet - start_packet] = packetoffset;
         }
 
