@@ -7,7 +7,7 @@
  */
 
 #include "gloo/transport/dmludp/pair.h"
-
+#include <arpa/inet.h>
 #include <algorithm>
 #include <array>
 #include <sstream>
