@@ -676,7 +676,7 @@ bool Pair::protocal2read(){
     char ip_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-    std::cout << "Connected to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+    std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
 
     std::cout<<"received:"<<received<<std::endl;
 
@@ -938,7 +938,7 @@ bool Pair::protocal2send(){
     char ip_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-    std::cout << "Connected to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+    std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
       return true;
@@ -960,7 +960,7 @@ void Pair::handleReadWrite(int events){
     if (!tx_.empty()){
       protocal2send();
     }
-    std::cout<<"EPOLLOUT end"<<std::endl;
+    std::cout<<"EPOLLOUT end \n"<<std::endl;
   }
 
 
@@ -969,7 +969,7 @@ void Pair::handleReadWrite(int events){
     while (protocal2read()) {
       // Keep going
     }
-    std::cout<<"EPOLLIN end"<<std::endl;
+    std::cout<<"EPOLLIN end \n"<<std::endl;
   }
 }
 
