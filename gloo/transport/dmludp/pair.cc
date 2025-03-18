@@ -642,6 +642,17 @@ bool Pair::protocal2read(){
 
   ssize_t received = 0;
   size_t receive_check = 0;
+  struct sockaddr_in peer_addr;
+  socklen_t addr_len = sizeof(peer_addr);
+  if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+      perror("getpeername failed");
+      return 1;
+  }
+
+  char ip_str[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+
+  std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -665,19 +676,7 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-
-    struct sockaddr_in peer_addr;
-    socklen_t addr_len = sizeof(peer_addr);
-    if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-        perror("getpeername failed");
-        return 1;
-    }
-
-    char ip_str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
-
-    std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
-
+    
     std::cout<<"received:"<<received<<std::endl;
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);

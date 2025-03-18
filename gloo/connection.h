@@ -441,6 +441,10 @@ class TransmissionMap{
                     offset_ = 48 + (packetnum_ - startmap.first - 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
                 }
             }else{
+                if (packetnum_ > endmap.first){
+                    std::cout<<"packetnum_("<<packetnum_<<") > endmap.first("<<endmap.first<<")"<<std::endl;
+                    _Exit(0);
+                }
                 offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
             }
             return offset_;
@@ -1219,6 +1223,7 @@ public:
 
     PairType& operator[](int index) {
         if (index < 0 || index >= count) {
+            std::cout<<"index"<<index<<std::endl;
             throw std::out_of_range("zeroQueue index out of range");
         }
         return data[(front_index + index) % capacity];  
@@ -1415,11 +1420,9 @@ public:
 
     uint64_t ACKrange;
 
-    ssize_t min_received;
+    ssize_t min_received = -1;
 
-    ssize_t max_received;
-
-    ssize_t next_received;
+    ssize_t max_received = -1;
 
     // Set at get_data()
     size_t data_gotten;    
@@ -1712,7 +1715,7 @@ public:
             }
         }
 
-        if (pkt_num > max_received){
+        if (ssize_t(pkt_num) > max_received){
             max_received = pkt_num;
             /* bit map substitude byte map*/
             send_num = pkt_num;
@@ -2028,14 +2031,15 @@ public:
             while (true){
                 size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off, send_status);
-                if (out_off == 0 && out_len > -1){
-                    std::cout<<"[Debug] difference:"<<i<<",out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
-                }
+                
                 if (out_len == -1) {
                     break;
                 }
 
                 auto pn = pkt_num_spaces[0].updatepktnum();
+                if (out_off == 0 && out_len > -1){
+                    std::cout<<"[Debug] difference:"<< i <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                }
                 send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
                 // if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
@@ -2115,6 +2119,10 @@ public:
         if (err_ != 0){
             if (send_packet_type == Type::Application){
                 end_ts = std::chrono::high_resolution_clock::now();
+                if (start_index < 0){
+                    std::cout<<"send_packet_complete start_index < 0" <<std::endl;
+                    _Exit(0);
+                }
                 tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces[0].getpktnum(), end_ts);
                 start_index = start_index + sent;
             }
