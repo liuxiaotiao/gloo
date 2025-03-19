@@ -72,6 +72,7 @@ namespace dmludp{
             return (data.size() - removed);
         }
 
+        /* NOT USE*/
         size_t first_item_len(size_t checkLength){
             size_t checkresult = 0;
             if (data.size() >= checkLength) {

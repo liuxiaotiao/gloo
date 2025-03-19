@@ -301,7 +301,7 @@ void ring(
         out[0]->waitSend(opts.timeout);
       }
     }
-//	std::cout<<"index:"<<i<<std::endl;
+    // std::cout<<"index:"<<i<<std::endl;
     // Issue new send and receive operation in all but the final two
     // iterations. At that point we have already sent all data we
     // needed to and only have to wait for the final segments to be
@@ -310,18 +310,18 @@ void ring(
       // Compute send and receive offsets and lengths for this iteration.
       auto cur = computeReduceScatterOffsets(i);
       if (cur.recvLength > 0) {
-//	      std::cout<<"start tmp->recv 1"<<std::endl;
+	      // std::cout<<"start tmp->recv 1"<<std::endl;
         tmp->recv(recvRank, slot, segmentOffset[i & 0x1], cur.recvLength);
-//	std::cout<<"end tmp->recv 1"<<std::endl;
+        // std::cout<<"end tmp->recv 1"<<std::endl;
       }
       if (cur.sendLength > 0) {
         // Prepare out[0]->ptr to hold the local reduction for this segment
         if (i < numSegmentsPerRank) {
           reduceInputs(cur.sendOffset, cur.sendLength);
         }
-// 	std::cout<<"start out[0]->send 1"<<std::endl;
+        // std::cout<<"start out[0]->send 1"<<std::endl;
         out[0]->send(sendRank, slot, cur.sendOffset, cur.sendLength);
-//	std::cout<<"end out[0]->send 1"<<std::endl;
+        // std::cout<<"end out[0]->send 1"<<std::endl;
       }
     }
   }

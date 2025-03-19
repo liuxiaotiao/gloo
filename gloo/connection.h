@@ -75,8 +75,6 @@ class Message{
 
         Header message_header;
 
-        // char control[CMSG_SPACE(sizeof(struct timespec))]; 
-
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
             iov[0].iov_len = sizeof(Header);
@@ -86,8 +84,6 @@ class Message{
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-            // message_body.msg_control = control;     
-            // message_body.msg_controllen = sizeof(control);
         }
 
         ~Message(){};
@@ -265,7 +261,8 @@ public:
 /*Check usage*/
 class RCset{
     public:
-        boost::dynamic_bitset<> RCset_body;
+        // boost::dynamic_bitset<> RCset_body;
+        DynamicBitset RCset_body;
 
         size_t payload_len = MAX_SEND_UDP_PAYLOAD_SIZE;
 
@@ -277,7 +274,7 @@ class RCset{
 
         RCset(size_t capacity_ = 330000): 
         RCset_body(capacity_){
-            dataload_len.reserve(10);
+            dataload_len.reserve(2);
         }
 
         bool find(uint64_t offset_){
@@ -341,9 +338,12 @@ class RCset{
 
 class ReTransmissionMap{
     private:
-        ssize_t start_packet = -1;
+        // ssize_t start_packet = -1;
 
-        ssize_t end_packet = -1;
+        // ssize_t end_packet = -1;
+        size_t start_packet = std::numeric_limits<size_t>::max();
+
+        size_t end_packet = std::numeric_limits<size_t>::max();
 
         std::vector<uint32_t> offsets;
 
@@ -355,7 +355,7 @@ class ReTransmissionMap{
         ~ReTransmissionMap(){};
 
         void clear(){
-            start_packet = end_packet = -1;
+            start_packet = end_packet = std::numeric_limits<size_t>::max();;
         }
 
         uint32_t get_offset(uint64_t packetnum){
@@ -382,10 +382,10 @@ class ReTransmissionMap{
         }
 
         bool empty(){
-            if (start_packet == -1 && end_packet != -1) {
-                throw std::underflow_error("Error: start == -1, end != -1");
+            if (start_packet == std::numeric_limits<size_t>::max() && end_packet != std::numeric_limits<size_t>::max()) {
+                throw std::underflow_error("Error: start == MAX, end != MAX");
             }
-            return ((start_packet == end_packet) && (start_packet == -1));
+            return ((start_packet == end_packet) && (start_packet == std::numeric_limits<size_t>::max()));
         }
 
         bool inrange(size_t PacketNum){
@@ -395,22 +395,27 @@ class ReTransmissionMap{
 
 class TransmissionMap{
     private:
-        std::pair<ssize_t, uint32_t> startmap;
+        // std::pair<ssize_t, uint32_t> startmap;
 
-        std::pair<ssize_t, uint32_t> endmap;
+        // std::pair<ssize_t, uint32_t> endmap;
+
+        std::pair<size_t, uint32_t> startmap;
+        
+        std::pair<size_t, uint32_t> endmap;
+
     public:
-        TransmissionMap() : startmap(-1, 0), endmap(-1, 0){};
+        TransmissionMap() : startmap(std::numeric_limits<size_t>::max(), 0), endmap(std::numeric_limits<size_t>::max(), 0){};
 
         ~TransmissionMap(){};
 
         void add(uint64_t packetnum, uint32_t packetoffset){
-            if(startmap.first == -1){
+            if(startmap.first == std::numeric_limits<size_t>::max()){
                 startmap = std::make_pair(packetnum, packetoffset);
             }
-            if(startmap.first == -1){
+            if(startmap.first == std::numeric_limits<size_t>::max()){
                 throw std::underflow_error("Error: startmap.first is -1");
             }
-            if ((endmap.first + 1) == packetnum || endmap.first == -1){
+            if ((endmap.first + 1) == packetnum || endmap.first == std::numeric_limits<size_t>::max()){
                 endmap = std::make_pair(packetnum, packetoffset);
             }else{
                 throw std::underflow_error("Error: TransmissionMap lacks enough space");
@@ -418,14 +423,14 @@ class TransmissionMap{
         }
 
         bool empty() {
-            if (startmap.first == -1 && endmap.first != -1) {
-                throw std::underflow_error("Error: start == -1, end != -1");
+            if (startmap.first == std::numeric_limits<size_t>::max() && endmap.first != std::numeric_limits<size_t>::max()) {
+                throw std::underflow_error("Error: start == MAX, end != MAX");
             }
-            return ((startmap.first == endmap.first) && (endmap.first == -1));
+            return ((startmap.first == endmap.first) && (endmap.first == std::numeric_limits<size_t>::max()));
         }  
 
         void clear(){
-            startmap = endmap = std::make_pair(-1, 0);
+            startmap = endmap = std::make_pair(std::numeric_limits<size_t>::max(), 0);
         }
 
         std::pair<uint64_t, uint64_t> get_range(){
@@ -579,13 +584,15 @@ class MetaInfo{
 
         TransmissionMap transmission_map;
 
-        size_t difference_flag;
+        uint16_t difference_flag = std::numeric_limits<uint16_t>::max();
 
         size_t range_len;
 
         size_t block_type = std::numeric_limits<size_t>::max();
 
-        std::pair<ssize_t, ssize_t> packet_range{-1, -1};
+        // std::pair<ssize_t, ssize_t> packet_range{-1, -1};
+
+        std::pair<size_t, size_t> packet_range{std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max()};
 
         MetaInfo(size_t difference_flag_ = 0): 
         difference_flag(difference_flag_), 
@@ -596,7 +603,7 @@ class MetaInfo{
 
         void add_transmission(uint64_t packetnum_, uint32_t packetoffset_){
             transmission_map.add(packetnum_, packetoffset_);
-            if (packet_range.first == -1){
+            if (packet_range.first == std::numeric_limits<size_t>::max()){
                 packet_range = std::make_pair(packetnum_, packetnum_);
             }else{
                 if (packet_range.second < packetnum_){
@@ -607,7 +614,7 @@ class MetaInfo{
 
         void add_retransmission(uint64_t packetnum_, uint32_t packetoffset_){
             retransmission_map.add(packetnum_, packetoffset_);
-            if (packet_range.first == -1){
+            if (packet_range.first == std::numeric_limits<size_t>::max()){
                 packet_range = std::make_pair(packetnum_, packetnum_);
             }else{
                 if (packet_range.second < packetnum_){
@@ -617,7 +624,7 @@ class MetaInfo{
         }
 
         void reset_packet_range(){
-            packet_range = std::make_pair(-1, -1);
+            packet_range = std::make_pair(std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max());
         }
 
         std::pair<uint64_t, uint64_t> get_packet_range(){
@@ -656,7 +663,12 @@ class MetaInfo{
             return MetaDifference;
         }
 
-        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const uint8_t difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+            if (difference_flag > std::numeric_limits<uint8_t>::max()){
+                std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
+                _Exit(0);
+            }
+            difference_flag = difference_;
             metabuf.add_Meta(iovecs, iovecs_len);
             range_len = 0;
             block_type = type_;
@@ -678,6 +690,7 @@ class MetaInfo{
             retransmission_map.clear();
             metabuf.clear();
             block_type = std::numeric_limits<size_t>::max();
+            difference_flag = std::numeric_limits<uint16_t>::max();
         }
 
         void MetaInfo_log(bool contain_ = false) const{
@@ -703,17 +716,21 @@ class SCircularQueue {
         size_t capacity_;
         size_t count_ = 0;
 
-        SCircularQueue(size_t capacity = 256) 
-            : head_(0), tail_(0), capacity_(capacity)
+        uint8_t lastest_difference;
+
+        SCircularQueue(size_t capacity = 16) 
+            : head_(0), tail_(0), capacity_(capacity), lastest_difference(0)
         {
             data_.reserve(capacity);
-            for (auto i = 0; i < capacity ; i++){
-                data_.emplace_back(i);
-            }
         }
 
         void push_back(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
-            data_[tail_].set_buffer(iovecs, iovecs_len, type_, priotity_list);
+            if (full()){
+                std::cerr << "SCircularQueue overflow" << std::endl;
+                _Exit(0);
+            }
+            data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
+            lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
             count_++;
         }
@@ -738,19 +755,8 @@ class SCircularQueue {
 
         bool empty() const {
             return count_ == 0;
-            return head_ == tail_;
+            // return head_ == tail_;
         }
-
-        // bool ready() {
-        //     if(empty()){
-        //         return false;
-        //     }
-        //     bool isReady = false;
-        //     for(auto i = start(); i < end() ; i = (i + 1) % capacity_){
-        //         isReady |= !data_[i].metabuf.is_empty();
-        //     }
-        //     return isReady;
-        // }
 
         size_t get_count(){
             return count_;
@@ -771,7 +777,7 @@ class SCircularQueue {
 
         bool full() const {
             return count_ == capacity_;
-            return ((tail_ + 1) % capacity_) == head_;
+            // return ((tail_ + 1) % capacity_) == head_;
         }
 
         void clear() {
@@ -802,6 +808,7 @@ class SCircularQueue {
         ~SCircularQueue() = default; 
 };
 
+/*Record copy contiouns*/
 class RecordInfo
 {
     private:
@@ -811,10 +818,13 @@ class RecordInfo
         uint32_t record_acumulate = 0;
 
         /*Continuous end index*/
-        ssize_t end_index = -1;
+        // ssize_t end_index = -1;
+
+        size_t end_index = std::numeric_limits<size_t>::max();
 
         /*Continuous start index*/
-        ssize_t start_index = -1;
+        // ssize_t start_index = -1;
+        size_t start_index = std::numeric_limits<size_t>::max();
 
         uint32_t record_offset = 0;
     public:
@@ -828,19 +838,19 @@ class RecordInfo
         } 
 
         void reset(){
-            start_index = end_index = -1;
+            start_index = end_index = std::numeric_limits<size_t>::max();
             record_acumulate = 0;
             record_diffference = 0;
             record_offset = 0;
         }
 
         bool empty(){
-            return (end_index == -1) && (start_index == -1);
+            return (end_index == std::numeric_limits<size_t>::max()) && (start_index == std::numeric_limits<size_t>::max());
         }
 
         void update(uint32_t index_, size_t offset_, size_t len_, uint8_t difference_){
             /*Check difference*/
-            if (get_start_index() == -1){
+            if (get_start_index() == std::numeric_limits<size_t>::max()){
                 set(index_, len_, offset_, difference_);
             }else{
                 if (difference_ != record_diffference){
@@ -908,13 +918,6 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        // metarecebuf(uint8_t difference_): rdifference(difference_), 
-        // receive_offset((difference_ == 9) ? 330000 : (difference_ == 11) ? 47000 : 6000){
-        //     for(auto i = 0; i < 2 ; i++){
-        //         source_len.push_back(0);
-        //     }
-        // }
-
         metarecebuf(uint8_t difference_): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
@@ -967,7 +970,7 @@ class metarecebuf{
 
         bool is_complete() const{
             size_t total = 0;
-            for(auto e:source_len){
+            for(auto const e:source_len){
                 total += e;
             }
             if (received == total || complete_flag){
@@ -1016,8 +1019,8 @@ public:
     size_t capacity_;  // 队列总容量
     size_t count_;     // 当前有效元素个数
 
-    // 构造函数，默认容量为256
-    RCircularQueue(size_t capacity = 256)
+    // 构造函数，默认容量为16
+    RCircularQueue(size_t capacity = 16)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
         data_.reserve(capacity_);
@@ -1200,7 +1203,7 @@ private:
     }
 
 public:
-    zeroQueue(int cap = 256) : front_index(0), back_index(0), count(0), capacity(cap) {
+    zeroQueue(int cap = 32) : front_index(0), back_index(0), count(0), capacity(cap) {
         data.resize(capacity);
     }
 
@@ -1296,9 +1299,6 @@ public:
 
     bool stop_ack;
 
-    // Key: sent packet number, value: correspoind offset
-    std::unordered_map<uint64_t, uint64_t> pktnum2offset;
-
     // map for received application pktnum and corresponding offset
     std::vector<uint8_t> receivevector;
 
@@ -1312,7 +1312,7 @@ public:
 
     size_t send_packet_type = 0;
 
-    std::vector<uint8_t> receive_result;
+    // std::vector<uint8_t> receive_result;
 
     /*
     store norm2 for every 256 bits float
@@ -1343,8 +1343,6 @@ public:
     std::chrono::nanoseconds rttvar;
     
     std::chrono::high_resolution_clock::time_point handshake;
-
-    // SendBuf send_buffer;
 
     RecvBuf rec_buffer;
 
@@ -1388,7 +1386,7 @@ public:
 
     size_t current_loop_max;
 
-    std::pair<uint64_t, uint64_t> receive_range;
+    // std::pair<uint64_t, uint64_t> receive_range;
 
     // size_t send_status;
     size_t send_status_flag;
@@ -1490,7 +1488,7 @@ public:
     send_status_flag(0),
     acknowldge_iov(3),
     // send_buffer(MAX_SEND_UDP_PAYLOAD_SIZE),
-    receivevector(3000, 0),
+    receivevector(MAX_SEND_UDP_PAYLOAD_SIZE, 0),
     receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0)
@@ -1503,7 +1501,6 @@ public:
         receive_offset.add_rule(100 * 1024 * 1024);
 
         acknowldge_header.resize(sizeof(Header));
-        pktnum2offset.reserve(1);
         set_receive_message();
     };
 
@@ -1946,7 +1943,6 @@ public:
         
         recovery.bytes_in_flight = 0;
         set_handshake();
-        pktnum2offset.clear();
         data_gotten = 0;
         return completed;
     }
@@ -2424,46 +2420,40 @@ public:
             send_acknowledge(src, size(src));
             */
             // If acknowledge too long, just 1000 acknowledge lastest part.
-            if(receive_result.size() > 1200){
-                psize = 1200 + 2 * sizeof(uint64_t);
-            }else{
-                psize = (uint64_t)(receive_result.size()) + 2 * sizeof(uint64_t);
-            }
+            // if(receive_result.size() > 1200){
+            //     psize = 1200 + 2 * sizeof(uint64_t);
+            // }else{
+            //     psize = (uint64_t)(receive_result.size()) + 2 * sizeof(uint64_t);
+            // }
             
-            Header* hdr = new Header(ty, send_num, 0, receive_connection_difference, psize);
-            if (difference_flag){
-                uint8_t tmp = receive_connection_difference - 1;
-                hdr->difference = tmp;
-            }
+            // Header* hdr = new Header(ty, send_num, 0, receive_connection_difference, psize);
+            // if (difference_flag){
+            //     uint8_t tmp = receive_connection_difference - 1;
+            //     hdr->difference = tmp;
+            // }
 
-            // Recevie info clear.
+            // // Recevie info clear.
 
-            memcpy(out, hdr, HEADER_LENGTH);
-            if(receive_range.second - receive_range.first <= 1199){
-                memcpy(out + HEADER_LENGTH, &receive_range.first, sizeof(uint64_t));
-                memcpy(out + HEADER_LENGTH + sizeof(uint64_t), &receive_range.second, sizeof(uint64_t));
-                memcpy(out + HEADER_LENGTH + 2 * sizeof(uint64_t), receive_result.data(), receive_result.size());
-            }else{
-                // memcpy(out + HEADER_LENGTH, &receive_range.first, sizeof(uint64_t));
-                auto first_pn = receive_range.second - 1199;
-                auto range_offset = first_pn - receive_range.first;
-                memcpy(out + HEADER_LENGTH, &first_pn, sizeof(uint64_t));
-                memcpy(out + HEADER_LENGTH + sizeof(uint64_t), &receive_range.second, sizeof(uint64_t));
-                memcpy(out + HEADER_LENGTH + 2 * sizeof(uint64_t), receive_result.data() + range_offset, 1200);
-            }
+            // memcpy(out, hdr, HEADER_LENGTH);
+            // if(receive_range.second - receive_range.first <= 1199){
+            //     memcpy(out + HEADER_LENGTH, &receive_range.first, sizeof(uint64_t));
+            //     memcpy(out + HEADER_LENGTH + sizeof(uint64_t), &receive_range.second, sizeof(uint64_t));
+            //     memcpy(out + HEADER_LENGTH + 2 * sizeof(uint64_t), receive_result.data(), receive_result.size());
+            // }else{
+            //     // memcpy(out + HEADER_LENGTH, &receive_range.first, sizeof(uint64_t));
+            //     auto first_pn = receive_range.second - 1199;
+            //     auto range_offset = first_pn - receive_range.first;
+            //     memcpy(out + HEADER_LENGTH, &first_pn, sizeof(uint64_t));
+            //     memcpy(out + HEADER_LENGTH + sizeof(uint64_t), &receive_range.second, sizeof(uint64_t));
+            //     memcpy(out + HEADER_LENGTH + 2 * sizeof(uint64_t), receive_result.data() + range_offset, 1200);
+            // }
             
-            receive_result.clear();
-            difference_flag = false;
-            delete hdr; 
-            hdr = nullptr; 
-            update_receive_parameter();
+            // receive_result.clear();
+            // difference_flag = false;
+            // delete hdr; 
+            // hdr = nullptr; 
+            // update_receive_parameter();
         }      
-
-
-        // if (ty == Type::Fin){
-        //     memcpy(out, fin_header, HEADER_LENGTH);
-        //     return total_len;
-        // }
 
         total_len += (size_t)psize;
 

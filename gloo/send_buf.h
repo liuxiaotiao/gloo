@@ -4,12 +4,120 @@
 #include <stdlib.h>
 #include <numeric>
 #include <boost/dynamic_bitset.hpp>
+#include <cstddef>    // size_t
+#include <cstdint>    // uint64_t
+#include <vector>     // std::vector
+#include <stdexcept>  // std::out_of_range
+#include <iostream>   // std::cout, std::endl
+#include <string>     // std::string
+#include <algorithm> 
 
 namespace dmludp{
     enum class MetaFlag : uint8_t {
         Initial = 1,       
         Retransmission,
         Complete  
+    };
+
+    class DynamicBitset {
+    private:
+        static constexpr size_t BITS_PER_BLOCK = 64;
+        std::vector<uint64_t> data;
+        size_t num_bits;
+
+        size_t block_index(size_t pos) const { return pos / BITS_PER_BLOCK; }
+        size_t bit_offset(size_t pos) const { return pos % BITS_PER_BLOCK; }
+
+        void ensure_capacity(size_t new_bits) {
+            size_t required_blocks = (new_bits + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
+            if (data.size() < required_blocks) {
+                data.resize(required_blocks, 0);
+            }
+        }
+
+    public:
+        explicit DynamicBitset(size_t size = 0) : num_bits(size) {
+            ensure_capacity(size);
+        }
+
+        void set(size_t pos, bool value = true) {
+            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            size_t block = block_index(pos), offset = bit_offset(pos);
+            if (value) data[block] |= (1ULL << offset);
+            else data[block] &= ~(1ULL << offset);
+        }
+
+        void reset(size_t pos) { set(pos, false); }
+
+        void flip(size_t pos) {
+            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            size_t block = block_index(pos), offset = bit_offset(pos);
+            data[block] ^= (1ULL << offset);
+        }
+
+        bool test(size_t pos) const {
+            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            size_t block = block_index(pos), offset = bit_offset(pos);
+            return (data[block] & (1ULL << offset)) != 0;
+        }
+
+        size_t count() const {
+            size_t sum = 0;
+            for (uint64_t block : data) sum += __builtin_popcountll(block);
+            return sum;
+        }
+
+        size_t size() const { return num_bits; }
+
+        void resize(size_t new_size) {
+            ensure_capacity(new_size);
+            if (new_size > num_bits) {
+                size_t old_block = block_index(num_bits);
+                size_t new_block = block_index(new_size);
+                if (old_block != new_block) std::fill(data.begin() + old_block + 1, data.begin() + new_block + 1, 0);
+                size_t old_offset = bit_offset(num_bits);
+                if (old_offset != 0) data[old_block] &= (1ULL << old_offset) - 1;
+            } else if (new_size < num_bits) {
+                size_t new_last_block = block_index(new_size);
+                size_t new_last_offset = bit_offset(new_size);
+                if (new_last_offset != 0) {
+                    data[new_last_block] &= (1ULL << new_last_offset) - 1;
+                }
+            }
+            num_bits = new_size;
+        }
+
+        void shrink_to_fit() {
+            size_t required_blocks = (num_bits + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
+            if (data.size() > required_blocks) {
+                data.resize(required_blocks);
+            }
+        }
+
+        std::string to_string() const {
+            std::string result;
+            for (size_t i = num_bits; i > 0; --i) result += test(i - 1) ? '1' : '0';
+            return result;
+        }
+
+        class BitReference {
+            friend class DynamicBitset;
+            DynamicBitset& bitset;
+            size_t index;
+            BitReference(DynamicBitset& b, size_t i) : bitset(b), index(i) {}
+
+        public:
+            operator bool() const { return bitset.test(index); }
+            BitReference& operator=(bool value) { bitset.set(index, value); return *this; }
+            BitReference& operator=(const BitReference& other) { return *this = bool(other); }
+            void flip() { bitset.flip(index); }
+        };
+
+        bool operator[](size_t index) const { return test(index); }
+        BitReference operator[](size_t index) {
+            if (index >= num_bits) throw std::out_of_range("Bit index out of range");
+            return BitReference(*this, index);
+        }
     };
 
     template <typename T>
@@ -93,11 +201,13 @@ namespace dmludp{
         /* SendMetaBuf*/
         void* meta_ptr;
 
-        ssize_t meta_ptr_len;
+        // ssize_t meta_ptr_len;
+        size_t meta_ptr_len;
 
         void* meta_ptr2;
 
-        ssize_t meta_ptr2_len; 
+        // ssize_t meta_ptr2_len; 
+        size_t meta_ptr2_len;
 
         uint64_t meta_len;
 
@@ -107,20 +217,18 @@ namespace dmludp{
 
         ssize_t meta_pos;
 
-        std::vector<std::pair<uint8_t*, ssize_t>> meta_element;
-
         std::vector<uint64_t> meta_len2;
 
         // CircularQueue rcq;
         SendBufferCircularQueue rcq;
 
-        boost::dynamic_bitset<> bits_set;
+        // boost::dynamic_bitset<> bits_set;
+
+        DynamicBitset bits_set;
 
         MetaFlag meta_status = MetaFlag::Initial;
         
         std::vector<uint32_t> retransmision_offset;
-
-        ssize_t start_pos = 0;
 
         size_t send_buffer_size;
 
@@ -130,7 +238,6 @@ namespace dmludp{
         send_buffer_size(packet_len), 
         retransmision_offset(10000, 0)
         {
-            meta_element.reserve(2);
             meta_len2.reserve(2);
         };
 
@@ -153,42 +260,27 @@ namespace dmludp{
             meta_ptr_len = 0;
             meta_ptr2 = nullptr;
             meta_ptr2_len = 0; 
-
-            if (meta_element.empty()){
-                for (auto i = 0; i < iovecs_len; i++){
-                    meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
-                    meta_left += iovecs[i].iov_len;
-                    meta_sent += iovecs[i].iov_len;
-                    meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
-                    meta_len2.push_back(iovecs[i].iov_len);
-                    if (i == 0){
-                        meta_ptr = iovecs[i].iov_base;
-                        meta_ptr_len = iovecs[i].iov_len;
-                    }else{
-                        meta_ptr2 = iovecs[i].iov_base;
-                        meta_ptr2_len = iovecs[i].iov_len;
-                    }
-                }
-            }else{
-                for (auto i = 0; i < iovecs_len; i++){
-                    meta_element[i] = std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len);
-                    meta_left += iovecs[i].iov_len;
-                    meta_sent += iovecs[i].iov_len;
-                    meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
-                    meta_len2[i] = iovecs[i].iov_len;
-                    if (i == 0){
-                        meta_ptr = iovecs[i].iov_base;
-                        meta_ptr_len = iovecs[i].iov_len;
-                    }else{
-                        meta_ptr2 = iovecs[i].iov_base;
-                        meta_ptr2_len = iovecs[i].iov_len;
-                    }
+         
+            for (auto i = 0; i < iovecs_len; i++){
+                meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
+                meta_left += iovecs[i].iov_len;
+                meta_sent += iovecs[i].iov_len;
+                meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
+                meta_len2.push_back(iovecs[i].iov_len);
+                if (i == 0){
+                    meta_ptr = iovecs[i].iov_base;
+                    meta_ptr_len = iovecs[i].iov_len;
+                }else{
+                    meta_ptr2 = iovecs[i].iov_base;
+                    meta_ptr2_len = iovecs[i].iov_len;
                 }
             }
             
             meta_pos = 0;
+            // bits_set.resize(meta_len);
+            // bits_set.reset();
             bits_set.resize(meta_len);
-            bits_set.reset();
+            bits_set.clear();
             ack_count = 0;
             rcq.clear();
         }
@@ -256,16 +348,10 @@ namespace dmludp{
             }
             out_off = tmp_off;
             if (out_off == 0){
-                // out_len = meta_element[0].second;
-                // out.iov_base = (void *)(meta_element[0].first + out_off);
-                // out.iov_len = out_len;
                 out_len = meta_ptr_len;
                 out.iov_base = meta_ptr;
                 out.iov_len = meta_ptr_len;
             }else{
-                // out_len = std::min(send_buffer_size, size_t(meta_len2[1] - (out_off - 48)));
-                // out.iov_base = (void *)(meta_element[1].first + out_off - 48);
-                // out.iov_len = out_len;
                 out_len = std::min(send_buffer_size, size_t(meta_ptr2_len - (out_off - 48)));
                 out.iov_base = (void *)(meta_ptr2 + out_off - 48);
                 out.iov_len = out_len;
@@ -285,7 +371,6 @@ namespace dmludp{
             for (auto i = 0; i < retransmision_offset.size(); i++){
                 retransmision_offset[i] = 0;
             }
-            // bits_set.reset();
             meta_len = 0;
             meta_left = 0;
             for(auto &e :meta_len2){
