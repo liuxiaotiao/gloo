@@ -1019,7 +1019,7 @@ public:
     size_t count_;     // 当前有效元素个数
 
     // 构造函数，默认容量为16
-    RCircularQueue(size_t capacity = 16)
+    RCircularQueue(size_t capacity = 256)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
         data_.resize(capacity_);
