@@ -917,7 +917,7 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        metarecebuf(uint8_t difference_): rdifference(difference_){
+        metarecebuf(uint8_t difference_ = 0): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1022,10 +1022,11 @@ public:
     RCircularQueue(size_t capacity = 256)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
-        data_.resize(capacity_);
+        data_.reserve(capacity_);
         // 初始化每个元素（例如：根据下标初始化）
         for (size_t i = 0; i < capacity_; i++) {
-            data_[i] = metarecebuf(static_cast<int>(i));
+            // data_[i] = metarecebuf(static_cast<int>(i));
+            data_.push_back(i);
         }
     }
 
