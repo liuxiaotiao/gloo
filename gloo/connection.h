@@ -720,7 +720,7 @@ class SCircularQueue {
         SCircularQueue(size_t capacity = 16) 
             : head_(0), tail_(0), capacity_(capacity), lastest_difference(0)
         {
-            data_.reserve(capacity);
+            data_.resize(capacity);
         }
 
         void push_back(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
@@ -1022,7 +1022,7 @@ public:
     RCircularQueue(size_t capacity = 16)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
-        data_.reserve(capacity_);
+        data_.resize(capacity_);
         // 初始化每个元素（例如：根据下标初始化）
         for (size_t i = 0; i < capacity_; i++) {
             data_[i] = metarecebuf(static_cast<int>(i));
@@ -1358,12 +1358,12 @@ public:
     // Used to record how many packet has been sent before EAGAIN
     size_t dmludp_error_sent;
 
-    static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
-        return std::make_shared<Connection>(local, peer, config, false);
+    static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer) {
+        return std::make_shared<Connection>(local, peer, false);
     };
 
-    static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer, Config config)  {
-        return std::make_shared<Connection>(local, peer, config, true);
+    static std::shared_ptr<Connection> accept(sockaddr_storage local, sockaddr_storage peer)  {
+        return std::make_shared<Connection>(local, peer, true);
     };
 
     const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -1450,7 +1450,7 @@ public:
 
     RecordInfo receive_record;
 
-    Connection(sockaddr_storage local, sockaddr_storage peer, Config config, bool server):    
+    Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     recv_count(0),
     is_server(server),
     handshake_completed(false),

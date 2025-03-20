@@ -190,16 +190,16 @@ std::shared_ptr<Connection> Socket::dmludp_conn_accept(struct sockaddr_storage l
 
 // Connection* Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, bool is_server){
 std::shared_ptr<Connection> Socket::create_dmludp_connection(struct sockaddr_storage local, struct sockaddr_storage peer, bool is_server){
-  auto dmludp_config = dmludp_config_new();
+  // auto dmludp_config = dmludp_config_new();
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   if(is_server){
-    auto connection = dmludp_accept(local, peer, *dmludp_config);
-    dmludp_config_free(dmludp_config);
+    auto connection = dmludp_accept(local, peer);
+    // dmludp_config_free(dmludp_config);
     return connection;
   }else{
-    auto connection = dmludp_connect(local, peer, *dmludp_config);
-    dmludp_config_free(dmludp_config);
+    auto connection = dmludp_connect(local, peer);
+    // dmludp_config_free(dmludp_config);
     return connection;
   }
 }

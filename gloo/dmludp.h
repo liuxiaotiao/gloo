@@ -60,14 +60,14 @@ enum dmludp_error {
 
 };
 
-inline Config* dmludp_config_new(){
-    Config* config = new Config();
-    return config;
-}
+// inline Config* dmludp_config_new(){
+//     Config* config = new Config();
+//     return config;
+// }
 
-inline void dmludp_config_free(Config* config){
-    delete config;
-}
+// inline void dmludp_config_free(Config* config){
+//     delete config;
+// }
 
 inline int dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
     auto result = reinterpret_cast<Header *>(data)->ty;
@@ -79,12 +79,12 @@ inline int dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint
 }
 
 
-inline std::shared_ptr<Connection> dmludp_accept(sockaddr_storage local, sockaddr_storage peer, Config config) {
-    return dmludp::Connection::accept(local, peer, config);
+inline std::shared_ptr<Connection> dmludp_accept(sockaddr_storage local, sockaddr_storage peer) {
+    return dmludp::Connection::accept(local, peer);
 }
 
-inline std::shared_ptr<Connection> dmludp_connect(sockaddr_storage local, sockaddr_storage peer, Config config) {
-    return dmludp::Connection::connect(local, peer, config);
+inline std::shared_ptr<Connection> dmludp_connect(sockaddr_storage local, sockaddr_storage peer) {
+    return dmludp::Connection::connect(local, peer);
 }
 
 inline void dmludp_update_receive_parameters(std::shared_ptr<Connection> conn){

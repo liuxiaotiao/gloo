@@ -241,7 +241,7 @@ namespace dmludp{
         send_buffer_size(packet_len), 
         retransmision_offset(10000, 0)
         {
-            meta_len2.reserve(2);
+            meta_len2.resize(2);
         };
 
         ~SendBuf(){};
@@ -269,7 +269,7 @@ namespace dmludp{
                 meta_left += iovecs[i].iov_len;
                 meta_sent += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
-                meta_len2.push_back(iovecs[i].iov_len);
+                meta_len2[i] = iovecs[i].iov_len;
                 if (i == 0){
                     meta_ptr = iovecs[i].iov_base;
                     meta_ptr_len = iovecs[i].iov_len;
