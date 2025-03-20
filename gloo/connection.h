@@ -13,7 +13,6 @@
 #include "recv_buf.h"
 #include "send_buf.h"
 #include <cmath>
-#include <unordered_map>
 
 namespace dmludp {
 
@@ -327,7 +326,7 @@ class RCset{
                 // boost::dynamic_bitset<> temp = RCset_body;
                 // RCset_body.swap(temp);
             }
-            RCset_body.reset();
+            RCset_body.clear();
             dataload_len.clear();
             dataload_index = 0;
             used_flag = true;

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <numeric>
-#include <boost/dynamic_bitset.hpp>
 #include <cstddef>    // size_t
 #include <cstdint>    // uint64_t
 #include <vector>     // std::vector
@@ -117,6 +116,10 @@ namespace dmludp{
         BitReference operator[](size_t index) {
             if (index >= num_bits) throw std::out_of_range("Bit index out of range");
             return BitReference(*this, index);
+        }
+
+        void clear() {
+            std::fill(data.begin(), data.end(), 0);
         }
     };
 
@@ -262,7 +265,7 @@ namespace dmludp{
             meta_ptr2_len = 0; 
          
             for (auto i = 0; i < iovecs_len; i++){
-                meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
+                // meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
                 meta_left += iovecs[i].iov_len;
                 meta_sent += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
