@@ -528,7 +528,7 @@ class MapSet {
         uint32_t get_offset(){
 
         }
-}
+};
 
 // New TransmissionMap
 // class TransmissionMap{
