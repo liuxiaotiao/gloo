@@ -33,6 +33,8 @@ const double alpha = 0.875;
 
 const double beta = 0.25;
 
+const size_t DataBlock = 16;
+
 using Type_len = uint8_t;
 
 using Packet_num_len = uint64_t;
@@ -593,7 +595,7 @@ class MetaInfo{
 
         std::pair<size_t, size_t> packet_range{std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max()};
 
-        MetaInfo(size_t difference_flag_ = 0): 
+        MetaInfo(size_t difference_flag_ = std::numeric_limits<uint16_t>::max()): 
         difference_flag(difference_flag_), 
         MetaDifference(difference_flag_),
         metabuf(MAX_SEND_UDP_PAYLOAD_SIZE){};
@@ -663,7 +665,7 @@ class MetaInfo{
         }
 
         void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const uint8_t difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
-            if (difference_flag > std::numeric_limits<uint8_t>::max()){
+            if (difference_flag != std::numeric_limits<uint16_t>::max()){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
                 _Exit(0);
             }
@@ -717,7 +719,7 @@ class SCircularQueue {
 
         uint8_t lastest_difference;
 
-        SCircularQueue(size_t capacity = 16) 
+        SCircularQueue(size_t capacity = DataBlock) 
             : head_(0), tail_(0), capacity_(capacity), lastest_difference(0)
         {
             data_.resize(capacity);
@@ -1019,7 +1021,7 @@ public:
     size_t count_;     // 当前有效元素个数
 
     // 构造函数，默认容量为16
-    RCircularQueue(size_t capacity = 256)
+    RCircularQueue(size_t capacity = DataBlock)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
         data_.reserve(capacity_);
@@ -1028,6 +1030,10 @@ public:
             // data_[i] = metarecebuf(static_cast<int>(i));
             data_.push_back(i);
         }
+    }
+
+    size_t get_capacity(){
+        return capacity_;
     }
 
     // push_back 操作：复位 tail_ 指向的对象，并推进 tail_ 指针。
@@ -1892,11 +1898,11 @@ public:
     }
 
     void update_receive_difference(){
-        receive_connection_difference += 1;
+        receive_connection_difference = (receive_connection_difference + 1) % DataBlock;
     }
 
      bool receive_complete(){
-        if (receive_connection_difference == recvCQ.start()){
+        if (receive_connection_difference == recvCQ.start() && !recvCQ.empty()){
             return recvCQ.iscomplete(receive_connection_difference);
         }
         return false;

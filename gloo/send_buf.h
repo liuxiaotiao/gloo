@@ -231,15 +231,15 @@ namespace dmludp{
 
         MetaFlag meta_status = MetaFlag::Initial;
         
-        std::vector<uint32_t> retransmision_offset;
+        // std::vector<uint32_t> retransmision_offset;
 
         size_t send_buffer_size;
 
         size_t ack_count = 0;
 
         SendBuf(size_t packet_len): 
-        send_buffer_size(packet_len), 
-        retransmision_offset(10000, 0)
+        send_buffer_size(packet_len)
+        // retransmision_offset(10000, 0)
         {
             meta_len2.resize(2);
         };
@@ -263,6 +263,8 @@ namespace dmludp{
             meta_ptr_len = 0;
             meta_ptr2 = nullptr;
             meta_ptr2_len = 0; 
+            meta_left = 0;
+            meta_len = 0;
          
             for (auto i = 0; i < iovecs_len; i++){
                 // meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
@@ -371,9 +373,9 @@ namespace dmludp{
         void clear(){
             meta_pos = -1;
             meta_sent = 0;
-            for (auto i = 0; i < retransmision_offset.size(); i++){
-                retransmision_offset[i] = 0;
-            }
+            // for (auto i = 0; i < retransmision_offset.size(); i++){
+            //     retransmision_offset[i] = 0;
+            // }
             meta_len = 0;
             meta_left = 0;
             for(auto &e :meta_len2){

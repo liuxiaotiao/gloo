@@ -698,7 +698,7 @@ bool Pair::protocal2read(){
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
               readComplete(rbuf);
-              std::cout<<"read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+              std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
               dmludp_connection->recv_reset();
               dmludp_connection->clear_recv_setting();
               dmludp_connection->recvCQ.pop_front();
@@ -752,7 +752,7 @@ bool Pair::protocal2read(){
 
               if (rnbytes == 0){
                 readComplete(rbuf);
-                std::cout<<"read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_conn_recv_reset(dmludp_connection);
                 dmludp_conn_reset_rx_len(dmludp_connection);
                 dmludp_connection->recvCQ.pop_front();
@@ -780,7 +780,7 @@ bool Pair::protocal2read(){
 
               if (rnbytes == 0){
                 readComplete(rbuf);
-                std::cout<<"read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                std::cout<<"3 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_conn_recv_reset(dmludp_connection);
                 dmludp_conn_reset_rx_len(dmludp_connection);
                 break;
@@ -802,31 +802,10 @@ bool Pair::protocal2read(){
     }
 
     {
-      // for (auto i = dmludp_connection->sendbufferqueue.start(); i < dmludp_connection->sendbufferqueue.end(); i = (i + 1) % 256){
-      //   if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
-      //     auto &op = tx_.front();
-      //     const auto opcode = op.getOpcode();
-      //     if (opcode == Op::SEND_UNBOUND_BUFFER) {
-      //       sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-      //       if (!sbuf) {
-      //         return false;
-      //       }
-      //     }
-      //     op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
-      //     // op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
-      //     if (op.nwritten == op.preamble.nbytes){
-      //       writeComplete(op, sbuf, opcode);
-      //       tx_.pop_front();
-      //       dmludp_connection->sendbufferqueue.pop_front();
-      //     }
-      //   }else{
-      //     break;
-      //   }
-      // }
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
-        auto i = (sendbufferqueue_start_index + idx) % 256;
+        auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
         if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
           std::cout<<"write:"<<i<<std::endl;
           auto &op = tx_.front();
