@@ -51,21 +51,21 @@ using Acknowledge_time_len = uint8_t;
 
 using Packet_len = uint16_t;
 
-struct SendInfo {
-    /// The local address the packet should be sent from.
-    sockaddr_storage from;
+// struct SendInfo {
+//     /// The local address the packet should be sent from.
+//     sockaddr_storage from;
 
-    /// The remote address the packet should be sent to.
-    sockaddr_storage to;
-};
+//     /// The remote address the packet should be sent to.
+//     sockaddr_storage to;
+// };
 
-struct RecvInfo {
-    /// The remote address the packet was received from.
-    sockaddr_storage from;
+// struct RecvInfo {
+//     /// The remote address the packet was received from.
+//     sockaddr_storage from;
 
-    /// The local address the packet was received on.
-    sockaddr_storage to;
-};
+//     /// The local address the packet was received on.
+//     sockaddr_storage to;
+// };
 
 
 class Message{
@@ -137,18 +137,6 @@ class RCMessage : public Message {
             iov[1].iov_base = ptr;
             iov[1].iov_len = ptr_len;
         }
-
-        // bool available(){
-        //     return !use_status;
-        // }
-
-        // void used(){
-        //     use_status = true;
-        // }
-
-        // void reset(){
-        //     use_status = false;
-        // }
 
         ~RCMessage(){};
 };
@@ -281,6 +269,7 @@ class RCset{
         bool find(uint64_t offset_){
             auto index = get_index(offset_);
             if (index >= RCset_body.size()){
+                std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
                 throw std::underflow_error("[RCset]: find index beyond capacity_");
             }
             return RCset_body[index] == 1;
@@ -316,18 +305,11 @@ class RCset{
             return (a + b - 1) / b;
         }
 
-        // void shrink(){
-        //     RCset_body.resize(10);  
-        //     boost::dynamic_bitset<> temp = RCset_body;  
-        //     RCset_body.swap(temp);
-        // }   
 
         void clear(){
-            if (RCset_body.size() > 6000 && used_flag == true){
-                RCset_body.resize(6000);
-                // boost::dynamic_bitset<> temp = RCset_body;
-                // RCset_body.swap(temp);
-            }
+            // if (RCset_body.size() > 6000 && used_flag == true){
+            //     RCset_body.resize(6000);
+            // }
             RCset_body.clear();
             dataload_len.clear();
             dataload_index = 0;
@@ -460,6 +442,97 @@ class TransmissionMap{
             return (PacketNum >= startmap.first && PacketNum <= endmap.first);
         }
 };
+
+template <typename T>
+class MapSet {
+    private:
+        std::vector<T> buffer_;
+
+        size_t head_;
+
+        size_t tail_;
+
+        size_t capacity_;
+
+        size_t count_;
+    public:
+        explicit MapSet(size_t capacity = 20)
+            : buffer_(capacity), capacity_(capacity),
+            head_(0), tail_(0), count_(0) {}
+
+        bool empty() const {
+            return count_ == 0;
+        }
+
+        bool full() const {
+            return count_ == capacity_;
+        }
+
+        size_t size() const {
+            return count_;
+        }
+
+        size_t capacity() const {
+            return capacity_;
+        }
+
+        void push(const T& value) {
+            if (full()) {
+                throw std::overflow_error("MapSet is full");
+            }
+            buffer_[tail_] = value;
+            tail_ = (tail_ + 1) % capacity_;
+            ++count_;
+        }
+
+        void pop() {
+            if (empty()) {
+                throw std::underflow_error("MapSet is empty");
+            }
+            head_ = (head_ + 1) % capacity_;
+            --count_;
+        }
+
+        T& front() {
+            if (empty()) {
+                throw std::underflow_error("MapSet is empty");
+            }
+            return buffer_[head_];
+        }
+
+        const T& front() const {
+            if (empty()) {
+                throw std::underflow_error("MapSet is empty");
+            }
+            return buffer_[head_];
+        }
+
+        T& back() {
+            if (empty()) {
+                throw std::underflow_error("MapSet is empty");
+            }
+            return buffer_[(tail_ + capacity_ - 1) % capacity_];
+        }
+
+        const T& back() const {
+            if (empty()) {
+                throw std::underflow_error("MapSet is empty");
+            }
+            return buffer_[(tail_ + capacity_ - 1) % capacity_];
+        }
+
+        MapSet(size_t capacity = 20) 
+                : data_(capacity), head_(0), tail_(0), capacity_(capacity)
+            {}
+
+        void add(uint64_t packetnum_, uint32_t packetoffset_){
+            
+        }
+        
+        uint32_t get_offset(){
+
+        }
+}
 
 // New TransmissionMap
 // class TransmissionMap{
@@ -756,7 +829,6 @@ class SCircularQueue {
 
         bool empty() const {
             return count_ == 0;
-            // return head_ == tail_;
         }
 
         size_t get_count(){
@@ -778,7 +850,6 @@ class SCircularQueue {
 
         bool full() const {
             return count_ == capacity_;
-            // return ((tail_ + 1) % capacity_) == head_;
         }
 
         void clear() {
@@ -1318,8 +1389,6 @@ public:
 
     size_t send_packet_type = 0;
 
-    // std::vector<uint8_t> receive_result;
-
     /*
     store norm2 for every 256 bits float
     Note: It refers to the priorty of each packet.
@@ -1392,9 +1461,6 @@ public:
 
     size_t current_loop_max;
 
-    // std::pair<uint64_t, uint64_t> receive_range;
-
-    // size_t send_status;
     size_t send_status_flag;
 
     /*
@@ -1428,9 +1494,6 @@ public:
 
     ssize_t max_received = -1;
 
-    // Set at get_data()
-    size_t data_gotten;    
-
     bool difference_flag;
 
     size_t receive_upper_bound = 0;
@@ -1442,15 +1505,12 @@ public:
     /*Receive buffer*/
     std::vector<uint8_t> rx_buffer;
 
-    // std::vector<std::pair<ssize_t, uint32_t>> rangemap;
-
     std::vector<uint8_t> receive_available_map;
 
     TSCircularQueue tsInfo;
 
     SCircularQueue sendbufferqueue;
 
-    // std::deque<std::pair<uint8_t, uint16_t>> zerolist;
     zeroQueue zerolist;
 
     RCircularQueue recvCQ;
@@ -1489,22 +1549,24 @@ public:
     current_loop_min(0),
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
-    data_gotten(0),
     difference_flag(false),
     send_status_flag(0),
-    acknowldge_iov(3),
-    // send_buffer(MAX_SEND_UDP_PAYLOAD_SIZE),
+    acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_SEND_UDP_PAYLOAD_SIZE, 0),
     receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0)
     {
+        memset(&acknowldge_msghdr, 0, sizeof(acknowldge_msghdr));
+        acknowldge_msghdr.msg_iov = nullptr;
+        acknowldge_msghdr.msg_iovlen = 0;
+
         send_message.resize(ONCE_SEND_LIMIT);
 
         // receive_message.resize(ONCE_RECEIVE_LIMINT);
         receive_message.resize(RX_CONST);
 
-        receive_offset.add_rule(100 * 1024 * 1024);
+        receive_offset.add_rule(1);
 
         acknowldge_header.resize(sizeof(Header));
         set_receive_message();
@@ -1796,7 +1858,6 @@ public:
     
 
     bool check_status(){
-        // if (recovery.cwnd_available() && !sendbufferqueue.empty()) return true;
         if (recovery.cwnd_available() && sendbufferqueue.ready()) return true;
         return false;
     }
@@ -1816,6 +1877,74 @@ public:
     }
 
     void process_acknowledge(const uint8_t* src, size_t src_len, const struct timespec& ts){
+
+    }
+
+     void process_acknowledge_new(const size_t index_){
+        auto pkt_num = receive_message[index_].get_packet_number();
+        auto pkt_len = receive_message[index_].get_packet_length();
+        receive_available_map[index_] = 0;
+        /*To acknowledge packet receive ts*/
+        // struct cmsghdr *cmsg;
+        // struct timespec *ts;
+        // for (cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); cmsg != nullptr; cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
+        //         ts = (struct timespec *) CMSG_DATA(cmsg);
+        //     }
+        // }
+
+        auto receivets = std::chrono::high_resolution_clock::now();
+        auto ackts = tsInfo.removeBeforeValue(pkt_num);
+        update_rtt3(receivets, ackts);
+
+        auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
+        auto end_pn = pkt_num;
+        bool loss = false;
+        size_t total_send = end_pn - first_pn + 1;
+        auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
+        size_t byte_index = 0;
+        size_t bit_index = 0;
+
+        
+        /*TODO: process max_ack and first_pn*/
+        auto sendbufferqueue_start_index = sendbufferqueue.start();
+        auto pn = first_pn;
+        // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+            if (pn > end_pn){
+                break;
+            }
+            auto i = (sendbufferqueue_start_index + idx)%sendbufferqueue.get_capacity();
+            auto sendpair = sendbufferqueue.data_[i].get_packet_range();
+            while(true){
+                if (pn >= sendpair.first && pn <= sendpair.second){
+                    if (pn <= end_pn && pn >= first_pn){
+                        byte_index = (pn - first_pn) / 8;
+                        bit_index = (pn - first_pn) % 8;
+                        size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                        sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
+                        pn++;
+                    }else{
+                        break;
+                    }
+                }else{
+                    sendbufferqueue.data_[i].reset_packet_range();
+                    break;
+                }
+            }
+        }
+        ack_pn = end_pn;
+        
+        if (loss){
+            recovery.check_point();
+            // recovery.congestion_event(timespecToChrono(*ts));
+            // recovery.on_packet_ack(total_send, timespecToChrono(*ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }else{
+            // recovery.on_packet_ack(total_send, timespecToChrono(*ts), std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
 
     }
 
@@ -1854,7 +1983,7 @@ public:
             if (pn > end_pn){
                 break;
             }
-            auto i = (sendbufferqueue_start_index + idx)%256;
+            auto i = (sendbufferqueue_start_index + idx)%sendbufferqueue.get_capacity();
             auto sendpair = sendbufferqueue.data_[i].get_packet_range();
             while(true){
                 if (pn >= sendpair.first && pn <= sendpair.second){
@@ -1949,7 +2078,6 @@ public:
         
         recovery.bytes_in_flight = 0;
         set_handshake();
-        data_gotten = 0;
         return completed;
     }
 
@@ -2044,11 +2172,7 @@ public:
                 }
                 send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
-                // if (sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Initial){
-                //     sendbufferqueue.data_[i].add_transmission(pn, out_off);
-                // }else if(sendbufferqueue.data_[i].metabuf.meta_status == MetaFlag::Retransmission){
-                //     sendbufferqueue.data_[i].add_retransmission(pn, out_off);
-                // }
+                
                 if (send_status == 1){
                     sendbufferqueue.data_[i].add_transmission(pn, out_off);
                 }else if(send_status == 2){
