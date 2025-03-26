@@ -521,10 +521,6 @@ class MapSet {
             return buffer_[(tail_ + capacity_ - 1) % capacity_];
         }
 
-        MapSet(size_t capacity = 20) 
-                : data_(capacity), head_(0), tail_(0), capacity_(capacity)
-            {}
-
         void add(uint64_t packetnum_, uint32_t packetoffset_){
             
         }
