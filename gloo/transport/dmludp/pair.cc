@@ -725,9 +725,6 @@ bool Pair::protocal2read(){
                 break;
               }
              
-              // if(dmludp_connection->send_packet_type == 0){
-              //   dmludp_connection->send_packet_type = 5;
-              // }
               dmludp_connection->send_packet_complete();
               rx_.nread += rnbytes;
               continue;
@@ -808,7 +805,7 @@ bool Pair::protocal2read(){
       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
         auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
         // if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
-        if (dmludp_connection->sendbufferqueue.iscomplete_check(i))
+        if (dmludp_connection->sendbufferqueue.iscomplete_check(i)){
           std::cout<<"write:"<<i<<std::endl;
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();

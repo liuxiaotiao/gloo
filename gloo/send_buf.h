@@ -301,7 +301,6 @@ namespace dmludp{
                         off = (meta_pos - 1) * send_buffer_size + 48;
                         meta_left -= send_buffer_size;
                     }
-                    status = 1;
                     meta_pos++;
                     if (meta_left <= 0){
                         meta_left = 0;
@@ -311,7 +310,6 @@ namespace dmludp{
             }else if(meta_status == MetaFlag::Retransmission){
                 if (!rcq.empty()){
                     off = rcq.pop_front();
-                    status = 0;
                 }
             }
             return off;

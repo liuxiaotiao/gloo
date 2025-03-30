@@ -629,7 +629,7 @@ class MapSet {
                 }
                 idx = (idx + 1) % capacity_;
             }
-            return  LIMIT_SIZE_T;
+            return  LIMIT_UINT32_T;
         }
 
 };
