@@ -786,13 +786,16 @@ class MapSet {
         }
 
         std::pair<Packet_num_len, Packet_num_len> get_range() {
+            if (empty()){
+                return std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T);
+            }
             return buffer_[head_].get_range();
         }
 
         void removeBeforeValue(Packet_num_len packet_) {
             while (!empty()) {
                 auto range = get_range();
-                if (range.second < packet_) {
+                if (range.second < packet_ && range.second != LIMIT_UINT64_T) {
                     pop();
                 } else {
                     return;
@@ -1120,24 +1123,24 @@ class MetaInfo{
 
         void add_transmission(uint64_t packetnum_, uint32_t packetoffset_){
             transmission_map.add(packetnum_, packetoffset_);
-            if (packet_range.first == std::numeric_limits<size_t>::max()){
-                packet_range = std::make_pair(packetnum_, packetnum_);
-            }else{
-                if (packet_range.second < packetnum_){
-                    packet_range.second = packetnum_;
-                }
-            }
+            // if (packet_range.first == std::numeric_limits<size_t>::max()){
+            //     packet_range = std::make_pair(packetnum_, packetnum_);
+            // }else{
+            //     if (packet_range.second < packetnum_){
+            //         packet_range.second = packetnum_;
+            //     }
+            // }
         }
 
         void add_retransmission(uint64_t packetnum_, uint32_t packetoffset_){
             retransmission_map.add(packetnum_, packetoffset_);
-            if (packet_range.first == std::numeric_limits<size_t>::max()){
-                packet_range = std::make_pair(packetnum_, packetnum_);
-            }else{
-                if (packet_range.second < packetnum_){
-                    packet_range.second = packetnum_;
-                }
-            }
+            // if (packet_range.first == std::numeric_limits<size_t>::max()){
+            //     packet_range = std::make_pair(packetnum_, packetnum_);
+            // }else{
+            //     if (packet_range.second < packetnum_){
+            //         packet_range.second = packetnum_;
+            //     }
+            // }
         }
 
         void removeoldmap(Packet_len packet_){
@@ -1173,6 +1176,9 @@ class MetaInfo{
             removeoldmap(packet_);
             auto transmission_front = transmission_map.get_range();
             auto retransmission_front = retransmission_map.get_range();
+            if (transmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T) && retransmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                return transmission_front;
+            }
             if (!no_overlap(transmission_front, retransmission_front)){
                 std::cerr << "Overlap: (" << transmission_front.first << ", " << transmission_front.second << "), ("
                     << retransmission_front.first << ", " << retransmission_front.second << ")" << std::endl;
@@ -2469,6 +2475,9 @@ public:
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                 sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
+                if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                    continue;
+                }
                 if (pn <= sendpair.second && pn >= sendpair.first){
                     break;
                 }
