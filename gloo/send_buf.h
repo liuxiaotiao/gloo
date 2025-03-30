@@ -290,7 +290,7 @@ namespace dmludp{
             rcq.clear();
         }
 
-        ssize_t off_front(size_t &status){
+        ssize_t off_front(){
             ssize_t off = -1;
             if(meta_status == MetaFlag::Initial){
                 if (meta_left > 0){
@@ -339,12 +339,16 @@ namespace dmludp{
             }
         } 
 
+        void ack_check(){
+            std::cout << "ack_count:" << ack_count << ", " << bits_set.size() << std::endl;
+        }
 
-        bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off, size_t & status){
+
+        bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off){
             bool stop = false;
             
             out_len = 0;
-            auto tmp_off = off_front(status);
+            auto tmp_off = off_front();
 
             if (tmp_off == -1){
                 out_len = -1;

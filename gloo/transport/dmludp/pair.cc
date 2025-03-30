@@ -653,6 +653,7 @@ bool Pair::protocal2read(){
   inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
   std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+  dmludp_connection->loss_reset();
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -806,7 +807,8 @@ bool Pair::protocal2read(){
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
         auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-        if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
+        // if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
+        if (dmludp_connection->sendbufferqueue.iscomplete_check(i))
           std::cout<<"write:"<<i<<std::endl;
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
@@ -882,7 +884,7 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-
+    std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << std::endl;
     // const auto opcode = op.getOpcode();
     // if (opcode == Op::SEND_UNBOUND_BUFFER) {
     //   NonOwningPtr<UnboundBuffer> buf = NonOwningPtr<UnboundBuffer>(op.ubuf);

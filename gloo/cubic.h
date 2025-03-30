@@ -72,6 +72,8 @@ class Recovery{
 
     const size_t INI_SSTHREAD = 2560;
 
+    const size_t AVOID_SSTHREAD = PACKET_SIZE * 3000;
+
     const double BETA = 0.7;
 
     const double C = 0.4;
@@ -168,7 +170,12 @@ class Recovery{
                 congestionEvent = 2;
             }
         }else if(congestionEvent == 2){
-            congestion_window += 0.25 * received_packets * max_datagram_size;
+            if (congestion_window > AVOID_SSTHREAD){
+                congestion_window += max_datagram_size;
+            }else{
+                congestion_window += 0.25 * received_packets * max_datagram_size;
+            }
+            
             if (bytes_in_flight > received_packets * max_datagram_size){
                 bytes_in_flight -= received_packets * max_datagram_size;
             }else{
