@@ -474,19 +474,227 @@ class TransmissionMap{
 };
 
 /*TransmissionMap and Retransmission queue*/
+// template<typename T, typename = typename std::enable_if<
+//     std::is_same<T, TransmissionMap>::value || std::is_same<T, ReTransmissionMap>::value>::type>
+// class MapSet {
+//     private:
+//         std::vector<T> buffer_;
+
+//         size_t head_;
+
+//         size_t tail_;
+
+//         size_t capacity_;
+
+//         size_t count_;
+//     public:
+//         explicit MapSet(size_t capacity = MapSetLimit)
+//             : buffer_(capacity), capacity_(capacity),
+//             head_(0), tail_(0), count_(0) {}
+
+//         bool empty() const {
+//             return count_ == 0;
+//         }
+
+//         bool full() const {
+//             return count_ == capacity_;
+//         }
+
+//         size_t size() const {
+//             return count_;
+//         }
+
+//         size_t capacity() const {
+//             return capacity_;
+//         }
+
+//         size_t used() const{
+//             return count_;
+//         }
+
+//         // void push(const T& value) {
+//         void push() {
+//             if (full()) {
+//                 throw std::overflow_error("MapSet is full");
+//             }
+//             buffer_[tail_].clear();
+//             tail_ = (tail_ + 1) % capacity_;
+//             ++count_;
+//         }
+
+//         void pop() {
+//             if (empty()) {
+//                 return;
+//             }
+//             auto frontmap = front();
+//             frontmap.clear();
+//             head_ = (head_ + 1) % capacity_;
+//             --count_;
+//         }
+
+//         // T& front() {
+//         //     if (empty()) {
+//         //         throw std::underflow_error("MapSet is empty");
+//         //     }
+//         //     return buffer_[head_];
+//         // }
+
+//         // const T& front() const {
+//         //     if (empty()) {
+//         //         throw std::underflow_error("MapSet is empty");
+//         //     }
+//         //     return buffer_[head_];
+//         // }
+
+//         // T& back() {
+//         //     if (empty()) {
+//         //         throw std::underflow_error("MapSet is empty");
+//         //     }
+//         //     return buffer_[(tail_ + capacity_ - 1) % capacity_];
+//         // }
+
+//         // const T& back() const {
+//         //     if (empty()) {
+//         //         throw std::underflow_error("MapSet is empty");
+//         //     }
+//         //     return buffer_[(tail_ + capacity_ - 1) % capacity_];
+//         // }
+
+//         T* front() {
+//             if (empty()) {
+//                 return nullptr;
+//             }
+//             return &buffer_[head_];
+//         }
+
+//         const T* front() const {
+//             if (empty()) {
+//                 return nullptr;
+//             }
+//             return &buffer_[head_];
+//         }
+
+//         T* back() {
+//             if (empty()) {
+//                 return nullptr;
+//             }
+//             return &buffer_[(tail_ + capacity_ - 1) % capacity_];
+//         }
+
+//         const T* back() const {
+//             if (empty()) {
+//                 return nullptr;
+//             }
+//             return &buffer_[(tail_ + capacity_ - 1) % capacity_];
+//         }
+
+//         void add(uint64_t packetnum_, Offset_len packetoffset_){
+//             auto backmap = back();
+//             if (backmap == nullptr){
+//                 push();
+//                 auto newmap = back();
+//                 newmap.add(packetnum_, packetoffset_);
+//                 return;
+//             }
+
+//             auto maprange = backmap.get_range();
+//             if ((packetnum_ == maprange.second + 1) && !backmap.full())
+//             {
+//                 backmap.add(packetnum_, packetoffset_);
+//             }else{
+//                 if (full()){
+//                     std::cerr << typeid(T).name() << " MapSet is full" << std::endl;
+//                     _Exit(0);
+//                 }
+//                 push();
+//                 auto newmap = back();
+//                 newmap.add(packetnum_, packetoffset_);
+//             }
+//         }
+        
+//         /*Fetch the head map range info*/
+//         std::pair<Packet_num_len, Packet_num_len> get_range(){
+//             return buffer_[head_].get_range();
+//         }
+        
+//         /*Remove all old data older the packet number*/
+//         void removeBeforeValue(Packet_num_len packet_){
+//             auto index = head_;
+//             for (auto i = 0; i < used(); i++){
+//                 auto range = get_range();
+//                 if (range.second < packet_){
+//                     pop();
+//                 }else{
+//                     return;
+//                 }
+//             }
+//         }
+
+//         void for_each(const std::function<void(const T&)>& func) const {
+//             size_t idx = head_;
+//             for (size_t i = 0; i < count_; ++i) {
+//                 func(buffer_[idx]);
+//                 idx = (idx + 1) % capacity_;
+//             }
+//         }
+
+//         void clear(){
+//             size_t idx = head_;
+//             for (size_t i = 0; i < count_; ++i) {
+//                 buffer_[idx].clear();
+//                 idx = (idx + 1) % capacity_;
+//             }
+//             head_ = 0;
+//             tail_ = 0;
+//             count_ = 0;
+//         }
+
+
+//         Offset_len get_offset(Packet_num_len PacketNum){
+//             size_t idx = head_;
+//             Offset_len result_offset = 0;
+//             for (size_t i = 0; i < count_; ++i) {
+//                 result_offset = buffer_[idx].get_offset(PacketNum);
+//                 if (result_offset != LIMIT_UINT32_T){
+//                     if (i != 0)
+//                     {
+//                         removeBeforeValue(PacketNum);
+//                     }
+//                     return result_offset;
+//                 }
+//                 idx = (idx + 1) % capacity_;
+//             }
+//             return  LIMIT_UINT32_T;
+//         }
+
+// };
 template<typename T, typename = typename std::enable_if<
     std::is_same<T, TransmissionMap>::value || std::is_same<T, ReTransmissionMap>::value>::type>
 class MapSet {
     private:
         std::vector<T> buffer_;
-
         size_t head_;
-
         size_t tail_;
-
         size_t capacity_;
-
         size_t count_;
+
+        void expand_capacity() {
+            size_t new_capacity = capacity_ * 2;
+            std::vector<T> new_buffer(new_capacity);
+
+            // Re-arrange elements from old buffer to new buffer
+            size_t idx = head_;
+            for (size_t i = 0; i < count_; ++i) {
+                new_buffer[i] = std::move(buffer_[idx]);
+                idx = (idx + 1) % capacity_;
+            }
+
+            buffer_ = std::move(new_buffer);
+            capacity_ = new_capacity;
+            head_ = 0;
+            tail_ = count_;
+        }
+
     public:
         explicit MapSet(size_t capacity = MapSetLimit)
             : buffer_(capacity), capacity_(capacity),
@@ -508,14 +716,13 @@ class MapSet {
             return capacity_;
         }
 
-        size_t used() const{
+        size_t used() const {
             return count_;
         }
 
-        // void push(const T& value) {
         void push() {
             if (full()) {
-                throw std::overflow_error("MapSet is full");
+                expand_capacity();
             }
             buffer_[tail_].clear();
             tail_ = (tail_ + 1) % capacity_;
@@ -524,72 +731,70 @@ class MapSet {
 
         void pop() {
             if (empty()) {
-                throw std::underflow_error("MapSet is empty");
+                return;
             }
-            auto frontmap = front();
-            frontmap.clear();
+            buffer_[head_].clear();
             head_ = (head_ + 1) % capacity_;
             --count_;
         }
 
-        T& front() {
+        T* front() {
             if (empty()) {
-                throw std::underflow_error("MapSet is empty");
+                return nullptr;
             }
-            return buffer_[head_];
+            return &buffer_[head_];
         }
 
-        const T& front() const {
+        const T* front() const {
             if (empty()) {
-                throw std::underflow_error("MapSet is empty");
+                return nullptr;
             }
-            return buffer_[head_];
+            return &buffer_[head_];
         }
 
-        T& back() {
+        T* back() {
             if (empty()) {
-                throw std::underflow_error("MapSet is empty");
+                return nullptr;
             }
-            return buffer_[(tail_ + capacity_ - 1) % capacity_];
+            return &buffer_[(tail_ + capacity_ - 1) % capacity_];
         }
 
-        const T& back() const {
+        const T* back() const {
             if (empty()) {
-                throw std::underflow_error("MapSet is empty");
+                return nullptr;
             }
-            return buffer_[(tail_ + capacity_ - 1) % capacity_];
+            return &buffer_[(tail_ + capacity_ - 1) % capacity_];
         }
 
-        void add(uint64_t packetnum_, Offset_len packetoffset_){
+        void add(uint64_t packetnum_, Offset_len packetoffset_) {
             auto backmap = back();
-            auto maprange = backmap.get_range();
-            if ((packetnum_ == maprange.second + 1) && !backmap.full())
-            {
-                backmap.add(packetnum_, packetoffset_);
-            }else{
-                if (full()){
-                    std::cerr << typeid(T).name() << " MapSet is full" << std::endl;
-                    _Exit(0);
-                }
+            if (backmap == nullptr) {
                 push();
                 auto newmap = back();
-                newmap.add(packetnum_, packetoffset_);
+                newmap->add(packetnum_, packetoffset_);
+                return;
+            }
+
+            auto maprange = backmap->get_range();
+            if ((packetnum_ == maprange.second + 1) && !backmap->full()) {
+                backmap->add(packetnum_, packetoffset_);
+            } else {
+                push();
+                auto newmap = back();
+                newmap->add(packetnum_, packetoffset_);
             }
         }
-        
-        /*Fetch the head map range info*/
-        std::pair<Packet_num_len, Packet_num_len> get_range(){
+
+        std::pair<Packet_num_len, Packet_num_len> get_range() {
             return buffer_[head_].get_range();
         }
-        
-        /*Remove all old data older the packet number*/
-        void removeBeforeValue(Packet_num_len packet_){
-            auto index = head_;
-            for (auto i = 0; i < used(); i++){
+
+        void removeBeforeValue(Packet_num_len packet_) {
+            while (!empty()) {
                 auto range = get_range();
-                if (range.second < packet_){
+                if (range.second < packet_) {
                     pop();
-                }else{
+                } else {
                     return;
                 }
             }
@@ -603,35 +808,28 @@ class MapSet {
             }
         }
 
-        void clear(){
-            size_t idx = head_;
-            for (size_t i = 0; i < count_; ++i) {
-                buffer_[idx].clear();
-                idx = (idx + 1) % capacity_;
-            }
+        void clear() {
+            buffer_.clear();
+            buffer_.resize(capacity_);
             head_ = 0;
             tail_ = 0;
             count_ = 0;
         }
 
-
-        Offset_len get_offset(Packet_num_len PacketNum){
+        Offset_len get_offset(Packet_num_len PacketNum) {
             size_t idx = head_;
-            Offset_len result_offset = 0;
             for (size_t i = 0; i < count_; ++i) {
-                result_offset = buffer_[idx].get_offset(PacketNum);
-                if (result_offset != LIMIT_UINT32_T){
-                    if (i != 0)
-                    {
+                Offset_len result_offset = buffer_[idx].get_offset(PacketNum);
+                if (result_offset != LIMIT_UINT32_T) {
+                    if (i != 0) {
                         removeBeforeValue(PacketNum);
                     }
                     return result_offset;
                 }
                 idx = (idx + 1) % capacity_;
             }
-            return  LIMIT_UINT32_T;
+            return LIMIT_UINT32_T;
         }
-
 };
 
 // New TransmissionMap
