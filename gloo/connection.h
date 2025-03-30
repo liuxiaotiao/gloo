@@ -795,6 +795,7 @@ class MapSet {
         void removeBeforeValue(Packet_num_len packet_) {
             while (!empty()) {
                 auto range = get_range();
+                std::cout<<"range:"<<range.first<<", "<<range.second<<std::endl;
                 if (range.second < packet_ && range.second != LIMIT_UINT64_T) {
                     pop();
                 } else {
@@ -1143,7 +1144,7 @@ class MetaInfo{
             // }
         }
 
-        void removeoldmap(Packet_len packet_){
+        void removeoldmap(Packet_num_len packet_){
             retransmission_map.removeBeforeValue(packet_);
             transmission_map.removeBeforeValue(packet_);
         }
@@ -1171,7 +1172,7 @@ class MetaInfo{
         //     }
         // }
 
-        std::pair<uint64_t, uint64_t> get_packet_range(Packet_len packet_){
+        std::pair<uint64_t, uint64_t> get_packet_range(Packet_num_len packet_){
             /*Make sure not old map exists*/
             removeoldmap(packet_);
             auto transmission_front = transmission_map.get_range();
@@ -2680,6 +2681,7 @@ public:
                 }
                 sent++;
                 if (sent >= sent_limit){
+                    // std::cout<<"last pn:"<<pn<<", send_status:" <<send_status<<std::endl;
                     /*TODO add pakcet number-offset mapping*/
                     break;
                 }
