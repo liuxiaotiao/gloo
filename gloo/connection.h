@@ -1194,11 +1194,11 @@ class MetaInfo{
 
         size_t offset_calculate(uint64_t PacketNum) {
             auto result = transmission_map.get_offset(PacketNum);
-            if (result != LIMIT_SIZE_T){
+            if (result != LIMIT_UINT32_T){
                 return result;
             }
             result = retransmission_map.get_offset(PacketNum);
-            if (result != LIMIT_SIZE_T){
+            if (result != LIMIT_UINT32_T){
                 return result;
             }
             throw std::underflow_error("Error: packet doesn't belong to this block.");

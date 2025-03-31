@@ -40,7 +40,10 @@ namespace dmludp{
         }
 
         void set(size_t pos, bool value = true) {
-            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            if (pos >= num_bits) {
+                std::cerr << "pos:" << pos << ", num_bits:" << num_bits << std::endl;
+                throw std::out_of_range("Set bit index out of range");
+            }
             size_t block = block_index(pos), offset = bit_offset(pos);
             if (value) data[block] |= (1ULL << offset);
             else data[block] &= ~(1ULL << offset);
@@ -49,13 +52,19 @@ namespace dmludp{
         void reset(size_t pos) { set(pos, false); }
 
         void flip(size_t pos) {
-            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            if (pos >= num_bits) {
+                std::cerr << "pos:" << pos << ", num_bits:" << num_bits << std::endl;
+                throw std::out_of_range("flip bit index out of range");
+            }
             size_t block = block_index(pos), offset = bit_offset(pos);
             data[block] ^= (1ULL << offset);
         }
 
         bool test(size_t pos) const {
-            if (pos >= num_bits) throw std::out_of_range("Bit index out of range");
+            if (pos >= num_bits) {
+                std::cerr << "pos:" << pos << ", num_bits:" << num_bits << std::endl;
+                throw std::out_of_range("test bit index out of range");
+            }
             size_t block = block_index(pos), offset = bit_offset(pos);
             return (data[block] & (1ULL << offset)) != 0;
         }
