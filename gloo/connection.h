@@ -2365,7 +2365,7 @@ public:
                 min_received = pkt_num;
             }
         }
-        std::cout<<"pkt_num:"<<pkt_num<<", pkt_offset:"<<std::endl;
+        std::cout<<"pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
@@ -2492,6 +2492,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
+        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
