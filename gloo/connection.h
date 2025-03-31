@@ -1209,7 +1209,7 @@ class MetaInfo{
         size_t offset_calculate(uint64_t PacketNum) {
             auto result = transmission_map.get_offset(PacketNum);
             if (result != LIMIT_UINT32_T){
-                std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
+                // std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
                 return result;
             }
             result = retransmission_map.get_offset(PacketNum);
@@ -1224,7 +1224,7 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
-                std::cout<<" ";
+                // std::cout<<" ";
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
                 metabuf.acknowledege_and_drop(packet_offset_, false);
