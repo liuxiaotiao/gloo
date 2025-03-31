@@ -339,6 +339,7 @@ namespace dmludp{
                     index = in_offset / send_buffer_size;
                 }
                 if (bits_set[index] == 0){
+                    std::cout<<"in_offset:"<<in_offset<<std::endl;
                     bits_set.set(index);
                     ack_count++;
                 }
