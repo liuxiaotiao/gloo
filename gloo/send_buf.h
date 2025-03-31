@@ -345,7 +345,7 @@ namespace dmludp{
             }else{
                 rcq.push_back(in_offset);
             }
-            std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
+            // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
             if (ack_count == bits_set.size()){
                 meta_status = MetaFlag::Complete;
             }
