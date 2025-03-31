@@ -2344,6 +2344,7 @@ public:
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
         auto pkt_length = receive_message[index].get_packet_length();
 
+        std::cout<<"1 pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation on old packet*/
         if (pkt_num < current_loop_min){
             return;
@@ -2365,7 +2366,7 @@ public:
                 min_received = pkt_num;
             }
         }
-        std::cout<<"pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
+        std::cout<<"2 pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
