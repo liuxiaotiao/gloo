@@ -399,6 +399,8 @@ class ReTransmissionMap{
         std::pair<Packet_num_len, Packet_num_len> get_range(){
             return std::make_pair(start_packet, end_packet);
         }
+
+        void print_log(){}
 };
 
 /*Used to record packet transmission.*/
@@ -470,6 +472,10 @@ class TransmissionMap{
 
         bool inrange(Packet_num_len PacketNum){
             return (PacketNum >= startmap.first && PacketNum <= endmap.first);
+        }
+
+        void print_log(){
+            std::cout << startmap.first<<", " << startmap.second << ", " << endmap.first << ", "<< endmap.second << std::endl;
         }
 };
 
@@ -1382,7 +1388,7 @@ class SCircularQueue {
         }
 
         void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-            data_[difference_].add_transmission(pn_, off_);
+            data_[difference_].add_retransmission(pn_, off_);
         }
 
         size_t get_status(Difference_len difference_){
