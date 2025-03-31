@@ -2344,7 +2344,7 @@ public:
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
         auto pkt_length = receive_message[index].get_packet_length();
 
-        std::cout<<"pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation on old packet*/
         if (pkt_num < current_loop_min){
             return;
