@@ -875,13 +875,12 @@ bool Pair::protocal2send(){
     }
   }else{}
 
-  auto sent = 0;
   while(true){
     if(!dmludp_connection->check_status()){
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
-    
+    auto sent = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
@@ -923,7 +922,7 @@ bool Pair::protocal2send(){
     char ip_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-    std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+    std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
       return true;
