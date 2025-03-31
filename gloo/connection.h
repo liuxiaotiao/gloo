@@ -2365,6 +2365,7 @@ public:
                 min_received = pkt_num;
             }
         }
+        std::cout<<"pkt_num:"<<pkt_num<<", pkt_offset:"<<std::endl;
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
@@ -2520,6 +2521,7 @@ public:
                     bit_index = (pn - first_pn) % 8;
                     size_t value = (ack_src[byte_index] >> bit_index) & 1;
                     if (value == 0){
+                        std::cout<<"pn:"<<pn<<" loss"<<std::endl;
                         loss = true;
                     }
                     // sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
