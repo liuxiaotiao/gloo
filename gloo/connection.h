@@ -378,7 +378,6 @@ class ReTransmissionMap{
                 std::cerr << "ReTransmissionMap add() out of boundary(" << start_packet << ", " << end_packet << ")" << std::endl;
                 _Exit(0);
             }   
-            std::cout<<"start_packet:"<<start_packet<<", "<<end_packet<<", packetnum:"<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
             offsets[end_packet - start_packet] = packetoffset;
         }
 
@@ -428,6 +427,7 @@ class TransmissionMap{
             }else{
                 throw std::underflow_error("Error: TransmissionMap lacks enough space");
             }      
+            std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<", "<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
         }
 
         bool empty() {
@@ -447,6 +447,7 @@ class TransmissionMap{
 
         Offset_len get_offset(Packet_num_len packetnum_){
             Offset_len offset_ = LIMIT_UINT32_T;
+            std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
             if (packetnum_ < startmap.first || packetnum_ > endmap.first){
                 return offset_;
             }
@@ -1202,10 +1203,10 @@ class MetaInfo{
         size_t offset_calculate(uint64_t PacketNum) {
             auto result = transmission_map.get_offset(PacketNum);
             if (result != LIMIT_UINT32_T){
+                std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
                 return result;
             }
             result = retransmission_map.get_offset(PacketNum);
-            std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
             if (result != LIMIT_UINT32_T){
                 return result;
             }
