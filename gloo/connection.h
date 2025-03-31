@@ -2513,6 +2513,7 @@ public:
                     break;
                 }
             }
+            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
             if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
                 std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
                 _Exit(0);
