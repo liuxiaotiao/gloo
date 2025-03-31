@@ -123,7 +123,10 @@ namespace dmludp{
 
         bool operator[](size_t index) const { return test(index); }
         BitReference operator[](size_t index) {
-            if (index >= num_bits) throw std::out_of_range("Bit index out of range");
+            if (index >= num_bits) {
+                std::cerr << "index:" << index << "num_bits:" << num_bits << std::endl;
+                throw std::out_of_range("Bit index out of range");
+            }
             return BitReference(*this, index);
         }
 

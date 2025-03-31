@@ -1369,8 +1369,28 @@ class SCircularQueue {
             return capacity_;
         }
 
+        std::pair<Packet_num_len, Packet_num_len> get_packet_range(Difference_len difference_, Packet_num_len pn_){
+            return data_[difference_].get_packet_range(pn_);
+        }
+
+        void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
+            data_[difference_].ack4offset(pn_, value_);
+        }
+
+        void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
+            data_[difference_].add_transmission(pn_, off_);
+        }
+
+        void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
+            data_[difference_].add_transmission(pn_, off_);
+        }
+
         size_t get_status(Difference_len difference_){
             return data_[difference_].metabuf.get_status();
+        }
+
+        bool iscomplete(Difference_len difference_){
+            return data_[difference_].iscomplete();
         }
 
         bool inrangecheck(uint8_t index){
@@ -2475,7 +2495,8 @@ public:
             std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
+                // sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
+                sendpair = sendbufferqueue.get_packet_range(i, pn);
                 if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                     continue;
                 }
@@ -2495,7 +2516,8 @@ public:
                     if (value == 0){
                         loss = true;
                     }
-                    sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
+                    // sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
+                    sendbufferqueue.ack4offset(i, pn, (bool)value);
                     pn++;
                 }else{
                     break;
@@ -2659,8 +2681,8 @@ public:
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             while (true){
-                size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
-                // size_t send_status = sendbufferqueue.get_status(i);
+                // size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
+                size_t send_status = sendbufferqueue.get_status(i);
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
                 
                 if (out_len == -1) {
@@ -2675,9 +2697,10 @@ public:
                 recovery.on_packet_sent(out_len);
                 
                 if (send_status == 1){
-                    sendbufferqueue.data_[i].add_transmission(pn, out_off);
+                    // sendbufferqueue.data_[i].add_transmission(pn, out_off);
+                    sendbufferqueue.add_transmission(i, pn, out_off);
                 }else if(send_status == 2){
-                    sendbufferqueue.data_[i].add_retransmission(pn, out_off);
+                    sendbufferqueue.add_retransmission(i, pn, out_off);
                 }
                 sent++;
                 if (sent >= sent_limit){
@@ -3180,7 +3203,8 @@ public:
     }
 
     bool transmission_complete(){
-        if (sendbufferqueue.data_[sendbufferqueue.start()].iscomplete()){
+        // if (sendbufferqueue.data_[sendbufferqueue.start()].iscomplete()){
+        if (sendbufferqueue.iscomplete(sendbufferqueue.start())){
             sendbufferqueue.pop_front();
             return true;
         }
