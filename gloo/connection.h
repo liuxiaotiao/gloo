@@ -423,11 +423,17 @@ class TransmissionMap{
             //     throw std::underflow_error("Error: startmap.first is -1");
             // }
             if ((endmap.first + 1) == packetnum || endmap.first == std::numeric_limits<size_t>::max()){
+                if((endmap.first + 1) == packetnum){
+                    if(endmap.second + 1440 != packetoffset && endmap.second != 0){
+                        std::cout<<"[Error] endmap.second:"<<endmap.second<<", "<<packetoffset<<std::endl;
+                       _Exit(0);
+                    }
+                }
                 endmap = std::make_pair(packetnum, packetoffset);
             }else{
                 throw std::underflow_error("Error: TransmissionMap lacks enough space");
             }      
-            std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<", "<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
+            // std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<", "<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
         }
 
         bool empty() {
