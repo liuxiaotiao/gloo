@@ -463,15 +463,18 @@ class TransmissionMap{
                 }else{
                     offset_ = 48 + (packetnum_ - startmap.first - 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
                 }
+                if(offset_!=48 || (offset_ - 48)%1440!=0){
+                    std::cout<<"2 startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
+                }
             }else{
                 if (packetnum_ > endmap.first){
                     std::cout<<"packetnum_("<<packetnum_<<") > endmap.first("<<endmap.first<<")"<<std::endl;
                     _Exit(0);
                 }
                 offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
-            }
-            if(offset_!=48 || (offset_ - 48)%1440!=0){
-                std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
+                if(offset_!=48 || (offset_ - 48)%1440!=0){
+                    std::cout<<"1 startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
+                }
             }
             return offset_;
         }
