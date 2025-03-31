@@ -453,7 +453,7 @@ class TransmissionMap{
 
         Offset_len get_offset(Packet_num_len packetnum_){
             Offset_len offset_ = LIMIT_UINT32_T;
-            std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
+            // std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
             if (packetnum_ < startmap.first || packetnum_ > endmap.first){
                 return offset_;
             }
@@ -469,6 +469,9 @@ class TransmissionMap{
                     _Exit(0);
                 }
                 offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
+            }
+            if(offset_!=48 || (offset_ - 48)%1440!=0){
+                std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
             }
             return offset_;
         }
