@@ -296,7 +296,7 @@ namespace dmludp{
             meta_pos = 0;
             // bits_set.resize(meta_len);
             // bits_set.reset();
-            std::cout<< "add_Meta: meta_sent:" << meta_sent << ", meta_len:" << meta_len << std::endl;
+            // std::cout<< "add_Meta: meta_sent:" << meta_sent << ", meta_len:" << meta_len << std::endl;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
             }
@@ -341,7 +341,7 @@ namespace dmludp{
                     index = in_offset / send_buffer_size;
                 }
                 if (bits_set[index] == 0){
-                    std::cout<<"in_offset:"<<in_offset<<std::endl;
+                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
                     bits_set.set(index);
                     ack_count++;
                 }

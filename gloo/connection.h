@@ -463,18 +463,12 @@ class TransmissionMap{
                 }else{
                     offset_ = 48 + (packetnum_ - startmap.first - 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
                 }
-                if(offset_!=48 || (offset_ - 48)%1440!=0){
-                    std::cout<<"2 startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
-                }
             }else{
                 if (packetnum_ > endmap.first){
                     std::cout<<"packetnum_("<<packetnum_<<") > endmap.first("<<endmap.first<<")"<<std::endl;
                     _Exit(0);
                 }
-                offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.first;
-                if(offset_!=48 || (offset_ - 48)%1440!=0){
-                    std::cout<<"1 startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
-                }
+                offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.second;
             }
             return offset_;
         }
@@ -2360,7 +2354,7 @@ public:
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
         auto pkt_length = receive_message[index].get_packet_length();
 
-        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation on old packet*/
         if (pkt_num < current_loop_min){
             return;
@@ -2509,7 +2503,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<std::endl;
+        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
@@ -2529,7 +2523,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
             if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
                 std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
                 _Exit(0);
@@ -2540,7 +2534,7 @@ public:
                     bit_index = (pn - first_pn) % 8;
                     size_t value = (ack_src[byte_index] >> bit_index) & 1;
                     if (value == 0){
-                        std::cout<<"pn:"<<pn<<" loss"<<std::endl;
+                        // std::cout<<"pn:"<<pn<<" loss"<<std::endl;
                         loss = true;
                     }
                     // sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
@@ -2568,7 +2562,7 @@ public:
             auto sendbufferqueue_start_index = sendbufferqueue.start();
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                std::cout << int(index) << " " ;
+                // std::cout << int(index) << " " ;
                 sendbufferqueue.data_[index].metabuf.ack_check();
             }
         }
@@ -2748,13 +2742,13 @@ public:
                 }
                 d_sent++;
             }
-            std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<std::endl;
+            // std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<std::endl;
             if (sent >= sent_limit){
                 break;
             }
         }
 
-        std::cout << "sent:" << sent << std::endl;
+        // std::cout << "sent:" << sent << std::endl;
 
         return sent;
     }
