@@ -684,6 +684,7 @@ bool Pair::protocal2read(){
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
+      std::cout<<"sent_result:"<<sent_result<<std::endl;
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
       bool stop = false;
       while(true){
