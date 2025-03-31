@@ -875,6 +875,9 @@ bool Pair::protocal2send(){
       if (!connection_written){
         return false;
       }
+      if(dmludp_connection->sendbufferqueue.size() == dmludp_connection->sendbufferqueue.get_capacity()){
+        break;
+      }
     }
   }else{}
 
