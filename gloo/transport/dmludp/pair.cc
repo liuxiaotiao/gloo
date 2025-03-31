@@ -833,6 +833,7 @@ bool Pair::protocal2read(){
     device_->registerDescriptor(fd_, EPOLLIN, this);
   }else{
     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+    std::cout << "tx_:" << tx_.size() << std::endl;
   }
 
   return false;
