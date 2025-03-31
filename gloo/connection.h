@@ -1215,6 +1215,7 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
+                std::cout<<"PacketNum:"<<PacketNum<<", ";
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
                 metabuf.acknowledege_and_drop(packet_offset_, false);

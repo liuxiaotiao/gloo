@@ -658,7 +658,7 @@ bool Pair::protocal2read(){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
-      std::cout<<"Receive ,"<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
+      std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
 
       if (retval == -1){
         if (errno == EAGAIN) {
@@ -762,6 +762,7 @@ bool Pair::protocal2read(){
                 if (dmludp_connection->recvCQ.empty()){
                   stop = true;
                 }
+                std::cout<<"2 read check 3"<<std::endl;
                 break;
               }
 
@@ -770,6 +771,7 @@ bool Pair::protocal2read(){
                 rx_.nread += rnbytes;
               }
             }
+            std::cout<<"2 read check 4"<<std::endl;
             // dmludp_connection->recv_reset();
           }else{
             NonOwningPtr<UnboundBuffer> rbuf;
@@ -796,7 +798,7 @@ bool Pair::protocal2read(){
             }
           }
         }
-
+        std::cout<<"2 read check 5"<<std::endl;
         if(stop){
           break;
         }
