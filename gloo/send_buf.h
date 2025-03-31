@@ -297,7 +297,9 @@ namespace dmludp{
             // bits_set.resize(meta_len);
             // bits_set.reset();
             std::cout<< "add_Meta: meta_sent:" << meta_sent << ", meta_len:" << meta_len << std::endl;
-            bits_set.resize(meta_len);
+            if(meta_len != bits_set.size()){
+                bits_set.resize(meta_len);
+            }
             bits_set.clear();
             ack_count = 0;
             rcq.clear();

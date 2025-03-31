@@ -378,6 +378,7 @@ class ReTransmissionMap{
                 std::cerr << "ReTransmissionMap add() out of boundary(" << start_packet << ", " << end_packet << ")" << std::endl;
                 _Exit(0);
             }   
+            std::cout<<"start_packet:"<<start_packet<<", "<<end_packet<<", packetnum:"<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
             offsets[end_packet - start_packet] = packetoffset;
         }
 
@@ -1204,6 +1205,7 @@ class MetaInfo{
                 return result;
             }
             result = retransmission_map.get_offset(PacketNum);
+            std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
             if (result != LIMIT_UINT32_T){
                 return result;
             }
@@ -1215,7 +1217,7 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
-                std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<packet_offset_<<", ";
+                std::cout<<" ";
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
                 metabuf.acknowledege_and_drop(packet_offset_, false);
