@@ -2543,6 +2543,16 @@ public:
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
+        {
+            auto sendbufferqueue_start_index = sendbufferqueue.start();
+            for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                std::cout << int(index) << " " ;
+                sendbufferqueue.data_[index].metabuf.ack_check();
+            }
+        }
+
+
     }
 
 
