@@ -124,7 +124,7 @@ namespace dmludp{
         bool operator[](size_t index) const { return test(index); }
         BitReference operator[](size_t index) {
             if (index >= num_bits) {
-                std::cerr << "index:" << index << "num_bits:" << num_bits << std::endl;
+                std::cerr << "index:" << index << ", num_bits:" << num_bits << std::endl;
                 throw std::out_of_range("Bit index out of range");
             }
             return BitReference(*this, index);
@@ -296,6 +296,7 @@ namespace dmludp{
             meta_pos = 0;
             // bits_set.resize(meta_len);
             // bits_set.reset();
+            std::cout<< "add_Meta: meta_sent:" << meta_sent << ", meta_len:" << meta_len << std::endl;
             bits_set.resize(meta_len);
             bits_set.clear();
             ack_count = 0;
