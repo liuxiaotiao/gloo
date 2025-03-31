@@ -2454,6 +2454,8 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
+        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<std::endl;
+
         send_packet_type = ty;
         return sizeof(Header) + hdr->pkt_length;
     }
@@ -2503,7 +2505,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<std::endl;
+        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
