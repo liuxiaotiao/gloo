@@ -755,7 +755,9 @@ bool Pair::protocal2read(){
                 dmludp_conn_recv_reset(dmludp_connection);
                 dmludp_conn_reset_rx_len(dmludp_connection);
                 dmludp_connection->recvCQ.pop_front();
+                std::cout<<"2 read check 1"<<std::endl;
                 dmludp_connection->update_receive_difference();
+                std::cout<<"2 read check 2"<<std::endl;
                 if (dmludp_connection->recvCQ.empty()){
                   stop = true;
                 }
