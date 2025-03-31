@@ -2830,8 +2830,8 @@ public:
         send_packet_type = 0;
     }
 
-    ssize_t get_start(){
-        return next_available(-1);
+    size_t get_start(){
+        return next_available(std::numeric_limits<size_t>::max());
     }
 
     size_t get_end(){
@@ -2843,13 +2843,29 @@ public:
         recvCQ.set_recv_pointer(zerolist[0].first, target_);
     }
 
-    ssize_t next_available(ssize_t index){
+    size_t next_available(size_t index){
+        if (index == std::numeric_limits<size_t>::max()){
+            auto idx = 0;
+            while(true){
+                if (receive_available_map[idx] == 0){
+                    break;
+                }
+                idx++;
+                if (idx == receive_available_map.size()){
+                    return std::numeric_limits<size_t>::max();
+                }
+            }
+            return idx;
+        }
         auto idx = index + 1;
         while(true){
             if (receive_available_map[idx] == 0){
                 break;
             }
             idx++;
+            if (idx == receive_available_map.size()){
+                return std::numeric_limits<size_t>::max();
+            }
         }
         return idx;
     }
