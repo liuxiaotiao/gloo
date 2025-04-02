@@ -60,21 +60,11 @@ enum dmludp_error {
 
 };
 
-// inline Config* dmludp_config_new(){
-//     Config* config = new Config();
-//     return config;
-// }
-
-// inline void dmludp_config_free(Config* config){
-//     delete config;
-// }
 
 inline int dmludp_header_info(uint8_t* data, size_t buf_len, uint32_t &off, uint64_t &pn) {
     auto result = reinterpret_cast<Header *>(data)->ty;
     pn = reinterpret_cast<Header *>(data)->pkt_num;
-    // auto pkt_priorty = reinterpret_cast<Header *>(data)->priority;
     off = reinterpret_cast<Header *>(data)->offset;
-    // auto pkt_len = reinterpret_cast<Header *>(data)->pkt_length;
     return result;
 }
 
@@ -91,7 +81,6 @@ inline void dmludp_update_receive_parameters(std::shared_ptr<Connection> conn){
     conn->update_receive_parameter();
 }
 
-// inline void dmludp_set_rtt(Connection* conn, long interval){
 inline void dmludp_set_rtt(std::shared_ptr<Connection> conn, long interval){
     conn->set_rtt(interval);
 }

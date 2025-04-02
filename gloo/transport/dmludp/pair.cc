@@ -765,7 +765,7 @@ bool Pair::protocal2read(){
                 if (dmludp_connection->recvCQ.empty()){
                   stop = true;
                 }
-                std::cout<<"2 read check 3"<<std::endl;
+                // std::cout<<"2 read check 3"<<std::endl;
                 break;
               }
 
@@ -774,7 +774,7 @@ bool Pair::protocal2read(){
                 rx_.nread += rnbytes;
               }
             }
-            std::cout<<"2 read check 4"<<std::endl;
+            // std::cout<<"2 read check 4"<<std::endl;
             // dmludp_connection->recv_reset();
           }else{
             NonOwningPtr<UnboundBuffer> rbuf;
@@ -801,7 +801,7 @@ bool Pair::protocal2read(){
             }
           }
         }
-        std::cout<<"2 read check 5"<<std::endl;
+        // std::cout<<"2 read check 5"<<std::endl;
         if(stop){
           break;
         }

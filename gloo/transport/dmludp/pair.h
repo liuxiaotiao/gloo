@@ -160,6 +160,37 @@ class Pair : public ::gloo::transport::Pair, public Handler {
 
   void close() override;
 
+  class dmludptimer: public Handler{
+    public:
+    Pair& outerPtr;
+
+    dmludptimer(Pair& outer) : outerPtr(outer) {}
+
+    void handleEvents(int events){
+      uint64_t expirations;
+      auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
+
+      if (timer_read == -1) {
+        if (errno == EAGAIN) {
+            printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
+        } else {
+            perror("read");
+            _Exit(EXIT_FAILURE);
+        }
+        return;
+      }
+
+      /*
+      Mark timeout packet as loss packet, start to retransmission
+      */
+      outerPtr.dmludp_connection->process_timeout();
+      outerPtr.device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, &outerPtr);
+    }
+  };
+  friend class dmludptimer;
+
+  dmludptimer innertimer;
+
  protected:
   // Refer to parent context using raw pointer. This could be a
   // weak_ptr, seeing as the context class is a shared_ptr, but:
