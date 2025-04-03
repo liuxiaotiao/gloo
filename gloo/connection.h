@@ -2329,6 +2329,7 @@ public:
 
         if (pkt_offset == 0){
             zerolist.push_back(std::make_pair(pkt_difference, index));
+            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         }
 
         /*TODO(3.3): Rethink min_received is worth to keep*/
