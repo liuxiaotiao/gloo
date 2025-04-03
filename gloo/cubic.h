@@ -327,12 +327,19 @@ class Recovery{
         bytes_in_flight += pktlen;
     }
 
-    size_t cwnd_available()  {
-        if(bytes_in_flight > congestion_window){
+    size_t cwnd_available() {
+        if(bytes_in_flight > (size_t)congestion_window){
             return 0;
         }
-        return congestion_window - bytes_in_flight;
+        return (size_t)congestion_window - bytes_in_flight;
     };
+
+    bool cwnd_enough() {
+        if(bytes_in_flight > (size_t)congestion_window){
+            return false;
+        }
+        return true;
+    }
 
     void collapse_cwnd() {
         congestion_window = INI_WIN;
