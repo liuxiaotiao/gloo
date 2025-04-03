@@ -335,7 +335,7 @@ class Recovery{
     };
 
     bool cwnd_enough() {
-        if(bytes_in_flight > (size_t)congestion_window){
+        if(bytes_in_flight >= (size_t)congestion_window){
             return false;
         }
         return true;
