@@ -884,6 +884,7 @@ bool Pair::protocal2send(){
 
   while(true){
     if(!dmludp_connection->check_status()){
+      
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }

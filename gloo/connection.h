@@ -2425,7 +2425,7 @@ public:
     
 
     bool check_status(){
-        std::cout << "check_status cwnd left:" << recovery.cwnd_available() <<std::endl;
+        std::cout << "check_status cwnd left:" << recovery.cwnd_available() <<", "<<recovery.cwnd_enough()<<", "<<sendbufferqueue.ready()<<std::endl;
         if (recovery.cwnd_enough() && sendbufferqueue.ready()) return true;
         return false;
     }
