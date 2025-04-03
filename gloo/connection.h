@@ -827,8 +827,11 @@ class MapSet {
         }
 
         void clear() {
-            buffer_.clear();
-            buffer_.resize(capacity_);
+            // buffer_.clear();
+            // buffer_.resize(capacity_);
+            for (auto e: buffer_){
+                e.clear();
+            }
             head_ = 0;
             tail_ = 0;
             count_ = 0;
@@ -1138,24 +1141,10 @@ class MetaInfo{
 
         void add_transmission(uint64_t packetnum_, uint32_t packetoffset_){
             transmission_map.add(packetnum_, packetoffset_);
-            // if (packet_range.first == std::numeric_limits<size_t>::max()){
-            //     packet_range = std::make_pair(packetnum_, packetnum_);
-            // }else{
-            //     if (packet_range.second < packetnum_){
-            //         packet_range.second = packetnum_;
-            //     }
-            // }
         }
 
         void add_retransmission(uint64_t packetnum_, uint32_t packetoffset_){
             retransmission_map.add(packetnum_, packetoffset_);
-            // if (packet_range.first == std::numeric_limits<size_t>::max()){
-            //     packet_range = std::make_pair(packetnum_, packetnum_);
-            // }else{
-            //     if (packet_range.second < packetnum_){
-            //         packet_range.second = packetnum_;
-            //     }
-            // }
         }
 
         void removeoldmap(Packet_num_len packet_){
@@ -1170,21 +1159,6 @@ class MetaInfo{
         bool no_overlap(const std::pair<uint64_t, uint64_t>& p1, const std::pair<uint64_t, uint64_t>& p2) {
             return p1.second < p2.first || p2.second < p1.first;
         }
-
-        // std::pair<uint64_t, uint64_t> get_packet_range(){
-        //     auto transmission_front = transmission_map.get_range();
-        //     auto retransmission_front = retransmission_map.get_range();
-        //     if (!no_overlap(transmission_front, retransmission_front)){
-        //         std::cerr << "Overlap: (" << transmission_front.first << ", " << transmission_front.second << "), ("
-        //             << retransmission_front.first << ", " << retransmission_front.second << ")" << std::endl;
-        //         _Exit(0);
-        //     }
-        //     if (transmission_front.second < retransmission_front.first){
-        //         return transmission_front;
-        //     }else{
-        //         return retransmission_front;
-        //     }
-        // }
 
         std::pair<uint64_t, uint64_t> get_packet_range(Packet_num_len packet_){
             /*Make sure not old map exists*/
@@ -1451,13 +1425,8 @@ class RecordInfo
 
         uint32_t record_acumulate = 0;
 
-        /*Continuous end index*/
-        // ssize_t end_index = -1;
-
         size_t end_index = std::numeric_limits<size_t>::max();
 
-        /*Continuous start index*/
-        // ssize_t start_index = -1;
         size_t start_index = std::numeric_limits<size_t>::max();
 
         Offset_len record_offset = 0;
@@ -1795,17 +1764,6 @@ public:
         }
     }
 
-    /*Check data block is in queue*/
-    // bool inrangecheck(uint8_t index){
-    //     bool inRange = false;
-    //     if (head_ < tail_) {
-    //         inRange = (index >= head_ && index < tail_);
-    //     } else {
-    //         inRange = (index >= head_ || index < tail_);
-    //     }
-    //     return inRange;
-    // }
-
     bool inrangecheck(uint8_t index) {
         bool inRange = false;
         if (head_ < tail_) {
@@ -1857,20 +1815,12 @@ public:
 
     /*Check data pointer is available*/
     bool targetCheck(uint8_t difference_){
-        // if (!inrangecheck(difference_)){
-        //     std::cerr << "targetCheck difference_("<<(int)difference_<<") not in range("<< head_ << ", " << tail_ <<")" << std::endl;
-        //     _Exit(0);
-        // }
         inrangecheck(difference_);
         return data_[difference_].targetCheck();
     }
 
     /*Check OP is available*/
     bool srcsetcheck(uint8_t difference_){
-        // if (!inrangecheck(difference_)){
-        //     std::cerr << "srcsetcheck difference_("<<(int)difference_<<") not in range("<< head_ << ", " << tail_ <<")" << std::endl;
-        //     _Exit(0);
-        // }
         inrangecheck(difference_);
         return data_[difference_].srcsetCheck();
     }

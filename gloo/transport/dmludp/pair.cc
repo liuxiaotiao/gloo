@@ -658,11 +658,6 @@ bool Pair::protocal2read(){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
-      if(dmludp_connection->receive_message[receive_number].get_packet_type() == 5){
-        std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
-      }
-      // std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
-
       if (retval == -1){
         if (errno == EAGAIN) {
             break;
@@ -670,6 +665,9 @@ bool Pair::protocal2read(){
         if (errno == EINTR){
             continue;
         }
+      }
+      if(dmludp_connection->receive_message[receive_number].get_packet_type() == 5){
+        std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
       }
       received++;
       receive_check = receive_number;
