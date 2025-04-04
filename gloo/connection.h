@@ -2153,6 +2153,7 @@ public:
         auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
         rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
         rto = srtt + 4 * rttvar;
+        std::cout<<"RTO:"<<rto.count()<<std::endl;
     }
 
     // void update_rtt() {
@@ -2647,6 +2648,10 @@ public:
 
     void clear_sent_once(){
         written_data_once = 0;
+    }
+
+    void process_timeout(){
+
     }
 
     // ssize_t prepareData() {

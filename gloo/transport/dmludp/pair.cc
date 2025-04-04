@@ -65,7 +65,10 @@ Pair::Pair(
       fd_(FD_INVALID),
       sendBufferSize_(0),
       self_(device_->nextAddress()),
-      ex_(nullptr){
+      ex_(nullptr),
+      innertimer(*this){
+        timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
+        // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
 // Destructor performs a "soft" close.
