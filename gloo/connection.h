@@ -1850,7 +1850,7 @@ private:
     }
 
 public:
-    zeroQueue(int cap = 32) : front_index(0), back_index(0), count(0), capacity(cap) {
+    zeroQueue(int cap = DataBlock) : front_index(0), back_index(0), count(0), capacity(cap) {
         data.resize(capacity);
     }
 
@@ -1897,6 +1897,97 @@ public:
         return data[(back_index - 1 + capacity) % capacity];
     }
 };
+
+// class zeroQueue {
+// public:
+//     using PairType = std::pair<uint8_t, uint16_t>;
+
+// private:
+//     std::vector<PairType> data;
+//     int front_index{0};
+//     int back_index{0};
+//     int count{0};
+//     int capacity{0};
+
+//     void resize() {
+//         std::vector<PairType> new_data(capacity * 2);
+//         for (int i = 0; i < count; ++i) {
+//             new_data[i] = (*this)[i];
+//         }
+//         data = std::move(new_data);
+//         front_index = 0;
+//         back_index = count;
+//         capacity *= 2;
+//     }
+
+//     int mod_add(int x, int d) const { return (x + d + capacity) % capacity; }
+//     int mod_sub(int x, int d) const { return (x - d % capacity + capacity) % capacity; }
+
+// public:
+//     zeroQueue(int cap = DataBlock)
+//       : capacity(cap)
+//     {
+//         data.resize(capacity);
+//     }
+
+//     void push_back(uint8_t idx, uint16_t payload) {
+//         if (count == capacity) resize();
+
+//         int target = idx % capacity;
+//         int dist_back = (target - back_index + capacity) % capacity;
+//         int dist_front = (front_index - target + capacity) % capacity;
+
+//         if (dist_back <= dist_front) {
+//             back_index = target;
+//             data[back_index] = { idx, payload };
+//             back_index = mod_add(back_index, 1);
+//         } else {
+//             front_index = mod_sub(front_index, dist_front);
+//             data[front_index] = { idx, payload };
+//         }
+
+//         ++count;
+//     }
+
+//     void pop_front() {
+//         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
+//         front_index = mod_add(front_index, 1);
+//         --count;
+//     }
+
+//     PairType& operator[](int logical_idx) {
+//         if (logical_idx < 0 || logical_idx >= count)
+//             throw std::out_of_range("zeroQueue index out of range");
+//         return data[mod_add(front_index, logical_idx)];
+//     }
+
+//     int size() const { return count; }
+//     bool empty() const { return count == 0; }
+
+//     PairType front() const {
+//         if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
+//         if (front_index != data[front_index].first){
+//             throw std::runtime_error("1 front_index != data[front_index].first!");
+//         }
+//         return data[front_index];
+//     }
+
+//     PairType back() const {
+//         if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
+//         if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first){
+//             throw std::runtime_error("1 back_index != data[back_index].first!");
+//         }
+//         return data[mod_sub(back_index, 1)];
+//     }
+
+
+//     int indices_used() const {
+//         if (count == 0) return 0;
+//         auto f = front().first;
+//         auto b = back().first;
+//         return static_cast<int>(b) - static_cast<int>(f) + 1;
+//     }
+// };
 
 class Connection{
 public: 
@@ -2005,6 +2096,8 @@ public:
     */
     uint8_t receive_connection_difference;
 
+    uint8_t receive_connection_difference_registration;
+
     size_t current_loop_min;
 
     size_t current_loop_max;
@@ -2099,6 +2192,7 @@ public:
     dmludp_error_sent(0),
     send_connection_difference(0),
     receive_connection_difference(0),
+    receive_connection_difference_registration(LIMIT_UINT8_T),
     current_loop_min(0),
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
@@ -2598,10 +2692,16 @@ public:
         return false;
     }
 
-    bool zerocheck(){
+    /*zerolist cannt be the different check*/
+    bool zerocheck(){       
         if (!zerolist.empty()){
-            if(receive_connection_difference == zerolist[0].first){
-                return true;
+            auto len_ = zerolist.size();
+            for (auto i = 0; i < len_; i++){
+                if (receive_connection_difference == zerolist[i].first)
+                {
+                    return true;
+                }
+                
             }
         }
        
@@ -2609,8 +2709,33 @@ public:
     }
 
     void rx_len(size_t expected){
-        recvCQ.rx_len(zerolist[0].first, expected);
+        recvCQ.rx_len(receive_connection_difference, expected);
     }
+
+    void get_recv_target(uint8_t * target_){
+        /*check top poiner is null or not*/
+        recvCQ.set_recv_pointer(receive_connection_difference, target_);
+    }
+
+
+    // bool zerocheck(){
+    //     if (!zerolist.empty()){
+    //         if(receive_connection_difference == zerolist[0].first){
+    //             return true;
+    //         }
+    //     }
+       
+    //     return false;
+    // }
+
+    // void rx_len(size_t expected){
+    //     recvCQ.rx_len(zerolist[0].first, expected);
+    // }
+
+    // void get_recv_target(uint8_t * target_){
+    //     /*check top poiner is null or not*/
+    //     recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    // }
 
     void reset_rx_len(){
         rx_length = 0;
@@ -2865,10 +2990,6 @@ public:
         return receive_message.size();
     }
 
-    void get_recv_target(uint8_t * target_){
-        /*check top poiner is null or not*/
-        recvCQ.set_recv_pointer(zerolist[0].first, target_);
-    }
 
     size_t next_available(size_t index){
         if (index == std::numeric_limits<size_t>::max()){
