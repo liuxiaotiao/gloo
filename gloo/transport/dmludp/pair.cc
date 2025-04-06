@@ -817,7 +817,7 @@ bool Pair::protocal2read(){
         }
       }  
     }
-    std::cout<<"read complete"<<std::endl;
+    // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
