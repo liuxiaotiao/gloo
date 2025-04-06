@@ -2587,7 +2587,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<std::endl;
+        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<", "<<max_acknowleged<<std::endl;
 
         /*Check acknowledge packet loss*/
         if (first_pn != (max_acknowleged + 1)){
