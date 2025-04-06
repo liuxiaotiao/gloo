@@ -1505,6 +1505,8 @@ class metarecebuf{
 
         RCset receive_offset;
 
+        RCset receive_offset_processed;
+
         std::vector<uint64_t> source_len;
 
         bool complete_flag = false;
@@ -1531,6 +1533,7 @@ class metarecebuf{
 
         void clear(){
             receive_offset.clear();
+            receive_offset_processed.clear();
             metabuf.reset();
             metabuf.src = nullptr;
             complete_flag = false;
@@ -2428,7 +2431,7 @@ public:
         /*TODO(2.24): break index, new parameter: index_check*/
 
         if (pkt_offset == 0){
-            zerolist.push_back(pkt_difference, std::make_pair(pkt_difference, index));
+            zerolist.push_back(pkt_difference, index);
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         }
 
