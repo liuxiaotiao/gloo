@@ -1829,90 +1829,19 @@ public:
 };
 
 /*Receive queue registation*/
-class zeroQueue {
-private:
-    using PairType = std::pair<uint8_t, uint16_t>;
-    std::vector<PairType> data;  
-    int front_index;        
-    int back_index;         
-    int count;              
-    int capacity;           
-
-    void resize() {
-        std::vector<PairType> new_data(capacity * 2);
-        for (int i = 0; i < count; ++i) {
-            new_data[i] = (*this)[i];  
-        }
-        data = std::move(new_data);
-        front_index = 0;
-        back_index = count;
-        capacity *= 2;
-    }
-
-public:
-    zeroQueue(int cap = DataBlock) : front_index(0), back_index(0), count(0), capacity(cap) {
-        data.resize(capacity);
-    }
-
-    void push_back(PairType value) {
-        if (count == capacity) {
-            resize();  
-        }
-        data[back_index] = value;
-        back_index = (back_index + 1) % capacity;
-        count++;
-    }
-
-    void pop_front() {
-        if (count == 0) {
-            throw std::runtime_error("zeroQueue is empty!");
-        }
-        front_index = (front_index + 1) % capacity;
-        count--;
-    }
-
-    PairType& operator[](int index) {
-        if (index < 0 || index >= count) {
-            std::cout<<"index"<<index<<std::endl;
-            throw std::out_of_range("zeroQueue index out of range");
-        }
-        return data[(front_index + index) % capacity];  
-    }
-
-    int size() const {
-        return count;
-    }
-
-    bool empty() const {
-        return count == 0;
-    }
-
-    PairType front() const {
-        if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
-        return data[front_index];
-    }
-
-    PairType back() const {
-        if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
-        return data[(back_index - 1 + capacity) % capacity];
-    }
-};
-
 // class zeroQueue {
-// public:
-//     using PairType = std::pair<uint8_t, uint16_t>;
-
 // private:
-//     std::vector<PairType> data;
-//     int front_index{0};
-//     int back_index{0};
-//     int count{0};
-//     int capacity{0};
+//     using PairType = std::pair<uint8_t, uint16_t>;
+//     std::vector<PairType> data;  
+//     int front_index;        
+//     int back_index;         
+//     int count;              
+//     int capacity;           
 
 //     void resize() {
 //         std::vector<PairType> new_data(capacity * 2);
 //         for (int i = 0; i < count; ++i) {
-//             new_data[i] = (*this)[i];
+//             new_data[i] = (*this)[i];  
 //         }
 //         data = std::move(new_data);
 //         front_index = 0;
@@ -1920,74 +1849,150 @@ public:
 //         capacity *= 2;
 //     }
 
-//     int mod_add(int x, int d) const { return (x + d + capacity) % capacity; }
-//     int mod_sub(int x, int d) const { return (x - d % capacity + capacity) % capacity; }
-
 // public:
-//     zeroQueue(int cap = DataBlock)
-//       : capacity(cap)
-//     {
+//     zeroQueue(int cap = DataBlock) : front_index(0), back_index(0), count(0), capacity(cap) {
 //         data.resize(capacity);
 //     }
 
-//     void push_back(uint8_t idx, uint16_t payload) {
-//         if (count == capacity) resize();
-
-//         int target = idx % capacity;
-//         int dist_back = (target - back_index + capacity) % capacity;
-//         int dist_front = (front_index - target + capacity) % capacity;
-
-//         if (dist_back <= dist_front) {
-//             back_index = target;
-//             data[back_index] = { idx, payload };
-//             back_index = mod_add(back_index, 1);
-//         } else {
-//             front_index = mod_sub(front_index, dist_front);
-//             data[front_index] = { idx, payload };
+//     void push_back(PairType value) {
+//         if (count == capacity) {
+//             resize();  
 //         }
-
-//         ++count;
+//         data[back_index] = value;
+//         back_index = (back_index + 1) % capacity;
+//         count++;
 //     }
 
 //     void pop_front() {
-//         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
-//         front_index = mod_add(front_index, 1);
-//         --count;
+//         if (count == 0) {
+//             throw std::runtime_error("zeroQueue is empty!");
+//         }
+//         front_index = (front_index + 1) % capacity;
+//         count--;
 //     }
 
-//     PairType& operator[](int logical_idx) {
-//         if (logical_idx < 0 || logical_idx >= count)
+//     PairType& operator[](int index) {
+//         if (index < 0 || index >= count) {
+//             std::cout<<"index"<<index<<std::endl;
 //             throw std::out_of_range("zeroQueue index out of range");
-//         return data[mod_add(front_index, logical_idx)];
+//         }
+//         return data[(front_index + index) % capacity];  
 //     }
 
-//     int size() const { return count; }
-//     bool empty() const { return count == 0; }
+//     int size() const {
+//         return count;
+//     }
+
+//     bool empty() const {
+//         return count == 0;
+//     }
 
 //     PairType front() const {
 //         if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
-//         if (front_index != data[front_index].first){
-//             throw std::runtime_error("1 front_index != data[front_index].first!");
-//         }
 //         return data[front_index];
 //     }
 
 //     PairType back() const {
 //         if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
-//         if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first){
-//             throw std::runtime_error("1 back_index != data[back_index].first!");
-//         }
-//         return data[mod_sub(back_index, 1)];
-//     }
-
-
-//     int indices_used() const {
-//         if (count == 0) return 0;
-//         auto f = front().first;
-//         auto b = back().first;
-//         return static_cast<int>(b) - static_cast<int>(f) + 1;
+//         return data[(back_index - 1 + capacity) % capacity];
 //     }
 // };
+
+class zeroQueue {
+public:
+    using PairType = std::pair<uint8_t, uint16_t>;
+
+private:
+    std::vector<PairType> data;
+    int front_index{0};
+    int back_index{0};
+    int count{0};
+    int capacity{0};
+
+    void resize() {
+        std::vector<PairType> new_data(capacity * 2);
+        for (int i = 0; i < count; ++i) {
+            new_data[i] = (*this)[i];
+        }
+        data = std::move(new_data);
+        front_index = 0;
+        back_index = count;
+        capacity *= 2;
+    }
+
+    int mod_add(int x, int d) const { return (x + d + capacity) % capacity; }
+    int mod_sub(int x, int d) const { return (x - d % capacity + capacity) % capacity; }
+
+public:
+    zeroQueue(int cap = DataBlock)
+      : capacity(cap)
+    {
+        data.resize(capacity);
+        for (auto i = 0; i < data.size; i++){
+            data[i] = std::make_pair(LIMIT_UINT8_T, LIMIT_UINT16_T);
+        }
+    }
+
+    void push_back(uint8_t idx, uint16_t payload) {
+        if (count == capacity) {
+            resize();
+        }
+
+        int target = idx % capacity;
+        int dist_back = (target - back_index + capacity) % capacity;
+        int dist_front = (front_index - target + capacity) % capacity;
+
+        if (dist_back <= dist_front) {
+            back_index = target;
+            data[back_index] = { idx, payload };
+            back_index = mod_add(back_index, 1);
+        } else {
+            front_index = mod_sub(front_index, dist_front);
+            data[front_index] = { idx, payload };
+        }
+
+        ++count;
+    }
+
+    void pop_front() {
+        if (count == 0) throw std::runtime_error("zeroQueue is empty!");
+        front_index = mod_add(front_index, 1);
+        --count;
+    }
+
+    PairType& operator[](int logical_idx) {
+        if (logical_idx < 0 || logical_idx >= count)
+            throw std::out_of_range("zeroQueue index out of range");
+        return data[mod_add(front_index, logical_idx)];
+    }
+
+    int size() const { return count; }
+    bool empty() const { return count == 0; }
+
+    PairType front() const {
+        if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
+        if (front_index != data[front_index].first){
+            throw std::runtime_error("1 front_index != data[front_index].first!");
+        }
+        return data[front_index];
+    }
+
+    PairType back() const {
+        if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
+        if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first){
+            throw std::runtime_error("1 back_index != data[back_index].first!");
+        }
+        return data[mod_sub(back_index, 1)];
+    }
+
+
+    int indices_used() const {
+        if (count == 0) return 0;
+        auto f = front().first;
+        auto b = back().first;
+        return static_cast<int>(b) - static_cast<int>(f) + 1;
+    }
+};
 
 class Connection{
 public: 
@@ -3186,6 +3191,10 @@ public:
     //     */
        
     // }
+
+    bool registration_check(){
+        return receive_connection_difference == receive_connection_difference_registration;
+    }
 
     // 3.27 recvCQ.data_ cannot be directly access
     void process_application_copy(){
