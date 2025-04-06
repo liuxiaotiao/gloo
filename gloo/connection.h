@@ -1597,6 +1597,10 @@ class metarecebuf{
         }
 
         void processCheck(){
+            /*offset 0 packet didn't received, not do any operation*/
+            if (srcset == 0){
+                return;
+            }
             if (received != processd){
                 std::cout<<"received:"<<received<<", processd:"<<processd<<std::endl;
                 throw std::overflow_error("received != processd");
