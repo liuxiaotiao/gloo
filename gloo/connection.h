@@ -1625,14 +1625,14 @@ class metarecebuf{
         }
 
         void record_copy(Offset_len offset_){
-            auto exist = receive_offset_processed.find(pkt_offset);
+            auto exist = receive_offset_processed.find(offset_);
             if (!exist){
-                receive_offset_processed.insert(pkt_offset);
+                receive_offset_processed.insert(offset_);
             }
         }
 
         bool copyed_check(Offset_len offset_){
-            return receive_offset_processed.find(pkt_offset);
+            return receive_offset_processed.find(offset_);
         }
 };  
 
