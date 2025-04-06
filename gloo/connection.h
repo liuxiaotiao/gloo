@@ -1907,7 +1907,7 @@ private:
     int front_index{0};
     int back_index{0};
     int count{0};
-    int capacity{0};
+    int capacity{DataBlock};
 
     void resize() {
         std::vector<PairType> new_data(capacity * 2);
@@ -1928,7 +1928,7 @@ public:
       : capacity(cap)
     {
         data.resize(capacity);
-        for (auto i = 0; i < data.size; i++){
+        for (auto i = 0; i < data.size(); i++){
             data[i] = std::make_pair(LIMIT_UINT8_T, LIMIT_UINT16_T);
         }
     }
