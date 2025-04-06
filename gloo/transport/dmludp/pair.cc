@@ -801,7 +801,7 @@ bool Pair::protocal2read(){
                 break;
               }
               // std::cout<<"3 read check:"<<rx_.getOpcode()<<", "<<(int)dmludp_connection->receive_connection_difference<<", "<<
-              (int)dmludp_connection->receive_connection_difference_registration<<std::endl;
+              // (int)dmludp_connection->receive_connection_difference_registration<<std::endl;
               if (rbuf){
                 dmludp_connection->send_packet_complete();
                 stop = true;
