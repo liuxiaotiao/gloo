@@ -2693,35 +2693,15 @@ public:
     }
 
     /*zerolist cannt be the different check*/
-    bool zerocheck(){       
-        if (!zerolist.empty()){
-            auto len_ = zerolist.size();
-            for (auto i = 0; i < len_; i++){
-                if (receive_connection_difference == zerolist[i].first)
-                {
-                    return true;
-                }
-                
-            }
-        }
-       
-        return false;
-    }
-
-    void rx_len(size_t expected){
-        recvCQ.rx_len(receive_connection_difference, expected);
-    }
-
-    void get_recv_target(uint8_t * target_){
-        /*check top poiner is null or not*/
-        recvCQ.set_recv_pointer(receive_connection_difference, target_);
-    }
-
-
-    // bool zerocheck(){
+    // bool zerocheck(){       
     //     if (!zerolist.empty()){
-    //         if(receive_connection_difference == zerolist[0].first){
-    //             return true;
+    //         auto len_ = zerolist.size();
+    //         for (auto i = 0; i < len_; i++){
+    //             if (receive_connection_difference == zerolist[i].first)
+    //             {
+    //                 return true;
+    //             }
+                
     //         }
     //     }
        
@@ -2729,13 +2709,33 @@ public:
     // }
 
     // void rx_len(size_t expected){
-    //     recvCQ.rx_len(zerolist[0].first, expected);
+    //     recvCQ.rx_len(receive_connection_difference, expected);
     // }
 
     // void get_recv_target(uint8_t * target_){
     //     /*check top poiner is null or not*/
-    //     recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    //     recvCQ.set_recv_pointer(receive_connection_difference, target_);
     // }
+
+
+    bool zerocheck(){
+        if (!zerolist.empty()){
+            if(receive_connection_difference == zerolist[0].first){
+                return true;
+            }
+        }
+       
+        return false;
+    }
+
+    void rx_len(size_t expected){
+        recvCQ.rx_len(zerolist[0].first, expected);
+    }
+
+    void get_recv_target(uint8_t * target_){
+        /*check top poiner is null or not*/
+        recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    }
 
     void reset_rx_len(){
         rx_length = 0;
@@ -3204,6 +3204,7 @@ public:
                 receive_available_map[index] = 0;
                 // recvCQ.data_[pkt_difference].processdlen(48);
                 receive_record.reset();
+                receive_connection_difference_registration = receive_connection_difference;
                 return;
             }
         }
