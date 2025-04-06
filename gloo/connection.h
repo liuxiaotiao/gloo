@@ -2628,7 +2628,7 @@ public:
                 
             }
         }
-         
+        std::cout<<"process_acknowledge 1"<<std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
@@ -2655,6 +2655,7 @@ public:
                 _Exit(0);
             }
             while (pn >= sendpair.first && pn <= sendpair.second){
+                std::cout<<"process_acknowledge 3"<<std::endl;
                 if (pn <= end_pn && pn >= first_pn){
                     byte_index = (pn - first_pn) / 8;
                     bit_index = (pn - first_pn) % 8;
@@ -2669,10 +2670,11 @@ public:
                 }else{
                     break;
                 }
+                std::cout<<"process_acknowledge 4"<<std::endl;
             }
 
         }
-        
+        std::cout<<"process_acknowledge 2"<<std::endl;
         max_acknowleged = end_pn;
         
         if (loss && !first_loss){
