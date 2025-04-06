@@ -2521,7 +2521,7 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<std::endl;
+        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
 
         send_packet_type = ty;
         return sizeof(Header) + hdr->pkt_length;
