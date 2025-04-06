@@ -783,6 +783,7 @@ bool Pair::protocal2read(){
               std::cout<<(int)dmludp_connection->receive_connection_difference<<", "<<
               (int)dmludp_connection->receive_connection_difference_registration<<std::endl;
               stop = true;
+              dmludp_connection->send_packet_complete();
               break;
             }
             NonOwningPtr<UnboundBuffer> rbuf;
