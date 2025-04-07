@@ -171,7 +171,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     void handleEvents(int events){
       uint64_t expirations;
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
-
+      std::cout<<"timerfd 1"<<std::endl;
       if (timer_read == -1) {
         if (errno == EAGAIN) {
             printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
