@@ -148,7 +148,6 @@ private:
                                std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>>;
     using TimeStamp = std::chrono::high_resolution_clock::time_point;
     std::vector<DataType> buffer; 
-    std::vector<std::chrono::nanoseconds> rto_buffer;
     size_t head;                  
     size_t tail;                 
     size_t capacity;              
@@ -156,16 +155,15 @@ private:
 
 public:
     explicit TSCircularQueue(size_t capacity = 100)
-        : buffer(capacity), rto_buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
+        : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
 
     ~TSCircularQueue(){}
 
-    void enqueue(const DataType& value, const std::chrono::nanoseconds& rto_) {
+    void enqueue(const DataType& value) {
         if (isFull()) {
             throw std::overflow_error("TSCircularQueue is full(enqueue)");
         }
         buffer[tail] = value;
-        rto_buffer[tail] = rto_;
         tail = (tail + 1) % capacity;
         ++count;
     }
@@ -185,13 +183,6 @@ public:
             throw std::underflow_error("TSCircularQueue is empty(front)");
         }
         return buffer[head];
-    }
-
-    DataType front_rto() const {
-        if (isEmpty()) {
-            throw std::underflow_error("TSCircularQueue is empty(front)");
-        }
-        return rto_buffer[head];
     }
 
     bool isEmpty() const {
@@ -243,8 +234,8 @@ public:
         return result;
     }
 
-    void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2, std::chrono::nanoseconds rto_) {
-        enqueue({{key1, ts1}, {key2, ts2}}, rto_);
+    void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
+        enqueue({{key1, ts1}, {key2, ts2}});
     }
 
     void printQueue() const {
