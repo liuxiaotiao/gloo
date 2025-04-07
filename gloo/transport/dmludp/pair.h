@@ -171,7 +171,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
     void handleEvents(int events){
       uint64_t expirations;
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
-      std::cout<<"timerfd 1"<<std::endl;
       if (timer_read == -1) {
         if (errno == EAGAIN) {
             printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
@@ -181,7 +180,6 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         }
         return;
       }
-      std::cout<<"timerfd"<<std::endl;
 
       /*
       Mark timeout packet as loss packet, start to retransmission
@@ -189,6 +187,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       if(!outerPtr.tx_.empty()){
         outerPtr.dmludp_connection->process_timeout();
         outerPtr.device_->registerDescriptor(outerPtr.fd_, EPOLLIN | EPOLLOUT, &outerPtr);
+        std::cout<<"timerfd\n"<<std::endl;
       }
     }
   };
