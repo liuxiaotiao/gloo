@@ -2191,6 +2191,8 @@ public:
 
     Packet_num_len max_acknowleged = LIMIT_UINT64_T;
 
+    bool rtt_initial = true;
+
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     recv_count(0),
     is_server(server),
@@ -2268,13 +2270,20 @@ public:
     }
 
     void update_rtt(std::chrono::high_resolution_clock::time_point send_time, std::chrono::high_resolution_clock::time_point receive_time){
-        rtt = receive_time - send_time;
-        auto tmp_srtt = std::chrono::duration<double, std::nano>(srtt.count() * alpha + (1 - alpha) * rtt.count());
-        srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_srtt);
-        auto diff = srtt - rtt;
-        auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
-        rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
-        rto = srtt + 4 * rttvar;
+        if (rtt_initial){
+            srtt = srtt = receive_time - send_time;
+            rttvar = srtt / 2;
+            rto = srtt + 4 * rttvar;
+            rtt_initial = false;
+        }else{
+            rtt = receive_time - send_time;
+            auto tmp_srtt = std::chrono::duration<double, std::nano>(srtt.count() * alpha + (1 - alpha) * rtt.count());
+            srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_srtt);
+            auto diff = srtt - rtt;
+            auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
+            rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
+            rto = srtt + 4 * rttvar;
+        }    
         std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
     }
 
@@ -2632,7 +2641,6 @@ public:
                 
             }
         }
-        std::cout<<"process_acknowledge 1"<<std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
@@ -2678,7 +2686,6 @@ public:
             }
 
         }
-        std::cout<<"process_acknowledge 2"<<std::endl;
         max_acknowleged = end_pn;
         
         if (loss && !first_loss){
@@ -2882,6 +2889,10 @@ public:
             while (true){
                 // size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 size_t send_status = sendbufferqueue.get_status(i);
+                if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                    std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
+                    _Exit(0);
+                }
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
                 
                 if (out_len == -1) {
