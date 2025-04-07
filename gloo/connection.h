@@ -2271,7 +2271,7 @@ public:
 
     void update_rtt(std::chrono::high_resolution_clock::time_point send_time, std::chrono::high_resolution_clock::time_point receive_time){
         if (rtt_initial){
-            srtt = srtt = receive_time - send_time;
+            rtt = srtt = receive_time - send_time;
             rttvar = srtt / 2;
             rto = srtt + 4 * rttvar;
             rtt_initial = false;
