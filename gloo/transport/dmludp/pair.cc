@@ -940,6 +940,15 @@ bool Pair::protocal2send(){
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
+  struct itimerspec new_value;
+  memset(&new_value, 0, sizeof(new_value));
+  auto delay = dmludp_connection->get_rto();
+  new_value.it_value.tv_sec = delay.count() / 1000000000;
+  new_value.it_value.tv_nsec = delay.count() % 1000000000;  
+  new_value.it_interval.tv_sec = 0;  
+  new_value.it_interval.tv_nsec = 0;
+  device_->registerDescriptor(timer_fd, EPOLLOUT | EPOLLIN, &(this->innertimer));
+
 
   // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
 
