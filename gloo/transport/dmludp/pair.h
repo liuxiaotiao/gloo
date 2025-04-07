@@ -186,8 +186,10 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       /*
       Mark timeout packet as loss packet, start to retransmission
       */
-      outerPtr.dmludp_connection->process_timeout();
-      outerPtr.device_->registerDescriptor(outerPtr.fd_, EPOLLIN | EPOLLOUT, &outerPtr);
+      if(!outerPtr.tx_.empty()){
+        outerPtr.dmludp_connection->process_timeout();
+        outerPtr.device_->registerDescriptor(outerPtr.fd_, EPOLLIN | EPOLLOUT, &outerPtr);
+      }
     }
   };
   friend class dmludptimer;
