@@ -2577,7 +2577,7 @@ public:
        
         auto receivets = std::chrono::high_resolution_clock::now();
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
-        update_rtt(receivets, ackts);
+        update_rtt(ackts, receivets);
 
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
         auto end_pn = pkt_num;
