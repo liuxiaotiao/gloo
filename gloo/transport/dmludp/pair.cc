@@ -947,6 +947,12 @@ bool Pair::protocal2send(){
   new_value.it_value.tv_nsec = delay.count() % 1000000000;  
   new_value.it_interval.tv_sec = 0;  
   new_value.it_interval.tv_nsec = 0;
+
+  if (timerfd_settime(timer_fd, 0, &new_value, NULL) == -1) {
+    perror("timerfd_settime");
+    return 1;
+  }
+
   device_->registerDescriptor(timer_fd, EPOLLOUT | EPOLLIN, &(this->innertimer));
 
 
