@@ -2926,6 +2926,7 @@ public:
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             int d_sent = 0;
+            std::cout<<"prepareData:"<<i<<std::endl;
             while (true){
                 // size_t send_status = sendbufferqueue.data_[i].metabuf.get_status();
                 size_t send_status = sendbufferqueue.get_status(i);
@@ -2960,7 +2961,7 @@ public:
                 }
                 d_sent++;
             }
-            // std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<std::endl;
+            std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<", "<<sent_limit<<std::endl;
             if (sent >= sent_limit){
                 break;
             }
