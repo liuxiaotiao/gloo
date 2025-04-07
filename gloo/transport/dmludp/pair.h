@@ -161,7 +161,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
   void close() override;
 
   int timer_fd;
-  
+
   class dmludptimer: public Handler{
     public:
     Pair& outerPtr;
@@ -181,6 +181,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
         }
         return;
       }
+      std::cout<<"timerfd"<<std::endl;
 
       /*
       Mark timeout packet as loss packet, start to retransmission
