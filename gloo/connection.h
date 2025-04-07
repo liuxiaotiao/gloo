@@ -2915,13 +2915,19 @@ public:
         size_t i = 0;
         ssize_t tramssioning_index = -1;
 
-        ssize_t cwnd_limit = (recovery.cwnd_available() + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
+        // ssize_t cwnd_limit = (recovery.cwnd_available() + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
+        // if (cwnd_limit <= 0){
+        //     return 0;
+        // }
+        size_t cwnd_limit = recovery.cwnd_available();
         if (cwnd_limit <= 0){
             return 0;
         }
 
-        size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
-        ssize_t sent = 0;       
+        const size_t sent_limit = cwnd_limit;
+        // size_t sent_limit = std::min(send_message.size(), (size_t)cwnd_limit);
+        size_t sent = 0;      
+        size_t sent_cwnd = 0; 
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
@@ -2954,15 +2960,16 @@ public:
                     sendbufferqueue.add_retransmission(i, pn, out_off);
                 }
                 sent++;
-                if (sent >= sent_limit){
+                sent_cwnd += out_len;
+                d_sent++;
+                if (sent_cwnd >= sent_limit){
                     // std::cout<<"last pn:"<<pn<<", send_status:" <<send_status<<std::endl;
                     /*TODO add pakcet number-offset mapping*/
                     break;
-                }
-                d_sent++;
+                }           
             }
             std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<", "<<sent_limit<<std::endl;
-            if (sent >= sent_limit){
+            if (sent_cwnd >= sent_limit){
                 break;
             }
         }
