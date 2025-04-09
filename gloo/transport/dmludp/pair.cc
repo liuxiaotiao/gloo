@@ -955,9 +955,6 @@ bool Pair::protocal2send(){
 
   device_->registerDescriptor(timer_fd, EPOLLOUT | EPOLLIN, &(this->innertimer));
 
-
-  // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-
   return true;
 }
 

@@ -237,13 +237,10 @@ namespace dmludp{
         // CircularQueue rcq;
         SendBufferCircularQueue rcq;
 
-        // boost::dynamic_bitset<> bits_set;
-
         DynamicBitset bits_set;
 
         MetaFlag meta_status = MetaFlag::Initial;
         
-        // std::vector<uint32_t> retransmision_offset;
 
         size_t send_buffer_size;
 
@@ -251,7 +248,6 @@ namespace dmludp{
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
-        // retransmision_offset(10000, 0)
         {
             meta_len2.resize(2);
         };
@@ -279,7 +275,6 @@ namespace dmludp{
             meta_len = 0;
          
             for (auto i = 0; i < iovecs_len; i++){
-                // meta_element.push_back(std::make_pair(reinterpret_cast<uint8_t*>(iovecs[i].iov_base), iovecs[i].iov_len));
                 meta_left += iovecs[i].iov_len;
                 meta_sent += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
@@ -294,9 +289,6 @@ namespace dmludp{
             }
             
             meta_pos = 0;
-            // bits_set.resize(meta_len);
-            // bits_set.reset();
-            // std::cout<< "add_Meta: meta_sent:" << meta_sent << ", meta_len:" << meta_len << std::endl;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
             }
@@ -392,9 +384,6 @@ namespace dmludp{
         void clear(){
             meta_pos = -1;
             meta_sent = 0;
-            // for (auto i = 0; i < retransmision_offset.size(); i++){
-            //     retransmision_offset[i] = 0;
-            // }
             meta_len = 0;
             meta_left = 0;
             for(auto &e :meta_len2){

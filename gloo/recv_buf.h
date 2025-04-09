@@ -40,11 +40,8 @@ namespace dmludp{
             }
             else{
                 size_t startPos = out_off;
-                // size_t endPos = out_off + out_len;
                 memcpy(data.data() + startPos, out, out_len * sizeof(uint8_t));
             }
-            // len += out_len;
-    	    // std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
 	        if (len > data.size()){
 				std::cout<<"[Debug] receive buffer len:"<<len<<" vector.size():"<<data.size()<<std::endl;
                 _Exit(0);

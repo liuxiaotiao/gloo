@@ -11,9 +11,9 @@ using Type_len = uint8_t;
 
 using Packet_num_len = uint64_t;
 
-using Offset_len = uint32_t;
+using Offset_len = uint64_t;
 
-using Difference_len = uint8_t;
+using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
@@ -59,15 +59,8 @@ using Packet_len = uint16_t;
         // Current packet offset in data flow.
         Offset_len offset;
 
-        // To differentiate data flow.
-        // Remove in the future, sender send application packet with stp flag to finish transmission.
-        /* difference start from 1*/
+        /* difference start from 0*/
         Difference_len difference;
-
-        /* Reserved */
-        /*
-        Difference_len maxdifference;
-        */
 
         // The data length of the application packet
         Packet_len pkt_length;
@@ -149,15 +142,15 @@ using Packet_len = uint16_t;
             return ty;
         }
 
-        void set_pkt_num(uint64_t pn_){
+        void set_pkt_num(Packet_num_len pn_){
             pkt_num = pn_;
         }
 
-        uint64_t get_pkt_num(){
+        Packet_num_len get_pkt_num(){
             return pkt_num;
         }
 
-        void set_offset(uint32_t offset_){
+        void set_offset(Offset_len offset_){
             offset = offset_;
         }
 
@@ -165,7 +158,7 @@ using Packet_len = uint16_t;
             return offset;
         } 
 
-        void set_difference(uint8_t difference_){
+        void set_difference(Difference_len difference_){
             difference = difference_;
         }
 
@@ -173,7 +166,7 @@ using Packet_len = uint16_t;
             return difference;
         }
 
-        void set_pkt_length(uint16_t length_){
+        void set_pkt_length(Packet_len length_){
             pkt_length = length_;
         }
 
@@ -193,13 +186,13 @@ using Packet_len = uint16_t;
     class PktNumSpace{
         public:
 
-        uint64_t next_pkt_num;
+        Packet_num_len next_pkt_num;
 
         PktNumSpace():next_pkt_num(0){};
 
         ~PktNumSpace(){};
 
-        uint64_t updatepktnum(){
+        Packet_num_len updatepktnum(){
             next_pkt_num += 1;
             return (next_pkt_num - 1);
         };
@@ -208,14 +201,11 @@ using Packet_len = uint16_t;
             next_pkt_num = 0;
         };
 
-        uint64_t getpktnum(){
-            // if (next_pkt_num == 0){
-            //     return next_pkt_num;
-            // }
+        Packet_num_len getpktnum(){
             return (next_pkt_num - 1);
         }
 
-        uint64_t expectpktnum(){
+        Packet_num_len expectpktnum(){
             return next_pkt_num;
         }
     };
