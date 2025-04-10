@@ -2268,6 +2268,7 @@ public:
                     _Exit(0);
                 }
                 auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
+                /*auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);*/
                 
                 if (out_len == -1) {
                     break;
@@ -2352,7 +2353,7 @@ public:
     }
 
     /*Use to clear send parameter*/
-    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::system_clock::time_point& start_ts = std::chrono::system_clock::time_point{}){
+    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::steady_clock::time_point& start_ts = std::chrono::steady_clock::time_point{}){
         if(send_packet_type == 0){
             return;
         }

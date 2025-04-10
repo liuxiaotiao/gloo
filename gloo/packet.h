@@ -108,10 +108,10 @@ using Packet_len = uint16_t;
             put_u64(out, pkt_num, off); // packet number
 
             off += sizeof(Packet_len);
-            put_u32(out, offset, off); // packet offset
+            put_u64(out, offset, off); // packet offset
             
             off += sizeof(Offset_len);
-            put_u8(out, difference, off); // flow difference
+            put_u32(out, difference, off); // flow difference
 
             off += sizeof(Difference_len);
             put_u16(out, pkt_length, off); // packet length
@@ -123,7 +123,7 @@ using Packet_len = uint16_t;
         };
 
         void put_u32(std::vector<uint8_t> &vec, uint32_t &input, size_t position){
-            memcpy(vec.data() + position, &input, sizeof(uint16_t));
+            memcpy(vec.data() + position, &input, sizeof(uint32_t));
         }
 
         void put_u16(std::vector<uint8_t> &vec, uint16_t &input, size_t position){

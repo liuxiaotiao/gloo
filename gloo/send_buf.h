@@ -240,7 +240,6 @@ namespace dmludp{
         DynamicBitset bits_set;
 
         MetaFlag meta_status = MetaFlag::Initial;
-        
 
         size_t send_buffer_size;
 
@@ -323,7 +322,7 @@ namespace dmludp{
         }
 
 
-        void acknowledege_and_drop(uint32_t in_offset, bool is_drop){
+        void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
             if (is_drop){
                 /*bits_set.set(buffer_offset_convertor(in_offset));*/
                 auto index = 0;
@@ -351,7 +350,7 @@ namespace dmludp{
         }
 
 
-        bool emit(struct iovec& out, ssize_t& out_len, uint32_t& out_off){
+        bool emit(struct iovec& out, ssize_t& out_len, uint64_t& out_off){
             bool stop = false;
             
             out_len = 0;
