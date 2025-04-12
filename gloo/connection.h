@@ -2349,14 +2349,14 @@ public:
                 sent++;
                 sent_cwnd += out_len;
                 d_sent++;
-                if (sent_cwnd >= sent_limit){
+                if (sent_cwnd >= sent_limit || sent >= send_message.size()){
                     // std::cout<<"last pn:"<<pn<<", send_status:" <<send_status<<std::endl;
                     /*TODO add pakcet number-offset mapping*/
                     break;
                 }           
             }
             std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<", "<<sent_limit<<std::endl;
-            if (sent_cwnd >= sent_limit){
+            if (sent_cwnd >= sent_limit || sent >= send_message.size()){
                 break;
             }
         }
