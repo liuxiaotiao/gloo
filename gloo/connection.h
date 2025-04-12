@@ -1476,21 +1476,21 @@ public:
             front_index = target;
             data[front_index] = { difference_, payload_index };
             back_index = front_index + 1;
-            return;
-        }
-
-        auto front_difference = front().first;;
-        auto back_difference = back().first;;
-        
-        if (difference_ < front_difference){
-            front_index = target;
-            data[front_index] = { difference_, payload_index };
-        }else if(difference_ > back_difference){
-            back_index = target;
-            data[back_index] = { difference_, payload_index };
-            back_index = mod_add(back_index, 1);
         }else{
-            data[target] = { difference_, payload_index };
+            auto front_difference = front().first;;
+            auto back_difference = back().first;;
+            
+            /*Use is_newer to compare difference*/
+            if (difference_ < front_difference){
+                front_index = target;
+                data[front_index] = { difference_, payload_index };
+            }else if(difference_ > back_difference){
+                back_index = target;
+                data[back_index] = { difference_, payload_index };
+                back_index = mod_add(back_index, 1);
+            }else{
+                data[target] = { difference_, payload_index };
+            }
         }
 
         ++count;
