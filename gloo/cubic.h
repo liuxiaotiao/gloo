@@ -273,7 +273,7 @@ class Recovery{
             }
 
             auto cubic_cwnd = congestion_window;
-            auto t = std::chrono::high_resolution_clock::now();
+            auto t = std::chrono::steady_clock::now();
             if (w_cubic(t) < W_est) {
                 // AIMD friendly region (W_cubic(t) < W_est)
                 cubic_cwnd = std::max(cubic_cwnd, W_est);
