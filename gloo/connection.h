@@ -149,9 +149,9 @@ class RCMessage : public Message {
 class TSCircularQueue{
 private:
     /*first packet number + timestamp, last packet number + timestamp*/
-    using DataType = std::pair<std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>,
-                               std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>>;
-    using TimeStamp = std::chrono::high_resolution_clock::time_point;
+    using DataType = std::pair<std::pair<uint64_t, std::chrono::steady_clock::time_point>,
+                               std::pair<uint64_t, std::chrono::steady_clock::time_point>>;
+    using TimeStamp = std::chrono::steady_clock::time_point;
     std::vector<DataType> buffer; 
     size_t head;                  
     size_t tail;                 
@@ -1604,7 +1604,7 @@ public:
 
     std::chrono::nanoseconds rttvar;
     
-    std::chrono::high_resolution_clock::time_point handshake;
+    std::chrono::steady_clock::time_point handshake;
 
     RecvBuf rec_buffer;
 
@@ -1656,11 +1656,9 @@ public:
     ts_record is used to calculate approximate send ts for each packet.
     Approximate ts ~= (2nd ts - 1st ts)/(2nd pkt - 1st pkt + 1)
     */ 
-    std::pair<std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>, std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>> ts_record;
+    std::chrono::steady_clock::time_point start_ts;
 
-    std::chrono::high_resolution_clock::time_point start_ts;
-
-    std::chrono::high_resolution_clock::time_point end_ts;
+    std::chrono::steady_clock::time_point end_ts;
     
     size_t normal_initial = 0;
 
@@ -1732,7 +1730,7 @@ public:
     minrtt(0),
     rto(0),
     rttvar(0),
-    handshake(std::chrono::high_resolution_clock::now()),
+    handshake(std::chrono::steady_clock::now()),
     bidirect(true),
     initial(false),
     current_buffer_pos(0),
@@ -1781,7 +1779,7 @@ public:
 
 
     void initial_rtt() {
-        auto arrive_time = std::chrono::high_resolution_clock::now();
+        auto arrive_time = std::chrono::steady_clock::now();
         srtt = arrive_time - handshake;
         rttvar = srtt / 2;
         rto = srtt + 4 * rttvar;
@@ -1801,7 +1799,7 @@ public:
         SRTT <- (1 - alpha) * SRTT + alpha * R'
         RTO <- SRTT + max (G, K*RTTVAR)
     */
-    void update_rtt(std::chrono::high_resolution_clock::time_point send_time, std::chrono::high_resolution_clock::time_point receive_time){
+    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time){
         if (rtt_initial){
             minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
@@ -1845,7 +1843,7 @@ public:
     bool on_timeout(){
         bool timeout_;
         std::chrono::nanoseconds duration((uint64_t)(get_rtt()));
-        std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
         if (handshake + duration < now){
             timeout_ = true;
@@ -2062,7 +2060,7 @@ public:
         auto pkt_difference = receive_message[index_].get_packet_difference();
         receive_available_map[index_] = 0;
 
-        auto receivets = std::chrono::high_resolution_clock::now();
+        auto receivets = std::chrono::steady_clock::now();
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
         update_rtt(ackts, receivets);
 
@@ -2231,7 +2229,7 @@ public:
     }
 
     void set_send_time(){
-        handshake = std::chrono::high_resolution_clock::now();
+        handshake = std::chrono::steady_clock::now();
     }
     
 
@@ -2296,7 +2294,7 @@ public:
         }
         auto total_send = max_sent_pn - max_acknowleged;
 
-        auto receivets = std::chrono::high_resolution_clock::now();
+        auto receivets = std::chrono::steady_clock::now();
 
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
@@ -2422,7 +2420,7 @@ public:
         set_error2(err_);
         if (err_ != 0){
             if (send_packet_type == Type::Application){
-                end_ts = std::chrono::high_resolution_clock::now();
+                end_ts = std::chrono::steady_clock::now();
                 if (start_index < 0){
                     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
                     _Exit(0);
@@ -2787,7 +2785,7 @@ public:
     };
 
     void set_handshake(){
-        handshake = std::chrono::high_resolution_clock::now();
+        handshake = std::chrono::steady_clock::now();
         end_ts = handshake;
     };
 

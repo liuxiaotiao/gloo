@@ -17,7 +17,9 @@ using Priority_len = uint8_t;
 
 using Offset_len = uint64_t;
 
-using Packet_len = uint64_t;
+using Packet_len = uint16_t;
+
+using Difference_len = uint32_t;
 
 enum dmludp_error {
     // There is no more work to do.
@@ -159,10 +161,10 @@ inline ssize_t dmludp_conn_recv(std::shared_ptr<Connection> conn, uint8_t* buf, 
     size_t received = conn->recv_slice(buf, out_len);
     
     if (received == 0){
-        uint64_t pkt_num;
-        uint32_t pkt_offset;
-        uint8_t pkt_difference;
-        uint16_t pkt_len;
+        Packet_num_len pkt_num;
+        Offset_len pkt_offset;
+        Difference_len pkt_difference;
+        Packet_len pkt_len;
         auto ty = conn->header_info(buf, out_len, pkt_num, pkt_offset, pkt_difference, pkt_len);
         if (ty == Type::Stop){
             return dmludp_error::DMLUDP_ERR_STOP;
