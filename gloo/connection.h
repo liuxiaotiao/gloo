@@ -15,6 +15,8 @@
 #include <cmath>
 #include <typeinfo>
 #include <dlfcn.h>
+#include <cassert>
+
 
 
 namespace dmludp {
@@ -62,6 +64,14 @@ using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
+/*a is latter received, b is former received*/
+template <typename T>
+typename std::enable_if<std::is_unsigned<T>::value, bool>::type
+is_newer(T a, T b) {
+    using SignedT = typename std::make_signed<T>::type;
+    return static_cast<SignedT>(a - b) > 0;
+}
+
 class Message{
     public:
         struct msghdr message_body;
@@ -79,7 +89,7 @@ class Message{
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-        }
+        } 
 
         ~Message(){};
 
@@ -138,6 +148,7 @@ class RCMessage : public Message {
 /*Send timestamp queue*/
 class TSCircularQueue{
 private:
+    /*first packet number + timestamp, last packet number + timestamp*/
     using DataType = std::pair<std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>,
                                std::pair<uint64_t, std::chrono::high_resolution_clock::time_point>>;
     using TimeStamp = std::chrono::high_resolution_clock::time_point;
@@ -244,20 +255,16 @@ public:
 
 /*Check usage*/
 class RCset{
-    public:
+    private:
         DynamicBitset RCset_body;
 
         size_t payload_len = MAX_SEND_UDP_PAYLOAD_SIZE;
-
-        size_t dataload_index = 0;
-
-        bool used_flag = false;
-
+    public:
         RCset(size_t capacity_ = 330000): 
         RCset_body(capacity_){
         }
 
-        bool find(uint64_t offset_){
+        bool find(Offset_len offset_){
             auto index = get_index(offset_);
             if (index >= RCset_body.size()){
                 std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
@@ -266,7 +273,7 @@ class RCset{
             return RCset_body[index] == 1;
         }
 
-        void insert(uint64_t offset_){
+        void insert(Offset_len offset_){
             auto index = get_index(offset_);
             if (index >= RCset_body.size()){
                 throw std::underflow_error("[RCset]: insert index beyond capacity_");
@@ -274,8 +281,8 @@ class RCset{
             RCset_body[index] = 1;
         }
 
-        uint64_t get_index(uint64_t offset_){
-            ssize_t index = -1;
+        size_t get_index(Offset_len offset_){
+            size_t index;
             if (offset_ < 48){
                 index = 0;
             }else{
@@ -284,7 +291,7 @@ class RCset{
             return index;
         }
 
-        uint64_t round_up(uint64_t a, uint64_t b){
+        size_t round_up(Offset_len a, Offset_len b){
             if (b == 0) {
                 throw std::invalid_argument("Division by zero is not allowed");
             }
@@ -295,8 +302,6 @@ class RCset{
 
         void clear(){
             RCset_body.clear();
-            dataload_index = 0;
-            used_flag = true;
         }
 
         ~RCset(){}
@@ -333,9 +338,7 @@ class ReTransmissionMap{
             if(start_packet == LIMIT_UINT64_T){
                 start_packet = packetnum;
             }
-            // if (start_packet == std::numeric_limits<size_t>::max()){
-            //     throw std::underflow_error("Error: start_packet is -1");
-            // }
+
             if (end_packet == LIMIT_UINT64_T){
                 end_packet = packetnum;
             }else{
@@ -393,12 +396,10 @@ class TransmissionMap{
             if(startmap.first == LIMIT_UINT64_T){
                 startmap = std::make_pair(packetnum, packetoffset);
             }
-            // if(startmap.first == std::numeric_limits<size_t>::max()){
-            //     throw std::underflow_error("Error: startmap.first is -1");
-            // }
+   
             if ((endmap.first + 1) == packetnum || endmap.first == LIMIT_UINT64_T){
                 if((endmap.first + 1) == packetnum){
-                    if(endmap.second + 1440 != packetoffset && endmap.second != 0){
+                    if(endmap.second + MAX_SEND_UDP_PAYLOAD_SIZE != packetoffset && endmap.second != 0){
                         std::cout<<"[Error] endmap.second:"<<endmap.second<<", "<<packetoffset<<std::endl;
                        _Exit(0);
                     }
@@ -634,7 +635,7 @@ class MetaInfo{
     public:
         SendBuf metabuf;
 
-        const uint32_t MetaDifference;
+        const Difference_len MetaDifference;
 
         MapSet<ReTransmissionMap> retransmission_map;
 
@@ -671,11 +672,11 @@ class MetaInfo{
             transmission_map.removeBeforeValue(packet_);
         }
 
-        bool no_overlap(const std::pair<uint64_t, uint64_t>& p1, const std::pair<uint64_t, uint64_t>& p2) {
+        bool no_overlap(const std::pair<Packet_num_len, Packet_num_len>& p1, const std::pair<Packet_num_len, Packet_num_len>& p2) {
             return p1.second < p2.first || p2.second < p1.first;
         }
 
-        std::pair<uint64_t, uint64_t> get_packet_range(Packet_num_len packet_){
+        std::pair<Packet_num_len, Packet_num_len> get_packet_range(Packet_num_len packet_){
             /*Make sure not old map exists*/
             removeoldmap(packet_);
             auto transmission_front = transmission_map.get_range();
@@ -695,14 +696,14 @@ class MetaInfo{
             }
         }
 
-        size_t offset_calculate(uint64_t PacketNum) {
+        size_t offset_calculate(Packet_num_len PacketNum) {
             auto result = transmission_map.get_offset(PacketNum);
-            if (result != LIMIT_UINT32_T){
+            if (result != LIMIT_UINT64_T){
                 // std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
                 return result;
             }
             result = retransmission_map.get_offset(PacketNum);
-            if (result != LIMIT_UINT32_T){
+            if (result != LIMIT_UINT64_T){
                 return result;
             }
             throw std::underflow_error("Error: packet doesn't belong to this block.");
@@ -720,17 +721,17 @@ class MetaInfo{
             }
         }
 
-        uint8_t get_difference(){
+        Difference_len get_difference(){
             return MetaDifference;
         }
 
-        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Offset_len difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
-            if (difference_flag != std::numeric_limits<uint16_t>::max()){
+        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+            if (difference_flag != LIMIT_UINT64_T){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
                 _Exit(0);
             }
             difference_flag = difference_;
-            if (difference_flag != MetaDifference){
+            if ((difference_flag % 16) != MetaDifference){
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
@@ -801,7 +802,7 @@ class SCircularQueue {
                 _Exit(0);
             }
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
-            lastest_difference = (lastest_difference + 1) % get_capacity();
+            lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
             count_++;
         }
@@ -874,28 +875,46 @@ class SCircularQueue {
             return capacity_;
         }
 
+        Difference_len get_difference(size_t index_){
+            return data_[index_].get_difference();
+        }
+
         std::pair<Packet_num_len, Packet_num_len> get_packet_range(Difference_len difference_, Packet_num_len pn_){
-            return data_[difference_].get_packet_range(pn_);
+            auto index = difference_ % get_capacity();
+            return data_[index].get_packet_range(pn_);
         }
 
         void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
-            data_[difference_].ack4offset(pn_, value_);
+            auto index = difference_ % get_capacity();
+            data_[index].ack4offset(pn_, value_);
         }
 
         void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-            data_[difference_].add_transmission(pn_, off_);
+            auto index = difference_ % get_capacity();
+            data_[index].add_transmission(pn_, off_);
         }
 
         void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-            data_[difference_].add_retransmission(pn_, off_);
+            auto index = difference_ % get_capacity();
+            data_[index].add_retransmission(pn_, off_);
         }
 
         size_t get_status(Difference_len difference_){
-            return data_[difference_].metabuf.get_status();
+            auto index = difference_ % get_capacity();           
+            return data_[index].metabuf.get_status();
+        }
+
+        bool emit(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_){
+            return data_[index_].metabuf.emit(src_, len_, off_);
         }
 
         bool iscomplete(Difference_len difference_){
-            return data_[difference_].iscomplete();
+            auto index_ = difference_ % get_capacity();
+            if (index_ >= get_capacity()){
+                std::cerr << "bool iscomplete(Difference_len difference_) index out of boundary" << std::endl;
+                _Exit(0);
+            }
+            return data_[index_].iscomplete();
         }
 
         bool inrangecheck(uint8_t index){
@@ -909,12 +928,12 @@ class SCircularQueue {
         }
 
         bool iscomplete_check(Difference_len difference_){
-            if (!inrangecheck(difference_)){
+            auto index_ = difference_ % get_capacity();
+            if (!inrangecheck(index_)){
                 std::cerr << "difference_("<<(int)difference_<<") not in range("<< head_ << ", " << tail_ <<")" << std::endl;
                 _Exit(0);
             }
-            auto index = difference_ % get_capacity();
-            return data_[index].iscomplete();
+            return data_[index_].iscomplete();
         }
 
         size_t compareIndices(int i, int j) const {
@@ -1027,7 +1046,7 @@ class metarecebuf{
 
         bool complete_flag = false;
 
-        uint64_t rdifference;
+        Difference_len rdifference;
 
         size_t received = 0;
 
@@ -1037,9 +1056,11 @@ class metarecebuf{
 
         bool has_zero = false;
 
+        bool used = false;
+
         size_t srcset = 0;
 
-        metarecebuf(uint8_t difference_ = 0): rdifference(difference_){
+        metarecebuf(Difference_len difference_ = 0): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1058,9 +1079,15 @@ class metarecebuf{
             srcset = 0;
             processd = 0;
             expected = 0;
+            used = false;
             for (auto &e:source_len){
                 e = 0;
             }
+        }
+
+        void set_difference(Difference_len difference_){
+            used = true;
+            rdifference = difference_;
         }
 
         void addexplen(size_t exp_){
@@ -1154,6 +1181,10 @@ class metarecebuf{
         bool copyed_check(Offset_len offset_){
             return receive_offset_processed.find(offset_);
         }
+
+        Difference_len get_difference(){
+            return rdifference;
+        }
 };  
 
 class RCircularQueue {
@@ -1177,11 +1208,12 @@ public:
         return capacity_;
     }
 
-    bool push_back() {
+    bool push_back(Difference_len difference_) {
         if (count_ == capacity_){
             return false;
         }
         data_[tail_].clear();
+        data_[tail_].set_difference(difference_);
 
         tail_ = (tail_ + 1) % capacity_;
 
@@ -1222,88 +1254,115 @@ public:
         return tail_;
     }
 
-    size_t start() const {
-        return head_;
+    Difference_len start(){
+        return data_[head_].get_difference();
     }
 
     void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length) {
-        /*fix*/
-        // if (difference >= capacity_) {
-        //     throw std::out_of_range("insert: difference index out of range");
-        // }
         auto index = difference % capacity_;
-        data_[difference].find(pkt_offset, pkt_length);
+        inrangecheck(index);
+        data_[index].find(pkt_offset, pkt_length);
     }
 
-    bool iscomplete(Difference_len difference) const {
-        // if (difference >= capacity_) {
-        //     throw std::out_of_range("iscomplete: difference index out of range");
-        // }
+    bool iscomplete(Difference_len difference) {
         auto index = difference % capacity_;
+        inrangecheck(index);
         return data_[index].is_complete();
     }
 
     void set_recv_pointer(Difference_len difference, uint8_t* src) {
-        // if (difference >= capacity_) {
-        //     throw std::out_of_range("set_recv_pointer: difference index out of range");
-        // }
         auto index = difference % capacity_;
-        data_[difference].set_src(src);
+        inrangecheck(index);
+        data_[index].set_src(src);
     }
 
     void rx_len(Difference_len difference, size_t expected) {
-        // if (difference >= capacity_) {
-        //     throw std::out_of_range("rx_len: difference index out of range");
-        // }
         auto index = difference % capacity_;
+        inrangecheck(index);
         data_[index].addexplen(expected);
     }
 
 
-    bool isreceived(Difference_len difference, size_t expected) const {
-        // if (difference >= capacity_) {
-        //     throw std::out_of_range("isreceived: difference index out of range");
-        // }
+    bool isreceived(Difference_len difference, size_t expected){
         auto index = difference % capacity_;
+        inrangecheck(index);
         return data_[index].is_complete();
     }
 
-    // 检查给定下标 index 是否在当前有效数据区间内。
-    // 如果不在区间内，则通过多次调用 push_back() 推进 tail_，
-    // 直至 index 成为有效数据的一部分。
-    void indexcheck(uint8_t index) {
-        // 如果队列为空，必须先调用一次 push_back() 添加一个元素，
-        // 这样才能让有效区间不再为空，从而将 index 纳入有效区间
+    /* 
+    Check whether the given index is within the current valid data range.
+    If it is not within the range, advance tail_ by repeatedly calling push_back()
+    until the index becomes part of the valid data.
+    */ 
+    void indexcheck(Difference_len difference_) {
+        /*
+        If the queue is empty, push_back() must be called once to add an element first.
+        This ensures the valid range is no longer empty, allowing the index to be included in it.
+        */
+        auto index = difference_ % get_capacity();
         if (empty()) {
             size_t desiredTail = (index + 1) % capacity_;
-            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
+            /*
+            Calculate the number of times push_back() needs to be called 
+            (i.e., the number of steps to advance from the current tail_ to desiredTail)
+            */ 
             size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
             for (size_t i = 0; i < pushes; ++i) {
-                push_back();
+                push_back(difference_);
             }
             return;
         }
         
         bool inRange = false;
         if (head_ < tail_) {
-            // 无环绕情况：有效区间为 [head_, tail_)
+            // Non-wrapping case: the valid range is [head_, tail_)
             inRange = (index >= head_ && index < tail_);
         } else {
-            // 环绕情况：有效区间为 [head_, capacity_) ∪ [0, tail_)
+            // Wrapping case: the valid range is [head_, capacity_) ∪ [0, tail_)
             inRange = (index >= head_ || index < tail_);
         }
         
         if (!inRange) {
-            // 计算期望的 tail_ 值：为了让 index 成为有效数据的一部分，应使 tail_ = (index + 1) % capacity_
+            /*
+            Compute the desired value of tail_: to include index in the valid data range,
+            tail_ should be set to (index + 1) % capacity_
+            */   
             size_t desiredTail = (index + 1) % capacity_;
-            // 计算需要调用 push_back() 的次数（即从当前 tail_ 推进到 desiredTail 的步数）
-            size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
+            /*
+            Calculate the number of times push_back() needs to be called 
+            (i.e., the number of steps to advance from the current tail_ to desiredTail)
+            */
+            int pushes = (desiredTail + capacity_ - tail_) % capacity_;
+
+            /**/
+            auto advance_relative = [](auto value, auto relative_step) {
+                using T = decltype(value);
+                using SignedT = std::make_signed_t<T>;
+                static_assert(std::is_integral<T>::value, "T must be an integer type"); // 编译期类型限制
+                assert(relative_step <= std::numeric_limits<SignedT>::max());          // 调试期值范围限制
+
+                if constexpr (std::is_unsigned<T>::value) {
+                    return static_cast<T>(static_cast<SignedT>(value) + relative_step);
+                } else {
+                    return value + relative_step;
+                }
+            };
+
+            Difference_len start = advance_relative(difference_, -(pushes-1));
+
             for (size_t i = 0; i < pushes; ++i) {
-                push_back();
+                push_back(start + i);
+                if (i == (pushes - 1)){
+                    if (start + i != difference_){
+                        std::cerr << "[indexcheck] start:" << start << ", pushes:" << pushes << ", difference_:" << difference_ << std::endl;
+                        _Exit(0);
+                    }
+                }
             }
         }
     }
 
+    /*Check data block has been registerred in queue*/
     bool inrangecheck(uint8_t index) {
         bool inRange = false;
         if (head_ < tail_) {
@@ -1334,8 +1393,8 @@ public:
 
     /*Copy data*/
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
-        inrangecheck(difference_);
         auto index = difference_ % capacity_;
+        inrangecheck(index);
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
         data_[index].record_copy(offset_);
@@ -1348,32 +1407,32 @@ public:
 
     /*Check difference_ block is received*/
     void processCheck(Difference_len difference_){
-        inrangecheck(difference_);
         auto index = difference_ % capacity_;
+        inrangecheck(index);
         data_[index].processCheck();
     }
 
     /*Check data pointer is available*/
     bool targetCheck(Difference_len difference_){
-        inrangecheck(difference_);
         auto index = difference_ % capacity_;
+        inrangecheck(index);
         return data_[index].targetCheck();
     }
 
     /*Check OP is available*/
     bool srcsetcheck(Difference_len difference_){
-        inrangecheck(difference_);
         auto index = difference_ % capacity_;
+        inrangecheck(index);
         return data_[index].srcsetCheck();
     }
 
     ~RCircularQueue() = default;
 };
 
-/*4.9 fix difference and index conversion*/
+/*4.9 fix difference and index conversion solved*/
 class zeroQueue {
 public:
-    using PairType = std::pair<uint64_t, uint16_t>;
+    using PairType = std::pair<Difference_len, uint16_t>;
 
 private:
     std::vector<PairType> data;
@@ -1402,26 +1461,36 @@ public:
     {
         data.resize(capacity);
         for (auto i = 0; i < data.size(); i++){
-            data[i] = std::make_pair(LIMIT_UINT64_T, LIMIT_UINT16_T);
+            data[i] = std::make_pair(LIMIT_UINT32_T, LIMIT_UINT16_T);
         }
     }
 
-    void push_back(uint8_t idx, uint16_t payload) {
+    void push_back(Difference_len difference_, uint16_t payload_index) {
         if (count == capacity) {
             resize();
         }
 
-        int target = idx % capacity;
-        int dist_back = (target - back_index + capacity) % capacity;
-        int dist_front = (front_index - target + capacity) % capacity;
+        auto target = difference_ % capacity;
 
-        if (dist_back <= dist_front) {
+        if (empty()){
+            front_index = target;
+            data[front_index] = { difference_, payload_index };
+            back_index = front_index + 1;
+            return;
+        }
+
+        auto front_difference = front().first;;
+        auto back_difference = back().first;;
+        
+        if (difference_ < front_difference){
+            front_index = target;
+            data[front_index] = { difference_, payload_index };
+        }else if(difference_ > back_difference){
             back_index = target;
-            data[back_index] = { idx, payload };
+            data[back_index] = { difference_, payload_index };
             back_index = mod_add(back_index, 1);
-        } else {
-            front_index = mod_sub(front_index, dist_front);
-            data[front_index] = { idx, payload };
+        }else{
+            data[target] = { difference_, payload_index };
         }
 
         ++count;
@@ -1429,6 +1498,7 @@ public:
 
     void pop_front() {
         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
+        data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
         front_index = mod_add(front_index, 1);
         --count;
     }
@@ -1565,16 +1635,16 @@ public:
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
-    uint8_t send_connection_difference;
+    Difference_len send_connection_difference;
 
     /*
     receive_connection_difference keeps current data flow send_connection_difference. 
     If receive_complete() is true, receive_connection_difference++ to keep track with send_connection_difference.
     WILL BE DROPPEP 
     */
-    uint8_t receive_connection_difference;
+    Difference_len receive_connection_difference;
 
-    uint8_t receive_connection_difference_registration;
+    Difference_len receive_connection_difference_registration;
 
     size_t current_loop_min;
 
@@ -1672,7 +1742,7 @@ public:
     dmludp_error_sent(0),
     send_connection_difference(0),
     receive_connection_difference(0),
-    receive_connection_difference_registration(LIMIT_UINT8_T),
+    receive_connection_difference_registration(LIMIT_UINT32_T),
     current_loop_min(0),
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
@@ -1733,12 +1803,12 @@ public:
     */
     void update_rtt(std::chrono::high_resolution_clock::time_point send_time, std::chrono::high_resolution_clock::time_point receive_time){
         if (rtt_initial){
-            minrtt = rtt = srtt = receive_time - send_time;
+            minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
             rto = srtt + 4 * rttvar;
             rtt_initial = false;
         }else{
-            rtt = receive_time - send_time;
+            rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             if (rtt < minrtt){
                 minrtt = rtt;
             }
@@ -1985,23 +2055,13 @@ public:
         current_loop_min = current_loop_max + 1;
     }
 
-    // std::chrono::system_clock::time_point timespecToChrono(const struct timespec& ts) {
-    //     //  tv_sec to chrono second
-    //     auto seconds = std::chrono::seconds(ts.tv_sec);
-
-    //     //  tv_nsec to chrono nanosecond
-    //     auto nanoseconds = std::chrono::nanoseconds(ts.tv_nsec);
-
-    //     return std::chrono::system_clock::time_point(seconds + nanoseconds);
-    // }
-
 
     void process_acknowledge(const size_t index_){
         auto pkt_num = receive_message[index_].get_packet_number();
         auto pkt_len = receive_message[index_].get_packet_length();
         auto pkt_difference = receive_message[index_].get_packet_difference();
         receive_available_map[index_] = 0;
-       
+
         auto receivets = std::chrono::high_resolution_clock::now();
         auto ackts = tsInfo.removeBeforeValue(pkt_num);
         update_rtt(ackts, receivets);
@@ -2123,8 +2183,6 @@ public:
                 sendbufferqueue.data_[index].metabuf.ack_check();
             }
         }
-
-
     }
 
 
@@ -2136,11 +2194,13 @@ public:
         rec_buffer.reset();
     }
 
+    /*Update receive difference to process next block data*/
     void update_receive_difference(){
-        receive_connection_difference = (receive_connection_difference + 1) % DataBlock;
+        receive_connection_difference++;
     }
 
-     bool receive_complete(){
+    /*Check current receving data block status*/
+    bool receive_complete(){
         if (receive_connection_difference == recvCQ.start() && !recvCQ.empty()){
             return recvCQ.iscomplete(receive_connection_difference);
         }
@@ -2191,7 +2251,7 @@ public:
 
         sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
         
-        recovery.bytes_in_flight = 0;
+        // recovery.bytes_in_flight = 0;
         set_handshake();
         return completed;
     }
@@ -2260,14 +2320,16 @@ public:
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             int d_sent = 0;
-            std::cout<<"prepareData:"<<i<<std::endl;
+            auto pkg_difference = sendbufferqueue.get_difference(i);
+            std::cout<<"prepareData:"<<pkg_difference<<std::endl;
             while (true){
                 size_t send_status = sendbufferqueue.get_status(i);
                 if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                     std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                     _Exit(0);
                 }
-                auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
+                auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);
+                // auto s_flag = sendbufferqueue.data_[i].metabuf.emit(send_message[sent].iov[1], out_len, out_off);
                 /*auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);*/
                 
                 if (out_len == -1) {
@@ -2276,9 +2338,9 @@ public:
 
                 auto pn = pkt_num_spaces[0].updatepktnum();
                 if (out_off == 0 && out_len > -1){
-                    std::cout<<"[Debug] difference:"<< i <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                    std::cout<<"[Debug] difference:"<< pkg_difference <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 }
-                send_message[sent].setMessageHeader(pn, out_off, i, (Packet_num_len)out_len);
+                send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
                 
                 if (send_status == 1){
