@@ -1160,7 +1160,7 @@ class metarecebuf{
                 std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
                 _Exit(0);
             }
-            memcpy(reinterpret_cast<uint8_t*>(metabuf.src + offset_), reinterpret_cast<uint8_t*>(src), copy_len);
+            memcpy(reinterpret_cast<uint8_t*>(metabuf.src) + offset_, reinterpret_cast<uint8_t*>(src), copy_len);
         }
 
         bool targetCheck(){

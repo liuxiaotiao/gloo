@@ -368,7 +368,8 @@ namespace dmludp{
                 out.iov_len = meta_ptr_len;
             }else{
                 out_len = std::min(send_buffer_size, size_t(meta_ptr2_len - (out_off - 48)));
-                out.iov_base = (void *)(meta_ptr2 + out_off - 48);
+                out.iov_base = reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(meta_ptr2) + out_off - 48);
+                // out.iov_base = (void *)(meta_ptr2 + out_off - 48);
                 out.iov_len = out_len;
             }      
 
