@@ -2779,7 +2779,7 @@ public:
                         auto copy_difference = receive_record.get_record_difference();
                         auto copy_offset = receive_record.get_offset();
                         if (copy_offset >= 48){
-                            std::cout<<"2 copy"<<std::endl;
+                            std::cout<<"2 copy:"<<pkt_offset<<std::endl;
                             recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                         }else{
                             recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
