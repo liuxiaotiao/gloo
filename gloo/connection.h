@@ -1561,6 +1561,7 @@ public:
             data[front_index] = { difference_, payload_index };
             back_index = front_index + 1;
         }else{
+            std::cout<<"head:" << front_index << ", " << back_index << std::endl;
             auto front_difference = front().first;;
             auto back_difference = back().first;;
             
