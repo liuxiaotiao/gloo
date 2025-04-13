@@ -650,7 +650,7 @@ class MapSet {
         }
 
         T& at(size_t i) {
-            if (i >= size_)
+            if (i >= count_)
                 throw std::out_of_range("Index out of range");
             return buffer_[(head_ + i) % capacity_];
         }
