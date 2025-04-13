@@ -2759,6 +2759,7 @@ public:
                     }
                     receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
                     if(recvCQ.processComplete(pkt_difference)){
+                        receive_record.reset();
                         return;
                     }
                     continue;
@@ -2776,6 +2777,7 @@ public:
                     }
                     receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
                     if(recvCQ.processComplete(pkt_difference)){
+                        receive_record.reset();
                         return;
                     }
                     continue;
