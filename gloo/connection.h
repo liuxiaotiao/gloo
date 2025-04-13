@@ -1583,11 +1583,11 @@ public:
 
     void pop_front() {
         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
-        std::cout << "1 pop_front:" << data[front_index].first << ", "  << count ", " << front_index << ", " << back_index << std::endl;
+        std::cout << "1 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
         data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
         front_index = mod_add(front_index, 1);
         --count;
-        std::cout << "2 pop_front:" << data[front_index].first << ", "  << count ", " << front_index << ", " << back_index << std::endl;
+        std::cout << "2 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
     }
 
     PairType& operator[](int logical_idx) {
