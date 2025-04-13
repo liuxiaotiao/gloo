@@ -2696,6 +2696,7 @@ public:
                     auto copy_difference = receive_record.get_record_difference();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
+                        std::cout<<"3 copy"<<std::endl;
                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2714,6 +2715,7 @@ public:
                     auto copy_difference = receive_record.get_record_difference();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
+                        std::cout<<"1 copy"<<std::endl;
                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2735,6 +2737,7 @@ public:
                         auto copy_difference = receive_record.get_record_difference();
                         auto copy_offset = receive_record.get_offset();
                         if (copy_offset >= 48){
+                            std::cout<<"2 copy"<<std::endl;
                             recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                         }else{
                             recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2749,6 +2752,7 @@ public:
                     auto copy_index = receive_record.get_start_index();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
+                        std::cout<<"4 copy"<<std::endl;
                         recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);                        
                     }else{
                         recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2765,6 +2769,7 @@ public:
                     auto copy_index = receive_record.get_start_index();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
+                        std::cout<<"5 copy"<<std::endl;
                         recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2786,6 +2791,7 @@ public:
                     auto copy_difference = receive_record.get_record_difference();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
+                        std::cout<<"6 copy"<<std::endl;
                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -2809,6 +2815,7 @@ public:
             auto copy_difference = receive_record.get_record_difference();
             auto copy_offset = receive_record.get_offset();
             if (copy_offset >= 48){
+                std::cout<<"7 copy"<<std::endl;
                 recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
             }else{
                 recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
