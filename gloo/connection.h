@@ -231,6 +231,26 @@ public:
             }
         }
 
+        /*
+        TOSOlVE:
+        IP: 10.10.1.3, Port: 37077
+        removeBeforeValue range:4, 263753, 260057
+        timerfd end
+
+        EPOLLIN start
+        Receive from: 10.10.1.3:37077
+        Receive, 5, 260122
+        Receive, 5, 260280
+        Receive, 5, 260601
+        Receive, 5, 261136
+        Receive, 5, 261809
+        Receive, 5, 262656
+        Receive, 5, 263753
+        terminate called after throwing an instance of 'std::runtime_error'
+        what():  Value not found in the queue
+
+        */
+
         if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
             throw std::runtime_error("Value not found in the queue");
         }
@@ -1574,7 +1594,12 @@ public:
                 data[back_index] = { difference_, payload_index };
                 back_index = mod_add(back_index, 1);
             }else{
-                data[target] = { difference_, payload_index };
+                if (data[target].first == difference_){
+                    return;
+                }
+                if (data[target].first != LIMIT_UINT32_T){
+                    data[target] = { difference_, payload_index };
+                }
             }
         }
         std::cout << "2 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
