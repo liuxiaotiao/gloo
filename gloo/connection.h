@@ -2069,7 +2069,7 @@ public:
         receive_available_map[index] = 1;
         /*TODO(2.24): break index, new parameter: index_check*/
 
-        if (pkt_offset == 0){
+        if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
             zerolist.push_back(pkt_difference, index);
         }
@@ -2151,7 +2151,7 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
 
         send_packet_type = ty;
         return sizeof(Header) + hdr->pkt_length;
@@ -2159,7 +2159,7 @@ public:
     
 
     bool check_status(){
-        std::cout << "check_status cwnd left:" << recovery.cwnd_available() <<", "<<recovery.cwnd_enough()<<", "<<sendbufferqueue.ready()<<std::endl;
+        // std::cout << "check_status cwnd left:" << recovery.cwnd_available() <<", "<<recovery.cwnd_enough()<<", "<<sendbufferqueue.ready()<<std::endl;
         if (recovery.cwnd_enough() && sendbufferqueue.ready()) return true;
         return false;
     }
@@ -2490,7 +2490,7 @@ public:
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             int d_sent = 0;
             auto pkg_difference = sendbufferqueue.get_difference(i);
-            std::cout<<"prepareData:"<<pkg_difference<<std::endl;
+            // std::cout<<"prepareData:"<<pkg_difference<<std::endl;
             while (true){
                 size_t send_status = sendbufferqueue.get_status(i);
                 if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
@@ -2689,6 +2689,24 @@ public:
         for (auto index = 0; index < receive_available_map.size(); index++){
             pkt_difference = receive_message[index].get_packet_difference();
             if (receive_available_map[index] == 0){
+                if (!receive_record.empty()){
+                    auto copy_len = receive_record.get_acumulation();
+                    auto copy_index = receive_record.get_start_index();
+                    auto copy_difference = receive_record.get_record_difference();
+                    auto copy_offset = receive_record.get_offset();
+                    if (copy_offset >= 48){
+                        recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+                    }else{
+                        recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+                    }
+                    receive_record.reset();
+                }   
+                continue;
+            }
+
+            /*No longer process old data block*/
+            if (pkt_difference < receive_connection_difference){
+                receive_available_map[index] = 0;
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
                     auto copy_index = receive_record.get_start_index();
