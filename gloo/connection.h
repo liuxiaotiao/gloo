@@ -2410,6 +2410,8 @@ public:
         }
         auto total_send = max_sent_pn - max_acknowleged;
 
+        max_acknowleged = max_sent_pn;
+        
         auto receivets = std::chrono::steady_clock::now();
 
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
