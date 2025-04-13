@@ -2824,7 +2824,7 @@ public:
                     }
                     continue;
                 }
-
+                std::cout<<"update"<<std::endl;
                 receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
                 /*different block occurs, contious check stop and start copy*/
