@@ -1555,7 +1555,7 @@ public:
         }
 
         auto target = difference_ % capacity;
-
+        std::cout << "push_back:" << difference_ << ", " << count << std::endl;
         if (empty()){
             front_index = target;
             data[front_index] = { difference_, payload_index };
@@ -1583,9 +1583,11 @@ public:
 
     void pop_front() {
         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
+        std::cout << "pop_front:" << data[front_index].first << ", ";
         data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
         front_index = mod_add(front_index, 1);
         --count;
+        std::cout << count << std::endl;
     }
 
     PairType& operator[](int logical_idx) {
