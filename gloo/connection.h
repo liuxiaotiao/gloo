@@ -1599,6 +1599,7 @@ public:
     PairType front() const {
         if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
         if (front_index != data[front_index].first){
+            std::cout<< "front_index:" << front_index << ", " << data[front_index].first << std::endl;
             throw std::runtime_error("1 front_index != data[front_index].first!");
         }
         return data[front_index];
@@ -1607,6 +1608,7 @@ public:
     PairType back() const {
         if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
         if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first){
+            std::cout<< "back_index:" << back_index << ", " << data[back_index].first<< std::endl;
             throw std::runtime_error("1 back_index != data[back_index].first!");
         }
         return data[mod_sub(back_index, 1)];
