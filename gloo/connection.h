@@ -2044,6 +2044,7 @@ public:
         /*TODO(2.24): break index, new parameter: index_check*/
 
         if (pkt_offset == 0){
+            std::cout<<"zerolist.push_back" << std::endl;
             zerolist.push_back(pkt_difference, index);
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         }
