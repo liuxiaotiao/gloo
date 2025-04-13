@@ -2824,7 +2824,7 @@ public:
                     }
                     continue;
                 }
-                std::cout<<"update"<<std::endl;
+                std::cout<<"update:"<<pkt_offset<<", "<<recvCQ.copyed_check(pkt_difference, pkt_offset)<<std::endl;
                 receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
                 /*different block occurs, contious check stop and start copy*/
