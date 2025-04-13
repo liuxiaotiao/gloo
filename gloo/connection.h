@@ -2245,7 +2245,7 @@ public:
                         }
                     }
                     if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-                        std::cerr << "Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
+                        std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         _Exit(0);
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
@@ -2287,8 +2287,9 @@ public:
             }
             // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
             if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-                std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
-                _Exit(0);
+                std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
+                pn++;
+                continue;
             }
             while (pn >= sendpair.first && pn <= sendpair.second){
                 // std::cout<<"process_acknowledge 3"<<std::endl;
