@@ -607,7 +607,7 @@ class MapSet {
         void removeBeforeValue(Packet_num_len packet_) {
             while (!empty()) {
                 auto range = get_range();
-                std::cout<<"range:"<<range.first<<", "<<range.second<<std::endl;
+                std::cout<<"removeBeforeValue range:"<<range.first<<", "<<range.second<<", "<<packet_<<std::endl;
                 if (range.second < packet_ && range.second != LIMIT_UINT64_T) {
                     pop();
                 } else {
