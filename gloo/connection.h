@@ -1256,6 +1256,7 @@ class metarecebuf{
         }
 
         bool processComplete(){
+            std::cout<<"processd:"<<processd<<", "<<expected<<std::endl;
             return processd == expected;
         }
 
