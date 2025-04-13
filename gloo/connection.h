@@ -1499,6 +1499,7 @@ public:
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
         inrangecheck(index);
+        std::cout<<"difference_:"<<difference_<<", "<<offset_<<", "<<len_<<", "<<(offset_+len_)<<std::endl;
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
         data_[index].record_copy(offset_);
