@@ -1575,13 +1575,13 @@ public:
         }
 
         auto target = difference_ % capacity;
-        std::cout << "1 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
+        // std::cout << "1 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
         if (empty()){
             front_index = target;
             data[front_index] = { difference_, payload_index };
             back_index = front_index + 1;
         }else{
-            std::cout<<"head:" << front_index << ", " << back_index << ", " << count<< std::endl;
+            // std::cout<<"head:" << front_index << ", " << back_index << ", " << count<< std::endl;
             auto front_difference = front().first;;
             auto back_difference = back().first;;
             
@@ -1594,6 +1594,7 @@ public:
                 data[back_index] = { difference_, payload_index };
                 back_index = mod_add(back_index, 1);
             }else{
+                /* Solve duplicate add zero block data*/
                 if (data[target].first == difference_){
                     return;
                 }
@@ -1602,17 +1603,17 @@ public:
                 }
             }
         }
-        std::cout << "2 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
+        // std::cout << "2 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
         ++count;
     }
 
     void pop_front() {
         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
-        std::cout << "1 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
+        // std::cout << "1 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
         data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
         front_index = mod_add(front_index, 1);
         --count;
-        std::cout << "2 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
+        // std::cout << "2 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
     }
 
     PairType& operator[](int logical_idx) {
