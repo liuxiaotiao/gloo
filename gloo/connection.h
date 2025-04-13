@@ -217,9 +217,22 @@ public:
         TimeStamp result;
 
         size_t indexToDeleteUpTo = std::numeric_limits<size_t>::max();
+        // for (size_t i = 0; i < count; ++i) {
+        //     size_t actualIndex = (head + i) % capacity;
+        //     const auto& item = buffer[actualIndex];
+        //     if (item.first.first <= value && item.second.first >= value) {
+        //         if (item.first.first == item.second.first){
+        //             result = item.first.second;
+        //         }else{
+        //             result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+        //         }
+        //         indexToDeleteUpTo = i; 
+        //         break;
+        //     }
+        // }
         for (size_t i = 0; i < count; ++i) {
-            size_t actualIndex = (head + i) % capacity;
-            const auto& item = buffer[actualIndex];
+            // size_t actualIndex = (head + i) % capacity;
+            const auto& item = buffer.at(i);
             if (item.first.first <= value && item.second.first >= value) {
                 if (item.first.first == item.second.first){
                     result = item.first.second;
@@ -248,16 +261,50 @@ public:
         Receive, 5, 263753
         terminate called after throwing an instance of 'std::runtime_error'
         what():  Value not found in the queue
-
         */
 
         if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
-            throw std::runtime_error("Value not found in the queue");
+            std::cerr << "Value not found in the queue" <<std::endl;
+            // throw std::runtime_error("Value not found in the queue");
+            for (auto i = 0; i < unused_size(); i++){
+                const auto& item = buffer[i];
+                if (item.first.first <= value && item.second.first >= value) {
+                    if (item.first.first == item.second.first){
+                        result = item.first.second;
+                    }else{
+                        result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+                    }
+                    break;
+                }
+            }
+        }else{
+            head = (head + indexToDeleteUpTo) % capacity;
+            count -= indexToDeleteUpTo;
         }
-
-        head = (head + indexToDeleteUpTo) % capacity;
-        count -= indexToDeleteUpTo;
         return result;
+    }
+
+    DataType& at(size_t i) {
+        if (i >= count)
+            throw std::out_of_range("Index out of range");
+        return buffer[(head + i) % capacity];
+    }
+
+    size_t unused_size() const {
+        return capacity - count;
+    }
+
+    DataType& at_unused(size_t i) {
+        if (i >= unused_size())
+            throw std::out_of_range("Unused index out of range");
+        return buffer[(tail + i) % capacity];
+    }
+
+
+    DataType& at_unused(size_t i) {
+        if (i >= unused_size())
+            throw std::out_of_range("Unused index out of range");
+        return buffer[(tail + i) % capacity];
     }
 
     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
