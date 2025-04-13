@@ -2431,6 +2431,7 @@ public:
         auto total_send = max_sent_pn - max_acknowleged;
 
         max_acknowleged = max_sent_pn;
+        auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
 
         auto receivets = std::chrono::steady_clock::now();
 
