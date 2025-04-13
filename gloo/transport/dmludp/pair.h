@@ -187,7 +187,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       if(!outerPtr.tx_.empty()){
         outerPtr.dmludp_connection->process_timeout();
         outerPtr.device_->registerDescriptor(outerPtr.fd_, EPOLLIN | EPOLLOUT, &outerPtr);
-        std::cout<<"timerfd\n"<<std::endl;
+        std::cout<<"timerfd end\n"<<std::endl;
       }
     }
   };
