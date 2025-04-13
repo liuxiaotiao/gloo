@@ -301,12 +301,6 @@ public:
     }
 
 
-    DataType& at_unused(size_t i) {
-        if (i >= unused_size())
-            throw std::out_of_range("Unused index out of range");
-        return buffer[(tail + i) % capacity];
-    }
-
     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
         enqueue({{key1, ts1}, {key2, ts2}});
     }
