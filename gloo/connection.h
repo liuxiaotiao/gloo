@@ -16,7 +16,8 @@
 #include <typeinfo>
 #include <dlfcn.h>
 #include <cassert>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 namespace dmludp {
@@ -2379,6 +2380,25 @@ public:
     }
 
     void process_timeout(){
+        char ipStr[INET6_ADDRSTRLEN];
+        uint16_t port = 0;
+
+        if (peeraddr.ss_family == AF_INET) {
+            // IPv4
+            const sockaddr_in* addr_in = reinterpret_cast<const sockaddr_in*>(&peeraddr);
+            inet_ntop(AF_INET, &(addr_in->sin_addr), ipStr, sizeof(ipStr));
+            port = ntohs(addr_in->sin_port);
+        } else if (peeraddr.ss_family == AF_INET6) {
+            // IPv6
+            const sockaddr_in6* addr_in6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
+            inet_ntop(AF_INET6, &(addr_in6->sin6_addr), ipStr, sizeof(ipStr));
+            port = ntohs(addr_in6->sin6_port);
+        } else {
+            std::cerr << "Unknown address family: " << peeraddr.ss_family << std::endl;
+            return;
+        }
+
+        std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces[0].getpktnum();
@@ -2411,7 +2431,7 @@ public:
         auto total_send = max_sent_pn - max_acknowleged;
 
         max_acknowleged = max_sent_pn;
-        
+
         auto receivets = std::chrono::steady_clock::now();
 
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
