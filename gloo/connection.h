@@ -263,6 +263,7 @@ public:
         if (isEmpty()) {
             throw std::underflow_error("TSCircularQueue is empty(remove)");
         }
+        std::cout << "start removeBeforeValue:" << value << std::endl;
 
         TimeStamp result;
 
