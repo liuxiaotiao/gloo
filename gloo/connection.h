@@ -1611,6 +1611,7 @@ private:
     int back_index{0};
     int count{0};
     int capacity{DataBlock};
+    Difference_len difference_record{LIMIT_UINT32_T};
 
     void resize() {
         std::vector<PairType> new_data(capacity * 2);
@@ -1639,6 +1640,10 @@ public:
     void push_back(Difference_len difference_, uint16_t payload_index) {
         if (count == capacity) {
             resize();
+        }
+
+        if (!is_newer(difference_, difference_record)){
+            return;
         }
 
         auto target = difference_ % capacity;
@@ -1677,6 +1682,7 @@ public:
     void pop_front() {
         if (count == 0) throw std::runtime_error("zeroQueue is empty!");
         // std::cout << "1 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
+        difference_record = data[front_index].first;
         data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
         front_index = mod_add(front_index, 1);
         --count;
@@ -1694,7 +1700,7 @@ public:
 
     PairType front() const {
         if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
-        if (front_index != data[front_index].first){
+        if (front_index != data[front_index].first % DataBlock){
             std::cout<< "front_index:" << front_index << ", " << data[front_index].first << std::endl;
             throw std::runtime_error("1 front_index != data[front_index].first!");
         }
@@ -1703,7 +1709,7 @@ public:
 
     PairType back() const {
         if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
-        if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first){
+        if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first % DataBlock){
             std::cout<< "back_index:" << back_index << ", " << data[back_index].first<< std::endl;
             throw std::runtime_error("1 back_index != data[back_index].first!");
         }
