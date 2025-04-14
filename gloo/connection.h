@@ -18,6 +18,7 @@
 #include <cassert>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <optional>
 
 
 namespace dmludp {
@@ -209,7 +210,7 @@ public:
         count = 0;
     }
 
-    TimeStamp removeBeforeValue(uint64_t value) {
+    std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
         if (isEmpty()) {
             throw std::underflow_error("TSCircularQueue is empty(remove)");
         }
@@ -264,24 +265,12 @@ public:
         */
 
         if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
-            std::cerr << "Value not found in the queue" <<std::endl;
-            // throw std::runtime_error("Value not found in the queue");
-            for (auto i = 0; i < unused_size(); i++){
-                const auto& item = buffer[i];
-                if (item.first.first <= value && item.second.first >= value) {
-                    if (item.first.first == item.second.first){
-                        result = item.first.second;
-                    }else{
-                        result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
-                    }
-                    break;
-                }
-            }
-        }else{
-            head = (head + indexToDeleteUpTo) % capacity;
-            count -= indexToDeleteUpTo;
-            std::cout<<"remove count:" << count << std::endl;
+            return std::nullopt;
         }
+        head = (head + indexToDeleteUpTo) % capacity;
+        count -= indexToDeleteUpTo;
+        std::cout<<"remove count:" << count << std::endl;
+        
         return result;
     }
 
@@ -2261,7 +2250,9 @@ public:
         if (pkt_num >= (max_acknowleged + 1)){
             std::cout<<"pkt_num:"<<pkt_num<<", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(pkt_num);
-            update_rtt(ackts, receivets);
+            if (ackts.has_value()){
+                update_rtt(*ackts, receivets);
+            }
         }
         
 
