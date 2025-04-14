@@ -1310,7 +1310,7 @@ class metarecebuf{
         }
 
         bool processComplete(){
-            std::cout<<"processd:"<<processd<<", "<<expected<<std::endl;
+            // std::cout<<"processd:"<<processd<<", "<<expected<<std::endl;
             return processd == expected;
         }
 
@@ -1373,6 +1373,7 @@ public:
         }
         data_[tail_].clear();
         data_[tail_].set_difference(difference_);
+        std::cout<<"push_back:" << tail_ << ", " << difference_ << std::endl;
 
         tail_ = (tail_ + 1) % capacity_;
 
@@ -2129,9 +2130,6 @@ public:
         /*index is not availble*/
         receive_available_map[index] = 1;
         /*TODO(2.24): break index, new parameter: index_check*/
-        if (pkt_offset == 0){
-            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        }
 
         if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
@@ -2759,7 +2757,7 @@ public:
                     auto copy_difference = receive_record.get_record_difference();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
-                        std::cout<<"3 copy"<<std::endl;
+                        // std::cout<<"3 copy"<<std::endl;
                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
