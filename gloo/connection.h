@@ -2259,6 +2259,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
 
         if (pkt_num >= (max_acknowleged + 1)){
+            std::cout<<"pkt_num:"<<pkt_num<<", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(pkt_num);
             update_rtt(ackts, receivets);
         }
