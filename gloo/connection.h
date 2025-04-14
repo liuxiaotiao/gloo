@@ -1529,7 +1529,7 @@ public:
     /*Check data block has been registerred in queue*/
     bool inrangecheck(uint8_t index) {
         bool inRange = false;
-        std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
+        // std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
         if (head_ < tail_) {
             inRange = (index >= head_ && index < tail_);
         } else {
