@@ -1320,10 +1320,8 @@ class metarecebuf{
         }
 
         void record_copy(Offset_len offset_){
-            std::cout<<"record_copy ";
             auto exist = receive_offset_processed.find(offset_);
             if (!exist){
-                std::cout<<"record_copy:"<<exist<<std::endl;
                 receive_offset_processed.insert(offset_);
             }
         }
@@ -1545,11 +1543,16 @@ public:
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
         inrangecheck(index);
-        std::cout<<"difference_:"<<difference_<<", "<<offset_<<", "<<len_<<", "<<(offset_+len_)<<std::endl;
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
+    }
+
+    void record_copy(Difference_len difference_, Offset_len offset_){
+        auto index = difference_ % capacity_;
+        inrangecheck(index);
         data_[index].record_copy(offset_);
     }
+    
 
     bool copyed_check(Difference_len difference_, Offset_len offset_){
         auto index = difference_ % capacity_;
@@ -2804,6 +2807,7 @@ public:
                         recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }
                     receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
+                    recvCQ.record_copy(pkt_difference, pkt_offset);
                     if(recvCQ.processComplete(pkt_difference)){
                         receive_record.reset();
                         return;
@@ -2822,6 +2826,7 @@ public:
                         recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }
                     receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
+                    recvCQ.record_copy(pkt_difference, pkt_offset);
                     if(recvCQ.processComplete(pkt_difference)){
                         receive_record.reset();
                         return;
@@ -2829,6 +2834,7 @@ public:
                     continue;
                 }
                 std::cout<<"update:"<<pkt_offset<<", "<<recvCQ.copyed_check(pkt_difference, pkt_offset)<<std::endl;
+                recvCQ.record_copy(pkt_difference, pkt_offset);
                 receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
             }else{
                 /*different block occurs, contious check stop and start copy*/
