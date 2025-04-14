@@ -234,7 +234,7 @@ public:
         for (size_t i = 0; i < count; ++i) {
             // size_t actualIndex = (head + i) % capacity;
             const auto& item = buffer.at(i);
-            std::cout<<"removeBeforeValue:"<< removeBeforeValue<<", "<< item.first.first<<", "<<item.second.first<<std::endl;
+            std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<std::endl;
             if (item.first.first <= value && item.second.first >= value) {
                 if (item.first.first == item.second.first){
                     result = item.first.second;
