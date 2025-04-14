@@ -2256,8 +2256,12 @@ public:
         receive_available_map[index_] = 0;
 
         auto receivets = std::chrono::steady_clock::now();
-        auto ackts = tsInfo.removeBeforeValue(pkt_num);
-        update_rtt(ackts, receivets);
+
+        if (pkt_num >= (max_acknowleged + 1)){
+            auto ackts = tsInfo.removeBeforeValue(pkt_num);
+            update_rtt(ackts, receivets);
+        }
+        
 
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
         auto end_pn = pkt_num;
