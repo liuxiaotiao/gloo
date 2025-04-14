@@ -2130,7 +2130,12 @@ public:
         if (pkt_num < current_loop_min){
             return;
         }
-        recvCQ.indexcheck(pkt_difference);
+
+        if (pkt_difference >= receive_connection_difference){
+            recvCQ.indexcheck(pkt_difference);
+        }else{
+            receive_available_map[index] = 0;
+        }
         /*index is not availble*/
         receive_available_map[index] = 1;
         /*TODO(2.24): break index, new parameter: index_check*/
