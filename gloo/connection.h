@@ -1389,7 +1389,7 @@ public:
         data_[head_].clear();
         head_ = (head_ + 1) % capacity_;
         --count_;
-        std::cout << "recvCQ pop_front:" << count_ << std::endl;
+        // std::cout << "recvCQ pop_front:" << count_ << std::endl;
     }
 
     size_t size() const {
@@ -1993,6 +1993,7 @@ public:
             rttvar = srtt / 2;
             rto = srtt + 4 * rttvar;
             rtt_initial = false;
+            std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             if (rtt < minrtt){
@@ -2004,7 +2005,7 @@ public:
             auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
             rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
             rto = srtt + 4 * rttvar;
-            // std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
+            std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }    
     }
 
