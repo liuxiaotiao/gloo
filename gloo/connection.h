@@ -1320,8 +1320,10 @@ class metarecebuf{
         }
 
         void record_copy(Offset_len offset_){
+            std::cout<<"record_copy ";
             auto exist = receive_offset_processed.find(offset_);
             if (!exist){
+                std::cout<<"record_copy:"<<exist<<std::endl;
                 receive_offset_processed.insert(offset_);
             }
         }
