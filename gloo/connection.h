@@ -280,6 +280,7 @@ public:
         }else{
             head = (head + indexToDeleteUpTo) % capacity;
             count -= indexToDeleteUpTo;
+            std::cout<<"remove count:" << count << std::endl;
         }
         return result;
     }
