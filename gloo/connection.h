@@ -2541,6 +2541,7 @@ public:
 
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
+        std::cout<<"tsInfo.size:"<<tsInfo.size()<<std::endl;
 
         auto receivets = std::chrono::steady_clock::now();
 
