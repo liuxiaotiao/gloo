@@ -232,7 +232,8 @@ public:
         //         break;
         //     }
         // }
-        for (size_t i = 0; i < count; ++i) {
+        auto times = count;
+        for (size_t i = 0; i < times; ++i) {
             // size_t actualIndex = (head + i) % capacity;
             const auto& item = buffer.at(i);
             std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
@@ -267,7 +268,6 @@ public:
         */
 
         if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
-
             return std::nullopt;
         }
         head = (head + indexToDeleteUpTo) % capacity;
