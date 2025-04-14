@@ -173,7 +173,7 @@ public:
         buffer[tail] = value;
         tail = (tail + 1) % capacity;
         ++count;
-        std::cout<<"enqueue:("<<key1<<", "<<key2<<")"<<std::endl;
+        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<")"<<std::endl;
     }
 
     DataType dequeue() {
