@@ -170,10 +170,11 @@ public:
         if (isFull()) {
             throw std::overflow_error("TSCircularQueue is full(enqueue)");
         }
+        std::cout<<"1 enqueue:"<<count<<std::endl;
         buffer[tail] = value;
         tail = (tail + 1) % capacity;
         ++count;
-        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<")"<<std::endl;
+        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<")"<<count<<std::endl;
     }
 
     DataType dequeue() {
@@ -201,7 +202,7 @@ public:
         return count == capacity;
     }
 
-    size_t size() const {
+    size_t size() {
         return count;
     }
 
@@ -248,25 +249,6 @@ public:
             }
         }
 
-        /*
-        TOSOlVE:
-        IP: 10.10.1.3, Port: 37077
-        removeBeforeValue range:4, 263753, 260057
-        timerfd end
-
-        EPOLLIN start
-        Receive from: 10.10.1.3:37077
-        Receive, 5, 260122
-        Receive, 5, 260280
-        Receive, 5, 260601
-        Receive, 5, 261136
-        Receive, 5, 261809
-        Receive, 5, 262656
-        Receive, 5, 263753
-        terminate called after throwing an instance of 'std::runtime_error'
-        what():  Value not found in the queue
-        */
-
         if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
             return std::nullopt;
         }
@@ -276,6 +258,40 @@ public:
         
         return result;
     }
+
+    // std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
+    //     if (isEmpty()) {
+    //         throw std::underflow_error("TSCircularQueue is empty(remove)");
+    //     }
+
+    //     TimeStamp result;
+
+    //     bool has = false;
+    //     while (size() > 0) {
+    //         const auto& item = front();  
+    //         if (item.second.first < value){
+    //             std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+    //             dequeue();
+    //         }
+
+    //         if (item.first.first <= value && item.second.first >= value){
+    //             if (item.first.first == item.second.first){
+    //                 result = item.first.second;
+    //             }else{
+    //                 result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+    //             }
+    //             has = true;
+    //             break;
+    //         }
+           
+    //     }
+
+    //     if(has){
+    //         return result;
+    //     }else{
+    //         return std::nullopt;
+    //     }
+    // }
 
     DataType& at(size_t i) {
         if (i >= count)
