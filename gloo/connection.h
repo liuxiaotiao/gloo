@@ -1981,7 +1981,7 @@ public:
             auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
             rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
             rto = srtt + 4 * rttvar;
-            std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
+            // std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }    
     }
 
@@ -2118,6 +2118,9 @@ public:
         /*index is not availble*/
         receive_available_map[index] = 1;
         /*TODO(2.24): break index, new parameter: index_check*/
+        if (pkt_offset == 0){
+            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        }
 
         if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
