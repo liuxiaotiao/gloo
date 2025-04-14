@@ -2249,17 +2249,18 @@ public:
         receive_available_map[index_] = 0;
 
         auto receivets = std::chrono::steady_clock::now();
+        auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        if (pkt_num >= (max_acknowleged + 1)){
+
+        if (first_pn >= (max_acknowleged + 1)){
             std::cout<<"pkt_num:"<<pkt_num<<", " << (max_acknowleged+1) << std::endl;
-            auto ackts = tsInfo.removeBeforeValue(pkt_num);
+            auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
                 update_rtt(*ackts, receivets);
             }
         }
         
 
-        auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
         auto end_pn = pkt_num;
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
