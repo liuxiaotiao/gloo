@@ -65,6 +65,7 @@
         "condition_variable": "cpp",
         "iomanip": "cpp",
         "filesystem": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "__memory": "cpp"
     }
 }
