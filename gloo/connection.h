@@ -668,33 +668,6 @@ class MapSet {
             return buffer_[head_].get_range();
         }
 
-        class ConstIterator {
-        public:
-            ConstIterator(const MapSet* queue, size_t offset)
-                : queue_(queue), offset_(offset) {}
-
-            const T& operator*() const {
-                size_t index = (queue_->head_ + offset_) % queue_->capacity_;
-                return queue_->buffer_[index];
-            }
-
-            ConstIterator& operator++() {
-                ++offset_;
-                return *this;
-            }
-
-            bool operator!=(const ConstIterator& other) const {
-                return offset_ != other.offset_;
-            }
-
-        private:
-            const MapSet* queue_;
-            size_t offset_;
-        };
-
-        ConstIterator begin() const { return ConstIterator(this, head_); }
-        ConstIterator end() const { return ConstIterator(this, size_); }
-
         void removeBeforeValue(Packet_num_len packet_) {
             if (!empty()){
                 for (auto i = 0; i < count_; i++){
