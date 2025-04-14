@@ -212,53 +212,6 @@ public:
         count = 0;
     }
 
-    std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
-        if (isEmpty()) {
-            throw std::underflow_error("TSCircularQueue is empty(remove)");
-        }
-
-        TimeStamp result;
-
-        size_t indexToDeleteUpTo = std::numeric_limits<size_t>::max();
-        // for (size_t i = 0; i < count; ++i) {
-        //     size_t actualIndex = (head + i) % capacity;
-        //     const auto& item = buffer[actualIndex];
-        //     if (item.first.first <= value && item.second.first >= value) {
-        //         if (item.first.first == item.second.first){
-        //             result = item.first.second;
-        //         }else{
-        //             result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
-        //         }
-        //         indexToDeleteUpTo = i; 
-        //         break;
-        //     }
-        // }
-        auto times = count;
-        for (size_t i = 0; i < times; ++i) {
-            // size_t actualIndex = (head + i) % capacity;
-            const auto& item = buffer.at(i);
-            std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
-            if (item.first.first <= value && item.second.first >= value) {
-                if (item.first.first == item.second.first){
-                    result = item.first.second;
-                }else{
-                    result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
-                }
-                indexToDeleteUpTo = i; 
-                break;
-            }
-        }
-
-        if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
-            return std::nullopt;
-        }
-        head = (head + indexToDeleteUpTo) % capacity;
-        count -= indexToDeleteUpTo;
-        std::cout<<"remove count:" << count << std::endl;
-        
-        return result;
-    }
-
     // std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
     //     if (isEmpty()) {
     //         throw std::underflow_error("TSCircularQueue is empty(remove)");
@@ -266,32 +219,79 @@ public:
 
     //     TimeStamp result;
 
-    //     bool has = false;
-    //     while (size() > 0) {
-    //         const auto& item = front();  
-    //         if (item.second.first < value){
-    //             std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
-    //             dequeue();
-    //         }
-
-    //         if (item.first.first <= value && item.second.first >= value){
+    //     size_t indexToDeleteUpTo = std::numeric_limits<size_t>::max();
+    //     // for (size_t i = 0; i < count; ++i) {
+    //     //     size_t actualIndex = (head + i) % capacity;
+    //     //     const auto& item = buffer[actualIndex];
+    //     //     if (item.first.first <= value && item.second.first >= value) {
+    //     //         if (item.first.first == item.second.first){
+    //     //             result = item.first.second;
+    //     //         }else{
+    //     //             result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+    //     //         }
+    //     //         indexToDeleteUpTo = i; 
+    //     //         break;
+    //     //     }
+    //     // }
+    //     auto times = count;
+    //     for (size_t i = 0; i < times; ++i) {
+    //         // size_t actualIndex = (head + i) % capacity;
+    //         const auto& item = buffer.at(i);
+    //         std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+    //         if (item.first.first <= value && item.second.first >= value) {
     //             if (item.first.first == item.second.first){
     //                 result = item.first.second;
     //             }else{
     //                 result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
     //             }
-    //             has = true;
+    //             indexToDeleteUpTo = i; 
     //             break;
     //         }
-           
     //     }
 
-    //     if(has){
-    //         return result;
-    //     }else{
+    //     if (indexToDeleteUpTo == std::numeric_limits<size_t>::max()) {
     //         return std::nullopt;
     //     }
+    //     head = (head + indexToDeleteUpTo) % capacity;
+    //     count -= indexToDeleteUpTo;
+    //     std::cout<<"remove count:" << count << std::endl;
+        
+    //     return result;
     // }
+
+    std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
+        if (isEmpty()) {
+            throw std::underflow_error("TSCircularQueue is empty(remove)");
+        }
+
+        TimeStamp result;
+
+        bool has = false;
+        while (size() > 0) {
+            const auto& item = front();  
+            if (item.second.first < value){
+                std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+                dequeue();
+            }
+
+            if (item.first.first <= value && item.second.first >= value){
+                if (item.first.first == item.second.first){
+                    result = item.first.second;
+                }else{
+                    result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+                }
+                has = true;
+                break;
+            }
+           
+        }
+
+        if(has){
+            return result;
+        }else{
+            return std::nullopt;
+        }
+    }
 
     DataType& at(size_t i) {
         if (i >= count)
