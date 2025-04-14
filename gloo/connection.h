@@ -2189,8 +2189,9 @@ public:
         //     receive_offset[pkt_difference].insert(pkt_offset);
         //     rec_buffer[pkt_difference].reg(pkt_length);
         // }
-        recvCQ.insert(pkt_difference, pkt_offset, pkt_length);
-
+        if (pkt_difference >= receive_connection_difference){
+            recvCQ.insert(pkt_difference, pkt_offset, pkt_length);
+        }
     };
 
     bool received(size_t explen_){
