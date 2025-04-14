@@ -869,6 +869,7 @@ class MetaInfo{
         }
 
         Difference_len get_difference(){
+            return difference_flag;
             return MetaDifference;
         }
 
