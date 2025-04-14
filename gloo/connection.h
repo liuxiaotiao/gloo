@@ -1484,7 +1484,7 @@ public:
             inRange = (index >= head_ || index < tail_);
         }
 
-        std::cout << "inRange:" << inRange << std::endl;
+        // std::cout << "inRange:" << inRange << std::endl;
         
         if (!inRange) {
             /*
