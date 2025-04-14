@@ -270,7 +270,7 @@ public:
         while (size() > 0) {
             const auto& item = front();  
             if (item.second.first < value){
-                std::cout<<"removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+                std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 dequeue();
             }
 
@@ -281,6 +281,11 @@ public:
                     result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
                 }
                 has = true;
+                break;
+            }
+
+            if (value < item.first.first){
+                std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 break;
             }
            
