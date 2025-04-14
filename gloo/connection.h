@@ -1389,6 +1389,7 @@ public:
         data_[head_].clear();
         head_ = (head_ + 1) % capacity_;
         --count_;
+        std::cout << "recvCQ pop_front:" << count_ << std::endl;
     }
 
     size_t size() const {
