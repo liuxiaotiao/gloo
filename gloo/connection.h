@@ -1461,7 +1461,7 @@ public:
         This ensures the valid range is no longer empty, allowing the index to be included in it.
         */
         auto index = difference_ % get_capacity();
-        std::cout << "index:" << index << ", " << difference_ << ", " << count_ << ", " << head_ << ", " << tail_ << std::endl;
+        // std::cout << "index:" << index << ", " << difference_ << ", " << count_ << ", " << head_ << ", " << tail_ << std::endl;
         if (empty()) {
             size_t desiredTail = (index + 1) % capacity_;
             /*
