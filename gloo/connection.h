@@ -173,6 +173,7 @@ public:
         buffer[tail] = value;
         tail = (tail + 1) % capacity;
         ++count;
+        std::cout<<"enqueue:("<<key1<<", "<<key2<<")"<<std::endl;
     }
 
     DataType dequeue() {
@@ -294,7 +295,6 @@ public:
 
 
     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
-        std::cout<<"updateQueue:(,"<<key1<<", "<<key2<<")"<<std::endl;
         enqueue({{key1, ts1}, {key2, ts2}});
     }
 
