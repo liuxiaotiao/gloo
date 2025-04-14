@@ -332,6 +332,7 @@ class RCset{
                 std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
                 throw std::underflow_error("[RCset]: find index beyond capacity_");
             }
+            std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
             return RCset_body[index] == 1;
         }
 
@@ -341,6 +342,7 @@ class RCset{
                 throw std::underflow_error("[RCset]: insert index beyond capacity_");
             }
             RCset_body[index] = 1;
+            std::cout<<"insert:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
         }
 
         size_t get_index(Offset_len offset_){
