@@ -1439,10 +1439,10 @@ public:
         return data_[head_].get_difference();
     }
 
-    void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length) {
+    void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length, bool &exist_) {
         auto index = difference % capacity_;
         inrangecheck(index);
-        data_[index].find(pkt_offset, pkt_length);
+        exist_ = data_[index].find(pkt_offset, pkt_length);
     }
 
     bool iscomplete(Difference_len difference) {
@@ -2173,22 +2173,26 @@ public:
 
         // if (pkt_difference >= receive_connection_difference && recvCQ){
         //     recvCQ.indexcheck(pkt_difference);
-        //     receive_available_map[index] = 1;
         // }else{
         //     receive_available_map[index] = 0;
         // }
+        //     receive_available_map[index] = 1;
 
         // if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
         //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         //     zerolist.push_back(pkt_difference, index);
         // }
 
-        if (pkt_difference >= receive_connection_difference && recvCQ.differencecheck(pkt_difference)){
-            recvCQ.indexcheck(pkt_difference);
-            receive_available_map[index] = 1;
+        receive_available_map[index] = 1;
+        if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
-                std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-                zerolist.push_back(pkt_difference, index);
+                if (recvCQ.differencecheck(pkt_difference)){
+                    recvCQ.indexcheck(pkt_difference);
+                    std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+                    zerolist.push_back(pkt_difference, index);
+                }else{
+                    receive_available_map[index] = 0;
+                }
             }
         }else{
             receive_available_map[index] = 0;
@@ -2238,7 +2242,11 @@ public:
         //     rec_buffer[pkt_difference].reg(pkt_length);
         // }
         if (pkt_difference >= receive_connection_difference){
-            recvCQ.insert(pkt_difference, pkt_offset, pkt_length);
+            bool exist = false;
+            recvCQ.insert(pkt_difference, pkt_offset, pkt_length, exist);
+            if (exist){
+                receive_available_map[index] = 0;
+            }
         }
     };
 
