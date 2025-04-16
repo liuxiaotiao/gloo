@@ -1219,7 +1219,7 @@ class metarecebuf{
 
         bool complete_flag = false;
 
-        Difference_len rdifference;
+        std::optional<Difference_len> rdifference = std::nullopt;
 
         size_t received = 0;
 
@@ -1233,7 +1233,7 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        metarecebuf(Difference_len difference_ = 0): rdifference(difference_){
+        metarecebuf(): {
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1253,6 +1253,7 @@ class metarecebuf{
             processd = 0;
             expected = 0;
             used = false;
+            rdifference = std::nullopt;
             for (auto &e:source_len){
                 e = 0;
             }
@@ -1318,7 +1319,7 @@ class metarecebuf{
                 return;
             }
             if (received != processd){
-                std::cout<<"received:"<<received<<", processd:"<<processd<<std::endl;
+                std::cout<< rdifference << " received:"<<received<<", processd:"<<processd<<std::endl;
                 throw std::overflow_error("received != processd");
             }
             return;
@@ -1372,10 +1373,10 @@ public:
     RCircularQueue(size_t capacity = DataBlock)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
-        data_.reserve(capacity_);
-        for (size_t i = 0; i < capacity_; i++) {
-            data_.push_back(i);
-        }
+        data_.resize(capacity_);
+        // for (size_t i = 0; i < capacity_; i++) {
+        //     data_.push_back(i);
+        // }
     }
 
     size_t get_capacity(){
@@ -1463,6 +1464,18 @@ public:
         auto index = difference % capacity_;
         inrangecheck(index);
         return data_[index].is_complete();
+    }
+
+    bool differencecheck(Difference_len difference_){
+        if (empty()){
+            return true;
+        }else{
+            auto index = difference_ % get_capacity();
+            if (!data_[index].get_difference()){
+                return true;
+            }
+            return false;
+        }
     }
 
     /* 
@@ -1685,7 +1698,7 @@ public:
                 if (data[target].first == difference_){
                     return;
                 }
-                if (data[target].first != LIMIT_UINT32_T){
+                if (data[target].first == LIMIT_UINT32_T){
                     data[target] = { difference_, payload_index };
                 }
             }
@@ -2154,18 +2167,27 @@ public:
             return;
         }
 
-        if (pkt_difference >= receive_connection_difference){
+        // if (pkt_difference >= receive_connection_difference && recvCQ){
+        //     recvCQ.indexcheck(pkt_difference);
+        //     receive_available_map[index] = 1;
+        // }else{
+        //     receive_available_map[index] = 0;
+        // }
+
+        // if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
+        //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        //     zerolist.push_back(pkt_difference, index);
+        // }
+
+        if (pkt_difference >= receive_connection_difference && recvCQ.differencecheck(pkt_difference)){
             recvCQ.indexcheck(pkt_difference);
+            receive_available_map[index] = 1;
+            if (pkt_offset == 0){
+                std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+                zerolist.push_back(pkt_difference, index);
+            }
         }else{
             receive_available_map[index] = 0;
-        }
-        /*index is not availble*/
-        receive_available_map[index] = 1;
-        /*TODO(2.24): break index, new parameter: index_check*/
-
-        if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
-            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-            zerolist.push_back(pkt_difference, index);
         }
 
         /*TODO(3.3): Rethink min_received is worth to keep*/
