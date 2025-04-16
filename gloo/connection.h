@@ -174,7 +174,7 @@ public:
         buffer[tail] = value;
         tail = (tail + 1) % capacity;
         ++count;
-        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<")"<<count<<std::endl;
+        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
     }
 
     DataType dequeue() {
@@ -2368,7 +2368,7 @@ public:
             }
             
         }
-        std::cout << "process_acknowledge:" << std::endl;
+        std::cout << "process_acknowledge process_acknowledge:" << std::endl;
         // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
         while (true)
         {
@@ -2416,6 +2416,8 @@ public:
 
         }
         max_acknowleged = end_pn;
+
+        std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
         
         if (loss && !first_loss){
             recovery.check_point();
