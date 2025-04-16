@@ -1559,7 +1559,7 @@ public:
     }
 
     /*Check data block has been registerred in queue*/
-    bool inrangecheck(uint8_t index) {
+    bool inrangecheck(uint8_t index, const char* caller) {
         bool inRange = false;
         // std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
         if (head_ < tail_) {
@@ -1569,14 +1569,15 @@ public:
         }
         
         if (!inRange) {
-            void* caller_address = __builtin_return_address(0);
-            Dl_info info;
+            // void* caller_address = __builtin_return_address(0);
+            // Dl_info info;
 
-            if (dladdr(caller_address, &info) && info.dli_sname) {
-                std::cerr << "Function '" << info.dli_sname << "' called inrangecheck, but the result is false." << std::endl;       
-            } else {
-                std::cerr << "Unknown caller function." << std::endl;
-            }
+            // if (dladdr(caller_address, &info) && info.dli_sname) {
+            std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
+            std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;       
+            // } else {
+            //     std::cerr << "Unknown caller function." << std::endl;
+            // }
             _Exit(0);
         }
 
@@ -1591,14 +1592,14 @@ public:
     /*Copy data*/
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
-        inrangecheck(index);
+        inrangecheck(index, __func__);
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
     }
 
     void record_copy(Difference_len difference_, Offset_len offset_){
         auto index = difference_ % capacity_;
-        inrangecheck(index);
+        inrangecheck(index, __func__);
         data_[index].record_copy(offset_);
     }
     
@@ -1611,21 +1612,21 @@ public:
     /*Check difference_ block is received*/
     void processCheck(Difference_len difference_){
         auto index = difference_ % capacity_;
-        inrangecheck(index);
+        inrangecheck(index, __func__);
         data_[index].processCheck();
     }
 
     /*Check data pointer is available*/
     bool targetCheck(Difference_len difference_){
         auto index = difference_ % capacity_;
-        inrangecheck(index);
+        inrangecheck(index, __func__);
         return data_[index].targetCheck();
     }
 
     /*Check OP is available*/
     bool srcsetcheck(Difference_len difference_){
         auto index = difference_ % capacity_;
-        inrangecheck(index);
+        inrangecheck(index, __func__);
         return data_[index].srcsetCheck();
     }
 
