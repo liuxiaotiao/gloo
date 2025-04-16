@@ -1357,7 +1357,7 @@ class metarecebuf{
             return receive_offset_processed.find(offset_);
         }
 
-        Difference_len get_difference(){
+        std::optional<Difference_len> get_difference(){
             return rdifference;
         }
 };  
@@ -1431,7 +1431,7 @@ public:
         return tail_;
     }
 
-    Difference_len start(){
+    std::optional<Difference_len> start(){
         return data_[head_].get_difference();
     }
 
@@ -1540,7 +1540,10 @@ public:
                 }
             };
 
-            Difference_len start = advance_relative(difference_, -(pushes-1));
+            auto start = advance_relative(difference_, -(pushes-1));
+            if (!start){
+                std::cout<<"start, difference_:"<<difference_<<", " << (-(pushes-1)) << " is invaild" << std::endl;
+            }
 
             for (size_t i = 0; i < pushes; ++i) {
                 push_back(start + i);
