@@ -1475,7 +1475,7 @@ public:
             return true;
         }else{
             auto index = difference_ % get_capacity();
-            if (data_[index].usedcheck){
+            if (data_[index].usedcheck()){
                 return false;
             }
             return true;
