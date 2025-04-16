@@ -1219,7 +1219,7 @@ class metarecebuf{
 
         bool complete_flag = false;
 
-        std::optional<Difference_len> rdifference = std::nullopt;
+        Difference_len rdifference;
 
         size_t received = 0;
 
@@ -1233,7 +1233,7 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        metarecebuf(): {
+        metarecebuf(Difference_len difference_ = 0): rdifference(difference_){
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1253,10 +1253,14 @@ class metarecebuf{
             processd = 0;
             expected = 0;
             used = false;
-            rdifference = std::nullopt;
+            rdifference = 0;
             for (auto &e:source_len){
                 e = 0;
             }
+        }
+
+        bool usedcheck(){
+            return used;
         }
 
         void set_difference(Difference_len difference_){
@@ -1357,7 +1361,7 @@ class metarecebuf{
             return receive_offset_processed.find(offset_);
         }
 
-        std::optional<Difference_len> get_difference(){
+        Difference_len get_difference(){
             return rdifference;
         }
 };  
@@ -1431,7 +1435,7 @@ public:
         return tail_;
     }
 
-    std::optional<Difference_len> start(){
+    Difference_len start(){
         return data_[head_].get_difference();
     }
 
@@ -1471,10 +1475,10 @@ public:
             return true;
         }else{
             auto index = difference_ % get_capacity();
-            if (!data_[index].get_difference()){
-                return true;
+            if (data_[index].usedcheck){
+                return false;
             }
-            return false;
+            return true;
         }
     }
 
@@ -1540,10 +1544,7 @@ public:
                 }
             };
 
-            auto start = advance_relative(difference_, -(pushes-1));
-            if (!start){
-                std::cout<<"start, difference_:"<<difference_<<", " << (-(pushes-1)) << " is invaild" << std::endl;
-            }
+            Difference_len start = advance_relative(difference_, -(pushes-1));
 
             for (size_t i = 0; i < pushes; ++i) {
                 push_back(start + i);
