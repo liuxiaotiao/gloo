@@ -2306,7 +2306,7 @@ public:
 
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
-        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<", "<<max_acknowleged<<std::endl;
+
 
         if (first_pn >= (max_acknowleged + 1)){
             std::cout<<"pkt_num:"<<pkt_num<<", " << (max_acknowleged+1) << std::endl;
@@ -2328,7 +2328,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<", "<<max_acknowleged<<std::endl;
+        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<", "<<max_acknowleged<<std::endl;
 
         /*Check acknowledge packet loss*/
         if (first_pn != (max_acknowleged + 1)){
