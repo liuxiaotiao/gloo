@@ -1392,7 +1392,7 @@ public:
         if (count_ == capacity_){
             return false;
         }
-        data_[tail_].clear();
+        // data_[tail_].clear();
         data_[tail_].set_difference(difference_);
         std::cout<<"push_back:" << tail_ << ", " << difference_ << std::endl;
 
