@@ -2384,7 +2384,7 @@ public:
                             break;
                         }
                         size_t i = 0;
-                        std::tuple<Packet_num_len, Packet_num_len> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+                        std::pair<Packet_num_len, Packet_num_len> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T};
                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                             sendtuple = sendbufferqueue.get_packet_range(i, pn);
