@@ -2434,7 +2434,7 @@ public:
                                 byte_index = (pn - first_pn) / 8;
                                 bit_index = (pn - first_pn) % 8;
                                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                                sendbufferqueue.ack4offset(i, pn, (bool)value);
+                                sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
                                 pn++;
                             }
                         }
