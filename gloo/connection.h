@@ -2363,6 +2363,9 @@ public:
                             if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
                                 continue;
                             }
+                            if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
+                                break;
+                            }
                         }
                         std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
                         if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
@@ -2383,21 +2386,50 @@ public:
                         if (pn > end_pn || pn == (max_acknowleged + 1)){
                             break;
                         }
-                        size_t i = 0;
-                        std::pair<Packet_num_len, Packet_num_len> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+                        size_t usei = 0;
+                        size_t unusei = 0;
+                        bool result = false;
+                        std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                            sendtuple = sendbufferqueue.get_packet_range(i, pn);
-                            if (sendtuple == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                            usei = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                            sendpair = sendbufferqueue.get_packet_range(usei, pn);
+                            if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                                 continue;
                             }
+                            if (pn <= sendpair.second && pn >= sendpair.first){
+                                resul = true;
+                                break;
+                            }
                         }
-                        std::cout<<"4 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
-                        if (sendtuple == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                        if (!result){
+                            for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                                unusei = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                                sendpair = sendbufferqueue.get_packet_range(unusei, pn);
+                                if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                                    continue;
+                                }
+                                if (pn <= sendpair.second && pn >= sendpair.first){
+                                    break;
+                                }
+                            }
+                        }
+                        
+
+                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << std::endl;
+                        if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                             std::cout<<"5 check:" << pn << std::endl;
                             return;
                         }else{
-                            while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+                            if (pn < std::get<0>(sendpair)){
+                                for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                                    i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                                    sendpair = sendbufferqueue.get_packet_range(i, pn);
+                                    if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                                        continue;
+                                    }
+                                }
+                            }
+                            while (pn >= std::get<0>(sendpair) && pn <= std::get<1>(sendpair)){
                                 byte_index = (pn - first_pn) / 8;
                                 bit_index = (pn - first_pn) % 8;
                                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
