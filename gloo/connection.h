@@ -2392,7 +2392,7 @@ public:
                         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                            sendpair = sendbufferqueue.get_packet_range(usei, pn);
+                            sendpair = sendbufferqueue.get_packet_range(i, pn);
                             if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                                 continue;
                             }
