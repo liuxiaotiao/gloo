@@ -2401,13 +2401,15 @@ public:
                         _Exit(0);
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<std::endl;
+                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
                     if (compare_ == 0){
+                        std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, true);
                             loss_pn++;
                         }
                     }else{
+                        std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
