@@ -2323,7 +2323,7 @@ public:
 
 
         if (first_pn >= (max_acknowleged + 1)){
-            std::cout<<"pkt_num:"<<pkt_num<<", " << (max_acknowleged+1) << std::endl;
+            std::cout<<"pkt_num:"<<first_pn<<", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
                 update_rtt(*ackts, receivets);
@@ -2342,7 +2342,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<pkt_len<<", "<<max_acknowleged<<std::endl;
+        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
 
         /*Check acknowledge packet loss*/
         if (first_pn != (max_acknowleged + 1)){
@@ -2401,6 +2401,7 @@ public:
                         _Exit(0);
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
+                    std::cout<<"2 check:"<<loss_pn<<std::endl;
                     if (compare_ == 0){
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, true);
@@ -2412,7 +2413,7 @@ public:
                             loss_pn++;
                         }
                     }
-                    
+                    std::cout<<"3 check"<<std::endl;
                 }
             }
             
