@@ -2397,7 +2397,7 @@ public:
                                 continue;
                             }
                             if (pn <= sendpair.second && pn >= sendpair.first){
-                                resul = true;
+                                result = true;
                                 break;
                             }
                         }
