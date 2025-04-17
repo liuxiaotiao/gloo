@@ -832,14 +832,18 @@ class MetaInfo{
         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Packet_num_len packet_){
             for (size_t i = 0; i < transmission_map.unused_size(); i++){
                 auto result = transmission_map.at_unused(i).get_range();
-                std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                    std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+                }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, true);
                 }
             }
             for (auto i = 0; i < retransmission_map.unused_size(); i++){
                 auto result = retransmission_map.at_unused(i).get_range();
-                std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                    std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+                }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, false);
                 }
@@ -2191,7 +2195,8 @@ public:
         //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         //     zerolist.push_back(pkt_difference, index);
         // }
-
+        
+        /*new difference coming will cause new recvCQ be created*/
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
