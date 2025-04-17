@@ -2348,34 +2348,65 @@ public:
         if (first_pn != (max_acknowleged + 1)){
             /*timeout and before send message get ack message*/
             if(first_pn < (max_acknowleged + 1)){
-                while (true){
-                    if (pn > end_pn || pn == (max_acknowleged + 1)){
-                        break;
-                    }
+                /*first_pn <= (max_acknowleged + 1) <= end_pn*/
+                if (end_pn < (max_acknowleged + 1)){
+                    while (true){
+                        if (pn > end_pn || pn == (max_acknowleged + 1)){
+                            break;
+                        }
 
-                    size_t i = 0;
-                    std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
-                    for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                        i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                        sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
+                        size_t i = 0;
+                        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
+                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                            sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
+                            if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+                                continue;
+                            }
+                        }
+                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
                         if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-                            continue;
+                            std::cout<<"1 check:" << pn << std::endl;
+                            return;
+                        }else{
+                            while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+                                byte_index = (pn - first_pn) / 8;
+                                bit_index = (pn - first_pn) % 8;
+                                size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                                sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
+                                pn++;
+                            }
                         }
                     }
-                    std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
-                    if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-                        std::cout<<"1 check:" << pn << std::endl;
-                        return;
-                    }else{
-                        while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
-                            byte_index = (pn - first_pn) / 8;
-                            bit_index = (pn - first_pn) % 8;
-                            size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                            sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
-                            pn++;
+                }else{
+                    while (true){
+                        if (pn > end_pn || pn == (max_acknowleged + 1)){
+                            break;
                         }
-                    }
+                        size_t i = 0;
+                        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
+                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                            sendtuple = sendbufferqueue.get_packet_range(i, pn);
+                            if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+                                continue;
+                            }
+                        }
+                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+                        if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+                            std::cout<<"1 check:" << pn << std::endl;
+                            return;
+                        }else{
+                            while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+                                byte_index = (pn - first_pn) / 8;
+                                bit_index = (pn - first_pn) % 8;
+                                size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                                sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
+                                pn++;
+                            }
+                        }
 
+                    }
                 }
             }else{
                 auto loss_pn = max_acknowleged + 1;
