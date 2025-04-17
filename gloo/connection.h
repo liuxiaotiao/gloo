@@ -276,6 +276,7 @@ public:
             }
 
             if (item.first.first <= value && item.second.first >= value){
+                std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 if (item.first.first == item.second.first){
                     result = item.first.second;
                 }else{
