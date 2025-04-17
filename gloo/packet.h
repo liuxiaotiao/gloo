@@ -65,6 +65,12 @@ using Packet_len = uint16_t;
         // The data length of the application packet
         Packet_len pkt_length;
 
+        /*
+        Importance pkt_importance;
+        Count pkt_count;
+        Status pkt_status;
+        */
+
 
         Header(
             Type first = Type::Application, 

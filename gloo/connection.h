@@ -1574,6 +1574,11 @@ public:
             // Dl_info info;
 
             // if (dladdr(caller_address, &info) && info.dli_sname) {
+            if (caller == "insert"){    
+                std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
+                std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
+                return inRange;
+            }
             std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
             std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;       
             // } else {
