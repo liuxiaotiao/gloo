@@ -2656,6 +2656,7 @@ public:
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces[0].getpktnum();
+        std::cout<<pn<<", "<<max_sent_pn<<std::endl;
         while (true)
         {
             if (pn > max_sent_pn){
@@ -2677,6 +2678,7 @@ public:
                 std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
                 _Exit(0);
             }
+            std::cout<<sendpair.first<<", " << sendpair.second << std::endl;
             while (pn >= sendpair.first && pn <= sendpair.second){
                 sendbufferqueue.ack4offset(i, pn, false);
                 pn++;
