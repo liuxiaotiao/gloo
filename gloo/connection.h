@@ -2323,7 +2323,7 @@ public:
 
 
         if (first_pn >= (max_acknowleged + 1)){
-            std::cout<<"pkt_num:"<<first_pn<<", " << (max_acknowleged+1) << std::endl;
+            std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
                 update_rtt(*ackts, receivets);
