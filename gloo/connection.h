@@ -2554,7 +2554,7 @@ public:
             std::cout<<"process_acknowledge 4"<<std::endl;
         }
 
-        if (max_acknowleged != LIMIT_UINT64_T){
+        if (max_acknowleged == LIMIT_UINT64_T){
             max_acknowleged = end_pn;
         }else{
             if (end_pn > max_acknowleged){
