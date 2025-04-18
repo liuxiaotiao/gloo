@@ -2184,7 +2184,7 @@ public:
             return;
         }
 
-        // if (pkt_difference >= receive_connection_difference && recvCQ){
+        // if (pkt_difference >= receive_connection_difference){
         //     recvCQ.indexcheck(pkt_difference);
         // }else{
         //     receive_available_map[index] = 0;
@@ -2197,6 +2197,20 @@ public:
         // }
         
         /*new difference coming will cause new recvCQ be created*/
+        // receive_available_map[index] = 1;
+        // if (pkt_difference >= receive_connection_difference){
+        //     recvCQ.indexcheck(pkt_difference);
+        //     if (pkt_offset == 0){
+        //         if (recvCQ.differencecheck(pkt_difference)){
+        //             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        //             zerolist.push_back(pkt_difference, index);
+        //         }else{
+        //             receive_available_map[index] = 0;
+        //         }
+        //     }
+        // }else{
+        //     receive_available_map[index] = 0;
+        // }
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
@@ -2505,14 +2519,14 @@ public:
                     break;
                 }
             }
-            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
             if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
                 std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
                 pn++;
                 continue;
             }
             while (pn >= sendpair.first && pn <= sendpair.second){
-                // std::cout<<"process_acknowledge 3"<<std::endl;
+                std::cout<<"process_acknowledge 3"<<std::endl;
                 if (pn <= end_pn && pn >= first_pn){
                     byte_index = (pn - first_pn) / 8;
                     bit_index = (pn - first_pn) % 8;
@@ -2527,7 +2541,7 @@ public:
                 }else{
                     break;
                 }
-                // std::cout<<"process_acknowledge 4"<<std::endl;
+                std::cout<<"process_acknowledge 4"<<std::endl;
             }
 
         }
