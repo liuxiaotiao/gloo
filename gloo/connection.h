@@ -2367,6 +2367,8 @@ public:
             just
         4. first_pn == (max_acknowleged + 1)
             Just check used 
+
+        Consider if pn is the old block.
         */
         if (first_pn != (max_acknowleged + 1)){
             /*timeout and before send message get ack message*/
@@ -2439,7 +2441,7 @@ public:
                         }
                         
 
-                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << std::endl;
+                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
                         std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
 
                         if (result == 0){
