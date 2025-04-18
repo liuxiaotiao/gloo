@@ -2553,10 +2553,16 @@ public:
             }
             std::cout<<"process_acknowledge 4"<<std::endl;
         }
-        if (end_pn > max_acknowleged){
-            max_acknowleged = end_pn;
-        }
 
+        if (max_acknowleged != LIMIT_UINT64_T){
+            max_acknowleged = end_pn;
+        }else{
+            if (end_pn > max_acknowleged){
+                max_acknowleged = end_pn;
+            }
+        }
+        
+        
         std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
         
         if (loss && !first_loss){
