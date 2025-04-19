@@ -829,6 +829,46 @@ class MetaInfo{
             }
         }
 
+        std::pair<Packet_num_len, Packet_num_len> get_used_range(Packet_num_len packet_){
+            /*Make sure not old map exists*/
+            removeoldmap(packet_);
+            auto transmission_front = transmission_map.get_range();
+            auto retransmission_front = retransmission_map.get_range();
+
+            if (packet_ >= transmission_front.first && packet_ <= transmission_front.second){
+                return transmission_front;
+            }
+
+            if (packet_ >= retransmission_front.first && packet_ <= retransmission_front.second){
+                return retransmission_front;
+            }
+
+            return std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T);
+        }
+
+        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Packet_num_len packet_){
+            for (size_t i = 0; i < transmission_map.unused_size(); i++){
+                auto result = transmission_map.at_unused(i).get_range();
+                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                    std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+                }
+                if (packet_ >= result.first && packet_ <= result.second){
+                    return std::make_tuple(result.first,result.second, i, true);
+                }
+            }
+            for (auto i = 0; i < retransmission_map.unused_size(); i++){
+                auto result = retransmission_map.at_unused(i).get_range();
+                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                    std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+                }
+                if (packet_ >= result.first && packet_ <= result.second){
+                    return std::make_tuple(result.first,result.second, i, false);
+                }
+            }
+            return std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false);
+        }
+        
+
         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Packet_num_len packet_){
             for (size_t i = 0; i < transmission_map.unused_size(); i++){
                 auto result = transmission_map.at_unused(i).get_range();
@@ -1059,14 +1099,24 @@ class SCircularQueue {
             return data_[index].get_cleared_packet_range(pn_);
         }
 
+        std::pair<Packet_num_len, Packet_num_len> get_used_range(Difference_len difference_, Packet_num_len pn_){
+            auto index = difference_ % get_capacity();
+            return data_[index].get_used_range(pn_);
+        }
+
+        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Difference_len difference_, Packet_num_len pn_){
+            auto index = difference_ % get_capacity();
+            return data_[index].get_unused_range(pn_);
+        }
+
         void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
             auto index = difference_ % get_capacity();
             data_[index].ack4offset(pn_, value_);
         }
 
-        void ack4offset2(Difference_len difference_, size_t mapindex_, Packet_num_len pn_, bool maptyep_, bool value_){
+        void ack4offset2(Difference_len difference_, size_t mapindex_, Packet_num_len pn_, bool maptype_, bool value_){
             auto index = difference_ % get_capacity();
-            data_[index].ack4offset2(pn_, mapindex_, maptyep_, value_);
+            data_[index].ack4offset2(pn_, mapindex_, maptype_, value_);
         }
 
         void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
@@ -2326,6 +2376,267 @@ public:
     }
 
 
+    // void process_acknowledge(const size_t index_){
+    //     auto pkt_num = receive_message[index_].get_packet_number();
+    //     auto pkt_len = receive_message[index_].get_packet_length();
+    //     auto pkt_difference = receive_message[index_].get_packet_difference();
+    //     receive_available_map[index_] = 0;
+
+    //     auto receivets = std::chrono::steady_clock::now();
+    //     auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
+
+
+    //     if (first_pn >= (max_acknowleged + 1)){
+    //         std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
+    //         auto ackts = tsInfo.removeBeforeValue(first_pn);
+    //         if (ackts.has_value()){
+    //             update_rtt(*ackts, receivets);
+    //         }
+    //     }
+        
+
+    //     auto end_pn = pkt_num;
+    //     bool loss = false;
+    //     size_t total_send = end_pn - first_pn + 1;
+    //     auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
+    //     size_t byte_index = 0;
+    //     size_t bit_index = 0;
+
+        
+    //     /*TODO: process max_ack and first_pn*/
+    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+    //     auto pn = first_pn;
+    //     std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
+
+    //     /*Check acknowledge packet loss*/
+    //     /*
+    //     1. first_pn < (max_acknowleged + 1) && end_pn < (max_acknowleged + 1)
+    //         Just check
+    //     2. first_pn < (max_acknowleged + 1) && end_pn >= (max_acknowleged + 1)
+    //     3. first_pn > (max_acknowleged + 1)
+    //         just
+    //     4. first_pn == (max_acknowleged + 1)
+    //         Just check used 
+
+    //     Consider if pn is the old block.
+    //     */
+    //     if (first_pn != (max_acknowleged + 1)){
+    //         /*timeout and before send message get ack message*/
+    //         if(first_pn < (max_acknowleged + 1)){
+    //             /*first_pn <= (max_acknowleged + 1) <= end_pn*/
+    //             if (end_pn < (max_acknowleged + 1)){
+    //                 while (true){
+    //                     if (pn > end_pn || pn == (max_acknowleged + 1)){
+    //                         break;
+    //                     }
+
+    //                     size_t i = 0;
+    //                     std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
+    //                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //                         sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
+    //                         if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+    //                             continue;
+    //                         }
+    //                         if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
+    //                             break;
+    //                         }
+    //                     }
+    //                     std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+    //                     if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+    //                         std::cout<<"1 check:" << pn << std::endl;
+    //                         return;
+    //                     }else{
+    //                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+    //                             byte_index = (pn - first_pn) / 8;
+    //                             bit_index = (pn - first_pn) % 8;
+    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
+    //                             sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
+    //                             pn++;
+    //                         }
+    //                     }
+    //                 }
+    //             }else{
+    //                 while (true){
+    //                     if (pn > end_pn || pn == (max_acknowleged + 1)){
+    //                         break;
+    //                     }
+    //                     size_t i = 0;
+    //                     int result = 0;
+    //                     std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+    //                     std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
+    //                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //                         sendpair = sendbufferqueue.get_packet_range(i, pn);
+    //                         if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+    //                             continue;
+    //                         }
+    //                         if (pn <= sendpair.second && pn >= sendpair.first){
+    //                             result = 1;
+    //                             break;
+    //                         }
+    //                     }
+    //                     if (result == 0){
+    //                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //                             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //                             sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
+    //                             if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
+    //                                 continue;
+    //                             }
+    //                             if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
+    //                                 result = 2;
+    //                                 break;
+    //                             }
+    //                         }
+    //                     }
+                        
+
+    //                     std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
+    //                     std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
+
+    //                     if (result == 0){
+
+    //                     }else if(result == 1){
+    //                         while (pn >= std::get<0>(sendpair) && pn <= std::get<1>(sendpair)){
+    //                             byte_index = (pn - first_pn) / 8;
+    //                             bit_index = (pn - first_pn) % 8;
+    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
+    //                             sendbufferqueue.ack4offset(i, pn, (bool)value);
+    //                             pn++;
+    //                         }
+    //                     }else if(result == 2){
+    //                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+    //                             byte_index = (pn - first_pn) / 8;
+    //                             bit_index = (pn - first_pn) % 8;
+    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
+    //                             sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
+    //                             pn++;
+    //                         }
+    //                     }
+
+    //                 }
+    //             }
+    //         }else{
+    //             auto loss_pn = max_acknowleged + 1;
+    //             while (true)
+    //             {
+    //                 if (loss_pn == first_pn){
+    //                     break;
+    //                 }
+    //                 size_t i = 0;
+    //                 std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+    //                 for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //                     i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //                     sendpair = sendbufferqueue.get_packet_range(i, loss_pn);
+    //                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+    //                         continue;
+    //                     }
+    //                     if (loss_pn <= sendpair.second && loss_pn >= sendpair.first){
+    //                         break;
+    //                     }
+    //                 }
+    //                 if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+    //                     std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
+    //                     _Exit(0);
+    //                 }
+    //                 auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
+    //                 std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
+    //                 if (compare_ == 0){
+    //                     std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
+    //                     while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
+    //                         sendbufferqueue.ack4offset(i, loss_pn, true);
+    //                         loss_pn++;
+    //                     }
+    //                 }else{
+    //                     std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
+    //                     while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
+    //                         sendbufferqueue.ack4offset(i, loss_pn, false);
+    //                         loss_pn++;
+    //                     }
+    //                 }
+    //                 std::cout<<"3 check"<<std::endl;
+    //             }
+    //         }
+            
+    //     }
+    //     std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
+    //     // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
+    //     while (true)
+    //     {
+    //         if (pn > end_pn){
+    //             break;
+    //         }
+            
+    //         size_t i = 0;
+    //         std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+    //         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //             // sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
+    //             sendpair = sendbufferqueue.get_packet_range(i, pn);
+    //             if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+    //                 continue;
+    //             }
+    //             if (pn <= sendpair.second && pn >= sendpair.first){
+    //                 break;
+    //             }
+    //         }
+    //         std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+          
+    //         if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+    //             std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
+    //             pn++;
+    //             continue;
+    //         }
+    //         while (pn >= sendpair.first && pn <= sendpair.second){
+    //             // std::cout<<"process_acknowledge 3"<<std::endl;
+    //             if (pn <= end_pn && pn >= first_pn){
+    //                 byte_index = (pn - first_pn) / 8;
+    //                 bit_index = (pn - first_pn) % 8;
+    //                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
+    //                 if (value == 0){
+    //                     // std::cout<<"pn:"<<pn<<" loss"<<std::endl;
+    //                     loss = true;
+    //                 }
+    //                 // sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
+    //                 sendbufferqueue.ack4offset(i, pn, (bool)value);
+    //                 pn++;
+    //             }else{
+    //                 break;
+    //             }
+    //         }
+    //         std::cout<<"process_acknowledge 4"<<std::endl;
+    //     }
+
+    //     if (max_acknowleged == LIMIT_UINT64_T){
+    //         max_acknowleged = end_pn;
+    //     }else{
+    //         if (end_pn > max_acknowleged){
+    //             max_acknowleged = end_pn;
+    //         }
+    //     }
+        
+        
+    //     std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
+        
+    //     if (loss && !first_loss){
+    //         recovery.check_point();
+    //         recovery.congestion_event(receivets);
+    //         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+    //         first_loss = true;
+    //     }else{
+    //         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+    //     }
+
+    //     {
+    //         auto sendbufferqueue_start_index = sendbufferqueue.start();
+    //         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+    //             int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //             std::cout << int(index) << " " ;
+    //             sendbufferqueue.data_[index].metabuf.ack_check();
+    //         }
+    //     }
+    // }
+
     void process_acknowledge(const size_t index_){
         auto pkt_num = receive_message[index_].get_packet_number();
         auto pkt_len = receive_message[index_].get_packet_length();
@@ -2361,7 +2672,7 @@ public:
         /*Check acknowledge packet loss*/
         /*
         1. first_pn < (max_acknowleged + 1) && end_pn < (max_acknowleged + 1)
-            Just check
+            Just check unused
         2. first_pn < (max_acknowleged + 1) && end_pn >= (max_acknowleged + 1)
         3. first_pn > (max_acknowleged + 1)
             just
@@ -2384,26 +2695,24 @@ public:
                         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                            sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
-                            if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-                                continue;
-                            }
+                            sendtuple = sendbufferqueue.get_unused_range(i, pn);
+                            
                             if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
                                 break;
                             }
                         }
-                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
                         if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-                            std::cout<<"1 check:" << pn << std::endl;
-                            return;
-                        }else{
-                            while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
-                                byte_index = (pn - first_pn) / 8;
-                                bit_index = (pn - first_pn) % 8;
-                                size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                                sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
-                                pn++;
-                            }
+                            pn++;
+                            continue;
+                        }
+                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+
+                        while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
+                            byte_index = (pn - first_pn) / 8;
+                            bit_index = (pn - first_pn) % 8;
+                            size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                            sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
+                            pn++;
                         }
                     }
                 }else{
@@ -2445,7 +2754,7 @@ public:
                         std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
 
                         if (result == 0){
-
+                            pn++;
                         }else if(result == 1){
                             while (pn >= std::get<0>(sendpair) && pn <= std::get<1>(sendpair)){
                                 byte_index = (pn - first_pn) / 8;
@@ -2523,15 +2832,14 @@ public:
                 i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                 // sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
                 sendpair = sendbufferqueue.get_packet_range(i, pn);
-                if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-                    continue;
-                }
+              
                 if (pn <= sendpair.second && pn >= sendpair.first){
                     break;
                 }
             }
             std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
-            if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+          
+            if ((sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
                 std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
                 pn++;
                 continue;
@@ -2759,17 +3067,19 @@ pn:920, 1705
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                 sendpair = sendbufferqueue.get_packet_range(i, pn);
-                if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-                    continue;
-                }
+                
                 if (pn <= sendpair.second && pn >= sendpair.first){
                     break;
                 }
             }
-            if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-                std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
-                _Exit(0);
+            if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                pn++;
+                continue;
             }
+            // if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+            //     std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
+            //     _Exit(0);
+            // }
             std::cout<<sendpair.first<<", " << sendpair.second << std::endl;
             while (pn >= sendpair.first && pn <= sendpair.second){
                 sendbufferqueue.ack4offset(i, pn, false);
