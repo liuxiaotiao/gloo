@@ -2839,8 +2839,12 @@ public:
             }
             std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
-            if ((sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-                std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
+            // if ((sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+            //     std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
+            //     pn++;
+            //     continue;
+            // }
+            if (sendpair.first > pn || pn > sendpair.second){
                 pn++;
                 continue;
             }
