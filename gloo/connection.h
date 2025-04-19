@@ -3076,7 +3076,11 @@ pn:920, 1705
                     break;
                 }
             }
-            if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+            // if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+            //     pn++;
+            //     continue;
+            // }
+            if (pn < sendpair.first || pn > sendpair.second){
                 pn++;
                 continue;
             }
