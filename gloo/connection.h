@@ -916,7 +916,7 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
-                std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
                 metabuf.acknowledege_and_drop(packet_offset_, false);
@@ -931,7 +931,7 @@ class MetaInfo{
                 packet_offset_ = retransmission_map.at_unused(mapindex_).get_offset(PacketNum);
             }
             if (isReceived){
-                std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
                 metabuf.acknowledege_and_drop(packet_offset_, false);
@@ -2692,6 +2692,7 @@ public:
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
         std::cout<<"process_acknowledge:"<<pkt_difference<<std::endl;
+        
 
 
 
@@ -2712,6 +2713,8 @@ public:
         auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
         size_t byte_index = 0;
         size_t bit_index = 0;
+
+        log_print((void*)ack_src, (pkt_len - 8));
 
         
         /*TODO: process max_ack and first_pn*/
