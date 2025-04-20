@@ -1321,8 +1321,12 @@ class metarecebuf{
         }
 
         void set_difference(Difference_len difference_){
-            used = true;
+            std::cout<<"difference_:"<<difference_<<" set" <<std::endl;
             rdifference = difference_;
+        }
+
+        void set_used(){
+            used = true;
         }
 
         void addexplen(size_t exp_){
@@ -1435,9 +1439,6 @@ public:
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
         data_.resize(capacity_);
-        // for (size_t i = 0; i < capacity_; i++) {
-        //     data_.push_back(i);
-        // }
     }
 
     size_t get_capacity(){
@@ -1539,6 +1540,11 @@ public:
         }
     }
 
+    void used_set(Difference_len difference_){
+        auto index = difference_ % get_capacity();
+        data_[index].set_used();
+    }
+
     /* 
     Check whether the given index is within the current valid data range.
     If it is not within the range, advance tail_ by repeatedly calling push_back()
@@ -1626,10 +1632,6 @@ public:
         }
         
         if (!inRange) {
-            // void* caller_address = __builtin_return_address(0);
-            // Dl_info info;
-
-            // if (dladdr(caller_address, &info) && info.dli_sname) {
             if (caller == "insert"){    
                 std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
                 std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
@@ -1637,9 +1639,6 @@ public:
             }
             std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
             std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;       
-            // } else {
-            //     std::cerr << "Unknown caller function." << std::endl;
-            // }
             _Exit(0);
         }
 
@@ -2271,6 +2270,7 @@ public:
             if (pkt_offset == 0){
                 if (recvCQ.differencecheck(pkt_difference)){
                     recvCQ.indexcheck(pkt_difference);
+                    recvCQ.used_set(pkt_difference);
                     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     zerolist.push_back(pkt_difference, index);
                 }else{
