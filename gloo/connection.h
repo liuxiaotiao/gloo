@@ -2899,7 +2899,8 @@ public:
             auto sendbufferqueue_start_index = sendbufferqueue.start();
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                std::cout << int(index) << " " ;
+                auto difference_ = sendbufferqueue.data_[index].get_difference();
+                std::cout << difference_ << " " ;
                 sendbufferqueue.data_[index].metabuf.ack_check();
             }
         }
@@ -2984,65 +2985,6 @@ public:
         written_data_once = 0;
     }
 
-
-    /*
-    IP: 10.10.1.4, Port: 34218
-pn:920, 1160
-920, 925
-926, 1160
-start removeBeforeValue:1160
-1 removeBeforeValue:1160, 737, 919, 2
-3 removeBeforeValue:1160, 920, 1160, 1
-tsInfo.size:1, 1160
-timerfd end
-
-EPOLLOUT start
-prepareData:8, 6, 433440
-prepareData:9, 296, 433440
-[send_packet] 0, 301, 0
-Send to: 10.10.1.4:34218, 302
-1 enqueue:1
-enqueue:(1161, 1462) 2
-rto:589532
-EPOLLOUT end 
-
-EPOLLIN start
-Receive from: 10.10.1.4:34218
-Receive, 5, 919
-first_pn:726, end_pn:919, 1160
-19 transmission_map:8, 731
-0 check:8, 731
-19 transmission_map:8, 731
-18 retransmission_map:920, 925
-17 transmission_map:732, 919
-0 check:732, 919
-process_acknowledge:1160, 920
-max_acknowleged: 919
-8 ack_count:718, 724
-9 ack_count:175, 724
-tx_:2
-EPOLLIN end 
-
-EPOLLOUT start
-prepareData:8, 6, 347780
-[Debug] difference:9, pn:1474, out_len:48, out_off:0
-prepareData:9, 237, 347780
-[send_packet] 0, 242, 0
-Send to: 10.10.1.4:34218, 243
-1 enqueue:2
-enqueue:(1463, 1705) 3
-rto:589532
-EPOLLOUT end 
-
-IP: 10.10.1.4, Port: 34218
-pn:920, 1705
-926, 1160
-926, 1160
-926, 1160
-926, 1160
-926, 1160
-926, 1160
-926, 1160*/
     /*If timer triggered, process all unacknowledge packet as loss*/
     /*TODD: use previous record pair to minimize the iteration times*/
     void process_timeout(){
