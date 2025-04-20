@@ -2334,24 +2334,9 @@ public:
             <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
             _Exit(0);
         }
-        receivevector[byte_index] |= (1 << bit_index);  
 
-        /*TODO: Receive quene to receive*/
-        /*
-        if(!receivequeue[pkt_difference].receive_offset.find(pkt_offset)){
-            receivequeue[pkt_difference].receive_offset.insert(pkt_offset);
-            receivequeue[pkt_difference].rec_buffer.reg(pkt_length);
-        }
-        */
-        // if(!receive_offset.find(pkt_offset) && pkt_difference == receive_connection_difference){
-        //     receive_offset.insert(pkt_offset);
-        //     rec_bufferp[].reg(pkt_length);
-        // }
-        // if(!receive_offset[pkt_difference].find(pkt_offset)){
-        //     receive_offset[pkt_difference].insert(pkt_offset);
-        //     rec_buffer[pkt_difference].reg(pkt_length);
-        // }
         if (pkt_difference >= receive_connection_difference){
+            receivevector[byte_index] |= (1 << bit_index);  
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, exist);
             if (exist){
