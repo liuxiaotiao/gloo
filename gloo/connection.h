@@ -2652,6 +2652,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
+        std::cout<<"process_acknowledge:"<<pkt_difference<<std::endl;
 
         if (first_pn >= (max_acknowleged + 1)){
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
