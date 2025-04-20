@@ -2262,16 +2262,16 @@ public:
         // }
         
         if (pkt_offset == 0){
-            std::cout<<"1. "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+            std::cout<<"[zerocheck] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
         }
         
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
                 if (recvCQ.differencecheck(pkt_difference)){
+                    std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
                     recvCQ.used_set(pkt_difference);
-                    std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     zerolist.push_back(pkt_difference, index);
                 }else{
                     receive_available_map[index] = 0;
