@@ -2280,8 +2280,12 @@ public:
         //     receive_available_map[index] = 0;
         // }
         
-        if (pkt_offset == 0){
-            std::cout<<"[zerocheck] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+        // if (pkt_offset == 0){
+        //     std::cout<<"[zerocheck] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+        // }
+
+        if (pkt_difference >= receive_connection_difference){
+            std::cout<<"[check] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num << ", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
         }
         
         receive_available_map[index] = 1;
