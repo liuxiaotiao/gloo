@@ -170,11 +170,11 @@ public:
         if (isFull()) {
             throw std::overflow_error("TSCircularQueue is full(enqueue)");
         }
-        std::cout<<"1 enqueue:"<<count<<std::endl;
+        // std::cout<<"1 enqueue:"<<count<<std::endl;
         buffer[tail] = value;
         tail = (tail + 1) % capacity;
         ++count;
-        std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
+        // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
     }
 
     DataType dequeue() {
@@ -263,7 +263,7 @@ public:
         if (isEmpty()) {
             throw std::underflow_error("TSCircularQueue is empty(remove)");
         }
-        std::cout << "start removeBeforeValue:" << value << std::endl;
+        // std::cout << "start removeBeforeValue:" << value << std::endl;
 
         TimeStamp result;
 
@@ -271,12 +271,12 @@ public:
         while (size() > 0) {
             const auto& item = front();  
             if (item.second.first < value){
-                std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+                // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 dequeue();
             }
 
             if (item.first.first <= value && item.second.first >= value){
-                std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+                // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 if (item.first.first == item.second.first){
                     result = item.first.second;
                 }else{
@@ -287,7 +287,7 @@ public:
             }
 
             if (value < item.first.first){
-                std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+                // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                 break;
             }
            
@@ -2088,7 +2088,7 @@ public:
             rttvar = srtt / 2;
             rto = srtt + 4 * rttvar;
             rtt_initial = false;
-            std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
+            // std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             if (rtt < minrtt){
@@ -2100,7 +2100,7 @@ public:
             auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
             rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
             rto = srtt + 4 * rttvar;
-            std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
+            // std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }    
     }
 
@@ -2297,6 +2297,10 @@ public:
         size_t byte_index = pos / 8;
         size_t bit_index = pos % 8;
 
+        /*
+        If byte_index is beyong the capacity of the receivevector.size(), splite ack to multiple acks 
+        or drop start part
+        */
         if (byte_index > receivevector.size()){
             std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
             <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
@@ -2371,6 +2375,7 @@ public:
         return false;
     }
 
+    /*Update received difference record*/
     void update_receive_parameter(){
         current_loop_min = current_loop_max + 1;
     }
@@ -2637,6 +2642,7 @@ public:
     //     }
     // }
 
+    /*Process acknowledge packet*/
     void process_acknowledge(const size_t index_){
         auto pkt_num = receive_message[index_].get_packet_number();
         auto pkt_len = receive_message[index_].get_packet_length();
@@ -2648,7 +2654,7 @@ public:
 
 
         if (first_pn >= (max_acknowleged + 1)){
-            std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
+            // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
                 update_rtt(*ackts, receivets);
@@ -2667,7 +2673,7 @@ public:
         /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
+        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
 
         /*Check acknowledge packet loss*/
         /*
@@ -2705,7 +2711,7 @@ public:
                             pn++;
                             continue;
                         }
-                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+                        // std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
 
                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
                             byte_index = (pn - first_pn) / 8;
@@ -2750,8 +2756,8 @@ public:
                         }
                         
 
-                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
-                        std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
+                        // std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
+                        // std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
 
                         if (result == 0){
                             pn++;
@@ -2799,15 +2805,15 @@ public:
                         _Exit(0);
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
+                    // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
                     if (compare_ == 0){
-                        std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, true);
                             loss_pn++;
                         }
                     }else{
-                        std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
@@ -2818,8 +2824,7 @@ public:
             }
             
         }
-        std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
-        // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
+        // std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
         while (true)
         {
             if (pn > end_pn){
@@ -2839,11 +2844,7 @@ public:
             }
             std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
-            // if ((sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-            //     std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
-            //     pn++;
-            //     continue;
-            // }
+       
             if (sendpair.first > pn || pn > sendpair.second){
                 pn++;
                 continue;
@@ -2865,7 +2866,7 @@ public:
                     break;
                 }
             }
-            std::cout<<"process_acknowledge 4," << pn <<std::endl;
+            // std::cout<<"process_acknowledge 4," << pn <<std::endl;
         }
 
         if (max_acknowleged == LIMIT_UINT64_T){
@@ -2877,7 +2878,7 @@ public:
         }
         
         
-        std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
+        // std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
         
         if (loss && !first_loss){
             recovery.check_point();
@@ -3036,7 +3037,8 @@ pn:920, 1705
 926, 1160
 926, 1160
 926, 1160*/
-
+    /*If timer triggered, process all unacknowledge packet as loss*/
+    /*TODD: use previous record pair to minimize the iteration times*/
     void process_timeout(){
         char ipStr[INET6_ADDRSTRLEN];
         uint16_t port = 0;
