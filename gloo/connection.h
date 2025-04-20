@@ -849,18 +849,18 @@ class MetaInfo{
         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Packet_num_len packet_){
             for (size_t i = 0; i < transmission_map.unused_size(); i++){
                 auto result = transmission_map.at_unused(i).get_range();
-                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                    std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
-                }
+                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+                // }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, true);
                 }
             }
             for (auto i = 0; i < retransmission_map.unused_size(); i++){
                 auto result = retransmission_map.at_unused(i).get_range();
-                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                    std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
-                }
+                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+                // }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, false);
                 }
@@ -872,18 +872,18 @@ class MetaInfo{
         std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Packet_num_len packet_){
             for (size_t i = 0; i < transmission_map.unused_size(); i++){
                 auto result = transmission_map.at_unused(i).get_range();
-                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                    std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
-                }
+                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+                // }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, true);
                 }
             }
             for (auto i = 0; i < retransmission_map.unused_size(); i++){
                 auto result = retransmission_map.at_unused(i).get_range();
-                if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                    std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
-                }
+                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+                //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+                // }
                 if (packet_ >= result.first && packet_ <= result.second){
                     return std::make_tuple(result.first,result.second, i, false);
                 }
@@ -2842,7 +2842,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
