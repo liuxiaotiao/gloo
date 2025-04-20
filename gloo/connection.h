@@ -2261,6 +2261,11 @@ public:
         // }else{
         //     receive_available_map[index] = 0;
         // }
+        
+        if (pkt_offset == 0){
+            std::cout<<"1. "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+        }
+        
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
