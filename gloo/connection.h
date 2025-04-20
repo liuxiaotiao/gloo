@@ -342,6 +342,10 @@ class RCset{
         RCset_body(capacity_){
         }
 
+        size_t count() const{
+            return RCset_body.count();
+        }
+
         bool find(Offset_len offset_){
             auto index = get_index(offset_);
             if (index >= RCset_body.size()){
@@ -1691,6 +1695,20 @@ public:
         return data_[index].srcsetCheck();
     }
 
+    metarecebuf& at(size_t i) {
+        if (i >= count_)
+            throw std::out_of_range("Index out of range");
+        return data_[(head_ + i) % capacity_];
+    }
+
+    void receive_log(){
+        std::cout<<"receive condition"<<std::endl;
+        for (auto i = 0; i < count_; i++){
+            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << std::endl;
+        }
+    }
+
+
     ~RCircularQueue() = default;
 };
 
@@ -2175,6 +2193,7 @@ public:
                 send_flag_ = false;
             }
         }
+        recvCQ.receive_log();
         return send_flag_;
     }
 
