@@ -2714,7 +2714,9 @@ public:
         size_t byte_index = 0;
         size_t bit_index = 0;
 
-        log_print((void*)ack_src, (pkt_len - 8));
+        if (pkt_difference > 20){
+            log_print((void*)ack_src, (pkt_len - 8));
+        }
 
         
         /*TODO: process max_ack and first_pn*/
