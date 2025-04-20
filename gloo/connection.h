@@ -788,6 +788,9 @@ class MetaInfo{
 
         size_t block_type = std::numeric_limits<size_t>::max();
 
+        /* true is complete, false is not complete*/
+        bool send_status = false;
+
         MetaInfo(size_t difference_flag_ = std::numeric_limits<uint16_t>::max()): 
         MetaDifference(difference_flag_),
         metabuf(MAX_SEND_UDP_PAYLOAD_SIZE),
@@ -959,11 +962,15 @@ class MetaInfo{
         }
 
         bool iscomplete(){
-            return metabuf.written_complete();
+            return metabuf.written_complete() || send_status == true;
         }
 
         size_t sent(){
             return metabuf.sentComplete();
+        }
+
+        void complete(){
+            send_status = true;
         }
 
         void clear(){
@@ -974,6 +981,7 @@ class MetaInfo{
             difference_flag = LIMIT_UINT64_T;
             range_len = 0;
             send_len = 0;
+            send_status = false;
         }
 
         void MetaInfo_log(bool contain_ = false) const{
@@ -1179,6 +1187,23 @@ class SCircularQueue {
                 return 2;
             else
                 return 1;
+        }
+
+        MetaInfo& at(size_t i) {
+            if (i >= count_)
+                throw std::out_of_range("Index out of range");
+            return data_[(head_ + i) % capacity_];
+        }
+
+        /*Manully set old difference block as complete*/
+        void completecheck(Difference_len difference_){
+            for (auto i = 0; i < count_; i++){
+                if (at(i).get_difference() < difference_){
+                    at(i).complete();
+                }else{
+                    break;
+                }
+            }
         }
 
 
@@ -2667,6 +2692,8 @@ public:
 
         std::cout<<"process_acknowledge:"<<pkt_difference<<std::endl;
 
+
+
         if (first_pn >= (max_acknowleged + 1)){
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
@@ -2674,6 +2701,8 @@ public:
                 update_rtt(*ackts, receivets);
             }
         }
+        sendbufferqueue.completecheck(pkt_difference);
+
         
 
         auto end_pn = pkt_num;
