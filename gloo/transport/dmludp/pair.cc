@@ -881,6 +881,7 @@ bool Pair::protocal2send(){
       auto &op = tx_[i];
       std::cout<<"2 i:"<<i<<std::endl;
       const auto opcode = op.getOpcode();
+      std::cout<<"3 i:"<<opcode<<std::endl;
       if (opcode == Op::SEND_UNBOUND_BUFFER) {
         buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
         if (!buf) {
