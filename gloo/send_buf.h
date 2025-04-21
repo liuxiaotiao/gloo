@@ -29,6 +29,7 @@ namespace dmludp{
 
         void ensure_capacity(size_t new_bits) {
             size_t required_blocks = (new_bits + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
+            std::cout<<"1 ensure_capacity:"<<new_bits<<", "<<required_blocks<<std::endl;
             if (data.size() < required_blocks) {
                 data.resize(required_blocks, 0);
             }
@@ -80,12 +81,14 @@ namespace dmludp{
         void resize(size_t new_size) {
             ensure_capacity(new_size);
             if (new_size > num_bits) {
+                std::cout<<"1 new_size:"<<new_size<<", "<<num_bits<<std::endl;
                 size_t old_block = block_index(num_bits);
                 size_t new_block = block_index(new_size);
                 if (old_block != new_block) std::fill(data.begin() + old_block + 1, data.begin() + new_block + 1, 0);
                 size_t old_offset = bit_offset(num_bits);
                 if (old_offset != 0) data[old_block] &= (1ULL << old_offset) - 1;
             } else if (new_size < num_bits) {
+                std::cout<<"2 new_size:"<<new_size<<", "<<num_bits<<std::endl;
                 size_t new_last_block = block_index(new_size);
                 size_t new_last_offset = bit_offset(new_size);
                 if (new_last_offset != 0) {
@@ -288,11 +291,9 @@ namespace dmludp{
             }
             
             meta_pos = 0;
-            std::cout<<"add_Meta 1"<<std::endl;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
             }
-            std::cout<<"add_Meta 2"<<std::endl;
             bits_set.clear();
             ack_count = 0;
             rcq.clear();
