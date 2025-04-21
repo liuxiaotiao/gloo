@@ -835,7 +835,6 @@ bool Pair::protocal2read(){
             }
           }
           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
-          // op.nwritten = dmludp_conn_data_sent_once(dmludp_connection);
           if (op.nwritten == op.preamble.nbytes){
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
@@ -864,7 +863,7 @@ bool Pair::protocal2send(){
   }
   
   ssize_t rv;
-  
+  std::cout<<"protocal2send"<<std::endl;
   if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
     std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
     _Exit(0);

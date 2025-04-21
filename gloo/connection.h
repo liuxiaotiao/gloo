@@ -2199,6 +2199,8 @@ public:
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         bool isfirst = true;
+        size_t first_index = 0;
+        size_t end_index = 0;
         for (auto i = 0 ; i <= receive_max_index ; i++){
             if (receive_available_map[i] == 1)
             {
@@ -2211,10 +2213,14 @@ public:
             }
 
             if (pkt_ty == Type::Application){
+                if (isfirst){
+                    first_index = i;
+                }
                 process_application_packet(i, isfirst);
                 send_packet_type = Type::ACK;
                 send_flag_ = true;
                 isfirst = false;
+                end_index = i;
             }
 
             if (pkt_ty == Type::Stop){
@@ -2223,6 +2229,8 @@ public:
                 send_flag_ = false;
             }
         }
+        std::cout<<"recv_slice2:"<<receive_message[first_index].get_packet_offset() << ", " << receive_message[end_index].get_packet_offset() << std::endl;
+      
         recvCQ.receive_log();
         return send_flag_;
     }
@@ -2280,6 +2288,10 @@ public:
         /* no operation on old packet*/
         if (pkt_num < current_loop_min){
             return;
+        }
+
+        if (isfirst){
+            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         }
 
         // if (pkt_difference >= receive_connection_difference){
