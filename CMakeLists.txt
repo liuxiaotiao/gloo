@@ -71,18 +71,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-# Enable Sanitizers+++++++++++++++++++++++++++++
-option(ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan for all targets" ON)
-
-if(ENABLE_SANITIZERS)
-  message(STATUS "Sanitizers enabled: AddressSanitizer + UBSan")
-  set(SANITIZER_FLAGS "-fsanitize=address,undefined")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS} -g -fno-omit-frame-pointer")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS} -g -fno-omit-frame-pointer")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_FLAGS}")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_FLAGS}")
-endif()
-
 # Use CMAKE_<LANG>_COMPILER_LAUNCHER if available.
 find_program(SCCACHE_EXECUTABLE sccache)
 mark_as_advanced(SCCACHE_EXECUTABLE)
