@@ -2832,6 +2832,9 @@ public:
                                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
                                 sendbufferqueue.ack4offset(i, pn, (bool)value);
                                 pn++;
+                                if (pn > end_pn || pn == (max_acknowleged + 1)){
+                                    break;
+                                }
                             }
                         }else if(result == 2){
                             while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
@@ -2840,6 +2843,9 @@ public:
                                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
                                 sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
                                 pn++;
+                                if (pn > end_pn || pn == (max_acknowleged + 1)){
+                                    break;
+                                }
                             }
                         }
 
