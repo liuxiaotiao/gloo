@@ -703,7 +703,7 @@ bool Pair::protocal2read(){
             };
 
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
-            std::cout<<"read check 1:"<<rnbytes<", "<<rx_.getOpcode()<<std::endl;
+            std::cout<<"read check 1:"<<rnbytes<<", "<<rx_.getOpcode()<<std::endl;
 
             if (rnbytes == 0){
               readComplete(rbuf);
@@ -796,7 +796,7 @@ bool Pair::protocal2read(){
                 .iov_len = 0,
               };
               const auto rnbytes = prepareRead(rx_, rbuf, riov);
-              std::cout<<"read check 3:"<<rnbytes<", "<<rx_.getOpcode()<<std::endl;
+              std::cout<<"read check 3:"<<rnbytes<<", "<<rx_.getOpcode()<<std::endl;
 
               if (rnbytes == 0){
                 readComplete(rbuf);
