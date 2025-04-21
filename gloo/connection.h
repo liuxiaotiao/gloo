@@ -719,7 +719,7 @@ class MapSet {
         }
 
         void clear() {
-            for (auto e: buffer_){
+            for (auto &e: buffer_){
                 // e.clear();
                 e.reset();
             }
@@ -2698,8 +2698,6 @@ public:
         std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num<<std::endl;
 
 
-
-
         if (first_pn >= (max_acknowleged + 1)){
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
@@ -2718,9 +2716,9 @@ public:
         size_t byte_index = 0;
         size_t bit_index = 0;
 
-        if (pkt_difference > 20){
-            log_print((void*)ack_src, (pkt_len - 8));
-        }
+        // if (pkt_difference > 20){
+        //     log_print((void*)ack_src, (pkt_len - 8));
+        // }
 
         
         /*TODO: process max_ack and first_pn*/
@@ -2772,6 +2770,16 @@ public:
                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
                             sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
                             pn++;
+                        }
+                    }
+                    {
+                        std::cout<<"process_acknowledge 1:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
+                        auto sendbufferqueue_start_index = sendbufferqueue.start();
+                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                            auto difference_ = sendbufferqueue.data_[index].get_difference();
+                            std::cout << difference_ << " " ;
+                            sendbufferqueue.data_[index].metabuf.ack_check();
                         }
                     }
                 }else{
@@ -2833,6 +2841,16 @@ public:
                         }
 
                     }
+                    {
+                        std::cout<<"process_acknowledge 2:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
+                        auto sendbufferqueue_start_index = sendbufferqueue.start();
+                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                            auto difference_ = sendbufferqueue.data_[index].get_difference();
+                            std::cout << difference_ << " " ;
+                            sendbufferqueue.data_[index].metabuf.ack_check();
+                        }
+                    }
                 }
             }else{
                 auto loss_pn = max_acknowleged + 1;
@@ -2875,12 +2893,23 @@ public:
                     }
                     std::cout<<"3 check"<<std::endl;
                 }
+                {
+                    std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
+                    auto sendbufferqueue_start_index = sendbufferqueue.start();
+                    for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                        int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                        auto difference_ = sendbufferqueue.data_[index].get_difference();
+                        std::cout << difference_ << " " ;
+                        sendbufferqueue.data_[index].metabuf.ack_check();
+                    }
+                }
             }
             
         }
         // std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
         while (true)
         {
+            std::cout<<"process_acknowledge 4:" << pn << ", " <<(max_acknowleged + 1) << std::endl;
             if (pn > end_pn){
                 break;
             }
