@@ -2900,12 +2900,18 @@ public:
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, true);
                             loss_pn++;
+                            if (loss_pn == first_pn){
+                                break;
+                            }
                         }
                     }else{
                         // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
+                            if (loss_pn == first_pn){
+                                break;
+                            }
                         }
                     }
                     std::cout<<"3 check"<<std::endl;
