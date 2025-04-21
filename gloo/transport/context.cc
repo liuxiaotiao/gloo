@@ -39,8 +39,9 @@ bool Context::LazyTally::exists() {
 }
 
 Context::Tally& Context::LazyTally::get() {
-  std::cout<<"Context::LazyTally::get():"<<vec_.size()<<std::endl;
+  std::cout<<"1 Context::LazyTally::get():"<<vec_.size()<<std::endl;
   initialize_iterator();
+  std::cout<<"2 Context::LazyTally::get():"<<vec_.size()<<std::endl;
   if (it_ == vec_.end()) {
     vec_.emplace_back(slot_);
     it_ = (vec_.end() - 1);
