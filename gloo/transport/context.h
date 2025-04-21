@@ -114,7 +114,7 @@ class Context {
     class List final {
      public:
       List() {
-        ranks_.reserve(1024);  
+        ranks_.reserve(128);  
       }
       bool empty() const {
         return ranks_.empty();

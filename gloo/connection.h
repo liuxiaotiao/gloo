@@ -2707,7 +2707,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
+        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
@@ -2787,16 +2787,16 @@ public:
                             }
                         }
                     }
-                    {
-                        std::cout<<"process_acknowledge 1:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
-                        auto sendbufferqueue_start_index = sendbufferqueue.start();
-                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                            auto difference_ = sendbufferqueue.data_[index].get_difference();
-                            std::cout << difference_ << " " ;
-                            sendbufferqueue.data_[index].metabuf.ack_check();
-                        }
-                    }
+                    // {
+                    //     std::cout<<"process_acknowledge 1:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
+                    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+                    //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                    //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                    //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+                    //         std::cout << difference_ << " " ;
+                    //         sendbufferqueue.data_[index].metabuf.ack_check();
+                    //     }
+                    // }
                 }else{
                     while (true){
                         if (pn > end_pn || pn == (max_acknowleged + 1)){
@@ -2862,16 +2862,16 @@ public:
                         }
 
                     }
-                    {
-                        std::cout<<"process_acknowledge 2:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
-                        auto sendbufferqueue_start_index = sendbufferqueue.start();
-                        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                            auto difference_ = sendbufferqueue.data_[index].get_difference();
-                            std::cout << difference_ << " " ;
-                            sendbufferqueue.data_[index].metabuf.ack_check();
-                        }
-                    }
+                    // {
+                    //     std::cout<<"process_acknowledge 2:" << end_pn << ", " << (max_acknowleged + 1) << std::endl;
+                    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+                    //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                    //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                    //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+                    //         std::cout << difference_ << " " ;
+                    //         sendbufferqueue.data_[index].metabuf.ack_check();
+                    //     }
+                    // }
                 }
             }else{
                 auto loss_pn = max_acknowleged + 1;
@@ -2893,7 +2893,7 @@ public:
                         }
                     }
                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-                        std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
+                        // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
                         loss_pn++;
                     }
@@ -2918,25 +2918,25 @@ public:
                             }
                         }
                     }
-                    std::cout<<"3 check"<<std::endl;
+                    // std::cout<<"3 check"<<std::endl;
                 }
-                {
-                    std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
-                    auto sendbufferqueue_start_index = sendbufferqueue.start();
-                    for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                        int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                        auto difference_ = sendbufferqueue.data_[index].get_difference();
-                        std::cout << difference_ << " " ;
-                        sendbufferqueue.data_[index].metabuf.ack_check();
-                    }
-                }
+                // {
+                //     std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
+                //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+                //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+                //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+                //         std::cout << difference_ << " " ;
+                //         sendbufferqueue.data_[index].metabuf.ack_check();
+                //     }
+                // }
             }
             
         }
         // std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
         while (true)
         {
-            std::cout<<"process_acknowledge 4:" << pn << ", " <<(max_acknowleged + 1) << std::endl;
+            // std::cout<<"process_acknowledge 4:" << pn << ", " <<(max_acknowleged + 1) << std::endl;
             if (pn > end_pn){
                 break;
             }
