@@ -758,6 +758,20 @@ bool Pair::protocal2read(){
               std::cout<<"read check 2:"<<rnbytes<<", "<<rx_.getOpcode()<<std::endl;
 
               if (rnbytes == 0){
+                /*
+                receive condition
+                154561, 722
+                154562, 0
+                154563, 1
+                read check 2:1038028, 1
+                read check 2:0, 1
+                readComplete:1
+                2 read:154561
+                read complete
+                read check 2:48, 0
+                read check 2:48, 0
+                read check 2:48, 0
+                */
                 readComplete(rbuf);
                 std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_conn_recv_reset(dmludp_connection);
@@ -853,6 +867,7 @@ bool Pair::protocal2read(){
   }
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
+    std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
   }else{
     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
     std::cout << "tx_:" << tx_.size() << std::endl;
