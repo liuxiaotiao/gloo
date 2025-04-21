@@ -874,11 +874,12 @@ bool Pair::protocal2send(){
   }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
     std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
     for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
+      std::cout<<"1 i:"<<i<<std::endl;
       NonOwningPtr<UnboundBuffer> buf;
       std::array<struct iovec, 2> iov;
       int ioc;
       auto &op = tx_[i];
-      std::cout<<"i:"<<i<<std::endl;
+      std::cout<<"2 i:"<<i<<std::endl;
       const auto opcode = op.getOpcode();
       if (opcode == Op::SEND_UNBOUND_BUFFER) {
         buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
