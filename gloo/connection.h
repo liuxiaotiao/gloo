@@ -2702,7 +2702,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num<<std::endl;
+        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
@@ -2891,6 +2891,7 @@ public:
                         std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
                         loss_pn++;
+
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
