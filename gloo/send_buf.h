@@ -346,7 +346,7 @@ namespace dmludp{
         } 
 
         void ack_check(){
-            std::cout << "ack_count:" << ack_count << ", " << bits_set.size() << std::endl;
+            std::cout << "ack_count:" << ack_count << ", " << bits_set.size() << ", " << bits_set.count() << std::endl;
         }
 
 
