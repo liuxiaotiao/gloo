@@ -15,9 +15,9 @@ else()
       "${CMAKE_CURRENT_SOURCE_DIR}/socket.cc"
       "${CMAKE_CURRENT_SOURCE_DIR}/unbound_buffer.cc"
       )
-    foreach(src_file IN LISTS GLOO_TRANSPORT_SRCS)
-      set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "-fsanitize=address,undefined -g -fno-omit-frame-pointer")
-    endforeach()
+    #foreach(src_file IN LISTS GLOO_TRANSPORT_SRCS)
+     # set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "-fsanitize=address,undefined -g -fno-omit-frame-pointer")
+   # endforeach()
     list(APPEND GLOO_TRANSPORT_HDRS
       "${CMAKE_CURRENT_SOURCE_DIR}/address.h"
       "${CMAKE_CURRENT_SOURCE_DIR}/attr.h"

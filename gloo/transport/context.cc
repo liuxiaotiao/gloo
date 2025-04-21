@@ -7,6 +7,7 @@
  */
 
 #include "gloo/transport/context.h"
+#include <iostream>
 
 namespace gloo {
 namespace transport {
@@ -39,6 +40,7 @@ bool Context::LazyTally::exists() {
 
 Context::Tally& Context::LazyTally::get() {
   initialize_iterator();
+  std::cout<<"Context::LazyTally::get():"<<vec_.size()<<std::endl;
   if (it_ == vec_.end()) {
     vec_.emplace_back(slot_);
     it_ = (vec_.end() - 1);
