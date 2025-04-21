@@ -883,7 +883,7 @@ bool Pair::protocal2send(){
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
 
-      bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+      bool connection_written = dmludp_connection->get_da090ta(iov.data(), ioc, opcode);
       if (!connection_written){
         return false;
       }

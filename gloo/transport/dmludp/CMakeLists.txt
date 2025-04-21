@@ -28,7 +28,7 @@ else()
       "${CMAKE_CURRENT_SOURCE_DIR}/pair.h"
       "${CMAKE_CURRENT_SOURCE_DIR}/socket.h"
       "${CMAKE_CURRENT_SOURCE_DIR}/unbound_buffer.h"
-      "${CMAKE_CURRENT_SOURCE_DIR}/dmludp_io.h"
+      #"${CMAKE_CURRENT_SOURCE_DIR}/dmludp_io.h"
       )
 endif()
 
