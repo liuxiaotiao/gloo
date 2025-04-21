@@ -896,7 +896,7 @@ bool Pair::protocal2send(){
       }
     }
   }else{}
-
+  std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
       device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -943,6 +943,7 @@ bool Pair::protocal2send(){
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
+  std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(new_value));
   auto delay = dmludp_connection->get_rto();
