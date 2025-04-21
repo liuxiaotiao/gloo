@@ -2851,9 +2851,10 @@ public:
                             break;
                         }
                     }
-                    if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
+                    if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                         std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
-                        _Exit(0);
+                        // _Exit(0);
+                        loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
