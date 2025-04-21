@@ -2312,9 +2312,9 @@ public:
         //     std::cout<<"[zerocheck] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
         // }
 
-        if (pkt_difference >= receive_connection_difference && receive_connection_difference >= 20){
-            std::cout<<"[check] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num << ", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-        }
+        // if (pkt_difference >= receive_connection_difference && receive_connection_difference >= 20){
+        //     std::cout<<"[check] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num << ", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+        // }
         
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
