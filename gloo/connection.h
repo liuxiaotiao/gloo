@@ -3096,7 +3096,7 @@ public:
             //     std::cerr << "Acknowledge unknow packet(" << pn << ")" << std::endl;
             //     _Exit(0);
             // }
-            std::cout<<sendpair.first<<", " << sendpair.second << std::endl;
+            // std::cout<<sendpair.first<<", " << sendpair.second << std::endl;
             while (pn >= sendpair.first && pn <= sendpair.second){
                 sendbufferqueue.ack4offset(i, pn, false);
                 pn++;
@@ -3106,7 +3106,7 @@ public:
 
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
-        std::cout<<"tsInfo.size:"<<tsInfo.size()<<", "<<max_acknowleged<<std::endl;
+        // std::cout<<"tsInfo.size:"<<tsInfo.size()<<", "<<max_acknowleged<<std::endl;
 
         auto receivets = std::chrono::steady_clock::now();
 
@@ -3169,7 +3169,7 @@ public:
                     break;
                 }           
             }
-            std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<", "<<sent_limit<<std::endl;
+            // std::cout<<"prepareData:"<<(int)i<<", "<<d_sent<<", "<<sent_limit<<std::endl;
             if (sent_cwnd >= sent_limit || sent >= send_message.size()){
                 break;
             }
