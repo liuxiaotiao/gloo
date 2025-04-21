@@ -1777,7 +1777,9 @@ public:
 
     void push_back(Difference_len difference_, uint16_t payload_index) {
         if (count == capacity) {
-            resize();
+            std::cerr<<"zeroQueue exceed capacity"<<std::endl;
+            _Exit(0);
+            // resize();
         }
 
         if (!is_newer(difference_, difference_record)){
