@@ -872,7 +872,7 @@ bool Pair::protocal2send(){
     std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
     _Exit(0);
   }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-    std::std << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
+    std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
     for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
       NonOwningPtr<UnboundBuffer> buf;
       std::array<struct iovec, 2> iov;
