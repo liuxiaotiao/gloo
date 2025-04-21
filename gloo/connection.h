@@ -2354,7 +2354,8 @@ public:
         size_t pos = pkt_num - current_loop_min;
         if(pos > receivevector.size() * sizeof(uint8_t)){
             if(isfirst){
-                current_loop_min = (pkt_num + current_loop_min) / 2;
+                current_loop_min = pkt_num;
+                pos = 0;
             }
         }
         size_t byte_index = pos / 8;
@@ -2891,7 +2892,6 @@ public:
                         std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
                         loss_pn++;
-
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
