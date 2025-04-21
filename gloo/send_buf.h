@@ -288,9 +288,11 @@ namespace dmludp{
             }
             
             meta_pos = 0;
+            std::cout<<"add_Meta 1"<<std::endl;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
             }
+            std::cout<<"add_Meta 2"<<std::endl;
             bits_set.clear();
             ack_count = 0;
             rcq.clear();
