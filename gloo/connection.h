@@ -2198,6 +2198,7 @@ public:
         receive_upper_bound = rx_count;
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
+        bool isfirst = true;
         for (auto i = 0 ; i <= receive_max_index ; i++){
             if (receive_available_map[i] == 1)
             {
@@ -2210,9 +2211,10 @@ public:
             }
 
             if (pkt_ty == Type::Application){
-                process_application_packet(i);
+                process_application_packet(i, isfirst);
                 send_packet_type = Type::ACK;
                 send_flag_ = true;
+                isfirst = false;
             }
 
             if (pkt_ty == Type::Stop){
@@ -2268,7 +2270,7 @@ public:
     1. skip pakcet older than this round minimum packet
     2. add new flag to shrink receive message queue.
     */
-    void process_application_packet(size_t index){
+    void process_application_packet(size_t index, bool isfirst){
         Packet_num_len pkt_num = receive_message[index].get_packet_number();
         Offset_len pkt_offset = receive_message[index].get_packet_offset();
         Difference_len pkt_difference = receive_message[index].get_packet_difference();
@@ -2350,6 +2352,11 @@ public:
 
         
         size_t pos = pkt_num - current_loop_min;
+        if(pos > receivevector.size() * sizeof(uint8_t)){
+            if(isfirst){
+                current_loop_min = (pkt_num + current_loop_min) / 2;
+            }
+        }
         size_t byte_index = pos / 8;
         size_t bit_index = pos % 8;
 
