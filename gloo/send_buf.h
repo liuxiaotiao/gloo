@@ -37,6 +37,7 @@ namespace dmludp{
 
     public:
         explicit DynamicBitset(size_t size = 0) : num_bits(size) {
+            data.reserve(5157);
             ensure_capacity(size);
         }
 
@@ -237,7 +238,6 @@ namespace dmludp{
 
         std::vector<uint64_t> meta_len2;
 
-        // CircularQueue rcq;
         SendBufferCircularQueue rcq;
 
         DynamicBitset bits_set;
