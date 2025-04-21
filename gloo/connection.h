@@ -2386,14 +2386,14 @@ public:
         hdr->difference = receive_connection_difference;
 
         size_t info_len = (max_received - current_loop_min + 1 + 7) / 8;
-        hdr->pkt_length = info_len + 16;
+        hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
         acknowldge_iov[0].iov_len = sizeof(Header);
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
-        acknowldge_iov[1].iov_len = sizeof(uint64_t);
+        acknowldge_iov[1].iov_len = sizeof(Packet_num_len);
 
         acknowldge_iov[2].iov_base = receivevector.data();
         acknowldge_iov[2].iov_len = info_len;
@@ -2401,7 +2401,9 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        log_print(receivevector.data(), info_len);
+
 
         send_packet_type = ty;
         return sizeof(Header) + hdr->pkt_length;
