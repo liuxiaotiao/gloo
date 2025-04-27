@@ -1309,7 +1309,7 @@ class metarecebuf{
             used = false;
             rdifference = 0;
             status_ = 0;
-            index_ = LIMIT_UINT32_T;
+            index_ = LIMIT_UINT16_T;
             for (auto &e:source_len){
                 e = 0;
             }
