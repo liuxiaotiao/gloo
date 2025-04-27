@@ -3158,7 +3158,6 @@ public:
         Difference_len pkt_difference;
         if (!recvCQ.empty()){
             if (receive_connection_difference == recvCQ.start() && recvCQ.srcsetcheck(receive_connection_difference)){
-                auto index = zerolist[0].second;
                 auto index = recvCQ.startpos();
                 pkt_offset = receive_message[index].get_packet_offset();
                 pkt_difference = receive_message[index].get_packet_difference();
