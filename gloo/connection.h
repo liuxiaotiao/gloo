@@ -3161,6 +3161,7 @@ public:
                 auto index = recvCQ.startpos();
                 pkt_offset = receive_message[index].get_packet_offset();
                 pkt_difference = receive_message[index].get_packet_difference();
+                std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << std::endl;
                 recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
                 receive_available_map[index] = 0;
                 receive_record.reset();
