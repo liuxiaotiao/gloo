@@ -947,18 +947,14 @@ bool Pair::protocal2send(){
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
     std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
-    if(sent == 0){
-      // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-      // return true;
-      break;
+    if(accumulated == 0){
+      device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+      return true;
     }else{
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
 
-  if (accumulated == 0){
-    device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-  }
 
   std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
