@@ -653,15 +653,6 @@ class MapSet {
                     }
                 }
             }
-            // while (!empty()) {
-            //     auto range = get_range();
-            //     std::cout<<"removeBeforeValue range:"<<range.first<<", "<<range.second<<", "<<packet_<<std::endl;
-            //     if (range.second < packet_ && range.second != LIMIT_UINT64_T) {
-            //         pop();
-            //     } else {
-            //         return;
-            //     }
-            // }
         }
 
         void for_each(const std::function<void(const T&)>& func) const {
@@ -1793,133 +1784,6 @@ public:
     ~RCircularQueue() = default;
 };
 
-/*4.9 fix difference and index conversion solved*/
-class zeroQueue {
-public:
-    using PairType = std::pair<Difference_len, uint16_t>;
-
-private:
-    std::vector<PairType> data;
-    int front_index{0};
-    int back_index{0};
-    int count{0};
-    int capacity{DataBlock};
-    Difference_len difference_record{LIMIT_UINT32_T};
-
-    void resize() {
-        std::vector<PairType> new_data(capacity * 2);
-        for (int i = 0; i < count; ++i) {
-            new_data[i] = (*this)[i];
-        }
-        data = std::move(new_data);
-        front_index = 0;
-        back_index = count;
-        capacity *= 2;
-    }
-
-    int mod_add(int x, int d) const { return (x + d + capacity) % capacity; }
-    int mod_sub(int x, int d) const { return (x - d % capacity + capacity) % capacity; }
-
-public:
-    zeroQueue(int cap = DataBlock)
-      : capacity(cap)
-    {
-        data.resize(capacity);
-        for (auto i = 0; i < data.size(); i++){
-            data[i] = std::make_pair(LIMIT_UINT32_T, LIMIT_UINT16_T);
-        }
-    }
-
-    void push_back(Difference_len difference_, uint16_t payload_index) {
-        if (count == capacity) {
-            std::cerr<<"zeroQueue exceed capacity"<<std::endl;
-            _Exit(0);
-            // resize();
-        }
-
-        if (!is_newer(difference_, difference_record)){
-            return;
-        }
-
-        auto target = difference_ % capacity;
-        // std::cout << "1 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
-        if (empty()){
-            front_index = target;
-            data[front_index] = { difference_, payload_index };
-            back_index = front_index + 1;
-        }else{
-            // std::cout<<"head:" << front_index << ", " << back_index << ", " << count<< std::endl;
-            auto front_difference = front().first;;
-            auto back_difference = back().first;;
-            
-            /*Use is_newer to compare difference*/
-            if (difference_ < front_difference){
-                front_index = target;
-                data[front_index] = { difference_, payload_index };
-            }else if(difference_ > back_difference){
-                back_index = target;
-                data[back_index] = { difference_, payload_index };
-                back_index = mod_add(back_index, 1);
-            }else{
-                /* Solve duplicate add zero block data*/
-                if (data[target].first == difference_){
-                    return;
-                }
-                if (data[target].first == LIMIT_UINT32_T){
-                    data[target] = { difference_, payload_index };
-                }
-            }
-        }
-        // std::cout << "2 push_back:" << difference_ << ", " << count << ", " << front_index << ", " << back_index << std::endl;
-        ++count;
-    }
-
-    void pop_front() {
-        if (count == 0) throw std::runtime_error("zeroQueue is empty!");
-        // std::cout << "1 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
-        difference_record = data[front_index].first;
-        data[front_index] = { LIMIT_UINT32_T, LIMIT_UINT16_T };
-        front_index = mod_add(front_index, 1);
-        --count;
-        // std::cout << "2 pop_front:" << data[front_index].first << ", "  << count << ", " << front_index << ", " << back_index << std::endl;
-    }
-
-    PairType& operator[](int logical_idx) {
-        if (logical_idx < 0 || logical_idx >= count)
-            throw std::out_of_range("zeroQueue index out of range");
-        return data[mod_add(front_index, logical_idx)];
-    }
-
-    int size() const { return count; }
-    bool empty() const { return count == 0; }
-
-    PairType front() const {
-        if (count == 0) throw std::runtime_error("zeroQueue front() is empty!");
-        if (front_index != data[front_index].first % DataBlock){
-            std::cout<< "front_index:" << front_index << ", " << data[front_index].first << std::endl;
-            throw std::runtime_error("1 front_index != data[front_index].first!");
-        }
-        return data[front_index];
-    }
-
-    PairType back() const {
-        if (count == 0) throw std::runtime_error("zeroQueue back() is empty!");
-        if (mod_sub(back_index, 1) != data[mod_sub(back_index, 1)].first % DataBlock){
-            std::cout<< "back_index:" << back_index << ", " << data[back_index].first<< std::endl;
-            throw std::runtime_error("1 back_index != data[back_index].first!");
-        }
-        return data[mod_sub(back_index, 1)];
-    }
-
-
-    int indices_used() const {
-        if (count == 0) return 0;
-        auto f = front().first;
-        auto b = back().first;
-        return static_cast<int>(b) - static_cast<int>(f) + 1;
-    }
-};
-
 class Connection{
 public: 
     /// Whether this is a server-side connection.
@@ -1947,7 +1811,7 @@ public:
     // map for received application pktnum and corresponding offset
     std::vector<uint8_t> receivevector;
 
-    RCset receive_offset;
+    // RCset receive_offset;
 
     std::vector<uint8_t> acknowldge_header;
 
@@ -1957,14 +1821,6 @@ public:
 
     size_t send_packet_type = 0;
 
-    /*
-    store norm2 for every 256 bits float
-    Note: It refers to the priorty of each packet.
-    */ 
-    std::vector<uint8_t> norm2_vec;
-
-    size_t rx_length;
-
     bool recv_flag;
 
     /*Acknowledge packet number*/
@@ -1973,8 +1829,6 @@ public:
     bool bidirect;
 
     Recovery recovery;
-
-    // std::array<PktNumSpace, 2> pkt_num_spaces;
 
     PktNumSpace pkt_num_spaces;
 
@@ -1990,14 +1844,9 @@ public:
     
     std::chrono::steady_clock::time_point handshake;
 
-    RecvBuf rec_buffer;
-
-    size_t current_buffer_pos;
+    // RecvBuf rec_buffer;
 
     bool initial;
-
-    // total data sent after one get data.
-    size_t written_data_once;
 
     // Record errno
     size_t dmludp_error;
@@ -2044,8 +1893,6 @@ public:
 
     std::chrono::steady_clock::time_point end_ts;
     
-    size_t normal_initial = 0;
-
     // Send message
 
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
@@ -2082,8 +1929,6 @@ public:
 
     SCircularQueue sendbufferqueue;
 
-    zeroQueue zerolist;
-
     RCircularQueue recvCQ;
 
     RecordInfo receive_record;
@@ -2105,7 +1950,6 @@ public:
     peeraddr(peer),
     stop_flag(true),
     stop_ack(true),
-    norm2_vec(),
     recv_flag(false),
     send_num(0),
     rtt(0),
@@ -2116,10 +1960,7 @@ public:
     handshake(std::chrono::steady_clock::now()),
     bidirect(true),
     initial(false),
-    current_buffer_pos(0),
-    written_data_once(0),
     dmludp_error(0),
-    rx_length(0),
     dmludp_error_sent(0),
     send_connection_difference(0),
     receive_connection_difference(0),
@@ -2131,7 +1972,7 @@ public:
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
-    receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
+    // receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0),
     first_loss(false)
@@ -2254,7 +2095,7 @@ public:
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         bool isfirst = true;
-        for (auto i = 0 ; i <= receive_max_index ; i++){
+        for (auto i = 0 ; i <= receive_max_index; i++){
             if (receive_available_map[i] == 1)
             {
                 continue;
@@ -2321,7 +2162,7 @@ public:
 
     /*
     TODO（3/2）:
-    1. skip pakcet older than this round minimum packet
+    1. skip pakcet older than this round minimum packet -> DONE
     2. add new flag to shrink receive message queue.
     */
     void process_application_packet(size_t index, bool isfirst){
@@ -2410,7 +2251,6 @@ public:
 
     bool received(size_t explen_){
         return recvCQ.isreceived(receive_connection_difference, explen_);
-        // return recvCQ.isreceived(zerolist[0].first, explen_);
     }
 
     
@@ -2490,10 +2330,6 @@ public:
         auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
         size_t byte_index = 0;
         size_t bit_index = 0;
-
-        // if (pkt_difference > 20){
-        //     log_print((void*)ack_src, (pkt_len - 8));
-        // }
 
         
         /*TODO: process max_ack and first_pn*/
@@ -2775,12 +2611,12 @@ public:
 
 
     void clear_recv_setting(){
-        receive_offset.clear();
+        // receive_offset.clear();
     }
 
-    void recv_reset(){
-        rec_buffer.reset();
-    }
+    // void recv_reset(){
+    //     rec_buffer.reset();
+    // }
 
     /*Update receive difference to process next block data*/
     void update_receive_difference(){
@@ -2807,16 +2643,6 @@ public:
         return recvCQ.get_status(receive_connection_difference);
     }
 
-    // bool zerocheck(){
-    //     if (!zerolist.empty()){
-    //         if(receive_connection_difference == zerolist[0].first){
-    //             return true;
-    //         }
-    //     }
-       
-    //     return false;
-    // }
-
      bool zerocheck(){
         if (!recvCQ.empty()){
             if(receive_connection_difference == recvCQ.start()){
@@ -2827,28 +2653,14 @@ public:
         return false;
     }
 
-    // void rx_len(size_t expected){
-    //     recvCQ.rx_len(zerolist[0].first, expected);
-    // }
-
     void rx_len(size_t expected){
         recvCQ.rx_len(receive_connection_difference, expected);
     }
-
-    // void get_recv_target(uint8_t * target_){
-    //     /*check top poiner is null or not*/
-    //     recvCQ.set_recv_pointer(zerolist[0].first, target_);
-    // }
-
 
     void rx_set(size_t expected, uint8_t * target_){
         recvCQ.rx_len(receive_connection_difference, expected);
         recvCQ.set_recv_pointer(receive_connection_difference, target_);
     }
-
-    // void reset_rx_len(){
-    //     rx_length = 0;
-    // }
 
     void set_send_time(){
         handshake = std::chrono::steady_clock::now();
@@ -2860,10 +2672,7 @@ public:
         triger data preparation
         */
         bool completed = true;
-        written_data_once = 0;
 	    dmludp_error_sent = 0;
-
-        current_buffer_pos = 0;
 
         if (sendbufferqueue.full()){
             return false;
@@ -3455,20 +3264,12 @@ public:
         return stop_flag && stop_ack && initial;
     };
 
-    size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
-        return rec_buffer.emit(out, iscopy, output_len);
-    };
-
-    uint8_t priority_calculation(uint64_t off){
-        auto real_index = (uint64_t)(off / MAX_SEND_UDP_PAYLOAD_SIZE);
-        if (real_index >= norm2_vec.size()){
-            std::cout<<"out of range"<<std::endl;
-        }
-        return norm2_vec[real_index];
-    };
+    // size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
+    //     return rec_buffer.emit(out, iscopy, output_len);
+    // };
 
     void reset(){
-        norm2_vec.clear();
+        // norm2_vec.clear();
     };
 
     void set_handshake(){
