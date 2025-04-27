@@ -748,15 +748,16 @@ bool Pair::protocal2read(){
             };
 
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
-            if (rnbytes == 0){
-              readComplete(rbuf);
-              std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
-              dmludp_connection->update_receive_difference();
-            }else{
-              dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
-              dmludp_connection->complete_check();
-            }
+            
             if (i == 1){
+              if (rnbytes == 0){
+                readComplete(rbuf);
+                std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                dmludp_connection->update_receive_difference();
+              }else{
+                dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
+                dmludp_connection->complete_check();
+              }
               break;
             }
 
