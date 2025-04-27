@@ -904,7 +904,6 @@ class MetaInfo{
                 _Exit(0);
             }
             metabuf.add_Meta(iovecs, iovecs_len);
-            metabuf.to_json();
             range_len = 0;
             block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
