@@ -132,9 +132,9 @@ inline bool dmludp_conn_is_closed(std::shared_ptr<Connection> conn){
 
 
 
-inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
-    return conn->get_once_data_len();
-}
+// inline size_t dmludp_conn_data_sent_once(std::shared_ptr<Connection> conn){
+//     return conn->get_once_data_len();
+// }
 
 inline ssize_t dmludp_conn_send(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len) {
     if(out_len == 0){
@@ -206,9 +206,9 @@ inline void dmludp_clear_recv_setting(std::shared_ptr<Connection> conn){
     conn->clear_recv_setting();
 }
 
-inline void dmludp_conn_clear_sent_once(std::shared_ptr<Connection> conn){
-    conn->clear_sent_once();
-}
+// inline void dmludp_conn_clear_sent_once(std::shared_ptr<Connection> conn){
+//     conn->clear_sent_once();
+// }
 
 inline bool dmludp_conn_receive_complete(std::shared_ptr<Connection> conn){
     return conn->receive_complete();
@@ -218,7 +218,7 @@ inline void dmludp_conn_rx_len(std::shared_ptr<Connection> conn, size_t expected
     conn->rx_len(expected);
 }
 
-inline void dmludp_conn_reset_rx_len(std::shared_ptr<Connection> conn){
-    conn->reset_rx_len();
-}
+// inline void dmludp_conn_reset_rx_len(std::shared_ptr<Connection> conn){
+//     conn->reset_rx_len();
+// }
 

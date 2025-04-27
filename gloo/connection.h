@@ -1339,11 +1339,15 @@ class metarecebuf{
             rdifference = difference_;
         }
 
-        void set_used(){
-            used = true;
-            if (status_ == 0){
-                status_ = 1;
+        bool set_start(size_t pos){
+            if (index_ == LIMIT_UINT16_T){
+                return false;
             }
+            index_ = pos;
+            if (status_ == 0 || status_ == 1){
+                status_ = 2;
+            }
+            return true;
         }
 
         void addexplen(size_t exp_){
@@ -1434,6 +1438,9 @@ class metarecebuf{
         }
 
         void copy(size_t offset_, void * src, size_t copy_len){
+            if (offset_ == 0){
+                status_ = 3;
+            }
             if(!metabuf.src){
                 std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
                 _Exit(0);
@@ -1462,6 +1469,10 @@ class metarecebuf{
 
         Difference_len get_difference(){
             return rdifference;
+        }
+
+        uint16_t get_position(){
+            return index_;
         }
 };  
 
@@ -1540,6 +1551,10 @@ public:
         return data_[head_].get_difference();
     }
 
+    size_t startpos(){
+        return data_[head_].get_position();
+    }
+
     void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length, bool &exist_) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
@@ -1612,65 +1627,63 @@ public:
         return data_[index_].get_status();
     }
 
-    void used_set(Difference_len difference_){
-        auto index = difference_ % get_capacity();
-        data_[index].set_used();
+
+    bool insertzero(Difference_len difference_, uint16_t position_){
+        auto index_ = difference_ % get_capacity();
+        inrangecheck(index_, __func__);
+        return data_[index_].set_start(position_);
     }
+
 
     /* 
     Check whether the given index is within the current valid data range.
     If it is not within the range, advance tail_ by repeatedly calling push_back()
     until the index becomes part of the valid data.
     */ 
-    void indexcheck(Difference_len difference_, uint16_t index_) {
+    void indexcheck(Difference_len difference_) {
         /*
         If the queue is empty, push_back() must be called once to add an element first.
         This ensures the valid range is no longer empty, allowing the index to be included in it.
         */
         auto index = difference_ % get_capacity();
         // std::cout << "index:" << index << ", " << difference_ << ", " << count_ << ", " << head_ << ", " << tail_ << std::endl;
-        if (empty()) {
-            size_t desiredTail = (index + 1) % capacity_;
-            /*
-            Calculate the number of times push_back() needs to be called 
-            (i.e., the number of steps to advance from the current tail_ to desiredTail)
-            */ 
-            size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
-            for (size_t i = 0; i < pushes; ++i) {
-                push_back(difference_);
-            }
-            return;
-        }
+
+        // if (empty()) {
+        //     size_t desiredTail = (index + 1) % capacity_;
+        //     /*
+        //     Calculate the number of times push_back() needs to be called 
+        //     (i.e., the number of steps to advance from the current tail_ to desiredTail)
+        //     */ 
+        //     size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
+        //     for (size_t i = 0; i < pushes; ++i) {
+        //         push_back(difference_);
+        //     }
+        //     return;
+        // }
         
         bool inRange = false;
-        if (head_ < tail_) {
-            // Non-wrapping case: the valid range is [head_, tail_)
-            inRange = (index >= head_ && index < tail_);
-        } else {
-            // Wrapping case: the valid range is [head_, capacity_) ∪ [0, tail_)
-            inRange = (index >= head_ || index < tail_);
+        if(!empty()){
+             if (head_ < tail_) {
+                // Non-wrapping case: the valid range is [head_, tail_)
+                inRange = (index >= head_ && index < tail_);
+            } else {
+                // Wrapping case: the valid range is [head_, capacity_) ∪ [0, tail_)
+                inRange = (index >= head_ || index < tail_);
+            }
         }
 
         // std::cout << "inRange:" << inRange << std::endl;
         
         if (!inRange) {
-            /*
-            Compute the desired value of tail_: to include index in the valid data range,
-            tail_ should be set to (index + 1) % capacity_
-            */   
             size_t desiredTail = (index + 1) % capacity_;
-            /*
-            Calculate the number of times push_back() needs to be called 
-            (i.e., the number of steps to advance from the current tail_ to desiredTail)
-            */
+
             int pushes = (desiredTail + capacity_ - tail_) % capacity_;
 
-            /**/
             auto advance_relative = [](auto value, auto relative_step) {
                 using T = decltype(value);
                 using SignedT = std::make_signed_t<T>;
-                static_assert(std::is_integral<T>::value, "T must be an integer type"); // 编译期类型限制
-                assert(relative_step <= std::numeric_limits<SignedT>::max());          // 调试期值范围限制
+                static_assert(std::is_integral<T>::value, "T must be an integer type"); 
+                assert(relative_step <= std::numeric_limits<SignedT>::max());          
 
                 if constexpr (std::is_unsigned<T>::value) {
                     return static_cast<T>(static_cast<SignedT>(value) + relative_step);
@@ -2321,6 +2334,7 @@ public:
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
+            receive_available_map[index] = 0;
             return;
         }
 
@@ -2334,9 +2348,10 @@ public:
             if (pkt_offset == 0){
                 if (recvCQ.differencecheck(pkt_difference)){
                     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-                    recvCQ.indexcheck(pkt_difference, index);
-                    recvCQ.used_set(pkt_difference);
-                    zerolist.push_back(pkt_difference, index);
+                    recvCQ.indexcheck(pkt_difference);
+                    if(!recvCQ.insertzero(pkt_difference, index)){
+                        receive_available_map[index] = 0;
+                    }
                 }else{
                     receive_available_map[index] = 0;
                 }
@@ -2395,7 +2410,8 @@ public:
     };
 
     bool received(size_t explen_){
-        return recvCQ.isreceived(zerolist[0].first, explen_);
+        return recvCQ.isreceived(receive_connection_difference, explen_);
+        // return recvCQ.isreceived(zerolist[0].first, explen_);
     }
 
     
@@ -2792,9 +2808,19 @@ public:
         return recvCQ.get_status(receive_connection_difference);
     }
 
-    bool zerocheck(){
-        if (!zerolist.empty()){
-            if(receive_connection_difference == zerolist[0].first){
+    // bool zerocheck(){
+    //     if (!zerolist.empty()){
+    //         if(receive_connection_difference == zerolist[0].first){
+    //             return true;
+    //         }
+    //     }
+       
+    //     return false;
+    // }
+
+     bool zerocheck(){
+        if (!recvCQ.empty()){
+            if(receive_connection_difference == recvCQ.start()){
                 return true;
             }
         }
@@ -2802,23 +2828,28 @@ public:
         return false;
     }
 
+    // void rx_len(size_t expected){
+    //     recvCQ.rx_len(zerolist[0].first, expected);
+    // }
+
     void rx_len(size_t expected){
-        recvCQ.rx_len(zerolist[0].first, expected);
+        recvCQ.rx_len(receive_connection_difference, expected);
     }
 
-    void get_recv_target(uint8_t * target_){
-        /*check top poiner is null or not*/
-        recvCQ.set_recv_pointer(zerolist[0].first, target_);
-    }
+    // void get_recv_target(uint8_t * target_){
+    //     /*check top poiner is null or not*/
+    //     recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    // }
+
 
     void rx_set(size_t expected, uint8_t * target_){
         recvCQ.rx_len(receive_connection_difference, expected);
         recvCQ.set_recv_pointer(receive_connection_difference, target_);
     }
 
-    void reset_rx_len(){
-        rx_length = 0;
-    }
+    // void reset_rx_len(){
+    //     rx_length = 0;
+    // }
 
     void set_send_time(){
         handshake = std::chrono::steady_clock::now();
@@ -2846,13 +2877,13 @@ public:
         return completed;
     }
 
-    size_t get_once_data_len(){
-        return written_data_once;
-    }
+    // size_t get_once_data_len(){
+    //     return written_data_once;
+    // }
 
-    void clear_sent_once(){
-        written_data_once = 0;
-    }
+    // void clear_sent_once(){
+    //     written_data_once = 0;
+    // }
 
     /*If timer triggered, process all unacknowledge packet as loss*/
     /*TODD: use previous record pair to minimize the iteration times*/
@@ -3125,9 +3156,10 @@ public:
         Offset_len pkt_offset;
         Packet_len pkt_len;
         Difference_len pkt_difference;
-        if (!zerolist.empty()){
-            if (receive_connection_difference == zerolist[0].first && recvCQ.srcsetcheck(receive_connection_difference)){
+        if (!recvCQ.empty()){
+            if (receive_connection_difference == recvCQ.start() && recvCQ.srcsetcheck(receive_connection_difference)){
                 auto index = zerolist[0].second;
+                auto index = recvCQ.startpos();
                 pkt_offset = receive_message[index].get_packet_offset();
                 pkt_difference = receive_message[index].get_packet_difference();
                 recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
