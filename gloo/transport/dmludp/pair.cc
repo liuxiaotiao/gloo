@@ -871,12 +871,12 @@ bool Pair::protocal2send(){
   }
   
   ssize_t rv;
-  std::cout<<"protocal2send"<<std::endl;
+  // std::cout<<"protocal2send"<<std::endl;
   if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
     std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
     _Exit(0);
   }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-    std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
+    // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
     for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
       
       NonOwningPtr<UnboundBuffer> buf;
@@ -885,7 +885,7 @@ bool Pair::protocal2send(){
       auto &op = tx_[i];
 
       const auto opcode = op.getOpcode();
-      std::cout<<"1 i:"<<opcode<<std::endl;
+      // std::cout<<"1 i:"<<opcode<<std::endl;
       if (opcode == Op::SEND_UNBOUND_BUFFER) {
         buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
         if (!buf) {
@@ -893,9 +893,9 @@ bool Pair::protocal2send(){
         }
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-      std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
+      // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
       bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
-      std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
+      // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
       if (!connection_written){
         return false;
       }
@@ -906,7 +906,7 @@ bool Pair::protocal2send(){
   }else{}
 
   auto accumulated = 0;
-  std::cout<<"protocal2send 2"<<std::endl;
+  // std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
       device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -947,12 +947,20 @@ bool Pair::protocal2send(){
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
     std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
+    // if(accumulated == 0){
+    //   device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+    //   return true;
     if(accumulated == 0){
-      device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-      return true;
+      break;
     }else{
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
+  }
+
+  if (accumulated == 0){
+    device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+  }else{
+    device_->registerDescriptor(fd_, EPOLLIN, this);
   }
 
 
