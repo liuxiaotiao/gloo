@@ -958,9 +958,12 @@ bool Pair::protocal2read(){
           // dmludp_connection->rx_len(rnbytes);
           // dmludp_connection->get_recv_target(reinterpret_cast<uint8_t*>(riov.iov_base));
           dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
+          if(dmludp_connection->send_packet_type == 0){
+            dmludp_connection->send_packet_type = 5;
+          }
+
           dmludp_connection->send_packet_complete();
           rx_.nread += rnbytes;
-          dmludp_connection->zerocomplete();
 
           riov = {
             .iov_base = nullptr,
@@ -987,6 +990,9 @@ bool Pair::protocal2read(){
           const auto rnbytes = prepareRead(rx_, rbuf, riov);
 
           if (rbuf){
+            if(dmludp_connection->send_packet_type == 0){
+              dmludp_connection->send_packet_type = 5;
+            }
             dmludp_connection->send_packet_complete();
             stop = true;
           }
@@ -1007,6 +1013,9 @@ bool Pair::protocal2read(){
             }
 
             if (rbuf){
+              if(dmludp_connection->send_packet_type == 0){
+                dmludp_connection->send_packet_type = 5;
+              }
               dmludp_connection->send_packet_complete();
               rx_.nread += rnbytes;
             }
