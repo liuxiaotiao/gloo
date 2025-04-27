@@ -1335,7 +1335,6 @@ class metarecebuf{
         }
 
         void set_difference(Difference_len difference_){
-            std::cout<<"difference_:"<<difference_<<" set" <<std::endl;
             rdifference = difference_;
         }
 
@@ -1445,7 +1444,6 @@ class metarecebuf{
                 std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
                 _Exit(0);
             }
-            std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
             memcpy(reinterpret_cast<uint8_t*>(metabuf.src) + offset_, reinterpret_cast<uint8_t*>(src), copy_len);
         }
 
@@ -2348,7 +2346,7 @@ public:
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
                 if (recvCQ.differencecheck(pkt_difference)){
-                    std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+                    // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
                     if(!recvCQ.insertzero(pkt_difference, index)){
                         receive_available_map[index] = 0;

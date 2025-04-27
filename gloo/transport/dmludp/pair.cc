@@ -904,6 +904,8 @@ bool Pair::protocal2send(){
       }
     }
   }else{}
+
+  auto accumulated = 0;
   std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
@@ -931,6 +933,7 @@ bool Pair::protocal2send(){
         break;
       }
       sent++;
+      accumulated++;
     }
 
     struct sockaddr_in peer_addr;
@@ -945,12 +948,18 @@ bool Pair::protocal2send(){
 
     std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
-      device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-      return true;
+      // device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+      // return true;
+      break;
     }else{
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
+
+  if (accumulated == 0){
+    device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+  }
+
   std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(new_value));
