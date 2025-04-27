@@ -949,7 +949,7 @@ bool Pair::protocal2send(){
     std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-      if (accumulated != 0){
+      if (!tx_.empty()){
         struct itimerspec new_value;
         memset(&new_value, 0, sizeof(new_value));
         auto delay = dmludp_connection->get_rto();
@@ -966,6 +966,7 @@ bool Pair::protocal2send(){
 
         device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
+      
       return true;
     }else{
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
