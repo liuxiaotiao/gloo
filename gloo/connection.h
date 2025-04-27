@@ -1717,8 +1717,8 @@ public:
         
         if (!inRange) {
             if (caller == "insert"){    
-                std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
-                std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
+                // std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
+                // std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
                 return inRange;
             }
             std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;

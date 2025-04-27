@@ -360,6 +360,8 @@ namespace dmludp{
             out_len = 0;
             auto tmp_off = off_front();
 
+            std::cout<<"emit:"<<(meta_ptr_len+meta_ptr2_len)<<std::endl;
+
             if (tmp_off == -1){
                 out_len = -1;
                 stop = true;
