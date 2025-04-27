@@ -3156,7 +3156,7 @@ public:
         Packet_len pkt_len;
         Difference_len pkt_difference;
         if (!recvCQ.empty()){
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << std::endl;
+            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << std::endl;
             if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
                 auto index = recvCQ.startpos();
                 pkt_offset = receive_message[index].get_packet_offset();
