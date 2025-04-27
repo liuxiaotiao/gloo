@@ -1340,7 +1340,7 @@ class metarecebuf{
         }
 
         bool set_start(size_t pos){
-            if (index_ == LIMIT_UINT16_T){
+            if (index_ != LIMIT_UINT16_T){
                 return false;
             }
             index_ = pos;
