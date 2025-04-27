@@ -20,13 +20,14 @@
 #include <arpa/inet.h>
 #include <optional>
 
-
 namespace dmludp {
 
 const size_t HEADER_LENGTH = sizeof(Header);
 
 // The default max_datagram_size used in congestion control.
 const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
+
+const size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
 const size_t RX_CONST = 4000;
 
@@ -293,8 +294,7 @@ class RCset{
         size_t payload_len = MAX_SEND_UDP_PAYLOAD_SIZE;
     public:
         RCset(size_t capacity_ = 330000): 
-        RCset_body(capacity_){
-        }
+        RCset_body(capacity_){}
 
         size_t count() const{
             return RCset_body.count();
@@ -730,15 +730,13 @@ class MetaInfo{
 
         MapSet<ReTransmissionMap> retransmission_map;
 
-        std::vector<uint64_t> priority_offset;
-
         MapSet<TransmissionMap> transmission_map;
+
+        std::vector<uint64_t> priority_offset;
 
         uint64_t difference_flag = LIMIT_UINT64_T;
 
         size_t range_len;
-
-        size_t send_len;
 
         size_t block_type = std::numeric_limits<size_t>::max();
 
@@ -748,8 +746,7 @@ class MetaInfo{
         MetaInfo(size_t difference_flag_ = std::numeric_limits<uint16_t>::max()): 
         MetaDifference(difference_flag_),
         metabuf(MAX_SEND_UDP_PAYLOAD_SIZE),
-        range_len(0),
-        send_len(0){};
+        range_len(0){};
 
         ~MetaInfo(){};
 
@@ -894,7 +891,6 @@ class MetaInfo{
 
         Difference_len get_difference(){
             return difference_flag;
-            return MetaDifference;
         }
 
         void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
@@ -909,7 +905,6 @@ class MetaInfo{
             }
             metabuf.add_Meta(iovecs, iovecs_len);
             range_len = 0;
-            send_len = 0;
             block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
                 range_len += (iovecs[i].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
@@ -935,7 +930,6 @@ class MetaInfo{
             block_type = std::numeric_limits<size_t>::max();
             difference_flag = LIMIT_UINT64_T;
             range_len = 0;
-            send_len = 0;
             send_status = false;
         }
 
@@ -1274,7 +1268,26 @@ class metarecebuf{
 
         size_t srcset = 0;
 
+        uint16_t index_ = LIMIT_UINT16_T;
+
+        /*
+        0: unused, waiting
+        1: used, without offset 0
+        2: used, has offset 0
+        3: used, offset 0 has processed
+        4: used, not complete
+        5: used, complete
+           |---1
+        0 -|   |     |---4
+           |   |     |   | 
+           |---2--3--|   5
+                     |   |
+                     |----
+        */
+        size_t status_ = 0;
+
         metarecebuf(Difference_len difference_ = 0): rdifference(difference_){
+            source_len.reserve(2);
             for(auto i = 0; i < 2 ; i++){
                 source_len.push_back(0);
             }
@@ -1295,6 +1308,8 @@ class metarecebuf{
             expected = 0;
             used = false;
             rdifference = 0;
+            status_ = 0;
+            index_ = LIMIT_UINT32_T;
             for (auto &e:source_len){
                 e = 0;
             }
@@ -1304,6 +1319,21 @@ class metarecebuf{
             return used;
         }
 
+        /*
+        0 unused
+        1 used without offset 0
+        2 used and have offset 0
+        3 offset 0 processed
+        4 peeding
+        5 completed
+        */
+        size_t get_status(){
+            if (status_ == 3){
+                completecheck();
+            }
+            return status_;
+        }
+
         void set_difference(Difference_len difference_){
             std::cout<<"difference_:"<<difference_<<" set" <<std::endl;
             rdifference = difference_;
@@ -1311,6 +1341,9 @@ class metarecebuf{
 
         void set_used(){
             used = true;
+            if (status_ == 0){
+                status_ = 1;
+            }
         }
 
         void addexplen(size_t exp_){
@@ -1332,6 +1365,9 @@ class metarecebuf{
             if (!exist){
                 if (pkt_offset == 0){
                     has_zero = true;
+                    if (status_ == 0 || status_ == 1){
+                        status_ = 2;
+                    }
                 }
                 receive_offset.insert(pkt_offset);
                 metabuf.reg(pkt_length);
@@ -1340,12 +1376,30 @@ class metarecebuf{
             return exist;
         }
 
-        bool is_complete() const{
+        void startcomplete(){
+            if (status_ == 2){
+                status_ = 3;
+            }
+        }
+
+        void completecheck(){
             size_t total = 0;
             for(auto const e:source_len){
                 total += e;
             }
             if (received == total || complete_flag){
+                status_ = 5;
+            }
+            status_ = 4;
+        }
+
+        bool is_complete(){
+            size_t total = 0;
+            for(auto const e:source_len){
+                total += e;
+            }
+            if (received == total || complete_flag){
+                status_ = 5;
                 return true;
             }
             return false;
@@ -1411,6 +1465,7 @@ class metarecebuf{
         }
 };  
 
+/*Receive circular queue*/
 class RCircularQueue {
 private:
     std::vector<metarecebuf> data_; 
@@ -1422,13 +1477,16 @@ public:
     RCircularQueue(size_t capacity = DataBlock)
         : head_(0), tail_(0), capacity_(capacity), count_(0)
     {
+        data_.reserve(capacity_);
         data_.resize(capacity_);
     }
 
+    /*Queue capacity*/
     size_t get_capacity(){
         return capacity_;
     }
 
+    /*Add new data block at the tail*/
     bool push_back(Difference_len difference_) {
         if (count_ == capacity_){
             return false;
@@ -1444,6 +1502,7 @@ public:
         return true;
     }
 
+    /*Complete block receive*/
     void pop_front() {
         if (empty()) {
             throw std::runtime_error("Queue is empty, cannot remove element.");
@@ -1487,31 +1546,55 @@ public:
         exist_ = data_[index].find(pkt_offset, pkt_length);
     }
 
+    size_t get_status(Difference_len difference_){
+        if (empty()){
+            return 0;
+        }
+        auto index_ = difference_ % get_capacity();
+        return data_[index_].get_status();
+    }
+
+    /* Complete check */
     bool iscomplete(Difference_len difference) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         return data_[index].is_complete();
     }
 
+    void startcomplete(Difference_len difference){
+        auto index = difference % capacity_;
+        inrangecheck(index, __func__);
+        return data_[index].startcomplete();
+    }
+
+    void completecheck(Difference_len difference){
+        auto index = difference % capacity_;
+        inrangecheck(index, __func__);
+        return data_[index].completecheck();
+    }
+
+    /*Set target pointer*/
     void set_recv_pointer(Difference_len difference, uint8_t* src) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         data_[index].set_src(src);
     }
 
+    /*Set rx_len*/
     void rx_len(Difference_len difference, size_t expected) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         data_[index].addexplen(expected);
     }
 
-
+    /*Same function as iscomplete, delete later*/
     bool isreceived(Difference_len difference, size_t expected){
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         return data_[index].is_complete();
     }
 
+    /**/
     bool differencecheck(Difference_len difference_){
         if (empty()){
             return true;
@@ -1524,6 +1607,11 @@ public:
         }
     }
 
+    size_t receivestatus(Difference_len difference_){
+        auto index_ = difference_ % get_capacity();
+        return data_[index_].get_status();
+    }
+
     void used_set(Difference_len difference_){
         auto index = difference_ % get_capacity();
         data_[index].set_used();
@@ -1534,7 +1622,7 @@ public:
     If it is not within the range, advance tail_ by repeatedly calling push_back()
     until the index becomes part of the valid data.
     */ 
-    void indexcheck(Difference_len difference_) {
+    void indexcheck(Difference_len difference_, uint16_t index_) {
         /*
         If the queue is empty, push_back() must be called once to add an element first.
         This ensures the valid range is no longer empty, allowing the index to be included in it.
@@ -1629,6 +1717,7 @@ public:
         return inRange;
     }
 
+    /*Check receive data and copy data are same*/
     bool processComplete(Difference_len difference_){
         auto index = difference_ % capacity_;
         return data_[index].processComplete();
@@ -1821,8 +1910,6 @@ public:
 
 class Connection{
 public: 
-    size_t recv_count;
-
     /// Whether this is a server-side connection.
     bool is_server;
 
@@ -1868,13 +1955,16 @@ public:
 
     bool recv_flag;
 
+    /*Acknowledge packet number*/
     uint64_t send_num;
 
     bool bidirect;
 
     Recovery recovery;
 
-    std::array<PktNumSpace, 3> pkt_num_spaces;
+    // std::array<PktNumSpace, 2> pkt_num_spaces;
+
+    PktNumSpace pkt_num_spaces;
 
     std::chrono::nanoseconds rtt;
 
@@ -1994,7 +2084,6 @@ public:
     bool rtt_initial = true;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
-    recv_count(0),
     is_server(server),
     handshake_completed(false),
     handshake_confirmed(false),
@@ -2029,7 +2118,7 @@ public:
     difference_flag(false),
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
-    receivevector(MAX_SEND_UDP_PAYLOAD_SIZE, 0),
+    receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0),
@@ -2197,7 +2286,6 @@ public:
 
     /*Only process handshake packet*/
     size_t recv_slice(uint8_t* src, size_t src_len, struct timespec ts = {0, 0}){
-        recv_count += 1;
        
         auto pkt_ty = reinterpret_cast<Header *>(src)->ty;
         size_t read_ = 0;
@@ -2231,7 +2319,7 @@ public:
         auto pkt_length = receive_message[index].get_packet_length();
 
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        /* no operation on old packet*/
+        /* no operation for old packet*/
         if (pkt_num < current_loop_min){
             return;
         }
@@ -2239,49 +2327,14 @@ public:
         if (isfirst){
             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         }
-
-        // if (pkt_difference >= receive_connection_difference){
-        //     recvCQ.indexcheck(pkt_difference);
-        // }else{
-        //     receive_available_map[index] = 0;
-        // }
-        //     receive_available_map[index] = 1;
-
-        // if (pkt_offset == 0 && pkt_difference >= receive_connection_difference){
-        //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        //     zerolist.push_back(pkt_difference, index);
-        // }
         
-        /*new difference coming will cause new recvCQ be created*/
-        // receive_available_map[index] = 1;
-        // if (pkt_difference >= receive_connection_difference){
-        //     recvCQ.indexcheck(pkt_difference);
-        //     if (pkt_offset == 0){
-        //         if (recvCQ.differencecheck(pkt_difference)){
-        //             std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        //             zerolist.push_back(pkt_difference, index);
-        //         }else{
-        //             receive_available_map[index] = 0;
-        //         }
-        //     }
-        // }else{
-        //     receive_available_map[index] = 0;
-        // }
-        
-        // if (pkt_offset == 0){
-        //     std::cout<<"[zerocheck] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-        // }
-
-        // if (pkt_difference >= receive_connection_difference && receive_connection_difference >= 20){
-        //     std::cout<<"[check] "<<(int)pkt_difference<<", pkt_num:"<<pkt_num << ", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-        // }
-        
+        /*Mark packet as to be processed*/
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
                 if (recvCQ.differencecheck(pkt_difference)){
                     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-                    recvCQ.indexcheck(pkt_difference);
+                    recvCQ.indexcheck(pkt_difference, index);
                     recvCQ.used_set(pkt_difference);
                     zerolist.push_back(pkt_difference, index);
                 }else{
@@ -2310,11 +2363,13 @@ public:
 
         
         size_t pos = pkt_num - current_loop_min;
-        if(pos > receivevector.size() * sizeof(uint8_t)){
-            if(isfirst){
-                current_loop_min = pkt_num;
-                pos = 0;
-            }
+        /*
+        If the difference between packet number and current_loop_min is more than receivevector capacity, previous will not do any acknowledge
+        */
+        // if(pos > receivevector.size() * sizeof(uint8_t)){
+        if(pos > 8000){
+            current_loop_min = pkt_num;
+            pos = 0;
         }
         size_t byte_index = pos / 8;
         size_t bit_index = pos % 8;
@@ -2389,267 +2444,6 @@ public:
         current_loop_min = current_loop_max + 1;
     }
 
-
-    // void process_acknowledge(const size_t index_){
-    //     auto pkt_num = receive_message[index_].get_packet_number();
-    //     auto pkt_len = receive_message[index_].get_packet_length();
-    //     auto pkt_difference = receive_message[index_].get_packet_difference();
-    //     receive_available_map[index_] = 0;
-
-    //     auto receivets = std::chrono::steady_clock::now();
-    //     auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
-
-
-    //     if (first_pn >= (max_acknowleged + 1)){
-    //         std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
-    //         auto ackts = tsInfo.removeBeforeValue(first_pn);
-    //         if (ackts.has_value()){
-    //             update_rtt(*ackts, receivets);
-    //         }
-    //     }
-        
-
-    //     auto end_pn = pkt_num;
-    //     bool loss = false;
-    //     size_t total_send = end_pn - first_pn + 1;
-    //     auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
-    //     size_t byte_index = 0;
-    //     size_t bit_index = 0;
-
-        
-    //     /*TODO: process max_ack and first_pn*/
-    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
-    //     auto pn = first_pn;
-    //     std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
-
-    //     /*Check acknowledge packet loss*/
-    //     /*
-    //     1. first_pn < (max_acknowleged + 1) && end_pn < (max_acknowleged + 1)
-    //         Just check
-    //     2. first_pn < (max_acknowleged + 1) && end_pn >= (max_acknowleged + 1)
-    //     3. first_pn > (max_acknowleged + 1)
-    //         just
-    //     4. first_pn == (max_acknowleged + 1)
-    //         Just check used 
-
-    //     Consider if pn is the old block.
-    //     */
-    //     if (first_pn != (max_acknowleged + 1)){
-    //         /*timeout and before send message get ack message*/
-    //         if(first_pn < (max_acknowleged + 1)){
-    //             /*first_pn <= (max_acknowleged + 1) <= end_pn*/
-    //             if (end_pn < (max_acknowleged + 1)){
-    //                 while (true){
-    //                     if (pn > end_pn || pn == (max_acknowleged + 1)){
-    //                         break;
-    //                     }
-
-    //                     size_t i = 0;
-    //                     std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
-    //                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //                         sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
-    //                         if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-    //                             continue;
-    //                         }
-    //                         if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
-    //                             break;
-    //                         }
-    //                     }
-    //                     std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
-    //                     if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-    //                         std::cout<<"1 check:" << pn << std::endl;
-    //                         return;
-    //                     }else{
-    //                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
-    //                             byte_index = (pn - first_pn) / 8;
-    //                             bit_index = (pn - first_pn) % 8;
-    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
-    //                             sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
-    //                             pn++;
-    //                         }
-    //                     }
-    //                 }
-    //             }else{
-    //                 while (true){
-    //                     if (pn > end_pn || pn == (max_acknowleged + 1)){
-    //                         break;
-    //                     }
-    //                     size_t i = 0;
-    //                     int result = 0;
-    //                     std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
-    //                     std::tuple<Packet_num_len, Packet_num_len, size_t, bool> sendtuple = {LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false};
-    //                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //                         sendpair = sendbufferqueue.get_packet_range(i, pn);
-    //                         if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-    //                             continue;
-    //                         }
-    //                         if (pn <= sendpair.second && pn >= sendpair.first){
-    //                             result = 1;
-    //                             break;
-    //                         }
-    //                     }
-    //                     if (result == 0){
-    //                         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //                             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //                             sendtuple = sendbufferqueue.get_cleared_packet_range(i, pn);
-    //                             if (sendtuple == std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false)){
-    //                                 continue;
-    //                             }
-    //                             if (pn <= std::get<1>(sendtuple) && pn >= std::get<0>(sendtuple)){
-    //                                 result = 2;
-    //                                 break;
-    //                             }
-    //                         }
-    //                     }
-                        
-
-    //                     std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
-    //                     std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
-
-    //                     if (result == 0){
-
-    //                     }else if(result == 1){
-    //                         while (pn >= std::get<0>(sendpair) && pn <= std::get<1>(sendpair)){
-    //                             byte_index = (pn - first_pn) / 8;
-    //                             bit_index = (pn - first_pn) % 8;
-    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
-    //                             sendbufferqueue.ack4offset(i, pn, (bool)value);
-    //                             pn++;
-    //                         }
-    //                     }else if(result == 2){
-    //                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
-    //                             byte_index = (pn - first_pn) / 8;
-    //                             bit_index = (pn - first_pn) % 8;
-    //                             size_t value = (ack_src[byte_index] >> bit_index) & 1;
-    //                             sendbufferqueue.ack4offset2(i, std::get<2>(sendtuple), pn, std::get<3>(sendtuple), (bool)value);
-    //                             pn++;
-    //                         }
-    //                     }
-
-    //                 }
-    //             }
-    //         }else{
-    //             auto loss_pn = max_acknowleged + 1;
-    //             while (true)
-    //             {
-    //                 if (loss_pn == first_pn){
-    //                     break;
-    //                 }
-    //                 size_t i = 0;
-    //                 std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
-    //                 for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //                     i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //                     sendpair = sendbufferqueue.get_packet_range(i, loss_pn);
-    //                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-    //                         continue;
-    //                     }
-    //                     if (loss_pn <= sendpair.second && loss_pn >= sendpair.first){
-    //                         break;
-    //                     }
-    //                 }
-    //                 if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-    //                     std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
-    //                     _Exit(0);
-    //                 }
-    //                 auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-    //                 std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
-    //                 if (compare_ == 0){
-    //                     std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
-    //                     while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
-    //                         sendbufferqueue.ack4offset(i, loss_pn, true);
-    //                         loss_pn++;
-    //                     }
-    //                 }else{
-    //                     std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
-    //                     while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
-    //                         sendbufferqueue.ack4offset(i, loss_pn, false);
-    //                         loss_pn++;
-    //                     }
-    //                 }
-    //                 std::cout<<"3 check"<<std::endl;
-    //             }
-    //         }
-            
-    //     }
-    //     std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
-    //     // for (auto i = sendbufferqueue.start(); i < sendbufferqueue.end(); i = (i + 1) % 256){
-    //     while (true)
-    //     {
-    //         if (pn > end_pn){
-    //             break;
-    //         }
-            
-    //         size_t i = 0;
-    //         std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
-    //         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //             // sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
-    //             sendpair = sendbufferqueue.get_packet_range(i, pn);
-    //             if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-    //                 continue;
-    //             }
-    //             if (pn <= sendpair.second && pn >= sendpair.first){
-    //                 break;
-    //             }
-    //         }
-    //         std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
-          
-    //         if (i == 0 && (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T))){
-    //             std::cerr << "2 Acknowledge unknow packet(" << pn << ")" << std::endl;
-    //             pn++;
-    //             continue;
-    //         }
-    //         while (pn >= sendpair.first && pn <= sendpair.second){
-    //             // std::cout<<"process_acknowledge 3"<<std::endl;
-    //             if (pn <= end_pn && pn >= first_pn){
-    //                 byte_index = (pn - first_pn) / 8;
-    //                 bit_index = (pn - first_pn) % 8;
-    //                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-    //                 if (value == 0){
-    //                     // std::cout<<"pn:"<<pn<<" loss"<<std::endl;
-    //                     loss = true;
-    //                 }
-    //                 // sendbufferqueue.data_[i].ack4offset(pn, (bool)value);
-    //                 sendbufferqueue.ack4offset(i, pn, (bool)value);
-    //                 pn++;
-    //             }else{
-    //                 break;
-    //             }
-    //         }
-    //         std::cout<<"process_acknowledge 4"<<std::endl;
-    //     }
-
-    //     if (max_acknowleged == LIMIT_UINT64_T){
-    //         max_acknowleged = end_pn;
-    //     }else{
-    //         if (end_pn > max_acknowleged){
-    //             max_acknowleged = end_pn;
-    //         }
-    //     }
-        
-        
-    //     std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
-        
-    //     if (loss && !first_loss){
-    //         recovery.check_point();
-    //         recovery.congestion_event(receivets);
-    //         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-    //         first_loss = true;
-    //     }else{
-    //         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-    //     }
-
-    //     {
-    //         auto sendbufferqueue_start_index = sendbufferqueue.start();
-    //         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-    //             int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //             std::cout << int(index) << " " ;
-    //             sendbufferqueue.data_[index].metabuf.ack_check();
-    //         }
-    //     }
-    // }
 
     /*Process acknowledge packet*/
     void process_acknowledge(const size_t index_){
@@ -2975,6 +2769,7 @@ public:
 
     /*Update receive difference to process next block data*/
     void update_receive_difference(){
+        recvCQ.pop_front();
         receive_connection_difference++;
     }
 
@@ -2984,6 +2779,17 @@ public:
             return recvCQ.iscomplete(receive_connection_difference);
         }
         return false;
+    }
+
+    void complete_check(){
+        if (receive_connection_difference == recvCQ.start() && !recvCQ.empty()){
+            recvCQ.startcomplete(receive_connection_difference);
+            recvCQ.completecheck(receive_connection_difference);
+        }
+    }
+
+    size_t recvCQcheck(){
+        return recvCQ.get_status(receive_connection_difference);
     }
 
     bool zerocheck(){
@@ -3003,6 +2809,11 @@ public:
     void get_recv_target(uint8_t * target_){
         /*check top poiner is null or not*/
         recvCQ.set_recv_pointer(zerolist[0].first, target_);
+    }
+
+    void rx_set(size_t expected, uint8_t * target_){
+        recvCQ.rx_len(receive_connection_difference, expected);
+        recvCQ.set_recv_pointer(receive_connection_difference, target_);
     }
 
     void reset_rx_len(){
@@ -3067,7 +2878,7 @@ public:
         std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
-        auto max_sent_pn = pkt_num_spaces[0].getpktnum();
+        auto max_sent_pn = pkt_num_spaces.getpktnum();
         std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
         while (true)
         {
@@ -3148,7 +2959,7 @@ public:
                     break;
                 }
 
-                auto pn = pkt_num_spaces[0].updatepktnum();
+                auto pn = pkt_num_spaces.updatepktnum();
                 if (out_off == 0 && out_len > -1){
                     std::cout<<"[Debug] difference:"<< pkg_difference <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 }
@@ -3239,7 +3050,7 @@ public:
                     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
                     _Exit(0);
                 }
-                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces[0].getpktnum(), end_ts);
+                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
                 start_index = start_index + sent;
             }
             return;
@@ -3256,7 +3067,7 @@ public:
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
-            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces[0].getpktnum(), end_ts);
+            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
         }else if(send_packet_type == Type::ElicitAck){
 
         }else if(send_packet_type == Type::Stop){
@@ -3584,7 +3395,7 @@ public:
     size_t send_data_stop(uint8_t* out){ 
         size_t total_len = HEADER_LENGTH;
 
-        auto pn = pkt_num_spaces[1].updatepktnum();
+        auto pn = pkt_num_spaces.updatepktnum();
 
         uint64_t offset = 0;
         uint8_t priority = 0;
