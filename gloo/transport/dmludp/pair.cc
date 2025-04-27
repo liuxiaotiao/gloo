@@ -683,7 +683,7 @@ bool Pair::protocal2read(){
       break;
     }
     
-    // std::cout<<"received:"<<received<<std::endl;
+    std::cout<<"received:"<<received<<std::endl;
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){
@@ -737,7 +737,7 @@ bool Pair::protocal2read(){
         //     dmludp_connection->complete_check();
         //   }
         // }
-        // std::cout<<"receive_status:"<<receive_status<<std::endl;
+        std::cout<<"receive_status:"<<receive_status<<std::endl;
         if (receive_status == 2){
           int i = 0;
           while (true){
