@@ -737,6 +737,7 @@ bool Pair::protocal2read(){
         //     dmludp_connection->complete_check();
         //   }
         // }
+        std::cout<<"receive_status:"<<receive_status<<std::endl;
         if (receive_status == 2){
           int i = 0;
           while (true){
