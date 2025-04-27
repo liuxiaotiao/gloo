@@ -947,22 +947,30 @@ bool Pair::protocal2send(){
     inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
     std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
-    // if(accumulated == 0){
-    //   device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-    //   return true;
-    if(accumulated == 0){
-      break;
+    if(sent == 0){
+      device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+      if (accumulated != 0){
+        struct itimerspec new_value;
+        memset(&new_value, 0, sizeof(new_value));
+        auto delay = dmludp_connection->get_rto();
+        new_value.it_value.tv_sec = delay.count() / 1000000000;
+        new_value.it_value.tv_nsec = delay.count() % 1000000000;  
+        std::cout<<"1 rto:"<<delay.count()<<std::endl;
+        new_value.it_interval.tv_sec = 0;  
+        new_value.it_interval.tv_nsec = 0;
+
+        if (timerfd_settime(timer_fd, 0, &new_value, NULL) == -1) {
+          perror("timerfd_settime");
+          return 1;
+        }
+
+        device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+      }
+      return true;
     }else{
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
-
-  if (accumulated == 0){
-    device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-  }else{
-    device_->registerDescriptor(fd_, EPOLLIN, this);
-  }
-
 
   std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
@@ -970,7 +978,7 @@ bool Pair::protocal2send(){
   auto delay = dmludp_connection->get_rto();
   new_value.it_value.tv_sec = delay.count() / 1000000000;
   new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-  std::cout<<"rto:"<<delay.count()<<std::endl;
+  std::cout<<"2 rto:"<<delay.count()<<std::endl;
   new_value.it_interval.tv_sec = 0;  
   new_value.it_interval.tv_nsec = 0;
 
