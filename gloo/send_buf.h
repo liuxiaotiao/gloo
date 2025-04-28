@@ -248,6 +248,8 @@ namespace dmludp{
 
         size_t ack_count = 0;
 
+        DynamicBitset retranmission_map;
+
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
         {
@@ -293,8 +295,10 @@ namespace dmludp{
             meta_pos = 0;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
+                retranmission_map.resize(meta_len);
             }
             bits_set.clear();
+            retranmission_map.clear();
             ack_count = 0;
             rcq.clear();
         }
@@ -320,6 +324,13 @@ namespace dmludp{
             }else if(meta_status == MetaFlag::Retransmission){
                 if (!rcq.empty()){
                     off = rcq.pop_front();
+                    /////////////
+                    auto index = 0;
+                    if (off != 48){
+                        index = round_up((off - 48), 1440) + 1;
+                    }
+                    retranmission_map[index] == 0;
+                    ///////////////
                 }
             }
             return off;
@@ -344,13 +355,31 @@ namespace dmludp{
                 /*
                 NO pop front cause duplicate packet sent again and again.
                 */
-                rcq.push_back(in_offset);
+               ////////////////
+                auto index = 0;
+                if (in_offset != 48){
+                    index = round_up((in_offset - 48), 1440) + 1;
+                }
+                if (retranmission_map[index] == 0){
+                    rcq.push_back(in_offset);
+                    retranmission_map[index] == 1;
+                }
+                ///////////////
+                // rcq.push_back(in_offset);
             }
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
             if (ack_count == bits_set.size()){
                 meta_status = MetaFlag::Complete;
             }
         } 
+
+        size_t round_up(uint64_t a, uint64_t b){
+            if (b == 0) {
+                throw std::invalid_argument("Division by zero is not allowed");
+            }
+
+            return (a + b - 1) / b;
+        }
 
         void ack_check(){
             std::cout << "ack_count:" << ack_count << ", " << bits_set.size() << ", " << bits_set.count() << std::endl;

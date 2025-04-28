@@ -2376,7 +2376,7 @@ public:
                             pn++;
                             continue;
                         }
-                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << std::get<2>(sendtuple)<< ", "<< std::get<3>(sendtuple)<< std::endl;
 
                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
                             byte_index = (pn - first_pn) / 8;
@@ -2563,7 +2563,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
