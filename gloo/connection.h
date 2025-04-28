@@ -2181,9 +2181,9 @@ public:
             return;
         }
 
-        if (isfirst){
-            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        }
+        // if (isfirst){
+        //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        // }
         
         /*Mark packet as to be processed*/
         receive_available_map[index] = 1;
