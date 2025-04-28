@@ -858,6 +858,9 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
+                if (packet_offset_ == 0){
+                    std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                }
                 // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
@@ -873,6 +876,9 @@ class MetaInfo{
                 packet_offset_ = retransmission_map.at_unused(mapindex_).get_offset(PacketNum);
             }
             if (isReceived){
+                if (packet_offset_ == 0){
+                    std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                }
                 // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
@@ -2227,6 +2233,7 @@ public:
         */
         // if(pos > receivevector.size() * sizeof(uint8_t)){
         if(pos > 8000){
+            std::cout<<"std::memset"<<std::endl;
             std::memset(receivevector.data(), 0, receivevector.size());
             current_loop_min = pkt_num;
             pos = 0;
