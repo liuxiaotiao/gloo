@@ -1118,6 +1118,11 @@ class SCircularQueue {
             return data_[index_].iscomplete();
         }
 
+        /*
+        0. i < j
+        1. i == j
+        2. i > j
+        */
         size_t compareIndices(int i, int j) const {
             int pos_i = (i + capacity_ - head_) % capacity_;
             int pos_j = (j + capacity_ - head_) % capacity_;
@@ -2478,9 +2483,11 @@ public:
                         break;
                     }
                     size_t i = 0;
+                    Difference_len temp_dif = LIMIT_UINT32_T;
                     std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+                        temp_dif = sendbufferqueue.get_difference(i);
                         sendpair = sendbufferqueue.get_packet_range(i, loss_pn);
                         if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                             continue;
@@ -2495,7 +2502,7 @@ public:
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
+                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     if (compare_ == 0){
                         // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
@@ -2505,7 +2512,11 @@ public:
                                 break;
                             }
                         }
-                    }else{
+                    }
+                    else if(compare_ == 2){
+
+                    }
+                    else{
                         std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
