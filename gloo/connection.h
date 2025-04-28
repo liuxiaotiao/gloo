@@ -2516,10 +2516,7 @@ public:
                             }
                         }
                         else{
-                            loss_pn = sendpair.first;
-                            if (loss_pn == first_pn){
-                                break;
-                            }
+                            loss_pn++;    
                         }
                     }
                     else{
