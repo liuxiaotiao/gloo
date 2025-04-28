@@ -122,7 +122,7 @@ void Loop::registerDescriptor(int fd, int events, Handler* h) {
   struct epoll_event ev;
   ev.events = events;
   ev.data.ptr = h;
- // std::cout<<"[Debug] registerDescriptor fd:"<<fd<<std::endl;
+ std::cout<<"[Debug] registerDescriptor fd:"<<fd<<std::endl;
  // std::cout<<std::endl;
   auto rv = epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
   if (rv == -1 && errno == EEXIST) {
@@ -154,23 +154,10 @@ void Loop::run() {
 
   while (!done_) {
     // Wakeup everyone waiting for a loop tick to finish.
-    // std::cout << "[Debug] notify_all() "<<std::endl;
     cv_.notify_all();
 
     // Wait for something to happen
     nfds = epoll_wait(fd_, events.data(), events.size(), 10);
-    // auto now = std::chrono::high_resolution_clock::now();
-
-    // // 转换为time_t以便可以用std::put_time来格式化日期和时间
-    // auto now_c = std::chrono::system_clock::to_time_t(now);
-
-    // // 获取当前时间的微秒部分
-    // auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
-
-    // // // 输出
-    // std::cout << "[Debug] Current time: "
-    //           << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S")
-    //           << '.' << std::setfill('0') << std::setw(6) << microseconds.count();
 
     // std::cout<<" nfds: "<<nfds<<std::endl;
     if (nfds == 0) {
