@@ -341,6 +341,9 @@ namespace dmludp{
                     ack_count++;
                 }
             }else{
+                /*
+                NO pop front cause duplicate packet sent again and again.
+                */
                 rcq.push_back(in_offset);
             }
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;

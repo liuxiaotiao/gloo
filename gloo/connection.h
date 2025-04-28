@@ -2503,8 +2503,9 @@ public:
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
                     std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
-                    if (compare_ == 0){
-                        // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
+                    // if (compare_ == 0){
+                    if (compare_ != 1){    
+                        std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, true);
                             loss_pn++;
@@ -2512,9 +2513,6 @@ public:
                                 break;
                             }
                         }
-                    }
-                    else if(compare_ == 2){
-
                     }
                     else{
                         std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
