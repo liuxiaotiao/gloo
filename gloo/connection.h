@@ -2227,6 +2227,7 @@ public:
         */
         // if(pos > receivevector.size() * sizeof(uint8_t)){
         if(pos > 8000){
+            std::memset(receivevector.data(), 0, receivevector.size());
             current_loop_min = pkt_num;
             pos = 0;
         }
