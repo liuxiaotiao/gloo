@@ -739,7 +739,7 @@ bool Pair::protocal2read(){
         //     dmludp_connection->complete_check();
         //   }
         // }
-        std::cout<<"receive_status:"<<receive_status<<std::endl;
+        // std::cout<<"receive_status:"<<receive_status<<std::endl;
         if (receive_status == 2){
           int i = 0;
           while (true){
@@ -961,7 +961,7 @@ bool Pair::protocal2send(){
         auto delay = dmludp_connection->get_rto();
         new_value.it_value.tv_sec = delay.count() / 1000000000;
         new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-        std::cout<<"1 rto:"<<delay.count()<<std::endl;
+        // std::cout<<"1 rto:"<<delay.count()<<std::endl;
         new_value.it_interval.tv_sec = 0;  
         new_value.it_interval.tv_nsec = 0;
 
@@ -979,13 +979,13 @@ bool Pair::protocal2send(){
     }
   }
 
-  std::cout<<"protocal2send 3"<<std::endl;
+  // std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(new_value));
   auto delay = dmludp_connection->get_rto();
   new_value.it_value.tv_sec = delay.count() / 1000000000;
   new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-  std::cout<<"2 rto:"<<delay.count()<<std::endl;
+  // std::cout<<"2 rto:"<<delay.count()<<std::endl;
   new_value.it_interval.tv_sec = 0;  
   new_value.it_interval.tv_nsec = 0;
 

@@ -1781,7 +1781,7 @@ public:
     void receive_log(){
         std::cout<<"receive condition"<<std::endl;
         for (auto i = 0; i < count_; i++){
-            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << std::endl;
+            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << ", " << at(i).get_status()<< std::endl;
         }
     }
 
