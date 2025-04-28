@@ -2313,7 +2313,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
+        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
@@ -2434,8 +2434,8 @@ public:
                         }
                         
 
-                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
-                        std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
+                        // std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
+                        // std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
 
                         if (result == 0){
                             pn++;
@@ -2502,7 +2502,7 @@ public:
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
+                    // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
                         std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
@@ -2520,7 +2520,7 @@ public:
                         }
                     }
                     else{
-                        std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
@@ -2529,7 +2529,7 @@ public:
                             }
                         }
                     }
-                    std::cout<<"3 check"<<std::endl;
+                    // std::cout<<"3 check"<<std::endl;
                 }
                 // {
                 //     std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
