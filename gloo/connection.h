@@ -1811,8 +1811,6 @@ public:
     // map for received application pktnum and corresponding offset
     std::vector<uint8_t> receivevector;
 
-    // RCset receive_offset;
-
     std::vector<uint8_t> acknowldge_header;
 
     struct msghdr acknowldge_msghdr;
@@ -2310,7 +2308,7 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
+        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
@@ -2373,7 +2371,7 @@ public:
                             pn++;
                             continue;
                         }
-                        // std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
+                        std::cout<<"0 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << std::endl;
 
                         while (pn >= std::get<0>(sendtuple) && pn <= std::get<1>(sendtuple)){
                             byte_index = (pn - first_pn) / 8;
@@ -2431,8 +2429,8 @@ public:
                         }
                         
 
-                        // std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
-                        // std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
+                        std::cout<<"4 check:" << std::get<0>(sendpair) << ", " << std::get<1>(sendpair) << ", " << pn << ", " << result << std::endl;
+                        std::cout<<"5 check:" << std::get<0>(sendtuple) << ", " << std::get<1>(sendtuple) << ", " << pn << std::endl;
 
                         if (result == 0){
                             pn++;
@@ -2497,7 +2495,7 @@ public:
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
+                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<std::endl;
                     if (compare_ == 0){
                         // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
@@ -2508,7 +2506,7 @@ public:
                             }
                         }
                     }else{
-                        // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
                         while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
@@ -2517,7 +2515,7 @@ public:
                             }
                         }
                     }
-                    // std::cout<<"3 check"<<std::endl;
+                    std::cout<<"3 check"<<std::endl;
                 }
                 // {
                 //     std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
@@ -2551,7 +2549,7 @@ public:
                     break;
                 }
             }
-            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
@@ -2598,15 +2596,15 @@ public:
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        {
-            auto sendbufferqueue_start_index = sendbufferqueue.start();
-            for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                auto difference_ = sendbufferqueue.data_[index].get_difference();
-                std::cout << difference_ << " " ;
-                sendbufferqueue.data_[index].metabuf.ack_check();
-            }
-        }
+        // {
+        //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+        //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+        //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+        //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+        //         std::cout << difference_ << " " ;
+        //         sendbufferqueue.data_[index].metabuf.ack_check();
+        //     }
+        // }
     }
 
 
