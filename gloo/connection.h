@@ -2122,7 +2122,7 @@ public:
                 send_flag_ = false;
             }
         }
-        recvCQ.receive_log();
+        // recvCQ.receive_log();
         return send_flag_;
     }
 
