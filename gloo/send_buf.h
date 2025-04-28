@@ -326,7 +326,7 @@ namespace dmludp{
                     off = rcq.pop_front();
                     /////////////
                     auto index = 0;
-                    if (off != 48){
+                    if (off != 0){
                         index = round_up((off - 48), 1440) + 1;
                     }
                     retranmission_map[index] == 0;
@@ -357,7 +357,7 @@ namespace dmludp{
                 */
                ////////////////
                 auto index = 0;
-                if (in_offset != 48){
+                if (in_offset != 0){
                     index = round_up((in_offset - 48), 1440) + 1;
                 }
                 if (retranmission_map[index] == 0){
