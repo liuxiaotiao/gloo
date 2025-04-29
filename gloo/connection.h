@@ -1916,7 +1916,7 @@ public:
 
     uint64_t ACKrange;
 
-    ssize_t min_received = -1;
+    // ssize_t min_received = -1;
 
     // ssize_t max_received = -1;
     size_t max_received = std::numeric_limits<size_t>::max();
@@ -2215,13 +2215,13 @@ public:
         }
 
         /*TODO(3.3): Rethink min_received is worth to keep*/
-        if (min_received == -1){
-            min_received = pkt_num;
-        }else{
-            if (pkt_num < min_received){
-                min_received = pkt_num;
-            }
-        }
+        // if (min_received == -1){
+        //     min_received = pkt_num;
+        // }else{
+        //     if (pkt_num < min_received){
+        //         min_received = pkt_num;
+        //     }
+        // }
         // std::cout<<"2 pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
@@ -2295,8 +2295,8 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
-        // log_print(receivevector.data(), info_len);
+        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        log_print(receivevector.data(), info_len);
 
 
         send_packet_type = ty;
@@ -3120,7 +3120,7 @@ public:
             for (size_t i = 0; i < receivevector.size(); ++i) {
                 receivevector[i] = 0;
             }
-            min_received = -1;
+            // min_received = -1;
             current_loop_min = max_received + 1;
             process_application_copy();
           
