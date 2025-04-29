@@ -859,7 +859,7 @@ class MetaInfo{
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
                 if (packet_offset_ == 0){
-                    std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                    std::cout<<difference_flag<<", ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 }
                 // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
@@ -877,7 +877,7 @@ class MetaInfo{
             }
             if (isReceived){
                 if (packet_offset_ == 0){
-                    std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                    std::cout<<difference_flag<<", ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 }
                 // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
@@ -2711,7 +2711,7 @@ public:
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
+                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
                         std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
@@ -2772,7 +2772,7 @@ public:
                     break;
                 }
             }
-            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
@@ -2834,10 +2834,6 @@ public:
     void clear_recv_setting(){
         // receive_offset.clear();
     }
-
-    // void recv_reset(){
-    //     rec_buffer.reset();
-    // }
 
     /*Update receive difference to process next block data*/
     void update_receive_difference(){
