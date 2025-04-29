@@ -2190,12 +2190,16 @@ public:
         // if (isfirst){
         //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         // }
+
+        if (pkt_offset == 0){
+            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+        }
         
         /*Mark packet as to be processed*/
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
-                std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+                // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                 if (recvCQ.differencecheck(pkt_difference)){
                     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
@@ -2711,10 +2715,10 @@ public:
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
+                    // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
-                        std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         if (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                                 sendbufferqueue.ack4offset(i, loss_pn, true);
@@ -2772,7 +2776,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
