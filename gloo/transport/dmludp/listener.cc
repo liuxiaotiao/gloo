@@ -13,6 +13,7 @@
 #include <netinet/tcp.h>
 #include <string.h>
 #include <unistd.h>
+#include <iostream>
 
 #include <gloo/common/common.h>
 #include <gloo/common/logging.h>
@@ -39,6 +40,7 @@ Listener::Listener(std::shared_ptr<Loop> loop, const attr& attr)
   addr_ = listener_->sockName();
 
   // Register with loop for readability events.
+  std::cout<<"Listener:"<<listener_->fd()<<std::endl;
   loop_->registerDescriptor(listener_->fd(), EPOLLIN, this);
 }
 
