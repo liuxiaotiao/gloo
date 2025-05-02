@@ -1981,7 +1981,6 @@ public:
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
-    // receive_offset(MAX_SEND_UDP_PAYLOAD_SIZE),
     rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0),
     first_loss(false)

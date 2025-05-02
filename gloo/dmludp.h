@@ -116,6 +116,12 @@ inline ssize_t dmludp_send_data_stop(std::shared_ptr<Connection> conn, uint8_t* 
     return static_cast<ssize_t>(written);
 }
 
+inline ssize_t dmludp_send_data_handshake2(uint8_t* out, size_t out_len){
+    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    memcpy(out, handshake_header, sizeof(Header));
+    return static_cast<ssize_t>(sizeof(Header));
+}
+
 inline ssize_t dmludp_send_data_handshake(std::shared_ptr<Connection> conn, uint8_t* out, size_t out_len){
     if (out_len == 0){
         return dmludp_error::DMLUDP_ERR_BUFFER_TOO_SHORT;
