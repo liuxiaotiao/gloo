@@ -225,11 +225,11 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   uint8_t buffer[1500];
 
   auto temp_connection = dmludp_conn_connect(local, ss);
-
+  std::cout<<"connect_dmludp 1"<<std::endl;
   ssize_t written = dmludp_send_data_handshake(temp_connection, out, sizeof(out));
   auto start = std::chrono::high_resolution_clock::now();
   ssize_t sent = sendto(fd_, out, written, 0, (struct sockaddr *) &ss, peer_addr_len);
-
+  std::cout<<"connect_dmludp 2"<<std::endl;
   struct sockaddr_in tmp_addr;
   memset(&tmp_addr, 0, sizeof(tmp_addr));
   tmp_addr.sin_family = AF_UNSPEC;
@@ -239,7 +239,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
   //     perror("setsockopt SO_TIMESTAMPNS failed");
   //     exit(EXIT_FAILURE);
   // }
-
+  std::cout<<"connect_dmludp 3"<<std::endl;
   for (;;){
     ssize_t received = recvfrom(fd_, buffer, sizeof(buffer), 0, (struct sockaddr *) &tmp_peer_addr, &peer_addr_len);
     if(received < 1){
@@ -269,6 +269,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     if(header != 2){
       continue;
     }
+    std::cout<<"connect_dmludp 4"<<std::endl;
     peer = tmp_peer_addr;
     connect(tmp_peer_addr);
     auto connection = dmludp_conn_connect(local, peer);
@@ -278,6 +279,7 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     written = dmludp_conn_send(dmludp_connection, out, sizeof(out));
     sent = write(out, written);
     new_socket = false;
+    std::cout<<"connect_dmludp 5"<<std::endl;
     break;
   }
 }
