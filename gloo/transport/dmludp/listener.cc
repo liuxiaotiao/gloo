@@ -40,7 +40,7 @@ Listener::Listener(std::shared_ptr<Loop> loop, const attr& attr)
   addr_ = listener_->sockName();
 
   // Register with loop for readability events.
-  std::cout<<"Listener:"<<listener_->fd()<<std::endl;
+  // std::cout<<"Listener:"<<listener_->fd()<<std::endl;
   loop_->registerDescriptor(listener_->fd(), EPOLLIN, this);
 }
 
