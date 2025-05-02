@@ -155,8 +155,7 @@ static void lookupAddrForHostname(struct attr& attr) {
 
       attr.ai_addrlen = sizeof(struct sockaddr_in);
       memcpy(&attr.ai_addr, tmp->ifa_addr, attr.ai_addrlen);
-      ////////////////
-      // attr.ai_socktype = SOCK_STREAM;
+
       attr.ai_socktype = SOCK_DGRAM;
       attr.ai_protocol = 0;
     } 
@@ -383,7 +382,6 @@ void Device::connectAsInitiator(
   auto socket = Socket::createForFamily(sockaddr.ss_family);
   socket->localSockAddrStorage(sockaddr);
   socket->reuseAddr(true);
-  // socket->noDelay(true);
   socket->connect_dmludp(sockaddr);
 
   // Write sequence number for peer to new socket.
