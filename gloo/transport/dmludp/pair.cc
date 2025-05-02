@@ -68,6 +68,7 @@ Pair::Pair(
       ex_(nullptr),
       innertimer(*this){
         timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
+        std::cout<<"timer_fd:"<<timer_fd<<std::endl;
         // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
