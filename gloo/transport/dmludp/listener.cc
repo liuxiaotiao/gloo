@@ -64,7 +64,7 @@ void Listener::handleEvents(int /* unused */) {
       // Actual error.
       // GLOO_ENFORCE(false, "accept: ", strerror(errno));
     }
-     auto sock = listener_->accept();
+    auto sock = listener_->accept();
     sock->reuseAddr(true);
     // sock->noDelay(true);
 
