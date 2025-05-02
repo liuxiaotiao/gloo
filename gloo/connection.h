@@ -2298,7 +2298,7 @@ public:
         acknowldge_msghdr.msg_iovlen = 3;
 
         std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
-        log_print(receivevector.data(), info_len);
+        // log_print(receivevector.data(), info_len);
 
 
         send_packet_type = ty;
@@ -2664,6 +2664,9 @@ public:
         auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
+        /*
+        process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
+        */
         std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
