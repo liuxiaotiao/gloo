@@ -381,9 +381,7 @@ void Device::connectAsInitiator(
   // Create new socket to connect to peer.
   auto socket = Socket::createForFamily(sockaddr.ss_family);
   socket->localSockAddrStorage(sockaddr);
-  std::cout<<"check 1"<<std::endl;
   socket->reuseAddr(true);
-  std::cout<<"check 2"<<std::endl;
   socket->connect_dmludp(sockaddr);
   std::cout<<"connectAsInitiator"<<std::endl;
 
