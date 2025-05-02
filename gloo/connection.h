@@ -1395,11 +1395,7 @@ class metarecebuf{
             if (received == total || complete_flag){
                 status_ = 5;
             }
-            /*Only offset 0 processed, status_ can become pending*/
-            if (status_ == 2 || status_ == 3){
-                status_ = 4;
-            }
-            
+            status_ = 4;
         }
 
         bool is_complete(){
