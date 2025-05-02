@@ -2633,6 +2633,26 @@ public:
     //         }
     //     }
     // }
+
+    /*
+    process_acknowledge:68042, first_pn:24683446, 24683470, 24683444
+    68043, ack4offset:24683445, 0
+    68044, ack4offset:24683446, 0
+    68042 ack_count:0, 1, 0
+    68043 ack_count:1, 1, 1
+    68044 ack_count:25, 722, 25
+
+
+    process_acknowledge:33792, first_pn:12472482, 12472628, 12467475
+    33793, ack4offset:12470331, 0
+    33794, ack4offset:12470332, 0
+    33795, ack4offset:12470333, 0
+    33796, ack4offset:12471055, 0
+    33797, ack4offset:12471056, 0
+    33798, ack4offset:12471778, 0
+    33799, ack4offset:12472482, 0
+
+    */
     void process_acknowledge(const size_t index_){
         auto pkt_num = receive_message[index_].get_packet_number();
         auto pkt_len = receive_message[index_].get_packet_length();
@@ -2721,7 +2741,8 @@ public:
                         // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         if (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
-                                sendbufferqueue.ack4offset(i, loss_pn, true);
+                                /*All packet less than first packet should be marked as lost*/
+                                sendbufferqueue.ack4offset(i, loss_pn, false);
                                 loss_pn++;
                                 if (loss_pn == first_pn){
                                     break;
