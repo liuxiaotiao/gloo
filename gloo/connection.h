@@ -1395,7 +1395,11 @@ class metarecebuf{
             if (received == total || complete_flag){
                 status_ = 5;
             }
-            status_ = 4;
+            /*Only offset 0 processed, status_ can become pending*/
+            if (status_ == 2 || status_ == 3){
+                status_ = 4;
+            }
+            
         }
 
         bool is_complete(){
@@ -2277,6 +2281,8 @@ public:
         hdr->ty = ty;
         hdr->pkt_num = send_num;
         hdr->offset = 0;
+
+        /*status lastest received difference*/
         hdr->difference = receive_connection_difference;
 
         size_t info_len = (max_received - current_loop_min + 1 + 7) / 8;
