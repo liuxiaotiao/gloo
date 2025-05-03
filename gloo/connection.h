@@ -3129,7 +3129,7 @@ public:
             // for (size_t i = 0; i < receivevector.size(); ++i) {
             //     receivevector[i] = 0;
             // }
-            memset(receivevector.data(), 0, receivevector.size());
+            // memset(receivevector.data(), 0, receivevector.size());
             // min_received = -1;
             // current_loop_min = max_received + 1;
             process_application_copy();
@@ -3150,6 +3150,7 @@ public:
     }
 
     void update_boundary(){
+        memset(receivevector.data(), 0, receivevector.size());
         current_loop_min = max_received + 1;
     }
 
