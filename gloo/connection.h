@@ -2185,14 +2185,6 @@ public:
             receive_available_map[index] = 0;
             return;
         }
-
-        // if (isfirst){
-        //     std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        // }
-
-        if (pkt_offset == 0){
-            std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-        }
         
         /*Mark packet as to be processed*/
         receive_available_map[index] = 1;
@@ -2200,7 +2192,7 @@ public:
             if (pkt_offset == 0){
                 // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                 if (recvCQ.differencecheck(pkt_difference)){
-                    std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+                    // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
                     if(!recvCQ.insertzero(pkt_difference, index)){
                         receive_available_map[index] = 0;
@@ -2931,14 +2923,6 @@ public:
         return completed;
     }
 
-    // size_t get_once_data_len(){
-    //     return written_data_once;
-    // }
-
-    // void clear_sent_once(){
-    //     written_data_once = 0;
-    // }
-
     /*If timer triggered, process all unacknowledge packet as loss*/
     /*TODD: use previous record pair to minimize the iteration times*/
     void process_timeout(){
@@ -3142,11 +3126,12 @@ public:
         }
         
         if(send_packet_type == Type::ACK){
-            for (size_t i = 0; i < receivevector.size(); ++i) {
-                receivevector[i] = 0;
-            }
+            // for (size_t i = 0; i < receivevector.size(); ++i) {
+            //     receivevector[i] = 0;
+            // }
+            memset(receivevector.data(), 0, receivevector.size());
             // min_received = -1;
-            current_loop_min = max_received + 1;
+            // current_loop_min = max_received + 1;
             process_application_copy();
           
         }else if(send_packet_type == Type::Application){
@@ -3162,6 +3147,10 @@ public:
         }
 
         send_packet_type = 0;
+    }
+
+    void update_boundary(){
+        current_loop_min = max_received + 1;
     }
 
     size_t get_start(){
@@ -3510,13 +3499,9 @@ public:
         return stop_flag && stop_ack && initial;
     };
 
-    // size_t read(uint8_t* out, bool iscopy, size_t output_len = 0){
-    //     return rec_buffer.emit(out, iscopy, output_len);
+    // void reset(){
+    //     // norm2_vec.clear();
     // };
-
-    void reset(){
-        // norm2_vec.clear();
-    };
 
     void set_handshake(){
         handshake = std::chrono::steady_clock::now();

@@ -68,7 +68,6 @@ Pair::Pair(
       ex_(nullptr),
       innertimer(*this){
         timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
-        std::cout<<"timer_fd:"<<timer_fd<<std::endl;
         // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
       }
 
@@ -692,6 +691,9 @@ bool Pair::protocal2read(){
       auto connection_result = dmludp_connection->send_data2();
       // std::cout<<"connection_result:"<<connection_result<<std::endl;
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
+      if (sent_result > -1){
+        dmludp_connection->update_boundary();
+      }
       // std::cout<<"sent_result:"<<sent_result<<std::endl;
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
       /*
