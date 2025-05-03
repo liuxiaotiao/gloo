@@ -3150,7 +3150,8 @@ public:
     }
 
     void update_boundary(){
-        memset(receivevector.data(), 0, receivevector.size());
+        // memset(receivevector.data(), 0, receivevector.size());
+        for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
     }
 
