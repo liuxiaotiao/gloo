@@ -1395,7 +1395,6 @@ class metarecebuf{
             }
             if (received == total || complete_flag){
                 status_ = 5;
-                return;
             }
             status_ = 4;
         }
