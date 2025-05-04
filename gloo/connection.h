@@ -1393,11 +1393,11 @@ class metarecebuf{
             for(auto const e:source_len){
                 total += e;
             }
+            status_ = 4;
             if (received == total || complete_flag){
                 status_ = 5;
                 std::cout<<"completecheck, received:"<<received<<", "<<total<<std::endl;
             }
-            status_ = 4;
             std::cout<<"status_:"<<status_<<std::endl; 
         }
 

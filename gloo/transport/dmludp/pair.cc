@@ -740,7 +740,7 @@ bool Pair::protocal2read(){
             i++;
           }       
         }
-        else if(receive_status == 5){
+        else if(receive_status == 4){
           /*Complete*/
           NonOwningPtr<UnboundBuffer> rbuf;
           struct iovec riov = {
@@ -758,7 +758,7 @@ bool Pair::protocal2read(){
             stop = true;
           }
         }
-        else if(receive_status == 4){
+        else if(receive_status == 5){
           while (true){
             NonOwningPtr<UnboundBuffer> rbuf;
             struct iovec riov = {
