@@ -311,12 +311,8 @@ namespace dmludp{
                     if (meta_pos == 0){
                         off = meta_pos * send_buffer_size;
                         meta_left -= 48;
-                        // std::cout<<"total:"<<(meta_ptr_len + meta_ptr2_len)<<std::endl;
                     }else{
                         off = (meta_pos - 1) * send_buffer_size + 48;
-                        // if(off == 48){
-                        //     std::cout<<"off:"<<meta_ptr2<<std::endl;
-                        // }
                         meta_left -= send_buffer_size;
                     }
                     meta_pos++;

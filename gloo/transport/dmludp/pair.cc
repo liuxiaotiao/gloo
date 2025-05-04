@@ -646,17 +646,17 @@ bool Pair::protocal2read(){
   size_t receive_check = 0;
 
   /*Debug use*/
-  // struct sockaddr_in peer_addr;
-  // socklen_t addr_len = sizeof(peer_addr);
-  // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-  //     perror("getpeername failed");
-  //     return 1;
-  // }
+  struct sockaddr_in peer_addr;
+  socklen_t addr_len = sizeof(peer_addr);
+  if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+      perror("getpeername failed");
+      return 1;
+  }
 
-  // char ip_str[INET_ADDRSTRLEN];
-  // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+  char ip_str[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-  // std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+  std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -794,7 +794,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log();
+    dmludp_connection->recvCQ.receive_log();
     // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
@@ -973,23 +973,23 @@ bool Pair::protocal2send(){
 
 void Pair::handleReadWrite(int events){
   if (events & EPOLLOUT){
-    // std::cout<<"EPOLLOUT start"<<std::endl;
+    std::cout<<"EPOLLOUT start"<<std::endl;
     GLOO_ENFORCE(
     !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     if (!tx_.empty()){
       protocal2send();
     }
-    // std::cout<<"EPOLLOUT end \n"<<std::endl;
+    std::cout<<"EPOLLOUT end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 
 
   if (events & EPOLLIN) {
-    // std::cout<<"EPOLLIN start"<<std::endl;
+    std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
-    // std::cout<<"EPOLLIN end \n"<<std::endl;
+    std::cout<<"EPOLLIN end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 }
