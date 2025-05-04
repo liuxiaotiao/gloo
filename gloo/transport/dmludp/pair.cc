@@ -328,7 +328,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
+	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
