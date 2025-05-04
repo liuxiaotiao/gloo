@@ -894,7 +894,7 @@ bool Pair::protocal2send(){
     auto i = packet_.first;
     std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()
     << ", " << dmludp_connection->max_acknowleged
-    << ", " << dmludp_connection->pkt_num_spaces.getpktnum();
+    << ", " << dmludp_connection->pkt_num_spaces.getpktnum()
     << std::endl;
     
     for ( ;i <= packet_.second; i++){

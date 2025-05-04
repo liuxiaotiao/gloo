@@ -370,7 +370,8 @@ class ReTransmissionMap{
 
         void reset(){
             start_packet = end_packet = LIMIT_UINT64_T;
-            std::fill(offsets.begin(), offsets.end(), 0);
+            memset(offsets.data(),0, offsets.size());
+            // std::fill(offsets.begin(), offsets.end(), 0);
         }
 
         Offset_len get_offset(Packet_num_len packetnum){
