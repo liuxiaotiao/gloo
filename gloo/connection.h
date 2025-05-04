@@ -3048,6 +3048,9 @@ public:
                 }
 
                 auto pn = pkt_num_spaces.updatepktnum();
+                if (out_off > 0){
+                    log_print(send_message[sent].iov[1].iov_base,send_message[sent].iov[1].iov_len);
+                }
                 // if (out_off == 0 && out_len > -1){
                 //     std::cout<<"[Debug] difference:"<< pkg_difference <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
                 // }
