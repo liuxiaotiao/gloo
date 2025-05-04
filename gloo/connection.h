@@ -2714,10 +2714,14 @@ public:
                     size_t i = 0;
                     Difference_len temp_dif = LIMIT_UINT32_T;
                     std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+                    std::pair<Packet_num_len, Packet_num_len> sendpair2 = {LIMIT_UINT64_T, LIMIT_UINT64_T};
                     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                         temp_dif = sendbufferqueue.get_difference(i);
                         sendpair = sendbufferqueue.get_packet_range(i, loss_pn);
+                        if (sendpair.first < sendpair2.first){
+                            sendpair2 = sendpair;
+                        }
                         if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                             continue;
                         }
@@ -2737,7 +2741,8 @@ public:
                     if (compare_ != 1){    
                         // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
                         if (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
-                            while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
+                            auto boundary = std::min(sendpair.second, (first_pn - 1));
+                            while (loss_pn >= sendpair.first && loss_pn <= boundary){
                                 /*All packet less than first packet should be marked as lost*/
                                 sendbufferqueue.ack4offset(i, loss_pn, false);
                                 loss_pn++;
@@ -2752,7 +2757,8 @@ public:
                     }
                     else{
                         // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
-                        while (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
+                        auto boundary = std::min(sendpair.second, (first_pn - 1));
+                        while (loss_pn >= sendpair.first && loss_pn <= boundary){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
                             loss_pn++;
                             if (loss_pn == first_pn){
