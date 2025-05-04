@@ -2729,17 +2729,18 @@ public:
                             break;
                         }
                     }
-
+                    std::cout<<"1 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                         // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
+                    std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
-                        // std::cout<<"0 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        std::cout<<"4 " << sendpair.first << ", " << sendpair.second << std::endl;
                         if (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             auto boundary = std::min(sendpair.second, (first_pn - 1));
                             while (loss_pn >= sendpair.first && loss_pn <= boundary){
@@ -2756,7 +2757,7 @@ public:
                         }
                     }
                     else{
-                        // std::cout<<"1 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        std::cout<<"5 " << sendpair.first << ", " << sendpair.second << std::endl;
                         auto boundary = std::min(sendpair.second, (first_pn - 1));
                         while (loss_pn >= sendpair.first && loss_pn <= boundary){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
@@ -2766,7 +2767,7 @@ public:
                             }
                         }
                     }
-                    // std::cout<<"3 check"<<std::endl;
+                    std::cout<<"3 check"<<std::endl;
                 }
                 // {
                 //     std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
