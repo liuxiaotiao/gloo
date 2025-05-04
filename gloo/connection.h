@@ -1742,8 +1742,26 @@ public:
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
         inrangecheck(index, __func__);
+        if (offset_){
+            std::cout<<"copy:"<<std::endl;
+            log_print(src_, len_);
+        }
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
+    }
+
+    void log_print(void* src_, size_t len_) {
+        if (!src_) {
+            std::cerr << "Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  
+
+        for (size_t i = 0; i < len_; i++) {
+            std::cout << static_cast<int>(data[i]) << " ";  
+        }
+        std::cout << std::endl;
     }
 
     void record_copy(Difference_len difference_, Offset_len offset_){
