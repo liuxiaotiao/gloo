@@ -2965,25 +2965,25 @@ public:
     /*If timer triggered, process all unacknowledge packet as loss*/
     /*TODD: use previous record pair to minimize the iteration times*/
     void process_timeout(){
-        // char ipStr[INET6_ADDRSTRLEN];
-        // uint16_t port = 0;
+        char ipStr[INET6_ADDRSTRLEN];
+        uint16_t port = 0;
 
-        // if (peeraddr.ss_family == AF_INET) {
-        //     // IPv4
-        //     const sockaddr_in* addr_in = reinterpret_cast<const sockaddr_in*>(&peeraddr);
-        //     inet_ntop(AF_INET, &(addr_in->sin_addr), ipStr, sizeof(ipStr));
-        //     port = ntohs(addr_in->sin_port);
-        // } else if (peeraddr.ss_family == AF_INET6) {
-        //     // IPv6
-        //     const sockaddr_in6* addr_in6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
-        //     inet_ntop(AF_INET6, &(addr_in6->sin6_addr), ipStr, sizeof(ipStr));
-        //     port = ntohs(addr_in6->sin6_port);
-        // } else {
-        //     std::cerr << "Unknown address family: " << peeraddr.ss_family << std::endl;
-        //     return;
-        // }
+        if (peeraddr.ss_family == AF_INET) {
+            // IPv4
+            const sockaddr_in* addr_in = reinterpret_cast<const sockaddr_in*>(&peeraddr);
+            inet_ntop(AF_INET, &(addr_in->sin_addr), ipStr, sizeof(ipStr));
+            port = ntohs(addr_in->sin_port);
+        } else if (peeraddr.ss_family == AF_INET6) {
+            // IPv6
+            const sockaddr_in6* addr_in6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
+            inet_ntop(AF_INET6, &(addr_in6->sin6_addr), ipStr, sizeof(ipStr));
+            port = ntohs(addr_in6->sin6_port);
+        } else {
+            std::cerr << "Unknown address family: " << peeraddr.ss_family << std::endl;
+            return;
+        }
 
-        // std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
+        std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
