@@ -884,7 +884,7 @@ bool Pair::protocal2send(){
   // std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
-      std::cout<<"!dmludp_connection->check_status()"<<std::endl;
+      // std::cout<<"!dmludp_connection->check_status()"<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
