@@ -25,7 +25,7 @@ namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
   auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-  std::cout<<"createForFamily:"<<rv<<std::endl;
+  // std::cout<<"createForFamily:"<<rv<<std::endl;
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
 }

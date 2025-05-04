@@ -2741,11 +2741,11 @@ public:
                         continue;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second << ", " << compare_ << ", " << sendpair2.first<< ", " << sendpair2.second<<std::endl;
+                    // std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second << ", " << compare_ << ", " << sendpair2.first<< ", " << sendpair2.second<<std::endl;
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
-                        std::cout<<"4 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"4 " << sendpair.first << ", " << sendpair.second << std::endl;
                         if (loss_pn >= sendpair.first && loss_pn <= sendpair.second){
                             auto boundary = std::min(sendpair.second, (first_pn - 1));
                             while (loss_pn >= sendpair.first && loss_pn <= boundary){
@@ -2762,7 +2762,7 @@ public:
                         }
                     }
                     else{
-                        std::cout<<"5 " << sendpair.first << ", " << sendpair.second << std::endl;
+                        // std::cout<<"5 " << sendpair.first << ", " << sendpair.second << std::endl;
                         auto boundary = std::min(sendpair.second, (first_pn - 1));
                         while (loss_pn >= sendpair.first && loss_pn <= boundary){
                             sendbufferqueue.ack4offset(i, loss_pn, false);
@@ -2772,7 +2772,7 @@ public:
                             }
                         }
                     }
-                    std::cout<<"3 check"<<std::endl;
+                    // std::cout<<"3 check"<<std::endl;
                 }
                 // {
                 //     std::cout<<"process_acknowledge 3:" << loss_pn << ", " << first_pn << std::endl;
@@ -2787,7 +2787,7 @@ public:
             }
             
         }
-        std::cout << "1 process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
+        // std::cout << "1 process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
         while (true)
         {
             // std::cout<<"process_acknowledge 4:" << pn << ", " <<(max_acknowleged + 1) << std::endl;
@@ -2945,29 +2945,29 @@ public:
     /*If timer triggered, process all unacknowledge packet as loss*/
     /*TODD: use previous record pair to minimize the iteration times*/
     void process_timeout(){
-        char ipStr[INET6_ADDRSTRLEN];
-        uint16_t port = 0;
+        // char ipStr[INET6_ADDRSTRLEN];
+        // uint16_t port = 0;
 
-        if (peeraddr.ss_family == AF_INET) {
-            // IPv4
-            const sockaddr_in* addr_in = reinterpret_cast<const sockaddr_in*>(&peeraddr);
-            inet_ntop(AF_INET, &(addr_in->sin_addr), ipStr, sizeof(ipStr));
-            port = ntohs(addr_in->sin_port);
-        } else if (peeraddr.ss_family == AF_INET6) {
-            // IPv6
-            const sockaddr_in6* addr_in6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
-            inet_ntop(AF_INET6, &(addr_in6->sin6_addr), ipStr, sizeof(ipStr));
-            port = ntohs(addr_in6->sin6_port);
-        } else {
-            std::cerr << "Unknown address family: " << peeraddr.ss_family << std::endl;
-            return;
-        }
+        // if (peeraddr.ss_family == AF_INET) {
+        //     // IPv4
+        //     const sockaddr_in* addr_in = reinterpret_cast<const sockaddr_in*>(&peeraddr);
+        //     inet_ntop(AF_INET, &(addr_in->sin_addr), ipStr, sizeof(ipStr));
+        //     port = ntohs(addr_in->sin_port);
+        // } else if (peeraddr.ss_family == AF_INET6) {
+        //     // IPv6
+        //     const sockaddr_in6* addr_in6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
+        //     inet_ntop(AF_INET6, &(addr_in6->sin6_addr), ipStr, sizeof(ipStr));
+        //     port = ntohs(addr_in6->sin6_port);
+        // } else {
+        //     std::cerr << "Unknown address family: " << peeraddr.ss_family << std::endl;
+        //     return;
+        // }
 
-        std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
+        // std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
-        std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
+        // std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
         while (true)
         {
             if (pn > max_sent_pn){
@@ -3221,7 +3221,7 @@ public:
         Packet_len pkt_len;
         Difference_len pkt_difference;
         if (!recvCQ.empty()){
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
+            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
             if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
                 auto index = recvCQ.startpos();
                 pkt_offset = receive_message[index].get_packet_offset();
@@ -3346,7 +3346,7 @@ public:
                     auto copy_difference = receive_record.get_record_difference();
                     auto copy_offset = receive_record.get_offset();
                     if (copy_offset >= 48){
-                        std::cout<<"6 copy"<<std::endl;
+                        // std::cout<<"6 copy"<<std::endl;
                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
                     }else{
                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
@@ -3370,7 +3370,7 @@ public:
             auto copy_difference = receive_record.get_record_difference();
             auto copy_offset = receive_record.get_offset();
             if (copy_offset >= 48){
-                std::cout<<"7 copy"<<std::endl;
+                // std::cout<<"7 copy"<<std::endl;
                 recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
             }else{
                 recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);

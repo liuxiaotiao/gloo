@@ -328,7 +328,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
+	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -514,7 +514,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  std::cout<<"readComplete:"<<opcode<<std::endl;
+  // std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -646,17 +646,17 @@ bool Pair::protocal2read(){
   size_t receive_check = 0;
 
   /*Debug use*/
-  struct sockaddr_in peer_addr;
-  socklen_t addr_len = sizeof(peer_addr);
-  if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-      perror("getpeername failed");
-      return 1;
-  }
+  // struct sockaddr_in peer_addr;
+  // socklen_t addr_len = sizeof(peer_addr);
+  // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+  //     perror("getpeername failed");
+  //     return 1;
+  // }
 
-  char ip_str[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+  // char ip_str[INET_ADDRSTRLEN];
+  // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-  std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+  // std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -757,7 +757,7 @@ bool Pair::protocal2read(){
             if (i == 1){
               if (rnbytes == 0){
                 readComplete(rbuf);
-                std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_connection->update_receive_difference();
               }else{
                 dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
@@ -804,7 +804,7 @@ bool Pair::protocal2read(){
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
               readComplete(rbuf);
-              std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+              // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
               dmludp_connection->update_receive_difference();
               break;
             }
@@ -1012,7 +1012,7 @@ void Pair::handleReadWrite(int events){
       protocal2send();
     }
     // std::cout<<"EPOLLOUT end \n"<<std::endl;
-    std::cout<<"\n"<<std::endl;
+    // std::cout<<"\n"<<std::endl;
   }
 
 
@@ -1022,7 +1022,7 @@ void Pair::handleReadWrite(int events){
       // Keep going
     }
     // std::cout<<"EPOLLIN end \n"<<std::endl;
-    std::cout<<"\n"<<std::endl;
+    // std::cout<<"\n"<<std::endl;
   }
 }
 
