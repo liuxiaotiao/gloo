@@ -1742,7 +1742,7 @@ public:
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
         inrangecheck(index, __func__);
-        if (offset_){
+        if (offset_ > 48){
             std::cout<<"copy:"<<std::endl;
             log_print(src_, len_);
         }
