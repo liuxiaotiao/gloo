@@ -2987,7 +2987,7 @@ public:
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
-        // std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
+        std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
         while (true)
         {
             if (pn > max_sent_pn){
@@ -3007,6 +3007,7 @@ public:
             //     pn++;
             //     continue;
             // }
+            std::cout<<"sendpair:"<<sendpair.first<<", "<<sendpair.second<<std::endl;
             if (pn < sendpair.first || pn > sendpair.second){
                 pn++;
                 continue;
