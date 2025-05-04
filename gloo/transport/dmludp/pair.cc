@@ -794,7 +794,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log();
+    dmludp_connection->recvCQ.receive_log();
     // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
@@ -825,10 +825,10 @@ bool Pair::protocal2read(){
     }
     
   }
-  dmludp_connection->recvCQ.receive_log();
+  // dmludp_connection->recvCQ.receive_log();
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
-    std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
+    // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
   }else{
     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
     // std::cout << "tx_:" << tx_.size() << std::endl;
@@ -884,6 +884,7 @@ bool Pair::protocal2send(){
   // std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
+      std::cout<<"!dmludp_connection->check_status()"<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
