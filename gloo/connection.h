@@ -1741,6 +1741,7 @@ public:
     /*Copy data*/
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
+        std::cout<<"copy:"<<offset_<<std::endl;
         inrangecheck(index, __func__);
         if (offset_ > 48){
             std::cout<<"copy:"<<std::endl;
