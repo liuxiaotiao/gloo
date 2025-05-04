@@ -2725,6 +2725,7 @@ public:
                             break;
                         }
                     }
+
                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                         // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
@@ -2774,7 +2775,7 @@ public:
             }
             
         }
-        // std::cout << "process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
+        std::cout << "1 process_acknowledge:" << max_acknowleged << ", "<< pn << std::endl;
         while (true)
         {
             // std::cout<<"process_acknowledge 4:" << pn << ", " <<(max_acknowleged + 1) << std::endl;
@@ -2799,7 +2800,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second << ", " << pn <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second << ", " << pn <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
