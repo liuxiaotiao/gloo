@@ -248,8 +248,6 @@ namespace dmludp{
 
         size_t ack_count = 0;
 
-        // DynamicBitset retranmission_map;
-
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
         {
@@ -288,6 +286,9 @@ namespace dmludp{
                     meta_ptr_len = iovecs[i].iov_len;
                 }else{
                     meta_ptr2 = iovecs[i].iov_base;
+                    if (iovecs[i].iov_len == 4 || iovecs[i].iov_len == 1184){
+                        std::cout<<"meta_ptr2:"<<meta_ptr2<<std::endl;
+                    }
                     meta_ptr2_len = iovecs[i].iov_len;
                 }
             }
@@ -313,6 +314,9 @@ namespace dmludp{
                         // std::cout<<"total:"<<(meta_ptr_len + meta_ptr2_len)<<std::endl;
                     }else{
                         off = (meta_pos - 1) * send_buffer_size + 48;
+                        if((off == 48 && meta_left == 4) || (off == 48 && meta_left == 1184)){
+                            std::cout<<"off:"<<meta_ptr2<<std::endl;
+                        }
                         meta_left -= send_buffer_size;
                     }
                     meta_pos++;

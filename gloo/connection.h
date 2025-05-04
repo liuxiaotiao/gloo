@@ -43,7 +43,7 @@ const double beta = 0.25;
 
 const size_t DataBlock = 16;
 
-const size_t MapSetLimit = 20;
+const size_t MapSetLimit = 50;
 
 const size_t ReTransmissionMapLimit = 2000;
 
@@ -571,7 +571,7 @@ class MapSet {
 
         void push() {
             if (full()) {
-                expand_capacity();
+                // expand_capacity();
             }
             buffer_[tail_].reset();
             // buffer_[tail_].clear();
