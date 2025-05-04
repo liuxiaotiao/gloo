@@ -3242,21 +3242,32 @@ public:
         Offset_len pkt_offset;
         Packet_len pkt_len;
         Difference_len pkt_difference;
-        if (!recvCQ.empty()){
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
-            if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
-                auto index = recvCQ.startpos();
-                pkt_offset = receive_message[index].get_packet_offset();
-                pkt_difference = receive_message[index].get_packet_difference();
-                // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
-                recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
-                receive_available_map[index] = 0;
-                receive_record.reset();
-                receive_connection_difference_registration = receive_connection_difference;
-                return;
-            }
+        // if (!recvCQ.empty()){
+        //     std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
+        //     if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
+        //         auto index = recvCQ.startpos();
+        //         pkt_offset = receive_message[index].get_packet_offset();
+        //         pkt_difference = receive_message[index].get_packet_difference();
+        //         // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
+        //         recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
+        //         receive_available_map[index] = 0;
+        //         receive_record.reset();
+        //         receive_connection_difference_registration = receive_connection_difference;
+        //         return;
+        //     }
+        // }
+        std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
+        if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
+            auto index = recvCQ.startpos();
+            pkt_offset = receive_message[index].get_packet_offset();
+            pkt_difference = receive_message[index].get_packet_difference();
+            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
+            recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
+            receive_available_map[index] = 0;
+            receive_record.reset();
+            receive_connection_difference_registration = receive_connection_difference;
+            return;
         }
-        
 
         /*TODO: used count to reduce iteration times*/
         for (auto index = 0; index < receive_available_map.size(); index++){
