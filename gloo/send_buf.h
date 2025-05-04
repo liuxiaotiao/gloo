@@ -216,14 +216,14 @@ namespace dmludp{
 
  
     class SendBuf{
-        public:
+        private:
         /* SendMetaBuf*/
-        void* meta_ptr;
+        void* meta_ptr = nullptr;
 
         // ssize_t meta_ptr_len;
         size_t meta_ptr_len;
 
-        void* meta_ptr2;
+        void* meta_ptr2 = nullptr;
 
         // ssize_t meta_ptr2_len; 
         size_t meta_ptr2_len;
@@ -247,6 +247,8 @@ namespace dmludp{
         size_t send_buffer_size;
 
         size_t ack_count = 0;
+
+        public:
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
