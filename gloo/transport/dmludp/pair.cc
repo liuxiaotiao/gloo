@@ -514,7 +514,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  // std::cout<<"readComplete:"<<opcode<<std::endl;
+  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -757,7 +757,7 @@ bool Pair::protocal2read(){
             if (i == 1){
               if (rnbytes == 0){
                 readComplete(rbuf);
-                // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_connection->update_receive_difference();
               }else{
                 dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
@@ -804,7 +804,7 @@ bool Pair::protocal2read(){
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
               readComplete(rbuf);
-              // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+              std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
               dmludp_connection->update_receive_difference();
               break;
             }
