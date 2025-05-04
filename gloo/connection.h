@@ -2729,14 +2729,14 @@ public:
                             break;
                         }
                     }
-                    std::cout<<"1 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
+                    // std::cout<<"1 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
                     if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
                         // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
                         // _Exit(0);
                         loss_pn++;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
-                    std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
+                    std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second << ", " << compare_ << ", " << sendpair2.first<< ", " << sendpair2.second<<std::endl;
                     // std::cout<<"2 check:"<<loss_pn<<", "<<compare_<<", "<<pkt_difference<<", "<<temp_dif<<std::endl;
                     // if (compare_ == 0){
                     if (compare_ != 1){    
