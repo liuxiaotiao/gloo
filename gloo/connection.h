@@ -1395,8 +1395,10 @@ class metarecebuf{
             }
             if (received == total || complete_flag){
                 status_ = 5;
+                std::cout<<"completecheck, received:"<<received<<", "<<total<<std::endl;
             }
             status_ = 4;
+            std::cout<<"status_:"<<status_<<std::endl; 
         }
 
         bool is_complete(){

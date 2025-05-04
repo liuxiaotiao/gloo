@@ -865,9 +865,9 @@ bool Pair::protocal2send(){
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
       // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
-      if (ioc == 2){
-        std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
-      }
+      // if (ioc == 2){
+      //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
+      // }
       bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
       // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
       if (!connection_written){
