@@ -669,9 +669,9 @@ bool Pair::protocal2read(){
             continue;
         }
       }
-      if(dmludp_connection->receive_message[receive_number].get_packet_type() == 5){
-        std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
-      }
+      // if(dmludp_connection->receive_message[receive_number].get_packet_type() == 5){
+      //   std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
+      // }
       received++;
       receive_check = receive_number;
       if(received == 1300){
