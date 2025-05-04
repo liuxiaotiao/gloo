@@ -942,17 +942,17 @@ bool Pair::protocal2send(){
       accumulated++;
     }
 
-    struct sockaddr_in peer_addr;
-    socklen_t addr_len = sizeof(peer_addr);
-    if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-        perror("getpeername failed");
-        return 1;
-    }
+    // struct sockaddr_in peer_addr;
+    // socklen_t addr_len = sizeof(peer_addr);
+    // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+    //     perror("getpeername failed");
+    //     return 1;
+    // }
 
-    char ip_str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+    // char ip_str[INET_ADDRSTRLEN];
+    // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-    std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
+    // std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
