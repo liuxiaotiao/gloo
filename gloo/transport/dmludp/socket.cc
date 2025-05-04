@@ -277,10 +277,10 @@ void Socket::connect_dmludp(const sockaddr_storage& ss) {
     }
     peer = tmp_peer_addr;
     connect(tmp_peer_addr);
-    std::cout<<"connect_dmludp 0"<<std::endl;
+    // std::cout<<"connect_dmludp 0"<<std::endl;
     auto connection = dmludp_conn_connect(local, peer);
     dmludp_connection = connection;
-    std::cout<<"connect_dmludp 1"<<std::endl;
+    // std::cout<<"connect_dmludp 1"<<std::endl;
     ssize_t dmludp_recv = dmludp_conn_recv(dmludp_connection, buffer, received);
     dmludp_set_rtt(dmludp_connection, duration.count());
     written = dmludp_conn_send(dmludp_connection, out, sizeof(out));

@@ -383,7 +383,7 @@ void Device::connectAsInitiator(
   socket->localSockAddrStorage(sockaddr);
   socket->reuseAddr(true);
   socket->connect_dmludp(sockaddr);
-  std::cout<<"connectAsInitiator"<<std::endl;
+  // std::cout<<"connectAsInitiator"<<std::endl;
 
   // Write sequence number for peer to new socket.
   // TODO(pietern): Use timeout.

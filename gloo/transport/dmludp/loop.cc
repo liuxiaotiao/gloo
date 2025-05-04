@@ -122,13 +122,13 @@ void Loop::registerDescriptor(int fd, int events, Handler* h) {
   struct epoll_event ev;
   ev.events = events;
   ev.data.ptr = h;
-  std::cout<<"[Debug] 1 registerDescriptor fd:"<<fd<<std::endl;
+  // std::cout<<"[Debug] 1 registerDescriptor fd:"<<fd<<std::endl;
  // std::cout<<std::endl;
   auto rv = epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
   if (rv == -1 && errno == EEXIST) {
     rv = epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
   }
-    std::cout<<"[Debug] 2 registerDescriptor fd:"<<fd<<std::endl;
+    // std::cout<<"[Debug] 2 registerDescriptor fd:"<<fd<<std::endl;
   GLOO_ENFORCE_NE(rv, -1, "epoll_ctl: ", strerror(errno));
 }
 
