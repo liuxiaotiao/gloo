@@ -1331,7 +1331,7 @@ class metarecebuf{
         5 completed
         */
         size_t get_status(){
-            if (status_ == 3){
+            if (status_ == 3 || status_ == 4){
                 completecheck();
             }
             return status_;
