@@ -758,6 +758,7 @@ class MetaInfo{
             return p1.second < p2.first || p2.second < p1.first;
         }
 
+        /*Get first element in the mapset*/
         std::pair<Packet_num_len, Packet_num_len> get_packet_range(Packet_num_len packet_){
             /*Make sure not old map exists*/
             removeoldmap(packet_);
@@ -2730,10 +2731,14 @@ public:
                         }
                     }
                     // std::cout<<"1 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second<<std::endl;
-                    if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-                        // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
-                        // _Exit(0);
+                    // if (sendpair == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+                    //     // std::cerr << "1 Acknowledge unknow packet(" << loss_pn << ")" << std::endl;
+                    //     // _Exit(0);
+                    //     loss_pn++;
+                    // }
+                    if (sendpair.first > loss_pn || loss_pn > sendpair.second){
                         loss_pn++;
+                        continue;
                     }
                     auto compare_ = sendbufferqueue.compareIndices(i, pkt_difference);
                     std::cout<<"2 check:"<<loss_pn<<", "<<sendpair.first<<", "<<sendpair.second << ", " << compare_ << ", " << sendpair2.first<< ", " << sendpair2.second<<std::endl;
