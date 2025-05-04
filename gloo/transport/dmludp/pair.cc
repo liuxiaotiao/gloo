@@ -722,7 +722,7 @@ bool Pair::protocal2read(){
             if (i == 1){
               if (rnbytes == 0){
                 readComplete(rbuf);
-                std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+                // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_connection->update_receive_difference();
               }else{
                 dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
@@ -769,7 +769,7 @@ bool Pair::protocal2read(){
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
               readComplete(rbuf);
-              std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
+              // std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
               dmludp_connection->update_receive_difference();
               break;
             }
@@ -973,23 +973,23 @@ bool Pair::protocal2send(){
 
 void Pair::handleReadWrite(int events){
   if (events & EPOLLOUT){
-    std::cout<<"EPOLLOUT start"<<std::endl;
+    // std::cout<<"EPOLLOUT start"<<std::endl;
     GLOO_ENFORCE(
     !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     if (!tx_.empty()){
       protocal2send();
     }
-    std::cout<<"EPOLLOUT end \n"<<std::endl;
+    // std::cout<<"EPOLLOUT end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 
 
   if (events & EPOLLIN) {
-    std::cout<<"EPOLLIN start"<<std::endl;
+    // std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
-    std::cout<<"EPOLLIN end \n"<<std::endl;
+    // std::cout<<"EPOLLIN end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 }
