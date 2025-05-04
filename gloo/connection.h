@@ -1398,7 +1398,8 @@ class metarecebuf{
                 status_ = 5;
                 std::cout<<"completecheck, received:"<<received<<", "<<total<<std::endl;
             }
-            std::cout<<"status_:"<<status_<<std::endl; 
+            
+            std::cout<<"status_:"<<status_<<std::endl;
         }
 
         bool is_complete(){
