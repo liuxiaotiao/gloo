@@ -922,7 +922,7 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::steady_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()<< std::endl;
+    // std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()<< std::endl;
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);

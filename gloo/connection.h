@@ -858,9 +858,9 @@ class MetaInfo{
             auto packet_offset_ = offset_calculate(PacketNum);
             /*Add priority calculation to logit remove "complete" data*/
             if (isReceived){
-                if (packet_offset_ == 0){
-                    std::cout<<difference_flag<<", ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                }
+                // if (packet_offset_ == 0){
+                //     std::cout<<difference_flag<<", ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                // }
                 // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
@@ -876,9 +876,9 @@ class MetaInfo{
                 packet_offset_ = retransmission_map.at_unused(mapindex_).get_offset(PacketNum);
             }
             if (isReceived){
-                if (packet_offset_ == 0){
-                    std::cout<<difference_flag<<", ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                }
+                // if (packet_offset_ == 0){
+                //     std::cout<<difference_flag<<", ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+                // }
                 // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
                 metabuf.acknowledege_and_drop(packet_offset_, true);
             }else{
@@ -1505,7 +1505,7 @@ public:
         }
         // data_[tail_].clear();
         data_[tail_].set_difference(difference_);
-        std::cout<<"push_back:" << tail_ << ", " << difference_ << std::endl;
+        // std::cout<<"push_back:" << tail_ << ", " << difference_ << std::endl;
 
         tail_ = (tail_ + 1) % capacity_;
 
@@ -2228,7 +2228,7 @@ public:
         */
         // if(pos > receivevector.size() * sizeof(uint8_t)){
         if(pos > 8000){
-            std::cout<<"std::memset"<<std::endl;
+            // std::cout<<"std::memset"<<std::endl;
             std::memset(receivevector.data(), 0, receivevector.size());
             current_loop_min = pkt_num;
             pos = 0;
@@ -2784,16 +2784,22 @@ public:
             
             size_t i = 0;
             std::pair<Packet_num_len, Packet_num_len> sendpair = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+
+            std::pair<Packet_num_len, Packet_num_len> sendpair2 = {LIMIT_UINT64_T, LIMIT_UINT64_T};
+
             for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
                 i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
                 // sendpair = sendbufferqueue.data_[i].get_packet_range(pn);
                 sendpair = sendbufferqueue.get_packet_range(i, pn);
+                if (sendpair.first > sendpair2.first){
+                    sendpair2 = sendpair;
+                }
               
                 if (pn <= sendpair.second && pn >= sendpair.first){
                     break;
                 }
             }
-            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second <<std::endl;
+            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second << ", " << pn <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
@@ -2840,15 +2846,15 @@ public:
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        {
-            auto sendbufferqueue_start_index = sendbufferqueue.start();
-            for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                auto difference_ = sendbufferqueue.data_[index].get_difference();
-                std::cout << difference_ << " " ;
-                sendbufferqueue.data_[index].metabuf.ack_check();
-            }
-        }
+        // {
+        //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+        //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+        //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+        //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+        //         std::cout << difference_ << " " ;
+        //         sendbufferqueue.data_[index].metabuf.ack_check();
+        //     }
+        // }
     }
 
 
@@ -3029,9 +3035,9 @@ public:
                 }
 
                 auto pn = pkt_num_spaces.updatepktnum();
-                if (out_off == 0 && out_len > -1){
-                    std::cout<<"[Debug] difference:"<< pkg_difference <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
-                }
+                // if (out_off == 0 && out_len > -1){
+                //     std::cout<<"[Debug] difference:"<< pkg_difference <<", pn:"<< pn <<", out_len:"<<out_len<<", out_off:"<<out_off<<std::endl;
+                // }
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
                 
