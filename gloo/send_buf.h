@@ -192,7 +192,7 @@ namespace dmludp{
         public:
             ssize_t last_value;
 
-            SendBufferCircularQueue(size_t capacity = 10000) 
+            SendBufferCircularQueue(size_t capacity = 50000) 
                 : CircularQueue<uint64_t>(capacity), last_value(-1) 
             {}
 
