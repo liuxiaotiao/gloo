@@ -338,9 +338,6 @@ namespace dmludp{
 
 
         void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
-            if (1048576<meta_sent && meta_sent<=67307040){
-                std::cout<<"in_offset:"<<in_offset<<", "<<is_drop<<std::endl;
-            }
             if (is_drop){
                 /*bits_set.set(buffer_offset_convertor(in_offset));*/
                 auto index = 0;
