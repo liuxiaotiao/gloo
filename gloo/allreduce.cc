@@ -111,7 +111,7 @@ void allreduce(const detail::AllreduceOptionsImpl& opts) {
 
   // Assert the size of all inputs and outputs is identical.
   const size_t totalBytes = opts.elements * opts.elementSize;
-  std::cout<<"totalBytes:"<<totalBytes<<std::endl;
+  // std::cout<<"totalBytes:"<<totalBytes<<std::endl;
   for (size_t i = 0; i < out.size(); i++) {
     GLOO_ENFORCE_EQ(out[i]->size, totalBytes);
   }

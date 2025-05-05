@@ -173,7 +173,7 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       auto timer_read = ::read(outerPtr.timer_fd, &expirations, sizeof(expirations));
       if (timer_read == -1) {
         if (errno == EAGAIN) {
-            printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
+            // printf("No timer expiration has occurred yet, read operation did not block and returned EAGAIN\n");
         } else {
             perror("read");
             _Exit(EXIT_FAILURE);
