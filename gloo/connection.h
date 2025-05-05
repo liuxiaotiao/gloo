@@ -2362,7 +2362,7 @@ public:
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
         */
-        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
+        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
@@ -2515,7 +2515,7 @@ public:
                     break;
                 }
             }
-            std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second << ", " << pn <<std::endl;
+            // std::cout<<(int)i<<", sendpair:" << sendpair.first << ", " << sendpair.second << ", " << pn <<std::endl;
           
        
             if (sendpair.first > pn || pn > sendpair.second){
@@ -2562,15 +2562,15 @@ public:
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        {
-            auto sendbufferqueue_start_index = sendbufferqueue.start();
-            for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-                int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-                auto difference_ = sendbufferqueue.data_[index].get_difference();
-                std::cout << difference_ << " " ;
-                sendbufferqueue.data_[index].metabuf.ack_check();
-            }
-        }
+        // {
+        //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+        //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+        //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+        //         auto difference_ = sendbufferqueue.data_[index].get_difference();
+        //         std::cout << difference_ << " " ;
+        //         sendbufferqueue.data_[index].metabuf.ack_check();
+        //     }
+        // }
     }
 
 

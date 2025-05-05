@@ -646,17 +646,18 @@ bool Pair::protocal2read(){
   size_t receive_check = 0;
 
   /*Debug use*/
-  struct sockaddr_in peer_addr;
-  socklen_t addr_len = sizeof(peer_addr);
-  if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-      perror("getpeername failed");
-      return 1;
-  }
+  // struct sockaddr_in peer_addr;
+  // socklen_t addr_len = sizeof(peer_addr);
+  // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
+  //     perror("getpeername failed");
+  //     return 1;
+  // }
 
-  char ip_str[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
+  // char ip_str[INET_ADDRSTRLEN];
+  // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
 
-  std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+  // std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
+  
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -892,10 +893,10 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::steady_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()
-    << ", " << dmludp_connection->max_acknowleged
-    << ", " << dmludp_connection->pkt_num_spaces.getpktnum()
-    << std::endl;
+    // std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()
+    // << ", " << dmludp_connection->max_acknowleged
+    // << ", " << dmludp_connection->pkt_num_spaces.getpktnum()
+    // << std::endl;
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
@@ -978,23 +979,23 @@ bool Pair::protocal2send(){
 
 void Pair::handleReadWrite(int events){
   if (events & EPOLLOUT){
-    std::cout<<"EPOLLOUT start"<<std::endl;
+    // std::cout<<"EPOLLOUT start"<<std::endl;
     GLOO_ENFORCE(
     !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     if (!tx_.empty()){
       protocal2send();
     }
-    std::cout<<"EPOLLOUT end \n"<<std::endl;
+    // std::cout<<"EPOLLOUT end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 
 
   if (events & EPOLLIN) {
-    std::cout<<"EPOLLIN start"<<std::endl;
+    // std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
-    std::cout<<"EPOLLIN end \n"<<std::endl;
+    // std::cout<<"EPOLLIN end \n"<<std::endl;
     // std::cout<<"\n"<<std::endl;
   }
 }
