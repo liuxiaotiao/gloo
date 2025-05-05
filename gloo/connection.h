@@ -2362,7 +2362,7 @@ public:
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
         */
-        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
+        std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
 
         if (first_pn >= (max_acknowleged + 1)){
