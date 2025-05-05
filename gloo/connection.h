@@ -2666,9 +2666,9 @@ public:
         // }
 
         // std::cout << "IP: " << ipStr << ", Port: " << port << std::endl;
-        // auto pn = max_acknowleged + 1;
-        // auto sendbufferqueue_start_index = sendbufferqueue.start();
-        // auto max_sent_pn = pkt_num_spaces.getpktnum();
+        auto pn = max_acknowleged + 1;
+        auto sendbufferqueue_start_index = sendbufferqueue.start();
+        auto max_sent_pn = pkt_num_spaces.getpktnum();
         // std::cout<<"pn:"<<pn<<", "<<max_sent_pn<<std::endl;
         while (true)
         {
