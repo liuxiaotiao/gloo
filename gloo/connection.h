@@ -19,6 +19,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <optional>
+#include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
+#include <linux/socket.h> 
 
 namespace dmludp {
 
@@ -137,8 +139,13 @@ class Message{
 class RCMessage : public Message {
     private:
         // bool use_status = true;
+        char control[CMSG_SPACE(sizeof(timespec) * 3)];
+
     public:
-        RCMessage(){}
+        RCMessage(){
+            message_body.msg_control = control;
+            message_body.msg_controllen = sizeof(control);
+        }
             
         void set_receive_message(void *ptr, size_t ptr_len){
             iov[1].iov_base = ptr;
@@ -1925,8 +1932,6 @@ public:
 
     std::chrono::steady_clock::time_point end_ts;
     
-    // Send message
-
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
     std::vector<Message> send_message;
 
@@ -1939,9 +1944,6 @@ public:
 
     uint64_t ACKrange;
 
-    // ssize_t min_received = -1;
-
-    // ssize_t max_received = -1;
     size_t max_received = std::numeric_limits<size_t>::max();
 
     bool difference_flag;
@@ -2356,8 +2358,22 @@ public:
         auto pkt_difference = receive_message[index_].get_packet_difference();
         receive_available_map[index_] = 0;
 
-        auto receivets = std::chrono::steady_clock::now();
+        // auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
+
+        timespec ts{};
+        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
+            cmsg != nullptr; 
+            cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+                timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
+                ts = ts_array[0];
+                break;
+            }
+        }
+
+        auto recv_time = std::chrono::steady_clock::time_point(
+            std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
@@ -2369,7 +2385,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, receivets);
+                update_rtt(*ackts, recv_time);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);

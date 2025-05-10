@@ -13,10 +13,15 @@
 #include <netinet/udp.h>
 #include <string.h>
 #include <unistd.h>
+#include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
+#include <linux/socket.h> 
 
 #include <gloo/common/logging.h>
 
 #include <gloo/dmludp.h>
+#ifndef SOF_TIMESTAMPING_CLOCK_MONOTONIC
+#define SOF_TIMESTAMPING_CLOCK_MONOTONIC (1 << 6)
+#endif
 
 namespace gloo {
 namespace transport {
@@ -25,6 +30,14 @@ namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
   auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
+  int flags = SOF_TIMESTAMPING_RX_SOFTWARE |
+              SOF_TIMESTAMPING_SOFTWARE |
+              SOF_TIMESTAMPING_CLOCK_MONOTONIC;
+
+  if (setsockopt(rv, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags)) < 0) {
+      perror("setsockopt SO_TIMESTAMPING");
+      return std::shared_ptr<Socket>();
+  }
   // std::cout<<"createForFamily:"<<rv<<std::endl;
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
@@ -132,6 +145,15 @@ std::shared_ptr<Socket> Socket::accept() {
   socklen_t addrlen = sizeof(addr);
   if(new_socket){
     auto rv = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
+    int flags = SOF_TIMESTAMPING_RX_SOFTWARE |
+                SOF_TIMESTAMPING_SOFTWARE |
+                SOF_TIMESTAMPING_CLOCK_MONOTONIC;
+
+    if (setsockopt(rv, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags)) < 0) {
+        perror("setsockopt SO_TIMESTAMPING");
+        return std::shared_ptr<Socket>();
+    }
+
     std::cout<<"accept:"<<rv<<std::endl;
     auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);

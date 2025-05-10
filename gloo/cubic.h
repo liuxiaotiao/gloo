@@ -17,7 +17,7 @@ enum CongestionControlAlgorithm {
 class Recovery{
     public:
 
-    bool app_limit;
+    // bool app_limit;
 
     size_t bytes_in_flight;
 
@@ -83,7 +83,7 @@ class Recovery{
     const double ALPHA_AIMD = 3.0 * (1.0 - BETA) / (1.0 + BETA); // 3.0 * (1.0 - BETA) / (1.0 + BETA) ~= 0.53
 
     Recovery(size_t pkt_size):
-    app_limit(false),
+    // app_limit(false),
     bytes_in_flight(0),
     max_datagram_size(pkt_size),
     prior_cwnd(1440 * pkt_size),
@@ -345,13 +345,13 @@ class Recovery{
         congestion_window = INI_WIN;
     };
 
-    void update_app_limited(bool v) {
-        app_limit = v;
-    };
+    // void update_app_limited(bool v) {
+    //     app_limit = v;
+    // };
 
-    bool app_limited(){
-        return app_limit;
-    };
+    // bool app_limited(){
+    //     return app_limit;
+    // };
 
 };
 
