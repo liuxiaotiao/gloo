@@ -2358,24 +2358,24 @@ public:
         auto pkt_difference = receive_message[index_].get_packet_difference();
         receive_available_map[index_] = 0;
 
-        // auto receivets = std::chrono::steady_clock::now();
+        auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
         std::cout<<"check 1"<<std::endl;
-        timespec ts{};
-        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
-            cmsg != nullptr; 
-            cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
-            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-                timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
-                ts = ts_array[0];
-                break;
-            }
-        }
-        std::cout<<"check 2"<<std::endl;
+        // timespec ts{};
+        // for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
+        //     cmsg != nullptr; 
+        //     cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+        //         timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
+        //         ts = ts_array[0];
+        //         break;
+        //     }
+        // }
+        // std::cout<<"check 2"<<std::endl;
 
-        auto receivets = std::chrono::steady_clock::time_point(
-            std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
+        // auto receivets = std::chrono::steady_clock::time_point(
+        //     std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
