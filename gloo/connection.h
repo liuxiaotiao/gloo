@@ -2361,6 +2361,7 @@ public:
         // auto receivets = std::chrono::steady_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
+        std::cout<<"check 1"<<std::endl;
         timespec ts{};
         for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
             cmsg != nullptr; 
@@ -2371,6 +2372,7 @@ public:
                 break;
             }
         }
+        std::cout<<"check 2"<<std::endl;
 
         auto receivets = std::chrono::steady_clock::time_point(
             std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
