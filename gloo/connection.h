@@ -2385,7 +2385,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, recv_time);
+                update_rtt(*ackts, receivets);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
