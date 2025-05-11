@@ -2237,7 +2237,7 @@ public:
                         }else{
                             expectedsize = sizeof(preamble);
                         }
-                        std::cout<<"expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
+                        std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
                     receive_available_map[index] = 0;
