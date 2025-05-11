@@ -159,9 +159,9 @@ class RCMessage : public Message {
 class TSCircularQueue{
 private:
     /*first packet number + timestamp, last packet number + timestamp*/
-    using DataType = std::pair<std::pair<uint64_t, std::chrono::steady_clock::time_point>,
-                               std::pair<uint64_t, std::chrono::steady_clock::time_point>>;
-    using TimeStamp = std::chrono::steady_clock::time_point;
+    using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
+                               std::pair<uint64_t, std::chrono::system_clock::time_point>>;
+    using TimeStamp = std::chrono::system_clock::time_point;
     std::vector<DataType> buffer; 
     size_t head;                  
     size_t tail;                 
@@ -1881,7 +1881,7 @@ public:
 
     std::chrono::nanoseconds rttvar;
     
-    std::chrono::steady_clock::time_point handshake;
+    std::chrono::system_clock::time_point handshake;
 
     // RecvBuf rec_buffer;
 
@@ -1928,9 +1928,9 @@ public:
     ts_record is used to calculate approximate send ts for each packet.
     Approximate ts ~= (2nd ts - 1st ts)/(2nd pkt - 1st pkt + 1)
     */ 
-    std::chrono::steady_clock::time_point start_ts;
+    std::chrono::system_clock::time_point start_ts;
 
-    std::chrono::steady_clock::time_point end_ts;
+    std::chrono::system_clock::time_point end_ts;
     
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
     std::vector<Message> send_message;
@@ -1991,7 +1991,7 @@ public:
     minrtt(0),
     rto(0),
     rttvar(0),
-    handshake(std::chrono::steady_clock::now()),
+    handshake(std::chrono::system_clock::now()),
     bidirect(true),
     initial(false),
     dmludp_error(0),
@@ -2036,7 +2036,7 @@ public:
 
 
     void initial_rtt() {
-        auto arrive_time = std::chrono::steady_clock::now();
+        auto arrive_time = std::chrono::system_clock::now();
         srtt = arrive_time - handshake;
         rttvar = srtt / 2;
         rto = srtt + 4 * rttvar;
@@ -2056,7 +2056,7 @@ public:
         SRTT <- (1 - alpha) * SRTT + alpha * R'
         RTO <- SRTT + max (G, K*RTTVAR)
     */
-    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time, std::chrono::steady_clock::time_point receive_time2 = std::chrono::steady_clock::time_point{}){
+    void update_rtt(std::chrono::system_clock::time_point send_time, std::chrono::system_clock::time_point receive_time, std::chrono::system_clock::time_point receive_time2 = std::chrono::system_clock::time_point{}){
         if (rtt_initial){
             minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
@@ -2103,7 +2103,7 @@ public:
     bool on_timeout(){
         bool timeout_;
         std::chrono::nanoseconds duration((uint64_t)(get_rtt()));
-        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
         if (handshake + duration < now){
             timeout_ = true;
@@ -2360,7 +2360,7 @@ public:
         auto pkt_difference = receive_message[index_].get_packet_difference();
         receive_available_map[index_] = 0;
 
-        auto receivets = std::chrono::steady_clock::now();
+        auto receivets = std::chrono::system_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
         // std::cout<<"check 1"<<std::endl;
@@ -2376,7 +2376,7 @@ public:
         }
         // std::cout<<"check 2"<<std::endl;
 
-        auto receivets2 = std::chrono::steady_clock::time_point(
+        auto receivets2 = std::chrono::system_clock::time_point(
             std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 
         /*
@@ -2389,7 +2389,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, receivets,receivets2);
+                update_rtt(*ackts, receivets, receivets2);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
@@ -2643,7 +2643,7 @@ public:
     }
 
     void set_send_time(){
-        handshake = std::chrono::steady_clock::now();
+        handshake = std::chrono::system_clock::now();
     }
     
 
@@ -2727,7 +2727,7 @@ public:
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
         // std::cout<<"tsInfo.size:"<<tsInfo.size()<<", "<<max_acknowleged<<std::endl;
 
-        auto receivets = std::chrono::steady_clock::now();
+        auto receivets = std::chrono::system_clock::now();
 
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
@@ -2849,14 +2849,14 @@ public:
     }
 
     /*Use to clear send parameter*/
-    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::steady_clock::time_point& start_ts = std::chrono::steady_clock::time_point{}){
+    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::system_clock::time_point& start_ts = std::chrono::system_clock::time_point{}){
         if(send_packet_type == 0){
             return;
         }
         set_error2(err_);
         if (err_ != 0){
             if (send_packet_type == Type::Application){
-                end_ts = std::chrono::steady_clock::now();
+                end_ts = std::chrono::system_clock::now();
                 if (start_index < 0){
                     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
                     _Exit(0);
@@ -3266,7 +3266,7 @@ public:
     // };
 
     void set_handshake(){
-        handshake = std::chrono::steady_clock::now();
+        handshake = std::chrono::system_clock::now();
         end_ts = handshake;
     };
 
