@@ -2586,11 +2586,11 @@ public:
         
         if (loss && !first_loss){
             recovery.check_point();
-            recovery.congestion_event(receivets2);
-            recovery.on_packet_ack(total_send, receivets2, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
             first_loss = true;
         }else{
-            recovery.on_packet_ack(total_send, receivets2, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
         // {
