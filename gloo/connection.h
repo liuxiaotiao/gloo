@@ -2233,7 +2233,7 @@ public:
                         };
                         auto* preamble_header = reinterpret_cast<const preamble*>(receive_message[index].iov[1].iov_base);
                         expectedsize = sizeof(preamble) + preamble_header->length;
-                        std::cout<<"expectedsize:"<<*expectedsize<<std::endl;
+                        std::cout<<"expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
                     receive_available_map[index] = 0;
