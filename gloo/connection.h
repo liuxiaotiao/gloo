@@ -2403,7 +2403,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, softwarets, softwarets);
+                update_rtt(*ackts, hardwarets, hardwarets);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
@@ -2589,11 +2589,11 @@ public:
         
         if (loss && !first_loss){
             recovery.check_point();
-            recovery.congestion_event(softwarets);
-            recovery.on_packet_ack(total_send, softwarets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
             first_loss = true;
         }else{
-            recovery.on_packet_ack(total_send, softwarets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
         // {
