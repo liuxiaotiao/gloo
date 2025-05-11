@@ -2056,7 +2056,7 @@ public:
         SRTT <- (1 - alpha) * SRTT + alpha * R'
         RTO <- SRTT + max (G, K*RTTVAR)
     */
-    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time, std::chrono::steady_clock::time_point receive_time2 == std::chrono::steady_clock::time_point{}){
+    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time, std::chrono::steady_clock::time_point receive_time2 = std::chrono::steady_clock::time_point{}){
         if (rtt_initial){
             minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
