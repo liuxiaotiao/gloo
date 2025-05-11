@@ -2364,20 +2364,31 @@ public:
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
         // std::cout<<"check 1"<<std::endl;
-        timespec ts{};
+        // timespec ts{};
+        // for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
+        //     cmsg != nullptr; 
+        //     cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+        //         timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
+        //         ts = ts_array[0];
+        //         break;
+        //     }
+        // }
+
+        timespec ts[3]{};
         for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
             cmsg != nullptr; 
             cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-                timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
-                ts = ts_array[0];
+                memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
                 break;
             }
         }
+    
         // std::cout<<"check 2"<<std::endl;
 
         auto receivets2 = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
+            std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
 
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
@@ -2575,11 +2586,11 @@ public:
         
         if (loss && !first_loss){
             recovery.check_point();
-            recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(receivets2);
+            recovery.on_packet_ack(total_send, receivets2, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
             first_loss = true;
         }else{
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, receivets2, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
         // {
