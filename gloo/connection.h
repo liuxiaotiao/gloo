@@ -2387,8 +2387,11 @@ public:
     
         // std::cout<<"check 2"<<std::endl;
 
-        auto receivets2 = std::chrono::system_clock::time_point(
+        auto softwarets = std::chrono::system_clock::time_point(
             std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
+
+        auto hardwarets = std::chrono::system_clock::time_point(
+            std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
 
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
@@ -2400,7 +2403,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, receivets2, receivets2);
+                update_rtt(*ackts, softwarets, softwarets);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
@@ -2586,11 +2589,11 @@ public:
         
         if (loss && !first_loss){
             recovery.check_point();
-            recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.congestion_event(softwarets);
+            recovery.on_packet_ack(total_send, softwarets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
             first_loss = true;
         }else{
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_send, softwarets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
         // {
