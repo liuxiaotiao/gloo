@@ -2065,8 +2065,6 @@ public:
             // std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
-            auto rtt2 = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time2 - send_time);
-            // std::cout<<"rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<", rtt2:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt2).count()<<std::endl;
             if (rtt < minrtt){
                 minrtt = rtt;
             }
@@ -2213,6 +2211,7 @@ public:
             return;
         }
         
+        std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
@@ -2223,6 +2222,18 @@ public:
                     recvCQ.indexcheck(pkt_difference);
                     if(!recvCQ.insertzero(pkt_difference, index)){
                         receive_available_map[index] = 0;
+                    }else{
+                        struct preamble {
+                            size_t nbytes = 0;
+                            size_t opcode = 0;
+                            size_t slot = 0;
+                            size_t offset = 0;
+                            size_t length = 0;
+                            size_t roffset = 0;
+                        };
+                        auto* preamble_header = reinterpret_cast<const preamble*>(receive_message[index].iov[1].iov_base);
+                        expectedsize = sizeof(preamble) + preamble_header->length;
+                        std::cout<<"expectedsize:"<<*expectedsize<<std::endl;
                     }
                 }else{
                     receive_available_map[index] = 0;
