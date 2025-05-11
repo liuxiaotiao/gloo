@@ -1611,7 +1611,18 @@ public:
     void rx_len(Difference_len difference, size_t expected) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
-        data_[index].addexplen(expected);
+        // data_[index].addexplen(expected);
+    }
+
+    void setRead(Difference_len difference, size_t expected) {
+        auto index = difference % capacity_;
+        inrangecheck(index, __func__);
+        if(expected > 48){
+            data_[index].addexplen(48);
+            data_[index].addexplen(expected - 48);
+        }else{
+            data_[index].addexplen(48);
+        }
     }
 
     /*Same function as iscomplete, delete later*/
@@ -2237,7 +2248,7 @@ public:
                         }else{
                             expectedsize = sizeof(preamble);
                         }
-                        std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
+                        // std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
                     receive_available_map[index] = 0;
@@ -2294,6 +2305,9 @@ public:
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, exist);
             if (exist){
                 receive_available_map[index] = 0;
+            }
+            if (expectedsize){
+                recvCQ.setRead(pkt_difference, *expectedsize);
             }
         }
     };
