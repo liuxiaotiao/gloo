@@ -2056,7 +2056,7 @@ public:
         SRTT <- (1 - alpha) * SRTT + alpha * R'
         RTO <- SRTT + max (G, K*RTTVAR)
     */
-    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time){
+    void update_rtt(std::chrono::steady_clock::time_point send_time, std::chrono::steady_clock::time_point receive_time, std::chrono::steady_clock::time_point receive_time2 == std::chrono::steady_clock::time_point{}){
         if (rtt_initial){
             minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
@@ -2065,6 +2065,8 @@ public:
             // std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
+            rtt2 = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time2);
+            std::cout<<"rtt2:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt2).count()<<std::endl;
             if (rtt < minrtt){
                 minrtt = rtt;
             }
@@ -2362,20 +2364,20 @@ public:
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
         // std::cout<<"check 1"<<std::endl;
-        // timespec ts{};
-        // for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
-        //     cmsg != nullptr; 
-        //     cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
-        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-        //         timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
-        //         ts = ts_array[0];
-        //         break;
-        //     }
-        // }
+        timespec ts{};
+        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
+            cmsg != nullptr; 
+            cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+                timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
+                ts = ts_array[0];
+                break;
+            }
+        }
         // std::cout<<"check 2"<<std::endl;
 
-        // auto receivets = std::chrono::steady_clock::time_point(
-        //     std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
+        auto receivets2 = std::chrono::steady_clock::time_point(
+            std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 
         /*
         process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
@@ -2387,7 +2389,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, receivets);
+                update_rtt(*ackts, receivets,receivets2);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
