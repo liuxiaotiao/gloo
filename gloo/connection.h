@@ -2065,7 +2065,7 @@ public:
             // std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
-            rtt2 = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time2);
+            auto rtt2 = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - receive_time2);
             std::cout<<"rtt2:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt2).count()<<std::endl;
             if (rtt < minrtt){
                 minrtt = rtt;
