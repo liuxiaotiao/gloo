@@ -273,8 +273,6 @@ ssize_t Pair::prepareWrite(
     return len;
   }
 
-  std::cout <<"prepareWrite:"<<op.preamble.length<<", "<<opcode<<std::endl;
-
   return len;
 }
 

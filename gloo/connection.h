@@ -2232,8 +2232,12 @@ public:
                             size_t roffset = 0;
                         };
                         auto* preamble_header = reinterpret_cast<const preamble*>(receive_message[index].iov[1].iov_base);
-                        expectedsize = sizeof(preamble) + preamble_header->length;
-                        // std::cout<<"expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
+                        if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
+                            expectedsize = sizeof(preamble) + preamble_header->length;
+                        }else{
+                            expectedsize = sizeof(preamble);
+                        }
+                        std::cout<<"expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
                     receive_available_map[index] = 0;
