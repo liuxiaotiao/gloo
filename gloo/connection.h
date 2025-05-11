@@ -3002,6 +3002,7 @@ public:
                 // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
                 recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
                 copy_count += 48;
+                std::cout<<"copy:"<<copy_count<<" ";
                 receive_available_map[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
@@ -3186,7 +3187,7 @@ public:
 
         recvCQ.processCheck(receive_connection_difference);
 
-        std::cout<<"copy:"<<copy_count<<std::endl;
+        std::cout<<"copy:"<<copy_count<<" ";
 
         receive_record.reset();
         /*
