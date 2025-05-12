@@ -169,7 +169,7 @@ private:
     size_t count;                 
 
 public:
-    explicit TSCircularQueue(size_t capacity = 100)
+    explicit TSCircularQueue(size_t capacity = 1024)
         : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
 
     ~TSCircularQueue(){}
