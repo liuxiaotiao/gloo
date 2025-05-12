@@ -747,6 +747,7 @@ bool Pair::protocal2read(){
 
   while(true){
     received = 0;
+    auto startts = std::chrono::high_resolution_clock::now();
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
       if (retval == -1){
@@ -764,11 +765,12 @@ bool Pair::protocal2read(){
         break;
       }
     }
+    auto endts = std::chrono::high_resolution_clock::now();
     
     if (received <= 0){
       break;
     }
-    
+    std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(startts-endts).count()/received<<" ns/packets"<<std::endl;
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){
