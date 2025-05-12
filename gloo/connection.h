@@ -2043,7 +2043,7 @@ public:
         acknowldge_msghdr.msg_iov = nullptr;
         acknowldge_msghdr.msg_iovlen = 0;
 
-        send_message.resize(ONCE_SEND_LIMIT);
+        send_message.resize(100);
 
         receive_message.resize(RX_CONST);
 
@@ -2454,7 +2454,7 @@ public:
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) << std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, hardwarets, hardwarets);
+                update_rtt(*ackts, softwarets, hardwarets);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
