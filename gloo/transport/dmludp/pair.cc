@@ -770,7 +770,7 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-    std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(startts-endts).count()/received<<" ns/packets"<<std::endl;
+    std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){

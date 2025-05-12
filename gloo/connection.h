@@ -3025,7 +3025,7 @@ public:
                 receive_available_map[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
-                std::cout<<"copycount:"<<copycount<<std::endl;
+                std::cout<<"copycount:"<<copycount;
                 return;
             }
         }
