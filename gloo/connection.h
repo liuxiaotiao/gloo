@@ -2425,18 +2425,6 @@ public:
         auto receivets = std::chrono::system_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
 
-        // std::cout<<"check 1"<<std::endl;
-        // timespec ts{};
-        // for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
-        //     cmsg != nullptr; 
-        //     cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
-        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-        //         timespec* ts_array = (timespec*)CMSG_DATA(cmsg);
-        //         ts = ts_array[0];
-        //         break;
-        //     }
-        // }
-
         timespec ts[3]{};
         for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
             cmsg != nullptr; 
@@ -2804,7 +2792,8 @@ public:
         // std::cout<<"tsInfo.size:"<<tsInfo.size()<<", "<<max_acknowleged<<std::endl;
 
         auto receivets = std::chrono::system_clock::now();
-
+        recovery.check_point();
+        recovery.congestion_event(receivets);
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
 
