@@ -2043,7 +2043,7 @@ public:
         acknowldge_msghdr.msg_iov = nullptr;
         acknowldge_msghdr.msg_iovlen = 0;
 
-        send_message.resize(100);
+        send_message.resize(ONCE_LIMIT);
 
         receive_message.resize(RX_CONST);
 
@@ -2168,7 +2168,7 @@ public:
                 auto startts = std::chrono::high_resolution_clock::now();
                 process_acknowledge(i);
                 auto endts = std::chrono::high_resolution_clock::now();
-                std::cout<<"process_acknowledge:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(startts-endts).count()<<" ns"<<std::endl;
+                std::cout<<"process_acknowledge:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
             }
 
             if (pkt_ty == Type::Application){
