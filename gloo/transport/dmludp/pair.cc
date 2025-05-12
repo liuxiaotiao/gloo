@@ -1076,12 +1076,11 @@ void Pair::handleReadWrite(int events){
 
 
   if (events & EPOLLIN) {
-    std::cout<<"EPOLLIN start"<<std::endl;
+    // std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
-    std::cout<<"EPOLLIN end \n"<<std::endl;
-    std::cout<<"\n"<<std::endl;
+    // std::cout<<"EPOLLIN end \n"<<std::endl;
   }
 }
 

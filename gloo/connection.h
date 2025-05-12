@@ -2940,10 +2940,10 @@ public:
             // memset(receivevector.data(), 0, receivevector.size());
             // // min_received = -1;
             // current_loop_min = max_received + 1;
-            auto copystart = std::chrono::high_resolution_clock::now();
+            // auto copystart = std::chrono::high_resolution_clock::now();
             process_application_copy();
-            auto copyend = std::chrono::high_resolution_clock::now();
-            std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
+            // auto copyend = std::chrono::high_resolution_clock::now();
+            // std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
@@ -3025,7 +3025,7 @@ public:
                 receive_available_map[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
-                std::cout<<"copycount:"<<copycount;
+                // std::cout<<"copycount:"<<copycount;
                 return;
             }
         }
@@ -3117,7 +3117,7 @@ public:
                     recvCQ.record_copy(pkt_difference, pkt_offset);
                     if(recvCQ.processComplete(pkt_difference)){
                         receive_record.reset();
-                        std::cout<<"copycount:"<<copycount;
+                        // std::cout<<"copycount:"<<copycount;
                         return;
                     }
                     continue;
@@ -3140,7 +3140,7 @@ public:
                     recvCQ.record_copy(pkt_difference, pkt_offset);
                     if(recvCQ.processComplete(pkt_difference)){
                         receive_record.reset();
-                        std::cout<<"copycount:"<<copycount;
+                        // std::cout<<"copycount:"<<copycount;
                         return;
                     }
                     continue;
@@ -3171,7 +3171,7 @@ public:
                         _Exit(0);
                     }
                     if(recvCQ.processComplete(copy_difference)){
-                        std::cout<<"copycount:"<<copycount;
+                        // std::cout<<"copycount:"<<copycount;
                         return;
                     }
                 }  
@@ -3196,7 +3196,7 @@ public:
             receive_record.reset();
         }   
         
-        std::cout<<"copycount:"<<copycount;
+        // std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);
 
         receive_record.reset();
