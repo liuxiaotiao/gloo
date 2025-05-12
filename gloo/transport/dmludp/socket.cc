@@ -154,7 +154,7 @@ std::shared_ptr<Socket> Socket::accept() {
         return std::shared_ptr<Socket>();
     }
 
-    std::cout<<"accept:"<<rv<<std::endl;
+    // std::cout<<"accept:"<<rv<<std::endl;
     auto connection = dmludp_conn_accept(local, peer);
     auto accept_socket = std::make_shared<Socket>(rv);
     accept_socket->dmludp_connection = connection;
@@ -218,12 +218,12 @@ std::shared_ptr<Connection> Socket::create_dmludp_connection(struct sockaddr_sto
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   if(is_server){
-    std::cout<<"create_dmludp_connection 1"<<std::endl;
+    // std::cout<<"create_dmludp_connection 1"<<std::endl;
     auto connection = dmludp_accept(local, peer);
     // dmludp_config_free(dmludp_config);
     return connection;
   }else{
-    std::cout<<"create_dmludp_connection 2"<<std::endl;
+    // std::cout<<"create_dmludp_connection 2"<<std::endl;
     auto connection = dmludp_connect(local, peer);
     // dmludp_config_free(dmludp_config);
     return connection;
