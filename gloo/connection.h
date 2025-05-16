@@ -2059,16 +2059,9 @@ public:
         receive_message.resize(RX_CONST);
 
         acknowldge_header.resize(sizeof(Header));
-        // set_receive_message();
     };
 
     ~Connection(){};
-
-    // void set_receive_message(){
-    //     for (auto i = 0 ; i < receive_message.size(); ++i){
-    //         receive_message[i].set_receive_message(rx_buffer.data() + MAX_SEND_UDP_PAYLOAD_SIZE * i, MAX_SEND_UDP_PAYLOAD_SIZE);
-    //     }
-    // }
 
     void loss_reset(){
         first_loss = false;
@@ -3022,7 +3015,6 @@ public:
         return receive_connection_difference == receive_connection_difference_registration;
     }
 
-    // 3.27 recvCQ.data_ cannot be directly access
     void process_application_copy(){
         Offset_len pkt_offset;
         Packet_len pkt_len;
@@ -3052,44 +3044,12 @@ public:
             auto& msg = receive_message[index];
             pkt_difference = msg.get_packet_difference();
             if (receive_available_map[index] == 0){
-                if (!receive_record.empty()){
-                    auto copy_len = receive_record.get_acumulation();
-                    auto copy_index = receive_record.get_start_index();
-                    auto copy_difference = receive_record.get_record_difference();
-                    auto copy_offset = receive_record.get_offset();
-                    // std::cout<<"1 copy:"<<copy_offset<<std::endl;
-                    if (copy_offset >= 48){
-                        // std::cout<<"3 copy"<<std::endl;
-                        recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }else{
-                        recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }
-                    receive_record.reset();
-                }   
                 continue;
             }
 
             /*No longer process old data block*/
             if (pkt_difference < receive_connection_difference){
                 receive_available_map[index] = 0;
-                if (!receive_record.empty()){
-                    auto copy_len = receive_record.get_acumulation();
-                    auto copy_index = receive_record.get_start_index();
-                    auto copy_difference = receive_record.get_record_difference();
-                    auto copy_offset = receive_record.get_offset();
-                    // std::cout<<"2 copy:"<<copy_offset<<std::endl;
-                    if (copy_offset >= 48){
-                        // std::cout<<"1 copy"<<std::endl;
-                        recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }else{
-                        recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }
-                    receive_record.reset();
-                }   
                 continue;
             }
 
@@ -3100,157 +3060,255 @@ public:
 
                 receive_available_map[index] = 0;
                 if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
-                    if (!receive_record.empty()){
-                        auto copy_len = receive_record.get_acumulation();
-                        auto copy_index = receive_record.get_start_index();
-                        auto copy_difference = receive_record.get_record_difference();
-                        auto copy_offset = receive_record.get_offset();
-                        // std::cout<<"3 copy:"<<copy_offset<<std::endl;
-                        if (copy_offset >= 48){
-                            // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
-                            recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                            copycount += copy_len;
-                        }else{
-                            recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                            copycount += copy_len;
-                        }
-                        receive_record.reset();
-                    }   
-                    continue;
-                }
-
-                if(receive_record.get_end_index() - receive_record.get_start_index() == 1){ 
-                    auto copy_len = receive_record.get_acumulation();
-                    auto copy_index = receive_record.get_start_index();
-                    auto copy_offset = receive_record.get_offset();
-                    // std::cout<<"4 copy:"<<copy_offset<<std::endl;
-                    if (copy_offset >= 48){
-                        // std::cout<<"4 copy"<<std::endl;
-                        recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
+                    if (pkt_offset >= 48){
+                        // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
+                        recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
+                        copycount += pkt_len;
                     }else{
-                        recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
+                        recvCQ.copy(receive_connection_difference, (pkt_offset), msg.iov[1].iov_base, pkt_len);
+                        copycount += pkt_len;
                     }
-                    receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
-                    recvCQ.record_copy(pkt_difference, pkt_offset);
                     if(recvCQ.processComplete(pkt_difference)){
-                        receive_record.reset();
-                        // std::cout<<"copycount:"<<copycount;
                         return;
                     }
                     continue;
                 }
-
-                if (receive_record.get_target_offset() != pkt_offset && receive_record.get_target_offset() != 0){
-                    auto copy_len = receive_record.get_acumulation();
-                    auto copy_index = receive_record.get_start_index();
-                    auto copy_offset = receive_record.get_offset();
-                    // std::cout<<"5 copy:"<<copy_offset<<std::endl;
-                    if (copy_offset >= 48){
-                        // std::cout<<"5 copy"<<std::endl;
-                        recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }else{
-                        recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }
-                    receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
-                    recvCQ.record_copy(pkt_difference, pkt_offset);
-                    if(recvCQ.processComplete(pkt_difference)){
-                        receive_record.reset();
-                        // std::cout<<"copycount:"<<copycount;
-                        return;
-                    }
-                    continue;
-                }
-                // std::cout<<"update:"<<pkt_offset<<", "<<recvCQ.copyed_check(pkt_difference, pkt_offset)<<std::endl;
-                recvCQ.record_copy(pkt_difference, pkt_offset);
-                receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
-            }else{
-                /*different block occurs, contious check stop and start copy*/
-                receive_upper_check = index;
-                if (!receive_record.empty()){
-                    auto copy_len = receive_record.get_acumulation();
-                    auto copy_index = receive_record.get_start_index();
-                    auto copy_difference = receive_record.get_record_difference();
-                    auto copy_offset = receive_record.get_offset();
-                    // std::cout<<"6 copy:"<<copy_offset<<std::endl;
-                    if (copy_offset >= 48){
-                        // std::cout<<"6 copy"<<std::endl;
-                        recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }else{
-                        recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                        copycount += copy_len;
-                    }
-                    receive_record.reset();
-                    if (copy_difference != receive_connection_difference){
-                        std::cerr << "[process_application_copy check 3]: copy_difference(" << (int)copy_difference<<"), receive_connection_difference(" << (int)receive_connection_difference<<")"<<std::endl;
-                        _Exit(0);
-                    }
-                    if(recvCQ.processComplete(copy_difference)){
-                        // std::cout<<"copycount:"<<copycount;
-                        return;
-                    }
-                }  
             }
         }
-
-
-        if (!receive_record.empty()){
-            auto copy_len = receive_record.get_acumulation();
-            auto copy_index = receive_record.get_start_index();
-            auto copy_difference = receive_record.get_record_difference();
-            auto copy_offset = receive_record.get_offset();
-            // std::cout<<"7 copy:"<<copy_offset<<std::endl;
-            if (copy_offset >= 48){
-                // std::cout<<"7 copy"<<std::endl;
-                recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
-                copycount += copy_len;
-            }else{
-                recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
-                copycount += copy_len;
-            }
-            receive_record.reset();
-        }   
         
         // std::cout<<"copycount:"<<copycount;
-        recvCQ.processCheck(receive_connection_difference);
-
-        receive_record.reset();
-        /*
-        1. Max 8 copy packets
-        2. index contious breaks
-        3. difference differ
-        */
-        /*
-        if receive_connection_difference == pkt_difference & src
-            if (end - start == 7)
-                !receive_record.empty
-                    copy(recordinfo)
-                    receive_record.set(index, pkt_len)
-                continue;
-            
-            if (receive_record.offset + packet_limit != pkt_offset)
-                if !receive_record.empty
-                    copy(record)
-                continue;
-            else
-                receive_record.update(end_index, pkt_len);
-        else
-            if check receive_record is not empty; other block data interupt
-                copy()
-                reset()
-            else
-                continue;
-        
-        if(!receive_record.empty())
-            copy(receive_record)
-            receive_record.reset;
-        */
-       
+        recvCQ.processCheck(receive_connection_difference);       
     }
+
+    // 3.27 recvCQ.data_ cannot be directly access
+    // void process_application_copy(){
+    //     Offset_len pkt_offset;
+    //     Packet_len pkt_len;
+    //     Difference_len pkt_difference;
+
+    //     int copycount = 0;
+    //     if (!recvCQ.empty()){
+    //         // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
+    //         if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
+    //             auto index = recvCQ.startpos();
+    //             auto& msg = receive_message[index]; 
+    //             pkt_offset = msg.get_packet_offset();
+    //             pkt_difference = msg.get_packet_difference();
+    //             // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
+    //             recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
+    //             copycount += 48;
+    //             receive_available_map[index] = 0;
+    //             receive_record.reset();
+    //             receive_connection_difference_registration = receive_connection_difference;
+    //             // std::cout<<"copycount:"<<copycount;
+    //             return;
+    //         }
+    //     }
+
+    //     /*TODO: used count to reduce iteration times*/
+    //     for (auto index = 0; index < receive_available_map.size(); index++){
+    //         auto& msg = receive_message[index];
+    //         pkt_difference = msg.get_packet_difference();
+    //         if (receive_available_map[index] == 0){
+    //             if (!receive_record.empty()){
+    //                 auto copy_len = receive_record.get_acumulation();
+    //                 auto copy_index = receive_record.get_start_index();
+    //                 auto copy_difference = receive_record.get_record_difference();
+    //                 auto copy_offset = receive_record.get_offset();
+    //                 // std::cout<<"1 copy:"<<copy_offset<<std::endl;
+    //                 if (copy_offset >= 48){
+    //                     // std::cout<<"3 copy"<<std::endl;
+    //                     recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }else{
+    //                     recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }
+    //                 receive_record.reset();
+    //             }   
+    //             continue;
+    //         }
+
+    //         /*No longer process old data block*/
+    //         if (pkt_difference < receive_connection_difference){
+    //             receive_available_map[index] = 0;
+    //             if (!receive_record.empty()){
+    //                 auto copy_len = receive_record.get_acumulation();
+    //                 auto copy_index = receive_record.get_start_index();
+    //                 auto copy_difference = receive_record.get_record_difference();
+    //                 auto copy_offset = receive_record.get_offset();
+    //                 // std::cout<<"2 copy:"<<copy_offset<<std::endl;
+    //                 if (copy_offset >= 48){
+    //                     // std::cout<<"1 copy"<<std::endl;
+    //                     recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }else{
+    //                     recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }
+    //                 receive_record.reset();
+    //             }   
+    //             continue;
+    //         }
+
+    //         if (receive_connection_difference == pkt_difference && recvCQ.targetCheck(pkt_difference)){
+    //             auto& msg = receive_message[index];
+    //             pkt_offset = msg.get_packet_offset();
+    //             pkt_len = msg.get_packet_length();
+
+    //             receive_available_map[index] = 0;
+    //             if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
+    //                 if (!receive_record.empty()){
+    //                     auto copy_len = receive_record.get_acumulation();
+    //                     auto copy_index = receive_record.get_start_index();
+    //                     auto copy_difference = receive_record.get_record_difference();
+    //                     auto copy_offset = receive_record.get_offset();
+    //                     // std::cout<<"3 copy:"<<copy_offset<<std::endl;
+    //                     if (copy_offset >= 48){
+    //                         // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
+    //                         recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                         copycount += copy_len;
+    //                     }else{
+    //                         recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                         copycount += copy_len;
+    //                     }
+    //                     receive_record.reset();
+    //                 }   
+    //                 continue;
+    //             }
+
+    //             if(receive_record.get_end_index() - receive_record.get_start_index() == 1){ 
+    //                 auto copy_len = receive_record.get_acumulation();
+    //                 auto copy_index = receive_record.get_start_index();
+    //                 auto copy_offset = receive_record.get_offset();
+    //                 // std::cout<<"4 copy:"<<copy_offset<<std::endl;
+    //                 if (copy_offset >= 48){
+    //                     // std::cout<<"4 copy"<<std::endl;
+    //                     recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }else{
+    //                     recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }
+    //                 receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
+    //                 recvCQ.record_copy(pkt_difference, pkt_offset);
+    //                 if(recvCQ.processComplete(pkt_difference)){
+    //                     receive_record.reset();
+    //                     // std::cout<<"copycount:"<<copycount;
+    //                     return;
+    //                 }
+    //                 continue;
+    //             }
+
+    //             if (receive_record.get_target_offset() != pkt_offset && receive_record.get_target_offset() != 0){
+    //                 auto copy_len = receive_record.get_acumulation();
+    //                 auto copy_index = receive_record.get_start_index();
+    //                 auto copy_offset = receive_record.get_offset();
+    //                 // std::cout<<"5 copy:"<<copy_offset<<std::endl;
+    //                 if (copy_offset >= 48){
+    //                     // std::cout<<"5 copy"<<std::endl;
+    //                     recvCQ.copy(pkt_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }else{
+    //                     recvCQ.copy(pkt_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }
+    //                 receive_record.set(index, pkt_len, pkt_offset, pkt_difference);
+    //                 recvCQ.record_copy(pkt_difference, pkt_offset);
+    //                 if(recvCQ.processComplete(pkt_difference)){
+    //                     receive_record.reset();
+    //                     // std::cout<<"copycount:"<<copycount;
+    //                     return;
+    //                 }
+    //                 continue;
+    //             }
+    //             // std::cout<<"update:"<<pkt_offset<<", "<<recvCQ.copyed_check(pkt_difference, pkt_offset)<<std::endl;
+    //             recvCQ.record_copy(pkt_difference, pkt_offset);
+    //             receive_record.update(index, pkt_offset, pkt_len, pkt_difference);
+    //         }else{
+    //             /*different block occurs, contious check stop and start copy*/
+    //             receive_upper_check = index;
+    //             if (!receive_record.empty()){
+    //                 auto copy_len = receive_record.get_acumulation();
+    //                 auto copy_index = receive_record.get_start_index();
+    //                 auto copy_difference = receive_record.get_record_difference();
+    //                 auto copy_offset = receive_record.get_offset();
+    //                 // std::cout<<"6 copy:"<<copy_offset<<std::endl;
+    //                 if (copy_offset >= 48){
+    //                     // std::cout<<"6 copy"<<std::endl;
+    //                     recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }else{
+    //                     recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //                     copycount += copy_len;
+    //                 }
+    //                 receive_record.reset();
+    //                 if (copy_difference != receive_connection_difference){
+    //                     std::cerr << "[process_application_copy check 3]: copy_difference(" << (int)copy_difference<<"), receive_connection_difference(" << (int)receive_connection_difference<<")"<<std::endl;
+    //                     _Exit(0);
+    //                 }
+    //                 if(recvCQ.processComplete(copy_difference)){
+    //                     // std::cout<<"copycount:"<<copycount;
+    //                     return;
+    //                 }
+    //             }  
+    //         }
+    //     }
+
+
+    //     if (!receive_record.empty()){
+    //         auto copy_len = receive_record.get_acumulation();
+    //         auto copy_index = receive_record.get_start_index();
+    //         auto copy_difference = receive_record.get_record_difference();
+    //         auto copy_offset = receive_record.get_offset();
+    //         // std::cout<<"7 copy:"<<copy_offset<<std::endl;
+    //         if (copy_offset >= 48){
+    //             // std::cout<<"7 copy"<<std::endl;
+    //             recvCQ.copy(copy_difference, (copy_offset - 48), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //             copycount += copy_len;
+    //         }else{
+    //             recvCQ.copy(copy_difference, (copy_offset), receive_message[copy_index].iov[1].iov_base, copy_len);
+    //             copycount += copy_len;
+    //         }
+    //         receive_record.reset();
+    //     }   
+        
+    //     // std::cout<<"copycount:"<<copycount;
+    //     recvCQ.processCheck(receive_connection_difference);
+
+    //     receive_record.reset();
+    //     /*
+    //     1. Max 8 copy packets
+    //     2. index contious breaks
+    //     3. difference differ
+    //     */
+    //     /*
+    //     if receive_connection_difference == pkt_difference & src
+    //         if (end - start == 7)
+    //             !receive_record.empty
+    //                 copy(recordinfo)
+    //                 receive_record.set(index, pkt_len)
+    //             continue;
+            
+    //         if (receive_record.offset + packet_limit != pkt_offset)
+    //             if !receive_record.empty
+    //                 copy(record)
+    //             continue;
+    //         else
+    //             receive_record.update(end_index, pkt_len);
+    //     else
+    //         if check receive_record is not empty; other block data interupt
+    //             copy()
+    //             reset()
+    //         else
+    //             continue;
+        
+    //     if(!receive_record.empty())
+    //         copy(receive_record)
+    //         receive_record.reset;
+    //     */
+       
+    // }
 
 
     void set_send_status(int status_){
