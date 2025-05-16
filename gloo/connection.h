@@ -324,7 +324,7 @@ class RCset{
                 std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
                 throw std::underflow_error("[RCset]: find index beyond capacity_");
             }
-            // std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
+            std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
             return RCset_body[index] == 1;
         }
 
@@ -2285,16 +2285,6 @@ public:
             receive_available_map[index] = 0;
         }
 
-        /*TODO(3.3): Rethink min_received is worth to keep*/
-        // if (min_received == -1){
-        //     min_received = pkt_num;
-        // }else{
-        //     if (pkt_num < min_received){
-        //         min_received = pkt_num;
-        //     }
-        // }
-        // std::cout<<"2 pkt_num:"<<pkt_num<<", pkt_offset:"<<pkt_offset<<std::endl;
-
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
             /* bit map substitude byte map*/
@@ -2303,12 +2293,8 @@ public:
 
         
         size_t pos = pkt_num - current_loop_min;
-        /*
-        If the difference between packet number and current_loop_min is more than receivevector capacity, previous will not do any acknowledge
-        */
-        // if(pos > receivevector.size() * sizeof(uint8_t)){
+  
         if(pos > 8000){
-            // std::cout<<"std::memset"<<std::endl;
             std::memset(receivevector.data(), 0, receivevector.size());
             current_loop_min = pkt_num;
             pos = 0;
@@ -2316,10 +2302,6 @@ public:
         size_t byte_index = pos / 8;
         size_t bit_index = pos % 8;
 
-        /*
-        If byte_index is beyong the capacity of the receivevector.size(), splite ack to multiple acks 
-        or drop start part
-        */
         if (byte_index > receivevector.size()){
             std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
             <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
@@ -3063,7 +3045,7 @@ public:
                 // auto& msg = receive_message[index];
                 // pkt_offset = msg.get_packet_offset();
                 // pkt_len = msg.get_packet_length();
-
+                
                 receive_available_map[index] = 0;
                 if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
