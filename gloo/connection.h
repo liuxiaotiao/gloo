@@ -1834,7 +1834,6 @@ public:
 
     /*Check data pointer is available*/
     bool targetCheck(Difference_len difference_){
-        std::cout<<"targetCheck:"<<difference_<<std::endl;
         auto index = difference_ % capacity_;
         inrangecheck(index, __func__);
         return data_[index].targetCheck();
@@ -3029,7 +3028,7 @@ public:
                 // pkt_len = msg.get_packet_length();
                 
                 receive_available_map[index] = 0;
-                if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
+                if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
                         std::cout<<"2 copy:"<<pkt_offset<<std::endl;
                         recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
