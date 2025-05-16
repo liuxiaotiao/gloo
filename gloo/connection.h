@@ -1834,6 +1834,7 @@ public:
 
     /*Check data pointer is available*/
     bool targetCheck(Difference_len difference_){
+        std::cout<<"targetCheck:"<<difference_<<std::endl;
         auto index = difference_ % capacity_;
         inrangecheck(index, __func__);
         return data_[index].targetCheck();
