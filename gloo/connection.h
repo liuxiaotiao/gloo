@@ -22,6 +22,15 @@
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
 
+#define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
+#define BENCH_END(name) \
+    do { \
+        auto __##name##_end = std::chrono::high_resolution_clock::now(); \
+        std::cout << "[BENCH] " #name " took " \
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(__##name##_end - __##name##_start).count() \
+                  << " ns\n"; \
+    } while(0)
+
 namespace dmludp {
 
 const size_t HEADER_LENGTH = sizeof(Header);
@@ -2231,10 +2240,11 @@ public:
     2. add new flag to shrink receive message queue.
     */
     void process_application_packet(size_t index, bool isfirst){
-        Packet_num_len pkt_num = receive_message[index].get_packet_number();
-        Offset_len pkt_offset = receive_message[index].get_packet_offset();
-        Difference_len pkt_difference = receive_message[index].get_packet_difference();
-        auto pkt_length = receive_message[index].get_packet_length();
+        auto& msg = receive_message[index];
+        Packet_num_len pkt_num = msg.get_packet_number();
+        Offset_len pkt_offset = msg.get_packet_offset();
+        Difference_len pkt_difference = msg.get_packet_difference();
+        auto pkt_length = msg.get_packet_length();
 
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
@@ -2263,7 +2273,7 @@ public:
                             size_t length = 0;
                             size_t roffset = 0;
                         };
-                        auto* preamble_header = reinterpret_cast<const preamble*>(receive_message[index].iov[1].iov_base);
+                        auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
                         if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
                             expectedsize = sizeof(preamble) + preamble_header->length;
                         }else{
@@ -2421,18 +2431,19 @@ public:
 
     */
     void process_acknowledge(const size_t index_){
-        auto pkt_num = receive_message[index_].get_packet_number();
-        auto pkt_len = receive_message[index_].get_packet_length();
-        auto pkt_difference = receive_message[index_].get_packet_difference();
+        auto& msg = receive_message[index_];
+        auto pkt_num = msg.get_packet_number();
+        auto pkt_len = msg.get_packet_length();
+        auto pkt_difference = msg.get_packet_difference();
         receive_available_map[index_] = 0;
 
         auto receivets = std::chrono::system_clock::now();
-        auto first_pn = *reinterpret_cast<const uint64_t*>(receive_message[index_].iov[1].iov_base);
+        auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
         timespec ts[3]{};
-        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&receive_message[index_].message_body); 
+        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
             cmsg != nullptr; 
-            cmsg = CMSG_NXTHDR(&receive_message[index_].message_body, cmsg)) {
+            cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
                 memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
                 break;
@@ -2465,7 +2476,7 @@ public:
         auto end_pn = pkt_num;
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = reinterpret_cast<const uint8_t*>(receive_message[index_].iov[1].iov_base) + sizeof(uint64_t);
+        auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
         size_t byte_index = 0;
         size_t bit_index = 0;
 
@@ -3020,10 +3031,11 @@ public:
             // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
             if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
                 auto index = recvCQ.startpos();
-                pkt_offset = receive_message[index].get_packet_offset();
-                pkt_difference = receive_message[index].get_packet_difference();
+                auto& msg = receive_message[index]; 
+                pkt_offset = msg.get_packet_offset();
+                pkt_difference = msg.get_packet_difference();
                 // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
-                recvCQ.copy(pkt_difference, pkt_offset, receive_message[index].iov[1].iov_base, 48);
+                recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
                 copycount += 48;
                 receive_available_map[index] = 0;
                 receive_record.reset();
@@ -3035,7 +3047,8 @@ public:
 
         /*TODO: used count to reduce iteration times*/
         for (auto index = 0; index < receive_available_map.size(); index++){
-            pkt_difference = receive_message[index].get_packet_difference();
+            auto& msg = receive_message[index];
+            pkt_difference = msg.get_packet_difference();
             if (receive_available_map[index] == 0){
                 if (!receive_record.empty()){
                     auto copy_len = receive_record.get_acumulation();
@@ -3079,8 +3092,9 @@ public:
             }
 
             if (receive_connection_difference == pkt_difference && recvCQ.targetCheck(pkt_difference)){
-                pkt_offset = receive_message[index].get_packet_offset();
-                pkt_len = receive_message[index].get_packet_length();
+                auto& msg = receive_message[index];
+                pkt_offset = msg.get_packet_offset();
+                pkt_len = msg.get_packet_length();
 
                 receive_available_map[index] = 0;
                 if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
