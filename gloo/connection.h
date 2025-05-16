@@ -2390,25 +2390,6 @@ public:
         current_loop_min = current_loop_max + 1;
     }
 
-    /*
-    process_acknowledge:68042, first_pn:24683446, 24683470, 24683444
-    68043, ack4offset:24683445, 0
-    68044, ack4offset:24683446, 0
-    68042 ack_count:0, 1, 0
-    68043 ack_count:1, 1, 1
-    68044 ack_count:25, 722, 25
-
-
-    process_acknowledge:33792, first_pn:12472482, 12472628, 12467475
-    33793, ack4offset:12470331, 0
-    33794, ack4offset:12470332, 0
-    33795, ack4offset:12470333, 0
-    33796, ack4offset:12471055, 0
-    33797, ack4offset:12471056, 0
-    33798, ack4offset:12471778, 0
-    33799, ack4offset:12472482, 0
-
-    */
     void process_acknowledge(const size_t index_){
         auto& msg = receive_message[index_];
         auto pkt_num = msg.get_packet_number();
@@ -3029,7 +3010,7 @@ public:
             pkt_offset = msg.get_packet_offset();
             pkt_len = msg.get_packet_length();
             pkt_difference = msg.get_packet_difference();
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(pkt_difference) << std::endl;
+            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(receive_connection_difference) << std::endl;
             // auto& msg = receive_message[index];
             // pkt_difference = msg.get_packet_difference();
             if (receive_available_map[index] == 0){
