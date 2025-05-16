@@ -1628,6 +1628,7 @@ public:
 
     /*Set target pointer*/
     void set_recv_pointer(Difference_len difference, uint8_t* src) {
+        std::cout<<"difference:"<<difference<<std::endl;
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         data_[index].set_src(src);
