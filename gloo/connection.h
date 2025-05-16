@@ -2161,6 +2161,7 @@ public:
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         bool isfirst = true;
+        auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
             if (receive_available_map[i] == 1)
             {
@@ -2188,6 +2189,9 @@ public:
                 send_flag_ = false;
             }
         }
+        auto endts = std::chrono::high_resolution_clock::now();
+        std::cout<<"processed:"<<receive_max_index<<", "<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+
         // recvCQ.receive_log();
         return send_flag_;
     }

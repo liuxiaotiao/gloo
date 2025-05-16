@@ -66,6 +66,10 @@
         "iomanip": "cpp",
         "filesystem": "cpp",
         "fstream": "cpp",
-        "__memory": "cpp"
+        "__memory": "cpp",
+        "execution": "cpp",
+        "forward_list": "cpp",
+        "print": "cpp",
+        "stack": "cpp"
     }
 }
