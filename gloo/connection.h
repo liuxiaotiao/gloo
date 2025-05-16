@@ -3061,7 +3061,7 @@ public:
                 receive_available_map[index] = 0;
                 if (recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
-                        // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
+                        std::cout<<"2 copy:"<<pkt_offset<<std::endl;
                         recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }else{
