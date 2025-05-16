@@ -149,11 +149,13 @@ class RCMessage : public Message {
     private:
         // bool use_status = true;
         char control[CMSG_SPACE(sizeof(timespec) * 3)];
-
+        uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
     public:
         RCMessage(){
             message_body.msg_control = control;
             message_body.msg_controllen = sizeof(control);
+            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
+            set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
         }
             
         void set_receive_message(void *ptr, size_t ptr_len){
@@ -1992,7 +1994,7 @@ public:
     size_t receive_upper_check = 0;
 
     /*Receive buffer*/
-    std::vector<uint8_t> rx_buffer;
+    // std::vector<uint8_t> rx_buffer;
 
     std::vector<uint8_t> receive_available_map;
 
@@ -2044,7 +2046,7 @@ public:
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
-    rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
+    // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0),
     first_loss(false)
     {
@@ -2057,16 +2059,16 @@ public:
         receive_message.resize(RX_CONST);
 
         acknowldge_header.resize(sizeof(Header));
-        set_receive_message();
+        // set_receive_message();
     };
 
     ~Connection(){};
 
-    void set_receive_message(){
-        for (auto i = 0 ; i < receive_message.size(); ++i){
-            receive_message[i].set_receive_message(rx_buffer.data() + MAX_SEND_UDP_PAYLOAD_SIZE * i, MAX_SEND_UDP_PAYLOAD_SIZE);
-        }
-    }
+    // void set_receive_message(){
+    //     for (auto i = 0 ; i < receive_message.size(); ++i){
+    //         receive_message[i].set_receive_message(rx_buffer.data() + MAX_SEND_UDP_PAYLOAD_SIZE * i, MAX_SEND_UDP_PAYLOAD_SIZE);
+    //     }
+    // }
 
     void loss_reset(){
         first_loss = false;
