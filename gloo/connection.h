@@ -1628,7 +1628,6 @@ public:
 
     /*Set target pointer*/
     void set_recv_pointer(Difference_len difference, uint8_t* src) {
-        // std::cout<<"set_recv_pointer difference:"<<difference<<std::endl;
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
         data_[index].set_src(src);
@@ -2913,10 +2912,10 @@ public:
             // memset(receivevector.data(), 0, receivevector.size());
             // // min_received = -1;
             // current_loop_min = max_received + 1;
-            // auto copystart = std::chrono::high_resolution_clock::now();
+            auto copystart = std::chrono::high_resolution_clock::now();
             process_application_copy();
-            // auto copyend = std::chrono::high_resolution_clock::now();
-            // std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
+            auto copyend = std::chrono::high_resolution_clock::now();
+            std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
@@ -3047,7 +3046,7 @@ public:
             }
         }
         
-        // std::cout<<"copycount:"<<copycount<<std::endl;
+        std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);       
     }
 
