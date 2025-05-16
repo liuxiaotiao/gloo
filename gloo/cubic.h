@@ -317,6 +317,13 @@ public:
     double cwnd_inc;
     double alpha_aimd;
 
+    double prior_cwnd;
+    double prior_W_max;
+    double prior_cubic_k;
+    double prior_ssthresh;
+    std::chrono::system_clock::time_point prior_epoch_start;
+    double prior_W_est;
+
     std::chrono::system_clock::time_point epoch_start;
     Phase phase;
 
@@ -439,6 +446,15 @@ public:
         W_est = congestion_window;
         alpha_aimd = ALPHA_AIMD_CONST;
         phase = (congestion_window == INI_WIN) ? Phase::SlowStart : Phase::Cubic;
+    }
+
+    void check_point(){
+        prior_cwnd = congestion_window;
+        prior_W_max = W_max;
+        prior_cubic_k = K;
+        prior_ssthresh = ssthresh;
+        prior_epoch_start = epoch_start;
+        prior_W_est = W_est;
     }
 };
 
