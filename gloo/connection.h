@@ -3068,15 +3068,17 @@ public:
                         recvCQ.copy(receive_connection_difference, (pkt_offset), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }
+
                     if(recvCQ.processComplete(pkt_difference)){
                         return;
                     }
+
                     continue;
                 }
             }
         }
         
-        // std::cout<<"copycount:"<<copycount;
+        std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);       
     }
 
