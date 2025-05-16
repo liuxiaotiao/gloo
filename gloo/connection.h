@@ -3078,7 +3078,7 @@ public:
             }
         }
         
-        std::cout<<"copycount:"<<copycount;
+        std::cout<<"copycount:"<<copycount<<std::endl;
         recvCQ.processCheck(receive_connection_difference);       
     }
 
