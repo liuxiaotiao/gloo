@@ -324,7 +324,7 @@ class RCset{
                 std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
                 throw std::underflow_error("[RCset]: find index beyond capacity_");
             }
-            std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
+            // std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
             return RCset_body[index] == 1;
         }
 
@@ -2242,7 +2242,7 @@ public:
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_length = msg.get_packet_length();
 
-        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
             receive_available_map[index] = 0;
@@ -3009,7 +3009,7 @@ public:
             pkt_offset = msg.get_packet_offset();
             pkt_len = msg.get_packet_length();
             pkt_difference = msg.get_packet_difference();
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(receive_connection_difference) << std::endl;
+            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(receive_connection_difference) << std::endl;
             // auto& msg = receive_message[index];
             // pkt_difference = msg.get_packet_difference();
             if (receive_available_map[index] == 0){
@@ -3030,7 +3030,7 @@ public:
                 receive_available_map[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
-                        std::cout<<"2 copy:"<<pkt_offset<<std::endl;
+                        // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
                         recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }else{
@@ -3047,7 +3047,7 @@ public:
             }
         }
         
-        std::cout<<"copycount:"<<copycount<<std::endl;
+        // std::cout<<"copycount:"<<copycount<<std::endl;
         recvCQ.processCheck(receive_connection_difference);       
     }
 
