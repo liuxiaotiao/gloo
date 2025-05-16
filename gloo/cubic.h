@@ -317,7 +317,7 @@ public:
     double cwnd_inc;
     double alpha_aimd;
 
-    std::chrono::steady_clock::time_point epoch_start;
+    std::chrono::system_clock::time_point epoch_start;
     Phase phase;
 
     static constexpr size_t INITIAL_WINDOW_PACKETS = 10;
@@ -378,13 +378,13 @@ public:
         return alpha_aimd * ((double)acked * max_datagram_size / congestion_window) * max_datagram_size;
     }
 
-    void set_epoch_if_needed(const std::chrono::steady_clock::time_point& now) {
+    void set_epoch_if_needed(const std::chrono::system_clock::time_point& now) {
         if (epoch_start.time_since_epoch().count() == 0)
             epoch_start = now;
     }
 
     void on_packet_ack(size_t received_packets,
-                       const std::chrono::steady_clock::time_point& now,
+                       const std::chrono::system_clock::time_point& now,
                        std::chrono::seconds min_rtt) {
         set_epoch_if_needed(now);
 
@@ -423,7 +423,7 @@ public:
         }
     }
 
-    void congestion_event(const std::chrono::steady_clock::time_point& now) {
+    void congestion_event(const std::chrono::system_clock::time_point& now) {
         if (congestion_window < W_max)
             W_max = congestion_window * (1.0 + BETA) / 2.0;
         else
