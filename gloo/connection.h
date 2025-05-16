@@ -3046,7 +3046,7 @@ public:
             pkt_offset = msg.get_packet_offset();
             pkt_len = msg.get_packet_length();
             pkt_difference = msg.get_packet_difference();
-            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << std::endl;
+            std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(pkt_difference) << std::endl;
             // auto& msg = receive_message[index];
             // pkt_difference = msg.get_packet_difference();
             if (receive_available_map[index] == 0){
