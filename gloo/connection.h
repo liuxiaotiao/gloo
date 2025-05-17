@@ -234,7 +234,7 @@ public:
 
     std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
         if (isEmpty()) {
-            return std::nullopt;
+            // return std::nullopt;
             throw std::underflow_error("TSCircularQueue is empty(remove)");
         }
         // std::cout << "start removeBeforeValue:" << value << std::endl;
@@ -2268,14 +2268,7 @@ public:
         }else{
             // receive_available_map[index] = 0;
         }
-
-        if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
-            max_received = pkt_num;
-            /* bit map substitude byte map*/
-            send_num = pkt_num;
-        }  
-
-        
+   
         size_t pos = pkt_num - current_loop_min;
   
         if(pos > 8000){
