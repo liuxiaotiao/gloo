@@ -2245,7 +2245,7 @@ public:
                
             }
         }else{
-            receive_slot[index] = 0;
+            receive_slot[index_] = 0;
         }
    
         size_t pos = pkt_num - current_loop_min;
