@@ -40,7 +40,7 @@ const size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
 
 const size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
-const size_t RX_CONST = 4000;
+const size_t RX_CONST = 4096;
 
 const size_t ONCE_LIMIT = 1300;
 
@@ -1999,6 +1999,8 @@ public:
 
     std::vector<uint8_t> receive_available_map;
 
+    std::vector<uint8_t> receive_slot;
+
     TSCircularQueue tsInfo;
 
     SCircularQueue sendbufferqueue;
@@ -2049,6 +2051,7 @@ public:
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_available_map(RX_CONST, 0),
+    receive_slot(RX_CONST, 0)
     first_loss(false)
     {
         memset(&acknowldge_msghdr, 0, sizeof(acknowldge_msghdr));
@@ -2206,15 +2209,16 @@ public:
         return send_flag_;
     }
 
-    bool recv_slice3(RCMessage &recvmsg){
+    bool recv_slice3(size_t index_){
         bool send_flag_ = false;
         auto startts = std::chrono::high_resolution_clock::now();
         auto pkt_ty = recvmsg.get_packet_type();
         if (pkt_ty == Type::ACK){
-            process_acknowledge2(recvmsg);
+            // process_acknowledge2(index_);
         }
 
         if (pkt_ty == Type::Application) {
+            process_application2(index_);
             send_packet_type = Type::ACK;
             send_flag_ = true;
         }
@@ -2222,21 +2226,21 @@ public:
         return send_flag_;
     }
 
-    void process_acknowledge2(RCMessage &msg){
+    void process_application2(size_t index_){
+        auto &msg = receive_message[i];
         Packet_num_len pkt_num = msg.get_packet_number();
         Offset_len pkt_offset = msg.get_packet_offset();
         Difference_len pkt_difference = msg.get_packet_difference();
-        auto pkt_length = msg.get_packet_length();
 
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
+            receive_slot
             // receive_available_map[index] = 0;
             return;
         }
-        
-        std::optional<int> expectedsize;
-        /*Mark packet as to be processed*/
+
+        recvCQ.
         // receive_available_map[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
