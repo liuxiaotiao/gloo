@@ -2210,7 +2210,7 @@ public:
         auto startts = std::chrono::high_resolution_clock::now();
         auto pkt_ty = recvmsg.get_packet_type();
         if (pkt_ty == Type::ACK){
-            process_acknowledge2();
+            process_acknowledge2(recvmsg);
         }
 
         if (pkt_ty == Type::Application) {
@@ -2221,11 +2221,72 @@ public:
         return send_flag_;
     }
 
-    size_t process_acknowledge2(){
-        auto volatile sum = 0;
-        for (auto index = 0; index < 6000; index++){
-            sum++;
+    size_t process_acknowledge2(RCMessage &msg){
+        auto& msg = receive_message[index];
+        Packet_num_len pkt_num = msg.get_packet_number();
+        Offset_len pkt_offset = msg.get_packet_offset();
+        Difference_len pkt_difference = msg.get_packet_difference();
+        auto pkt_length = msg.get_packet_length();
+
+        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        /* no operation for old packet*/
+        if (pkt_num < current_loop_min){
+            // receive_available_map[index] = 0;
+            return;
         }
+        
+        std::optional<int> expectedsize;
+        /*Mark packet as to be processed*/
+        // receive_available_map[index] = 1;
+        if (pkt_difference >= receive_connection_difference){
+            if (pkt_offset == 0){
+                // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+                if (recvCQ.differencecheck(pkt_difference)){
+                    // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
+                    // recvCQ.indexcheck(pkt_difference);
+                    
+                        struct preamble {
+                            size_t nbytes = 0;
+                            size_t opcode = 0;
+                            size_t slot = 0;
+                            size_t offset = 0;
+                            size_t length = 0;
+                            size_t roffset = 0;
+                        };
+                        auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
+                        if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
+                            expectedsize = sizeof(preamble) + preamble_header->length;
+                        }else{
+                            expectedsize = sizeof(preamble);
+                        }
+                        // std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
+                    
+                }else{
+                    // receive_available_map[index] = 0;
+                }
+            }
+        }else{
+            // receive_available_map[index] = 0;
+        }
+
+        if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
+            max_received = pkt_num;
+            /* bit map substitude byte map*/
+            send_num = pkt_num;
+        }  
+
+        
+        size_t pos = pkt_num - current_loop_min;
+  
+        if(pos > 8000){
+            // std::memset(receivevector.data(), 0, receivevector.size());
+            // current_loop_min = pkt_num;
+            pos = 0;
+        }
+        size_t byte_index = pos / 8;
+        size_t bit_index = pos % 8;
+
+        
         __atomic_thread_fence(__ATOMIC_RELEASE);
         return sum;
     }
