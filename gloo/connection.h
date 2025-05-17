@@ -2212,7 +2212,7 @@ public:
     bool recv_slice3(size_t index_){
         bool send_flag_ = false;
         auto startts = std::chrono::high_resolution_clock::now();
-        auto pkt_ty = recvmsg.get_packet_type();
+        auto pkt_ty = receive_message[index_].get_packet_type();
         if (pkt_ty == Type::ACK){
             // process_acknowledge2(index_);
         }
