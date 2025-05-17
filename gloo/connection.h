@@ -2221,7 +2221,7 @@ public:
         return send_flag_;
     }
 
-    size_t process_acknowledge2(RCMessage &msg){
+    void process_acknowledge2(RCMessage &msg){
         auto& msg = receive_message[index];
         Packet_num_len pkt_num = msg.get_packet_number();
         Offset_len pkt_offset = msg.get_packet_offset();
@@ -2288,7 +2288,6 @@ public:
 
         
         __atomic_thread_fence(__ATOMIC_RELEASE);
-        return sum;
     }
 
     /*Max received index*/
