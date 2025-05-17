@@ -2223,7 +2223,8 @@ public:
 
     size_t process_acknowledge2(){
         auto volatile sum = 0;
-        for (auto index = 0; index < receive_available_map.size(); index++){
+        auto len = receive_available_map.size();
+        for (auto index = 0; index < len; index++){
             sum++;
         }
         __atomic_thread_fence(__ATOMIC_RELEASE);
