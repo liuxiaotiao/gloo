@@ -2174,7 +2174,7 @@ public:
             auto pkt_ty = receive_message[i].get_packet_type();
 
             auto startts = std::chrono::high_resolution_clock::now();
-            recv_slice3(receive_message[i]);
+            recv_slice3(i);
             auto endts = std::chrono::high_resolution_clock::now();
             std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
         
