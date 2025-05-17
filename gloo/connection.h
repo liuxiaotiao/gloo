@@ -2227,7 +2227,7 @@ public:
     }
 
     void process_application2(size_t index_){
-        auto &msg = receive_message[i];
+        auto &msg = receive_message[index_];
         Packet_num_len pkt_num = msg.get_packet_number();
         Offset_len pkt_offset = msg.get_packet_offset();
         Difference_len pkt_difference = msg.get_packet_difference();
@@ -2235,49 +2235,23 @@ public:
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
-            receive_slot
-            // receive_available_map[index] = 0;
+            receive_slot[index_] = 0;
             return;
         }
 
-        recvCQ.
-        // receive_available_map[index] = 1;
+        receive_slot[index_] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
-                // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-                if (recvCQ.differencecheck(pkt_difference)){
-                    // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
-                    // recvCQ.indexcheck(pkt_difference);
-                    
-                        struct preamble {
-                            size_t nbytes = 0;
-                            size_t opcode = 0;
-                            size_t slot = 0;
-                            size_t offset = 0;
-                            size_t length = 0;
-                            size_t roffset = 0;
-                        };
-                        auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-                        if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
-                            expectedsize = sizeof(preamble) + preamble_header->length;
-                        }else{
-                            expectedsize = sizeof(preamble);
-                        }
-                        // std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
-                    
-                }else{
-                    // receive_available_map[index] = 0;
-                }
+               
             }
         }else{
-            // receive_available_map[index] = 0;
+            receive_slot[index] = 0;
         }
    
         size_t pos = pkt_num - current_loop_min;
   
         if(pos > 8000){
-            // std::memset(receivevector.data(), 0, receivevector.size());
-            // current_loop_min = pkt_num;
+
             pos = 0;
         }
         size_t byte_index = pos / 8;
