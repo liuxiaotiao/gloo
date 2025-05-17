@@ -2222,10 +2222,11 @@ public:
     }
 
     size_t process_acknowledge2(){
-        auto sum = 0;
-        for (){
-
+        auto volatile sum = 0;
+        for (auto index = 0; index < receive_available_map.size(); index++){
+            sum++;
         }
+        return sum;
     }
 
     /*Max received index*/
