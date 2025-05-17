@@ -2161,14 +2161,20 @@ public:
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         bool isfirst = true;
-        auto startts = std::chrono::high_resolution_clock::now();
+        // auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
             if (receive_available_map[i] == 1)
             {
                 continue;
             }
             auto pkt_ty = receive_message[i].get_packet_type();
-            
+
+            auto startts = std::chrono::high_resolution_clock::now();
+            recv_slice3(receive_message[i]);
+            auto endts = std::chrono::high_resolution_clock::now();
+            std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+        
+        
             if (pkt_ty == Type::ACK){
                 // auto startts = std::chrono::high_resolution_clock::now();
                 process_acknowledge(i);
@@ -2189,11 +2195,31 @@ public:
                 send_flag_ = false;
             }
         }
-        auto endts = std::chrono::high_resolution_clock::now();
-        std::cout<<"processed:"<<receive_max_index<<", "<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+        // auto endts = std::chrono::high_resolution_clock::now();
+        // std::cout<<"processed:"<<receive_max_index<<", "<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
 
         // recvCQ.receive_log();
         return send_flag_;
+    }
+
+    bool recv_slice3(RCMessage &recvmsg){
+        bool send_flag_ = false;
+        auto startts = std::chrono::high_resolution_clock::now();
+        auto pkt_ty = recvmsg.get_packet_type();
+        if (pkt_ty == Type::ACK){
+            process_acknowledge2();
+        }
+
+        if (pkt_ty == Type::Application) {
+            send_packet_type = Type::ACK;
+            send_flag_ = true;
+        }
+
+        return send_flag_;
+    }
+
+    void process_acknowledge2(){
+
     }
 
     /*Max received index*/
@@ -2916,10 +2942,10 @@ public:
             // memset(receivevector.data(), 0, receivevector.size());
             // // min_received = -1;
             // current_loop_min = max_received + 1;
-            auto copystart = std::chrono::high_resolution_clock::now();
+            // auto copystart = std::chrono::high_resolution_clock::now();
             process_application_copy();
-            auto copyend = std::chrono::high_resolution_clock::now();
-            std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
+            // auto copyend = std::chrono::high_resolution_clock::now();
+            // std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
@@ -3001,7 +3027,7 @@ public:
                 receive_available_map[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
-                std::cout<<"copycount:"<<copycount;
+                // std::cout<<"copycount:"<<copycount;
                 return;
             }
         }
@@ -3050,7 +3076,7 @@ public:
             }
         }
         
-        std::cout<<"copycount:"<<copycount;
+        // std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);       
     }
 

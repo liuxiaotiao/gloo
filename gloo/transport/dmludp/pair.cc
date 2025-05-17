@@ -651,7 +651,8 @@ void Pair::handleEvents(int events) {
 //       receive_number < dmludp_connection->get_end(); 
 //       receive_number = dmludp_connection->next_available(receive_number))
 //     {
-//       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
+//       auto &rmsg = dmludp_connection->receive_message[receive_number];
+//       auto retval = recvmsg(fd_, &rmsg.message_body, 0);
 //       if (retval == -1)
 //       {
 //         if (errno == EAGAIN) 
@@ -663,6 +664,8 @@ void Pair::handleEvents(int events) {
 //           continue;
 //         }
 //       }
+
+//       dmludp_connection->recv_slice3(rmsg);
 
 //       auto packet_type;
 //       if (packet_type == 5){
