@@ -234,6 +234,7 @@ public:
 
     std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
         if (isEmpty()) {
+            return std::nullopt;
             throw std::underflow_error("TSCircularQueue is empty(remove)");
         }
         // std::cout << "start removeBeforeValue:" << value << std::endl;
