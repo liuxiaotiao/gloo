@@ -2016,7 +2016,6 @@ public:
 
     bool rtt_initial = true;
 
-    bool first_loss;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
