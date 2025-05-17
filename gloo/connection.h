@@ -2226,6 +2226,7 @@ public:
         for (auto index = 0; index < receive_available_map.size(); index++){
             sum++;
         }
+        __atomic_thread_fence(__ATOMIC_RELEASE);
         return sum;
     }
 
