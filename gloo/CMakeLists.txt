@@ -60,6 +60,7 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/cubic.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tool.h"
   )
 
 if(USE_CUDA)
