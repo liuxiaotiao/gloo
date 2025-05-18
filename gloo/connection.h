@@ -1863,6 +1863,44 @@ public:
     ~RCircularQueue() = default;
 };
 
+/*In receive side, it's used to record msghdr index*/
+template<typename T, size_t Capacity>
+class SPSCQueue {
+    static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2");
+
+    std::vector<T> buffer;
+    size_t head = 0;
+    size_t tail = 0;
+
+public:
+    SPSCQueue() : buffer(Capacity = 330000) {}
+
+    bool enqueue(const T& item) {
+        size_t next_tail = (tail + 1) & (Capacity - 1);
+        if (next_tail == __atomic_load_n(&head, __ATOMIC_ACQUIRE)) {
+            return false; // full
+        }
+        buffer[tail] = item;
+        __atomic_thread_fence(__ATOMIC_RELEASE);
+        tail = next_tail;
+        return true;
+    }
+
+    std::optional<T> dequeue() {
+        __atomic_thread_fence(__ATOMIC_ACQUIRE);
+        size_t cur_tail = __atomic_load_n(&tail, __ATOMIC_ACQUIRE);
+        if (head == cur_tail) {
+            return std::nullopt; // empty
+        }
+
+        __builtin_prefetch(&buffer[(head + 1) & (Capacity - 1)], 0, 1);
+
+        T item = buffer[head];
+        head = (head + 1) & (Capacity - 1);
+        return item;
+    }
+};
+
 class Connection{
 public: 
     /// Whether this is a server-side connection.
