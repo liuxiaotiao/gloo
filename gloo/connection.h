@@ -2174,6 +2174,11 @@ public:
             }
             auto pkt_ty = receive_message[i].get_packet_type();
 
+            auto test1 = std::chrono::high_resolution_clock::now();
+            auto test2 = std::chrono::high_resolution_clock::now();
+            std::cout<<"choro:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(test2-test1).count()<<" ns"<<std::endl;
+
+
             auto startts = std::chrono::high_resolution_clock::now();
             recv_slice3(i);
             auto endts = std::chrono::high_resolution_clock::now();
