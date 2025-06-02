@@ -328,7 +328,7 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
+	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -514,7 +514,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  // std::cout<<"readComplete:"<<opcode<<std::endl;
+  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
