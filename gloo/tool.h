@@ -733,6 +733,55 @@ class MapSet {
         // }
 
 };
+
+    inline void log_print(void* src_, size_t len_, size_t print_len = LIMIT_SIZE_T) {
+        if (!src_) {
+            std::cerr << "Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  
+        
+        if (print_len == LIMIT_SIZE_T){
+            for (size_t i = 0; i < len_; i++) {
+                std::cout << static_cast<int>(data[i]) << " ";  
+            }
+            std::cout << std::endl;
+        }else {
+            auto tmp_len = std::min(len_, print_len);
+            for (size_t i = 0; i < tmp_len; i++) {
+                std::cout << static_cast<int>(data[i]) << " ";  
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    inline void ip_print (struct sockaddr_storage & peeraddr, bool port_ = false) {
+        char ipstr[INET6_ADDRSTRLEN] = {0};
+        uint16_t port = 0;
+
+        if (peeraddr.ss_family == AF_INET) {
+            // IPv4
+            const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(&peeraddr);
+            inet_ntop(AF_INET, &addr4->sin_addr, ipstr, sizeof(ipstr));
+            if (port_){
+                std::cout << "Peer IP: " << ipstr << ":" << ntohs(addr4->sin_port) << ", ";
+            } else {
+                std::cout << "Peer IP: " << ipstr << ", ";
+            }   
+        } else if (peeraddr.ss_family == AF_INET6) {
+            // IPv6
+            const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(&peeraddr);
+            inet_ntop(AF_INET6, &addr6->sin6_addr, ipstr, sizeof(ipstr));
+            if (port_) {
+                std::cout << "Peer IP: [" << ipstr << "]:" << ntohs(addr6->sin6_port) << ", ";
+            } else {
+                std::cout << "Peer IP: [" << ipstr << "]:" << ", ";
+            }
+        } else {
+            return;
+        }
+    }
 /*Record copy contiouns*/
     class RecordInfo
     {

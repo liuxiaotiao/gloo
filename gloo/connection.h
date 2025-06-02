@@ -1109,19 +1109,19 @@ public:
         data_[index].processdlen(len_);
     }
 
-    void log_print(void* src_, size_t len_) {
-        if (!src_) {
-            std::cerr << "Null pointer passed to log_print!" << std::endl;
-            return;
-        }
+    // void log_print(void* src_, size_t len_) {
+    //     if (!src_) {
+    //         std::cerr << "Null pointer passed to log_print!" << std::endl;
+    //         return;
+    //     }
         
-        auto* data = static_cast<uint8_t*>(src_);  
+    //     auto* data = static_cast<uint8_t*>(src_);  
 
-        for (size_t i = 0; i < len_; i++) {
-            std::cout << static_cast<int>(data[i]) << " ";  
-        }
-        std::cout << std::endl;
-    }
+    //     for (size_t i = 0; i < len_; i++) {
+    //         std::cout << static_cast<int>(data[i]) << " ";  
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     void record_copy(Difference_len difference_, Offset_len offset_){
         auto index = difference_ % capacity_;
@@ -1484,14 +1484,14 @@ public:
             }
             auto pkt_ty = receive_message[i].get_packet_type();
 
-            auto test1 = std::chrono::high_resolution_clock::now();
-            auto test2 = std::chrono::high_resolution_clock::now();
+            // auto test1 = std::chrono::high_resolution_clock::now();
+            // auto test2 = std::chrono::high_resolution_clock::now();
             // std::cout<<"choro:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(test2-test1).count()<<" ns"<<std::endl;
 
 
-            auto startts = std::chrono::high_resolution_clock::now();
+            // auto startts = std::chrono::high_resolution_clock::now();
             recv_slice3(i);
-            auto endts = std::chrono::high_resolution_clock::now();
+            // auto endts = std::chrono::high_resolution_clock::now();
             // std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
         
         
@@ -2161,6 +2161,12 @@ public:
                     break;
                 }
 
+                if (out_len == 4) {
+                    ip_print(peeraddr);
+                    std::cout<<pkg_difference", send:";
+                    log_print(send_message[sent].iov[1].iov_base, out_len);
+                }
+
                 auto pn = pkt_num_spaces.updatepktnum();
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
@@ -2187,19 +2193,19 @@ public:
     }
     
     /*Check send or received data*/
-    void log_print(void* src_, size_t len_) {
-        if (!src_) {
-            std::cerr << "Null pointer passed to log_print!" << std::endl;
-            return;
-        }
+    // void log_print(void* src_, size_t len_) {
+    //     if (!src_) {
+    //         std::cerr << "Null pointer passed to log_print!" << std::endl;
+    //         return;
+    //     }
         
-        auto* data = static_cast<uint8_t*>(src_);  
+    //     auto* data = static_cast<uint8_t*>(src_);  
 
-        for (size_t i = 0; i < len_; i++) {
-            std::cout << static_cast<int>(data[i]) << " ";  
-        }
-        std::cout << std::endl;
-    }
+    //     for (size_t i = 0; i < len_; i++) {
+    //         std::cout << static_cast<int>(data[i]) << " ";  
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     /*Check send or received data for function*/
     void log_print_fun(const char* func_name, void* src_, size_t len_) {
