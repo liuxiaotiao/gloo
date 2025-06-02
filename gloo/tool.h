@@ -17,7 +17,7 @@ namespace dmludp {
 
     inline constexpr  size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
-    inline constexpr  size_t RX_CONST = 4096;
+    inline constexpr  size_t RX_CONST = 8192;
 
     inline constexpr  size_t ONCE_LIMIT = 1300;
 
@@ -997,5 +997,103 @@ class MapSet {
         void clear() {
             head_ = tail_ = 0;
         }
+    };
+
+    class PacketMapRingBuffer {
+    public:
+        explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
+            : capacity_(capacity),
+            buffer_(capacity),
+            head_(0),
+            tail_(0),
+            head_packet_number_(start_packet_number) {}
+
+        bool push(uint64_t offset) {
+            size_t next_tail = (tail_ + 1) % capacity_;
+            if (next_tail == head_) {
+                return false; 
+            }
+
+            buffer_[tail_].offset = offset;
+            tail_ = next_tail;
+            return true;
+        }
+
+        bool getOffset(uint64_t packet_number, uint64_t& out_offset) const {
+            uint64_t current_size = size();
+            uint64_t tail_packet_number = head_packet_number_ + current_size;
+
+            if (packet_number < head_packet_number_ || packet_number >= tail_packet_number) {
+                return false;
+            }
+
+            size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
+            out_offset = buffer_[index].offset;
+            return true;
+        }
+
+        bool pop() {
+            if (empty()) return false;
+            head_ = (head_ + 1) % capacity_;
+            ++head_packet_number_;
+            return true;
+        }
+
+        std::vector<std::pair<uint64_t, uint64_t>> getAllMappings() const {
+            std::vector<std::pair<uint64_t, uint64_t>> mappings;
+            mappings.reserve(size());
+
+            size_t idx = head_;
+            uint64_t pkt = head_packet_number_;
+            while (idx != tail_) {
+                mappings.emplace_back(pkt, buffer_[idx].offset);
+                idx = (idx + 1) % capacity_;
+                ++pkt;
+            }
+
+            return mappings;
+        }
+
+        bool empty() const {
+            return head_ == tail_;
+        }
+
+        size_t size() const {
+            if (tail_ >= head_) return tail_ - head_;
+            return capacity_ - head_ + tail_;
+        }
+
+        size_t capacity() const {
+            return capacity_ - 1; 
+        }
+
+        size_t freeSlots() const {
+            return capacity() - size();
+        }
+
+        uint64_t packetNumberBegin() const {
+            return head_packet_number_;
+        }
+
+        uint64_t packetNumberEnd() const {
+            return head_packet_number_ + size();
+        }
+
+    private:
+        struct Slot {
+            Offset_len offset;
+            Difference_len difference;
+            bool priority;
+
+            // 可拓展字段：
+            // bool acked;
+            // std::chrono::nanoseconds ts;
+        };
+
+        size_t capacity_;
+        std::vector<Slot> buffer_;
+        size_t head_;
+        size_t tail_;
+        uint64_t head_packet_number_;
     };
 }

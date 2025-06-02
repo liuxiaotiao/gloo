@@ -45,6 +45,8 @@ using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
+using Slot_len = uint32_t;
+
 
 class Message{
     public:
@@ -147,7 +149,7 @@ class MetaInfo{
         /* true is complete, false is not complete*/
         bool send_status = false;
 
-        MetaInfo(size_t difference_flag_ = std::numeric_limits<uint16_t>::max()): 
+        MetaInfo(size_t difference_flag_ = std::numeric_limits<Difference_len>::max()): 
         MetaDifference(difference_flag_),
         metabuf(MAX_SEND_UDP_PAYLOAD_SIZE),
         range_len(0){};
@@ -601,7 +603,8 @@ class metarecebuf{
 
         size_t srcset = 0;
 
-        uint16_t index_ = LIMIT_UINT16_T;
+        Slot_len offset0_index = std::numeric_limits<Slot_len>::max();
+
 
         /*
         0: unused, waiting
@@ -642,7 +645,7 @@ class metarecebuf{
             used = false;
             rdifference = 0;
             status_ = 0;
-            index_ = LIMIT_UINT16_T;
+            offset0_index = std::numeric_limits<Slot_len>::max();
             for (auto &e:source_len){
                 e = 0;
             }
@@ -672,10 +675,10 @@ class metarecebuf{
         }
 
         bool set_start(size_t pos){
-            if (index_ != LIMIT_UINT16_T){
+            if (offset0_index != std::numeric_limits<Slot_len>::max()){
                 return false;
             }
-            index_ = pos;
+            offset0_index = pos;
             if (status_ == 0 || status_ == 1){
                 status_ = 2;
             }
@@ -820,8 +823,8 @@ class metarecebuf{
             return rdifference;
         }
 
-        uint16_t get_position(){
-            return index_;
+        Slot_len get_position(){
+            return offset0_index;
         }
 };  
 
@@ -988,7 +991,7 @@ public:
     }
 
 
-    bool insertzero(Difference_len difference_, uint16_t position_){
+    bool insertzero(Difference_len difference_, Slot_len position_){
         auto index_ = difference_ % get_capacity();
         inrangecheck(index_, __func__);
         return data_[index_].set_start(position_);
@@ -1325,6 +1328,8 @@ public:
     bool rtt_initial = true;
 
     size_t slot_index = 0;
+
+    // PacketMapRingBuffer connection_mapping;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
