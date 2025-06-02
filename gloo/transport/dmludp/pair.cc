@@ -860,11 +860,11 @@ bool Pair::protocal2read(){
 
       received++;
       receive_check = receive_number;
-      auto startts = std::chrono::high_resolution_clock::now();
+      // auto startts = std::chrono::high_resolution_clock::now();
       flag4send = dmludp_connection->recv_slice3(receive_number);
-      auto endts = std::chrono::high_resolution_clock::now();
+      // auto endts = std::chrono::high_resolution_clock::now();
       dmludp_connection->update_slot();  
-      std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+      // std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
     }
     // auto endts = std::chrono::high_resolution_clock::now();
     // auto startts = std::chrono::high_resolution_clock::now();
