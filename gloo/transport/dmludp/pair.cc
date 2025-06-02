@@ -1336,7 +1336,7 @@ void Pair::sendAsyncMode(Op& op) {
   op.nwritten = 0;
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
-    // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+    std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
     return;
   }
   // Write may have resulted in an error.
@@ -1344,7 +1344,7 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
-  // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+  std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 
