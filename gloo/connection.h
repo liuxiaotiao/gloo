@@ -1307,8 +1307,6 @@ public:
     /*Receive buffer*/
     // std::vector<uint8_t> rx_buffer;
 
-    std::vector<uint8_t> receive_available_map;
-
     std::vector<uint8_t> receive_slot;
 
     TSCircularQueue tsInfo;
@@ -1362,7 +1360,6 @@ public:
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
-    receive_available_map(RX_CONST, 0),
     receive_slot(RX_CONST, 0),
     first_loss(false)
     {
@@ -1479,7 +1476,7 @@ public:
         bool isfirst = true;
         // auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
-            if (receive_available_map[i] == 1)
+            if (receive_slot[i] == 1)
             {
                 continue;
             }
@@ -1583,7 +1580,7 @@ public:
 
     void update_slot(){
         slot_index = (slot_index + 1) % RX_CONST;
-        while (receive_available_map[slot_index] != 0)
+        while (receive_slot[slot_index] != 0)
         {
            slot_index = (slot_index + 1) % RX_CONST;
         }
@@ -1641,13 +1638,13 @@ public:
         // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
-            receive_available_map[index] = 0;
+            receive_slot[index] = 0;
             return;
         }
         
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
-        receive_available_map[index] = 1;
+        receive_slot[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
                 // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
@@ -1655,7 +1652,7 @@ public:
                     // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
                     if(!recvCQ.insertzero(pkt_difference, index)){
-                        receive_available_map[index] = 0;
+                        receive_slot[index] = 0;
                     }else{
                         struct preamble {
                             size_t nbytes = 0;
@@ -1674,11 +1671,11 @@ public:
                         // std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
-                    receive_available_map[index] = 0;
+                    receive_slot[index] = 0;
                 }
             }
         }else{
-            receive_available_map[index] = 0;
+            receive_slot[index] = 0;
         }
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
@@ -1709,7 +1706,7 @@ public:
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, exist);
             if (exist){
-                receive_available_map[index] = 0;
+                receive_slot[index] = 0;
             }
             if (expectedsize){
                 recvCQ.setRead(pkt_difference, *expectedsize);
@@ -1790,7 +1787,7 @@ public:
         auto pkt_num = msg.get_packet_number();
         auto pkt_len = msg.get_packet_length();
         auto pkt_difference = msg.get_packet_difference();
-        receive_available_map[index_] = 0;
+        receive_slot[index_] = 0;
 
         auto receivets = std::chrono::system_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
@@ -2306,11 +2303,11 @@ public:
         if (index == std::numeric_limits<size_t>::max()){
             auto idx = 0;
             while(true){
-                if (receive_available_map[idx] == 0){
+                if (receive_slot[idx] == 0){
                     break;
                 }
                 idx++;
-                if (idx == receive_available_map.size()){
+                if (idx == receive_slot.size()){
                     return std::numeric_limits<size_t>::max();
                 }
             }
@@ -2318,11 +2315,11 @@ public:
         }
         auto idx = index + 1;
         while(true){
-            if (receive_available_map[idx] == 0){
+            if (receive_slot[idx] == 0){
                 break;
             }
             idx++;
-            if (idx == receive_available_map.size()){
+            if (idx == receive_slot.size()){
                 return std::numeric_limits<size_t>::max();
             }
         }
@@ -2350,7 +2347,7 @@ public:
                 // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
                 recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
                 copycount += 48;
-                receive_available_map[index] = 0;
+                receive_slot[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
                 // std::cout<<"copycount:"<<copycount;
@@ -2359,7 +2356,7 @@ public:
         }
 
         /*TODO: used count to reduce iteration times*/
-        for (auto index = 0; index < receive_available_map.size(); index++){
+        for (auto index = 0; index < receive_slot.size(); index++){
             auto& msg = receive_message[index];
             pkt_offset = msg.get_packet_offset();
             pkt_len = msg.get_packet_length();
@@ -2367,13 +2364,13 @@ public:
             // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(receive_connection_difference) << std::endl;
             // auto& msg = receive_message[index];
             // pkt_difference = msg.get_packet_difference();
-            if (receive_available_map[index] == 0){
+            if (receive_slot[index] == 0){
                 continue;
             }
 
             /*No longer process old data block*/
             if (pkt_difference < receive_connection_difference){
-                receive_available_map[index] = 0;
+                receive_slot[index] = 0;
                 continue;
             }
 
@@ -2382,7 +2379,7 @@ public:
                 // pkt_offset = msg.get_packet_offset();
                 // pkt_len = msg.get_packet_length();
                 
-                receive_available_map[index] = 0;
+                receive_slot[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
                         // std::cout<<"2 copy:"<<pkt_offset<<std::endl;

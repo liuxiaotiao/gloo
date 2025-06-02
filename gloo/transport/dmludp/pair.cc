@@ -842,9 +842,7 @@ bool Pair::protocal2read(){
   while(true){
     received = 0;
     // auto startts = std::chrono::high_resolution_clock::now();
-    while (true)
-    {
-      auto receive_number = dmludp_connection->get_slot();
+    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
       if (retval == -1){
         if (errno == EAGAIN) {
@@ -854,7 +852,6 @@ bool Pair::protocal2read(){
             continue;
         }
       }
-      dmludp_connection->update_slot();
 
       received++;
       receive_check = receive_number;
