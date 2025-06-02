@@ -1542,122 +1542,7 @@ public:
         auto pkt_ty = receive_message[index_].get_packet_type();
         if (pkt_ty == Type::ACK){
             auto startts = std::chrono::high_resolution_clock::now();
-            // process_acknowledge(index_);
-            auto& msg = receive_message[index_];
-        auto pkt_num = msg.get_packet_number();
-        auto pkt_len = msg.get_packet_length();
-        auto pkt_difference = msg.get_packet_difference();
-        receive_slot[index_] = 0;
-
-        auto receivets = std::chrono::system_clock::now();
-        auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
-
-        auto startts1 = std::chrono::high_resolution_clock::now();
-        timespec ts[3]{};
-        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
-            cmsg != nullptr; 
-            cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
-            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-                memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
-                break;
-            }
-        }
-        auto endts1 = std::chrono::high_resolution_clock::now();
-        std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
-    
-        // std::cout<<"check 2"<<std::endl;
-
-        auto softwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
-
-        auto hardwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
-            
-        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
-
-        auto t1 = std::chrono::high_resolution_clock::now();
-        if (first_pn >= (max_acknowleged + 1)){
-            // ip_print(peeraddr);
-            // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
-            auto ackts = tsInfo.removeBeforeValue(first_pn);
-            if (ackts.has_value()){
-                update_rtt(*ackts, softwarets, hardwarets);
-            }
-        }
-        auto t2 = std::chrono::high_resolution_clock::now();
-        sendbufferqueue.completecheck(pkt_difference);
-        auto t3 = std::chrono::high_resolution_clock::now();
-
-        std::cout << "removeBeforeValue+RTT: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
-          << " ns\n";
-        std::cout << "completecheck: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
-          << " ns\n";
-
-        auto end_pn = pkt_num;
-        bool loss = false;
-        size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
-        size_t byte_index = 0;
-        size_t bit_index = 0;
-
-        
-        /*TODO: process max_ack and first_pn*/
-        auto sendbufferqueue_start_index = sendbufferqueue.start();
-        auto pn = first_pn;
-        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
-
-        /*Check acknowledge packet loss*/
-        /*
-        1. first_pn < (max_acknowleged + 1) && end_pn < (max_acknowleged + 1)
-            Just check unused
-        2. first_pn < (max_acknowleged + 1) && end_pn >= (max_acknowleged + 1)
-        3. first_pn > (max_acknowleged + 1)
-            just
-        4. first_pn == (max_acknowleged + 1)
-            Just check used 
-
-        Consider if pn is the old block.
-        */
-
-        auto connection_mapstart = std::chrono::high_resolution_clock::now();
-        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-            if (slot.difference < send_connection_difference){
-                return;
-            }else{
-                size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
-            }
-        });
-        auto connection_mapend = std::chrono::high_resolution_clock::now();
-        std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(connection_mapend-connection_mapstart).count()<<" ns"<<std::endl;
-
-
-
-        if (max_acknowleged == LIMIT_UINT64_T){
-            max_acknowleged = end_pn;
-        }else{
-            if (end_pn > max_acknowleged){
-                max_acknowleged = end_pn;
-            }
-        }
-        
-        
-        // std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
-        auto t4 = std::chrono::high_resolution_clock::now();
-        if (loss && !first_loss){
-            recovery.check_point();
-            recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-            first_loss = true;
-        }else{
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        }
-        auto t5 = std::chrono::high_resolution_clock::now();
-        std::cout << "recovery: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-          << " ns\n";
+            process_acknowledge(index_);
             auto endts = std::chrono::high_resolution_clock::now();
             std::cout<<"process_acknowledge:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
 
@@ -2198,11 +2083,15 @@ public:
     // }
 
     void process_acknowledge(const size_t index_){
+        auto tsa = std::chrono::high_resolution_clock::now();
         auto& msg = receive_message[index_];
         auto pkt_num = msg.get_packet_number();
         auto pkt_len = msg.get_packet_length();
         auto pkt_difference = msg.get_packet_difference();
         receive_slot[index_] = 0;
+        auto tsb = std::chrono::high_resolution_clock::now();
+        std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
+
 
         auto receivets = std::chrono::system_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
