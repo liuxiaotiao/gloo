@@ -891,7 +891,7 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-
+    
     if (flag4send) {
       auto connection_result = dmludp_connection->send_data2();
       // std::cout<<"connection_result:"<<connection_result<<std::endl;
