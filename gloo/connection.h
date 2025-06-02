@@ -2140,12 +2140,12 @@ public:
         auto pn = first_pn;
 
          connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-            // if (slot.difference < send_connection_difference){
-            //     return;
-            // }else{
-            //     size_t value = (ack_src[byte_index] >> bit_index) & 1;
-            //     sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
-            // }
+            if (slot.difference < send_connection_difference){
+                return;
+            }else{
+                size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
+            }
         });
     }
 
