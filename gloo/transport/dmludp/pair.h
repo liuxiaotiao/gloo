@@ -185,7 +185,10 @@ class Pair : public ::gloo::transport::Pair, public Handler {
       Mark timeout packet as loss packet, start to retransmission
       */
       if(!outerPtr.tx_.empty()){
+        auto startts = std::chrono::high_resolution_clock::now();
         outerPtr.dmludp_connection->process_timeout();
+        auto endts = std::chrono::high_resolution_clock::now();
+        std::cout<<"process_timeout:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
         outerPtr.device_->registerDescriptor(outerPtr.fd_, EPOLLIN | EPOLLOUT, &outerPtr);
         // std::cout<<"timerfd end\n"<<std::endl;
       }
