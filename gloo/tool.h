@@ -909,4 +909,93 @@ class MapSet {
             return item;
         }
     };
+
+    template<typename T, size_t Capacity>
+    class FIFOQueue {
+        static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2");
+
+        alignas(64) size_t head_ = 0;
+        alignas(64) size_t tail_ = 0;
+        std::vector<T> buffer_;
+
+    public:
+        FIFOQueue() : buffer_(Capacity) {}
+
+        bool enqueue(const T& item) {
+            size_t next_tail = (tail_ + 1) & (Capacity - 1);
+            if (next_tail == head_) return false;
+            buffer_[tail_] = item;
+            tail_ = next_tail;
+            return true;
+        }
+
+        std::optional<T> dequeue() {
+            if (head_ == tail_) std::nullopt;
+            T out = buffer_[head_];
+            head_ = (head_ + 1) & (Capacity - 1);
+            return out;
+        }
+
+        size_t enqueue_batch(const T* data, size_t max_count) {
+            size_t space = (head_ - tail_ - 1) & (Capacity - 1);
+            size_t count = std::min(max_count, space);
+
+            size_t first_chunk = std::min(count, Capacity - tail_);
+            for (size_t i = 0; i < first_chunk; ++i) {
+                buffer_[tail_ + i] = data[i];
+            }
+            size_t second_chunk = count - first_chunk;
+            for (size_t i = 0; i < second_chunk; ++i) {
+                buffer_[i] = data[first_chunk + i];
+            }
+
+            tail_ = (tail_ + count) & (Capacity - 1);
+            return count;
+        }
+
+        size_t dequeue_batch(T* out, size_t max_count) {
+            size_t available = size();
+            size_t count = std::min(max_count, available);
+
+            size_t first_chunk = std::min(count, Capacity - head_);
+            for (size_t i = 0; i < first_chunk; ++i) {
+                out[i] = buffer_[head_ + i];
+            }
+            size_t second_chunk = count - first_chunk;
+            for (size_t i = 0; i < second_chunk; ++i) {
+                out[first_chunk + i] = buffer_[i];
+            }
+
+            head_ = (head_ + count) & (Capacity - 1);
+            return count;
+        }
+
+        size_t dequeue_batch(std::vector<T>& out, size_t max_count) {
+            size_t available = size();
+            size_t count = std::min(max_count, available);
+
+            size_t first_chunk = std::min(count, Capacity - head_);
+            out.insert(out.end(), buffer_.begin() + head_, buffer_.begin() + head_ + first_chunk);
+
+            size_t second_chunk = count - first_chunk;
+            if (second_chunk > 0) {
+                out.insert(out.end(), buffer_.begin(), buffer_.begin() + second_chunk);
+            }
+
+            head_ = (head_ + count) & (Capacity - 1);
+            return count;
+        }
+
+        inline size_t size() const {
+            return (tail_ - head_) & (Capacity - 1);
+        }
+
+        inline bool empty() const {
+            return head_ == tail_;
+        }
+
+        void clear() {
+            head_ = tail_ = 0;
+        }
+    };
 }

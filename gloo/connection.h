@@ -1326,6 +1326,7 @@ public:
 
     bool rtt_initial = true;
 
+    size_t slot_index = 0;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
@@ -1529,7 +1530,7 @@ public:
         bool send_flag_ = false;
         auto pkt_ty = receive_message[index_].get_packet_type();
         if (pkt_ty == Type::ACK){
-            // process_acknowledge2(index_);
+            process_acknowledge2(index_);
         }
 
         if (pkt_ty == Type::Application) {
@@ -1574,6 +1575,18 @@ public:
 
         
         __atomic_thread_fence(__ATOMIC_RELEASE);
+    }
+
+    size_t get_slot(){
+        return slot_index;
+    }
+
+    void update_slot(){
+        slot_index = (slot_index + 1) % RX_CONST;
+        while (receive_available_map[slot_index] != 0)
+        {
+           slot_index = (slot_index + 1) % RX_CONST;
+        }
     }
 
     /*Max received index*/
@@ -2258,16 +2271,7 @@ public:
         }
         
         if(send_packet_type == Type::ACK){
-            // for (size_t i = 0; i < receivevector.size(); ++i) {
-            //     receivevector[i] = 0;
-            // }
-            // memset(receivevector.data(), 0, receivevector.size());
-            // // min_received = -1;
-            // current_loop_min = max_received + 1;
-            // auto copystart = std::chrono::high_resolution_clock::now();
             process_application_copy();
-            // auto copyend = std::chrono::high_resolution_clock::now();
-            // std::cout<<", copy cost:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(copyend-copystart).count()<<" ns"<<std::endl;
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
