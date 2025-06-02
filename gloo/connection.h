@@ -1751,7 +1751,7 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
         // log_print(receivevector.data(), info_len);
 
 
