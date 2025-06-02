@@ -19,6 +19,8 @@ namespace dmludp {
 
     inline constexpr  size_t RX_CONST = 8192;
 
+    inline constexpr  size_t MAP_CONST = 65536;
+
     inline constexpr  size_t ONCE_LIMIT = 1300;
 
     inline constexpr  size_t ONCE_SEND_LIMIT = ONCE_LIMIT;
