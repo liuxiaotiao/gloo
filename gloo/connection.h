@@ -2073,11 +2073,11 @@ public:
 
     void process_acknowledge_test(const size_t index_){
         // auto tsa = std::chrono::high_resolution_clock::now();
-        // auto& msg = receive_message[index_];
-        // auto pkt_num = msg.get_packet_number();
-        // auto pkt_len = msg.get_packet_length();
-        // auto pkt_difference = msg.get_packet_difference();
-        // receive_slot[index_] = 0;
+        auto& msg = receive_message[index_];
+        auto pkt_num = msg.get_packet_number();
+        auto pkt_len = msg.get_packet_length();
+        auto pkt_difference = msg.get_packet_difference();
+        receive_slot[index_] = 0;
         // auto tsb = std::chrono::high_resolution_clock::now();
         // std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
 
