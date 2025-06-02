@@ -134,9 +134,9 @@ class MetaInfo{
 
         const Difference_len MetaDifference;
 
-        MapSet<ReTransmissionMap> retransmission_map;
+        // MapSet<ReTransmissionMap> retransmission_map;
 
-        MapSet<TransmissionMap> transmission_map;
+        // MapSet<TransmissionMap> transmission_map;
 
         std::vector<uint64_t> priority_offset;
 
@@ -156,151 +156,151 @@ class MetaInfo{
 
         ~MetaInfo(){};
 
-        void add_transmission(Packet_num_len packetnum_, Offset_len packetoffset_){
-            transmission_map.add(packetnum_, packetoffset_);
-        }
+        // void add_transmission(Packet_num_len packetnum_, Offset_len packetoffset_){
+        //     transmission_map.add(packetnum_, packetoffset_);
+        // }
 
-        void add_retransmission(Packet_num_len packetnum_, Offset_len packetoffset_){
-            retransmission_map.add(packetnum_, packetoffset_);
-        }
+        // void add_retransmission(Packet_num_len packetnum_, Offset_len packetoffset_){
+        //     retransmission_map.add(packetnum_, packetoffset_);
+        // }
 
-        void removeoldmap(Packet_num_len packet_){
-            retransmission_map.removeBeforeValue(packet_);
-            transmission_map.removeBeforeValue(packet_);
-        }
+        // void removeoldmap(Packet_num_len packet_){
+        //     retransmission_map.removeBeforeValue(packet_);
+        //     transmission_map.removeBeforeValue(packet_);
+        // }
 
         bool no_overlap(const std::pair<Packet_num_len, Packet_num_len>& p1, const std::pair<Packet_num_len, Packet_num_len>& p2) {
             return p1.second < p2.first || p2.second < p1.first;
         }
 
         /*Get first element in the mapset*/
-        std::pair<Packet_num_len, Packet_num_len> get_packet_range(Packet_num_len packet_){
-            /*Make sure not old map exists*/
-            removeoldmap(packet_);
-            auto transmission_front = transmission_map.get_range();
-            auto retransmission_front = retransmission_map.get_range();
-            if (transmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T) && retransmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
-                return transmission_front;
-            }
-            if (!no_overlap(transmission_front, retransmission_front)){
-                std::cerr << "Overlap: (" << transmission_front.first << ", " << transmission_front.second << "), ("
-                    << retransmission_front.first << ", " << retransmission_front.second << ")" << std::endl;
-                _Exit(0);
-            }
-            if (transmission_front.second < retransmission_front.first){
-                return transmission_front;
-            }else{
-                return retransmission_front;
-            }
-        }
+        // std::pair<Packet_num_len, Packet_num_len> get_packet_range(Packet_num_len packet_){
+        //     /*Make sure not old map exists*/
+        //     removeoldmap(packet_);
+        //     auto transmission_front = transmission_map.get_range();
+        //     auto retransmission_front = retransmission_map.get_range();
+        //     if (transmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T) && retransmission_front == std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T)){
+        //         return transmission_front;
+        //     }
+        //     if (!no_overlap(transmission_front, retransmission_front)){
+        //         std::cerr << "Overlap: (" << transmission_front.first << ", " << transmission_front.second << "), ("
+        //             << retransmission_front.first << ", " << retransmission_front.second << ")" << std::endl;
+        //         _Exit(0);
+        //     }
+        //     if (transmission_front.second < retransmission_front.first){
+        //         return transmission_front;
+        //     }else{
+        //         return retransmission_front;
+        //     }
+        // }
 
-        std::pair<Packet_num_len, Packet_num_len> get_used_range(Packet_num_len packet_){
-            /*Make sure not old map exists*/
-            removeoldmap(packet_);
-            auto transmission_front = transmission_map.get_range();
-            auto retransmission_front = retransmission_map.get_range();
+        // std::pair<Packet_num_len, Packet_num_len> get_used_range(Packet_num_len packet_){
+        //     /*Make sure not old map exists*/
+        //     removeoldmap(packet_);
+        //     auto transmission_front = transmission_map.get_range();
+        //     auto retransmission_front = retransmission_map.get_range();
 
-            if (packet_ >= transmission_front.first && packet_ <= transmission_front.second){
-                return transmission_front;
-            }
+        //     if (packet_ >= transmission_front.first && packet_ <= transmission_front.second){
+        //         return transmission_front;
+        //     }
 
-            if (packet_ >= retransmission_front.first && packet_ <= retransmission_front.second){
-                return retransmission_front;
-            }
+        //     if (packet_ >= retransmission_front.first && packet_ <= retransmission_front.second){
+        //         return retransmission_front;
+        //     }
 
-            return std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T);
-        }
+        //     return std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T);
+        // }
 
-        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Packet_num_len packet_){
-            for (size_t i = 0; i < transmission_map.unused_size(); i++){
-                auto result = transmission_map.at_unused(i).get_range();
-                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
-                // }
-                if (packet_ >= result.first && packet_ <= result.second){
-                    return std::make_tuple(result.first,result.second, i, true);
-                }
-            }
-            for (auto i = 0; i < retransmission_map.unused_size(); i++){
-                auto result = retransmission_map.at_unused(i).get_range();
-                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
-                // }
-                if (packet_ >= result.first && packet_ <= result.second){
-                    return std::make_tuple(result.first,result.second, i, false);
-                }
-            }
-            return std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false);
-        }
+        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Packet_num_len packet_){
+        //     for (size_t i = 0; i < transmission_map.unused_size(); i++){
+        //         auto result = transmission_map.at_unused(i).get_range();
+        //         // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+        //         //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+        //         // }
+        //         if (packet_ >= result.first && packet_ <= result.second){
+        //             return std::make_tuple(result.first,result.second, i, true);
+        //         }
+        //     }
+        //     for (auto i = 0; i < retransmission_map.unused_size(); i++){
+        //         auto result = retransmission_map.at_unused(i).get_range();
+        //         // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+        //         //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+        //         // }
+        //         if (packet_ >= result.first && packet_ <= result.second){
+        //             return std::make_tuple(result.first,result.second, i, false);
+        //         }
+        //     }
+        //     return std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false);
+        // }
         
 
-        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Packet_num_len packet_){
-            for (size_t i = 0; i < transmission_map.unused_size(); i++){
-                auto result = transmission_map.at_unused(i).get_range();
-                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
-                // }
-                if (packet_ >= result.first && packet_ <= result.second){
-                    return std::make_tuple(result.first,result.second, i, true);
-                }
-            }
-            for (auto i = 0; i < retransmission_map.unused_size(); i++){
-                auto result = retransmission_map.at_unused(i).get_range();
-                // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
-                //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
-                // }
-                if (packet_ >= result.first && packet_ <= result.second){
-                    return std::make_tuple(result.first,result.second, i, false);
-                }
-            }
-            return std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false);
-        }
+        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Packet_num_len packet_){
+        //     for (size_t i = 0; i < transmission_map.unused_size(); i++){
+        //         auto result = transmission_map.at_unused(i).get_range();
+        //         // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+        //         //     std::cout<<i<<" transmission_map:" <<  result.first << ", " << result.second << std::endl;
+        //         // }
+        //         if (packet_ >= result.first && packet_ <= result.second){
+        //             return std::make_tuple(result.first,result.second, i, true);
+        //         }
+        //     }
+        //     for (auto i = 0; i < retransmission_map.unused_size(); i++){
+        //         auto result = retransmission_map.at_unused(i).get_range();
+        //         // if (result.first != LIMIT_UINT64_T && result.second != LIMIT_UINT64_T){
+        //         //     std::cout<<i<<" retransmission_map:" <<  result.first << ", " << result.second << std::endl;
+        //         // }
+        //         if (packet_ >= result.first && packet_ <= result.second){
+        //             return std::make_tuple(result.first,result.second, i, false);
+        //         }
+        //     }
+        //     return std::make_tuple(LIMIT_UINT64_T, LIMIT_UINT64_T, LIMIT_SIZE_T, false);
+        // }
 
-        size_t offset_calculate(Packet_num_len PacketNum) {
-            auto result = transmission_map.get_offset(PacketNum);
-            if (result != LIMIT_UINT64_T){
-                // std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
-                return result;
-            }
-            result = retransmission_map.get_offset(PacketNum);
-            if (result != LIMIT_UINT64_T){
-                return result;
-            }
-            throw std::underflow_error("Error: packet doesn't belong to this block.");
-        }
+        // size_t offset_calculate(Packet_num_len PacketNum) {
+        //     auto result = transmission_map.get_offset(PacketNum);
+        //     if (result != LIMIT_UINT64_T){
+        //         // std::cout<<(int)MetaDifference<<", PacketNum:"<<PacketNum<<", "<<result;
+        //         return result;
+        //     }
+        //     result = retransmission_map.get_offset(PacketNum);
+        //     if (result != LIMIT_UINT64_T){
+        //         return result;
+        //     }
+        //     throw std::underflow_error("Error: packet doesn't belong to this block.");
+        // }
 
 
-        void ack4offset(Packet_num_len PacketNum, bool isReceived, Offset_len offset_ = 0){
-            auto packet_offset_ = offset_calculate(PacketNum);
-            /*Add priority calculation to logit remove "complete" data*/
-            if (isReceived){
-                // if (packet_offset_ == 0){
-                //     std::cout<<difference_flag<<", ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                // }
-                // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                metabuf.acknowledege_and_drop(packet_offset_, true);
-            }else{
-                metabuf.acknowledege_and_drop(packet_offset_, false);
-            }
-        }
+        // void ack4offset(Packet_num_len PacketNum, bool isReceived, Offset_len offset_ = 0){
+        //     auto packet_offset_ = offset_calculate(PacketNum);
+        //     /*Add priority calculation to logit remove "complete" data*/
+        //     if (isReceived){
+        //         // if (packet_offset_ == 0){
+        //         //     std::cout<<difference_flag<<", ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+        //         // }
+        //         // std::cout<<"ack4offset:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+        //         metabuf.acknowledege_and_drop(packet_offset_, true);
+        //     }else{
+        //         metabuf.acknowledege_and_drop(packet_offset_, false);
+        //     }
+        // }
 
-        void ack4offset2(Packet_num_len PacketNum, size_t mapindex_, bool maptype_, bool isReceived){
-            Offset_len packet_offset_;
-            if (maptype_ == true){
-                packet_offset_ = transmission_map.at_unused(mapindex_).get_offset(PacketNum);
-            }else{
-                packet_offset_ = retransmission_map.at_unused(mapindex_).get_offset(PacketNum);
-            }
-            if (isReceived){
-                // if (packet_offset_ == 0){
-                //     std::cout<<difference_flag<<", ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                // }
-                // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
-                metabuf.acknowledege_and_drop(packet_offset_, true);
-            }else{
-                metabuf.acknowledege_and_drop(packet_offset_, false);
-            }
-        }
+        // void ack4offset2(Packet_num_len PacketNum, size_t mapindex_, bool maptype_, bool isReceived){
+        //     Offset_len packet_offset_;
+        //     if (maptype_ == true){
+        //         packet_offset_ = transmission_map.at_unused(mapindex_).get_offset(PacketNum);
+        //     }else{
+        //         packet_offset_ = retransmission_map.at_unused(mapindex_).get_offset(PacketNum);
+        //     }
+        //     if (isReceived){
+        //         // if (packet_offset_ == 0){
+        //         //     std::cout<<difference_flag<<", ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+        //         // }
+        //         // std::cout<<"ack4offset2:"<<PacketNum<<", "<<packet_offset_<<std::endl;
+        //         metabuf.acknowledege_and_drop(packet_offset_, true);
+        //     }else{
+        //         metabuf.acknowledege_and_drop(packet_offset_, false);
+        //     }
+        // }
 
         Difference_len get_difference(){
             return difference_flag;
@@ -337,8 +337,8 @@ class MetaInfo{
         }
 
         void clear(){
-            transmission_map.clear();
-            retransmission_map.clear();
+            // transmission_map.clear();
+            // retransmission_map.clear();
             metabuf.clear();
             block_type = std::numeric_limits<size_t>::max();
             difference_flag = LIMIT_UINT64_T;
@@ -463,50 +463,50 @@ class SCircularQueue {
             return data_[index_].get_difference();
         }
 
-        std::pair<Packet_num_len, Packet_num_len> get_packet_range(Difference_len difference_, Packet_num_len pn_){
-            auto index = difference_ % get_capacity();
-            return data_[index].get_packet_range(pn_);
-        }
+        // std::pair<Packet_num_len, Packet_num_len> get_packet_range(Difference_len difference_, Packet_num_len pn_){
+        //     auto index = difference_ % get_capacity();
+        //     return data_[index].get_packet_range(pn_);
+        // }
 
-        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Difference_len difference_, Packet_num_len pn_){
-            auto index = difference_ % get_capacity();
-            return data_[index].get_cleared_packet_range(pn_);
-        }
+        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Difference_len difference_, Packet_num_len pn_){
+        //     auto index = difference_ % get_capacity();
+        //     return data_[index].get_cleared_packet_range(pn_);
+        // }
 
-        std::pair<Packet_num_len, Packet_num_len> get_used_range(Difference_len difference_, Packet_num_len pn_){
-            auto index = difference_ % get_capacity();
-            return data_[index].get_used_range(pn_);
-        }
+        // std::pair<Packet_num_len, Packet_num_len> get_used_range(Difference_len difference_, Packet_num_len pn_){
+        //     auto index = difference_ % get_capacity();
+        //     return data_[index].get_used_range(pn_);
+        // }
 
-        std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Difference_len difference_, Packet_num_len pn_){
-            auto index = difference_ % get_capacity();
-            return data_[index].get_unused_range(pn_);
-        }
+        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Difference_len difference_, Packet_num_len pn_){
+        //     auto index = difference_ % get_capacity();
+        //     return data_[index].get_unused_range(pn_);
+        // }
 
-        void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
-            auto index = difference_ % get_capacity();
-            data_[index].ack4offset(pn_, value_);
-        }
+        // void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
+        //     auto index = difference_ % get_capacity();
+        //     data_[index].ack4offset(pn_, value_);
+        // }
 
         void pkt2ack(Difference_len difference_, Offset_len offset_, bool value_){
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
         }
 
-        void ack4offset2(Difference_len difference_, size_t mapindex_, Packet_num_len pn_, bool maptype_, bool value_){
-            auto index = difference_ % get_capacity();
-            data_[index].ack4offset2(pn_, mapindex_, maptype_, value_);
-        }
+        // void ack4offset2(Difference_len difference_, size_t mapindex_, Packet_num_len pn_, bool maptype_, bool value_){
+        //     auto index = difference_ % get_capacity();
+        //     data_[index].ack4offset2(pn_, mapindex_, maptype_, value_);
+        // }
 
-        void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-            auto index = difference_ % get_capacity();
-            data_[index].add_transmission(pn_, off_);
-        }
+        // void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
+        //     auto index = difference_ % get_capacity();
+        //     data_[index].add_transmission(pn_, off_);
+        // }
 
-        void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-            auto index = difference_ % get_capacity();
-            data_[index].add_retransmission(pn_, off_);
-        }
+        // void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
+        //     auto index = difference_ % get_capacity();
+        //     data_[index].add_retransmission(pn_, off_);
+        // }
 
         size_t get_status(Difference_len difference_){
             auto index = difference_ % get_capacity();           
