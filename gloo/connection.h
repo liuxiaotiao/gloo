@@ -1624,7 +1624,7 @@ public:
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_length = msg.get_packet_length();
 
-        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
         /* no operation for old packet*/
         if (pkt_num < current_loop_min){
             receive_slot[index] = 0;
