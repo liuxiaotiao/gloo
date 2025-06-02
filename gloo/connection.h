@@ -2159,7 +2159,7 @@ public:
             }
         });
         auto connection_mapend = std::chrono::high_resolution_clock::now();
-        std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+        std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(connection_mapend-connection_mapstart).count()<<" ns"<<std::endl;
 
 
 
