@@ -164,7 +164,7 @@ namespace dmludp {
         BitReference operator[](size_t index) {
             if (index >= num_bits) {
                 std::cerr << "index:" << index << ", num_bits:" << num_bits << std::endl;
-                throw std::out_of_range("Bit index out of range");
+                throw std::out_of_range("[] Bit index out of range");
             }
             return BitReference(*this, index);
         }
