@@ -1061,7 +1061,7 @@ class MapSet {
             return tryFindDeletedOffset(packet_number, out_offset, difference_);
         }
 
-        std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) const {
+        std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) {
             uint64_t offset;
             Difference_len diff;
             if (findOffsetAuto(packet_number, offset, diff)) {
