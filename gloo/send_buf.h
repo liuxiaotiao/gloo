@@ -209,6 +209,7 @@ namespace dmludp{
                     if (off != 0){
                         index = round_up((off - 48), 1440) + 1;
                     }
+                    std::cout<<"off:"<<off<<", "<<meta_len<<std::endl;
                     if (bits_set[index] == 1)
                     {
                         off = -1;
