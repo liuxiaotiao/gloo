@@ -2112,13 +2112,10 @@ public:
 
         auto hardwarets = std::chrono::system_clock::time_point(
             std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
-
-        /*
-        process_acknowledge:223066, first_pn:82349582, 82349680, 82349381
-        */
+            
         // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
-
+        auto t1 = std::chrono::high_resolution_clock::now();
         if (first_pn >= (max_acknowleged + 1)){
             // ip_print(peeraddr);
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
@@ -2127,7 +2124,16 @@ public:
                 update_rtt(*ackts, softwarets, hardwarets);
             }
         }
+        auto t2 = std::chrono::high_resolution_clock::now();
         sendbufferqueue.completecheck(pkt_difference);
+        auto t3 = std::chrono::high_resolution_clock::now();
+
+        std::cout << "removeBeforeValue+RTT: "
+          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
+          << " ns\n";
+        std::cout << "completecheck: "
+          << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
+          << " ns\n";
 
         auto end_pn = pkt_num;
         bool loss = false;
@@ -2179,7 +2185,7 @@ public:
         
         
         // std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
-        
+        auto t4 = std::chrono::high_resolution_clock::now();
         if (loss && !first_loss){
             recovery.check_point();
             recovery.congestion_event(receivets);
@@ -2188,6 +2194,10 @@ public:
         }else{
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
+        auto t5 = std::chrono::high_resolution_clock::now();
+        std::cout << "recovery: "
+          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
+          << " ns\n";
 
         // {
         //     auto sendbufferqueue_start_index = sendbufferqueue.start();
