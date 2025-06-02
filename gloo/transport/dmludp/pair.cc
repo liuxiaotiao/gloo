@@ -858,7 +858,7 @@ bool Pair::protocal2read(){
       received++;
       receive_check = receive_number;
 
-      dmludp_connection->update_slot();  /
+      dmludp_connection->update_slot();  
 
       if (received == 1300) {
           break;  
