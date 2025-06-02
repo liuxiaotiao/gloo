@@ -2145,7 +2145,7 @@ public:
         Consider if pn is the old block.
         */
 
-        connection_map.forEachSlotAutoRangePartial(first_pn, end_pn, [&](uint64_t pkt, const auto& slot){
+        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
