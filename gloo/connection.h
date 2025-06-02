@@ -1743,7 +1743,7 @@ public:
         if (pkt_difference >= receive_connection_difference){
             receivevector[byte_index] |= (1 << bit_index);  
             bool exist = false;
-            recvCQ.insert(pkt_difference, pkt_offset, pkt_length, exist);
+            recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist);
             if (exist){
                 receive_slot[index] = 0;
             }
