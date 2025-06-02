@@ -2118,7 +2118,7 @@ public:
             }
         }
         // auto t2 = std::chrono::high_resolution_clock::now();
-        // sendbufferqueue.completecheck(pkt_difference);
+        sendbufferqueue.completecheck(pkt_difference);
         // auto t3 = std::chrono::high_resolution_clock::now();
 
         // std::cout << "removeBeforeValue+RTT: "
