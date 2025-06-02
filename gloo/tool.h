@@ -739,7 +739,7 @@ class MapSet {
         //     return buffer_[index];
         // }
 
-};
+    };
 
     inline void log_print(void* src_, size_t len_, size_t print_len = LIMIT_SIZE_T) {
         if (!src_) {
@@ -1008,18 +1008,19 @@ class MapSet {
             tail_(0),
             head_packet_number_(start_packet_number) {}
 
-        bool push(uint64_t offset) {
+        bool push(uint64_t offset, Difference_len difference_) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
                 return false; 
             }
 
             buffer_[tail_].offset = offset;
+            buffer_[tail_].difference = difference_;
             tail_ = next_tail;
             return true;
         }
 
-        bool getOffset(uint64_t packet_number, uint64_t& out_offset) const {
+        bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) const {
             uint64_t current_size = size();
             uint64_t tail_packet_number = head_packet_number_ + current_size;
 
@@ -1027,10 +1028,98 @@ class MapSet {
                 return false;
             }
 
+            if (packet_number > head_packet_number_) {
+                size_t advance = packet_number - head_packet_number_;
+                head_ = (head_ + advance) % capacity_;
+                head_packet_number_ = packet_number;
+            }
+
             size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
             out_offset = buffer_[index].offset;
             return true;
         }
+
+        bool tryFindDeletedOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
+            // 考虑最早还能访问到的 packet_number 是：
+            uint64_t buffer_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t buffer_end = head_packet_number_ + size();  // 当前最大 packet_number（非包含）
+
+            if (packet_number < buffer_begin || packet_number >= buffer_end) {
+                return false;  // 被覆盖了
+            }
+
+            size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
+            out_offset = buffer_[index].offset;
+            difference_ = buffer_[index].difference;
+            return true;
+        }
+
+        bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
+            if (getOffset(packet_number, out_offset, difference_)) {
+                return true;
+            }
+            return tryFindDeletedOffset(packet_number, out_offset, difference_);
+        }
+
+        std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) const {
+            uint64_t offset;
+            Difference_len diff;
+            if (findOffsetAuto(packet_number, offset, diff)) {
+                return std::make_pair(offset, diff);
+            }
+            return std::nullopt;
+        }
+
+        template <typename Func>
+        bool forEachSlotAutoRange(uint64_t start_packet, uint64_t end_packet, Func&& func) const {
+            if (start_packet >= end_packet) return false;
+
+            
+            uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t full_end = head_packet_number_ + size();
+
+            if (start_packet < full_begin || end_packet > full_end) {
+                return false;  
+            }
+
+            size_t base_index = (head_ + (start_packet - head_packet_number_)) % capacity_;
+            size_t index = base_index;
+
+            for (uint64_t pkt = start_packet; pkt < end_packet; ++pkt) {
+                func(pkt, buffer_[index]);
+                index = (index + 1) % capacity_;
+            }
+
+            return true;
+        }
+
+        template <typename Func>
+        bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
+            if (start_packet >= end_packet) return false;
+
+            uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t full_end = head_packet_number_ + size();
+
+            uint64_t actual_start = std::max(start_packet, full_begin);
+            uint64_t actual_end = std::min(end_packet, full_end);
+
+            if (actual_start >= actual_end) return false;
+
+            bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
+            size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
+
+            for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
+                func(pkt, buffer_[index]);
+                if (within_active_range && pkt == head_packet_number_) {
+                    head_ = (head_ + 1) % capacity_;
+                    ++head_packet_number_;
+                }
+                index = (index + 1) % capacity_;
+            }
+
+            return true;
+        }
+
 
         bool pop() {
             if (empty()) return false;
@@ -1081,13 +1170,10 @@ class MapSet {
 
     private:
         struct Slot {
-            Offset_len offset;
-            Difference_len difference;
-            bool priority;
-
-            // 可拓展字段：
-            // bool acked;
-            // std::chrono::nanoseconds ts;
+            uint64_t offset;
+            uint32_t difference;
+            uint16_t len_;
+            uint16_t priority;
         };
 
         size_t capacity_;
