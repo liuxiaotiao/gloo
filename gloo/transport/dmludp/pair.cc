@@ -1125,9 +1125,9 @@ bool Pair::protocal2send(){
       accumulated++;
     }
     auto end_time = std::chrono::system_clock::now();
-    if (sent > 0){
-      std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count()/sent<<" ns/packets"<<std::endl;
-    }
+    // if (sent > 0){
+    //   std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count()/sent<<" ns/packets"<<std::endl;
+    // }
 
     // struct sockaddr_in peer_addr;
     // socklen_t addr_len = sizeof(peer_addr);
