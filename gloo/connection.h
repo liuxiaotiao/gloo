@@ -2149,6 +2149,7 @@ public:
         Consider if pn is the old block.
         */
 
+        auto connection_mapstart = std::chrono::high_resolution_clock::now();
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference < send_connection_difference){
                 return;
@@ -2157,6 +2158,9 @@ public:
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
             }
         });
+        auto connection_mapend = std::chrono::high_resolution_clock::now();
+        std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+
 
 
         if (max_acknowleged == LIMIT_UINT64_T){
