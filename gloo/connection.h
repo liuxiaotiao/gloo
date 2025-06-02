@@ -2139,7 +2139,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
+        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference < send_connection_difference){
                 return;
             }else{
@@ -2147,6 +2147,23 @@ public:
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
             }
         });
+
+        if (max_acknowleged == LIMIT_UINT64_T){
+            max_acknowleged = end_pn;
+        }else{
+            if (end_pn > max_acknowleged){
+                max_acknowleged = end_pn;
+            }
+        }
+
+        if (loss && !first_loss){
+            recovery.check_point();
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            first_loss = true;
+        }else{
+            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
     }
 
 
