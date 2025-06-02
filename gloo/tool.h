@@ -1020,7 +1020,7 @@ class MapSet {
             return true;
         }
 
-        bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) const {
+        bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) {
             uint64_t current_size = size();
             uint64_t tail_packet_number = head_packet_number_ + current_size;
 
