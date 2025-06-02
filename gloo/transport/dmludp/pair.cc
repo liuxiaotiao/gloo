@@ -843,7 +843,7 @@ bool Pair::protocal2read(){
     received = 0;
     auto flag4send = false;
     
-    auto startts = std::chrono::high_resolution_clock::now();
+    // auto startts = std::chrono::high_resolution_clock::now();
     while (true) {
       size_t receive_number = dmludp_connection->get_slot();
       auto& msg = dmludp_connection->receive_message[receive_number].message_body;
@@ -860,11 +860,13 @@ bool Pair::protocal2read(){
 
       received++;
       receive_check = receive_number;
-
+      auto startts = std::chrono::high_resolution_clock::now();
       flag4send = dmludp_connection->recv_slice3(receive_number);
+      endts = std::chrono::high_resolution_clock::now();
       dmludp_connection->update_slot();  
+      std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
     }
-    auto endts = std::chrono::high_resolution_clock::now();
+    // auto endts = std::chrono::high_resolution_clock::now();
     // auto startts = std::chrono::high_resolution_clock::now();
     // for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
     //   auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
@@ -888,7 +890,7 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-    std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
+    // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
 
     if (flag4send) {
