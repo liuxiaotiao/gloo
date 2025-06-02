@@ -2128,16 +2128,16 @@ public:
         //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
         //   << " ns\n";
 
-        // auto end_pn = pkt_num;
-        // bool loss = false;
-        // size_t total_send = end_pn - first_pn + 1;
-        // auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
-        // size_t byte_index = 0;
-        // size_t bit_index = 0;
+        auto end_pn = pkt_num;
+        bool loss = false;
+        size_t total_send = end_pn - first_pn + 1;
+        auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
+        size_t byte_index = 0;
+        size_t bit_index = 0;
 
         
-        // auto sendbufferqueue_start_index = sendbufferqueue.start();
-        // auto pn = first_pn;
+        auto sendbufferqueue_start_index = sendbufferqueue.start();
+        auto pn = first_pn;
     }
 
 
