@@ -1,6 +1,13 @@
 #pragma once
 #include <chrono>
 #include <iostream>
+#include <optional>
+#include <atomic>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <omp.h>
+#include <thread>
+#include <execution>
 #include "packet.h"
 namespace dmludp {
     inline constexpr  size_t HEADER_LENGTH = sizeof(Header);
