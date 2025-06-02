@@ -1574,17 +1574,6 @@ public:
         __atomic_thread_fence(__ATOMIC_RELEASE);
     }
 
-    size_t get_slot(){
-        return slot_index;
-    }
-
-    void update_slot(){
-        slot_index = (slot_index + 1) % RX_CONST;
-        while (receive_slot[slot_index] != 0)
-        {
-           slot_index = (slot_index + 1) % RX_CONST;
-        }
-    }
 
     /*Max received index*/
     size_t boundary(){
@@ -2288,6 +2277,18 @@ public:
         // memset(receivevector.data(), 0, receivevector.size());
         for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
+    }
+
+    size_t get_slot(){
+        return slot_index;
+    }
+
+    void update_slot(){
+        slot_index = (slot_index + 1) % RX_CONST;
+        while (receive_slot[slot_index] != 0)
+        {
+           slot_index = (slot_index + 1) % RX_CONST;
+        }
     }
 
     size_t get_start(){

@@ -841,24 +841,48 @@ bool Pair::protocal2read(){
 
   while(true){
     received = 0;
-    // auto startts = std::chrono::high_resolution_clock::now();
-    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
-      auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
-      if (retval == -1){
-        if (errno == EAGAIN) {
-            break;
-        }
-        if (errno == EINTR){
-            continue;
-        }
+    while (true) {
+      size_t receive_number = dmludp_connection->get_slot();
+      auto& msg = dmludp_connection->receive_message[receive_number].message_body;
+
+      auto retval = recvmsg(fd_, &msg, 0);
+      if (retval == -1) {
+          if (errno == EAGAIN) {
+              break;  
+          }
+          if (errno == EINTR) {
+              continue;  
+          }
       }
 
       received++;
       receive_check = receive_number;
-      if(received == 1300){
-        break;
+
+      dmludp_connection->update_slot();  /
+
+      if (received == 1300) {
+          break;  
       }
-    }
+  }
+      
+    // auto startts = std::chrono::high_resolution_clock::now();
+    // for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
+    //   auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
+    //   if (retval == -1){
+    //     if (errno == EAGAIN) {
+    //         break;
+    //     }
+    //     if (errno == EINTR){
+    //         continue;
+    //     }
+    //   }
+
+    //   received++;
+    //   receive_check = receive_number;
+    //   if(received == 1300){
+    //     break;
+    //   }
+    // }
     // auto endts = std::chrono::high_resolution_clock::now();
     
     if (received <= 0){
