@@ -2083,18 +2083,18 @@ public:
 
 
         // auto receivets = std::chrono::system_clock::now();
-        // auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
+        auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
         // auto startts1 = std::chrono::high_resolution_clock::now();
-        // timespec ts[3]{};
-        // for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
-        //     cmsg != nullptr; 
-        //     cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
-        //     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-        //         memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
-        //         break;
-        //     }
-        // }
+        timespec ts[3]{};
+        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
+            cmsg != nullptr; 
+            cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+                memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
+                break;
+            }
+        }
         // auto endts1 = std::chrono::high_resolution_clock::now();
         // std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
     
