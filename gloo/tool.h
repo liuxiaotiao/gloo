@@ -316,431 +316,62 @@ namespace dmludp {
     };
 
     /*Check usage*/
-class RCset{
-    private:
-        DynamicBitset RCset_body;
+    class RCset{
+        private:
+            DynamicBitset RCset_body;
 
-        size_t payload_len = MAX_SEND_UDP_PAYLOAD_SIZE;
-    public:
-        RCset(size_t capacity_ = 330000): 
-        RCset_body(capacity_){}
+            size_t payload_len = MAX_SEND_UDP_PAYLOAD_SIZE;
+        public:
+            RCset(size_t capacity_ = 330000): 
+            RCset_body(capacity_){}
 
-        size_t count() const{
-            return RCset_body.count();
-        }
-
-        bool find(Offset_len offset_){
-            auto index = get_index(offset_);
-            if (index >= RCset_body.size()){
-                std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
-                throw std::underflow_error("[RCset]: find index beyond capacity_");
-            }
-            // std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
-            return RCset_body[index] == 1;
-        }
-
-        void insert(Offset_len offset_){
-            auto index = get_index(offset_);
-            if (index >= RCset_body.size()){
-                throw std::underflow_error("[RCset]: insert index beyond capacity_");
-            }
-            RCset_body[index] = 1;
-            // std::cout<<"insert:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
-        }
-
-        size_t get_index(Offset_len offset_){
-            size_t index;
-            if (offset_ < 48){
-                index = 0;
-            }else{
-                index = round_up((offset_ - 48), payload_len) + 1;
-            }
-            return index;
-        }
-
-        size_t round_up(Offset_len a, Offset_len b){
-            if (b == 0) {
-                throw std::invalid_argument("Division by zero is not allowed");
+            size_t count() const{
+                return RCset_body.count();
             }
 
-            return (a + b - 1) / b;
-        }
-
-
-        void clear(){
-            RCset_body.clear();
-        }
-
-        ~RCset(){}
-};
-
-/*Used to record retransmission data*/
-class ReTransmissionMap{
-    private:
-        Packet_num_len start_packet = LIMIT_UINT64_T;
-
-        Packet_num_len end_packet = LIMIT_UINT64_T;
-
-        std::vector<Offset_len> offsets;
-
-        bool use_flag = false;
-
-    public:
-        ReTransmissionMap():offsets(ReTransmissionMapLimit, 0){
-        };
-
-        ~ReTransmissionMap(){};
-
-        void clear(){
-            use_flag = false;
-            // start_packet = end_packet = LIMIT_UINT64_T;
-            // std::fill(offsets.begin(), offsets.end(), 0);
-        }
-
-        void reset(){
-            start_packet = end_packet = LIMIT_UINT64_T;
-            memset(offsets.data(),0, offsets.size());
-            // std::fill(offsets.begin(), offsets.end(), 0);
-        }
-
-        Offset_len get_offset(Packet_num_len packetnum){
-            if (packetnum < start_packet || packetnum > end_packet){
-                return LIMIT_UINT64_T;
-            }
-            return offsets[packetnum - start_packet];
-        }
-
-        void add(Packet_num_len packetnum, Offset_len packetoffset){
-            if(start_packet == LIMIT_UINT64_T){
-                start_packet = packetnum;
+            bool find(Offset_len offset_){
+                auto index = get_index(offset_);
+                if (index >= RCset_body.size()){
+                    std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
+                    throw std::underflow_error("[RCset]: find index beyond capacity_");
+                }
+                // std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
+                return RCset_body[index] == 1;
             }
 
-            if (end_packet == LIMIT_UINT64_T){
-                end_packet = packetnum;
-            }else{
-                if (end_packet + 1 == packetnum){
-                    end_packet = packetnum;
+            void insert(Offset_len offset_){
+                auto index = get_index(offset_);
+                if (index >= RCset_body.size()){
+                    throw std::underflow_error("[RCset]: insert index beyond capacity_");
+                }
+                RCset_body[index] = 1;
+                // std::cout<<"insert:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
+            }
+
+            size_t get_index(Offset_len offset_){
+                size_t index;
+                if (offset_ < 48){
+                    index = 0;
                 }else{
-                    std::cerr << "ReTransmissionMap add error: start_packet(" << start_packet 
-                    << "), (" << end_packet << "), (" << packetnum << ")" << std::endl;
-                    _Exit(0);
+                    index = round_up((offset_ - 48), payload_len) + 1;
                 }
+                return index;
             }
-            
-            if ((end_packet - start_packet) > (offsets.size() - 1)){
-                std::cerr << "ReTransmissionMap add() out of boundary(" << start_packet << ", " << end_packet << ")" << std::endl;
-                _Exit(0);
-            }   
-            offsets[end_packet - start_packet] = packetoffset;
-            use_flag = true;
-        }
 
-        bool empty(){
-            if (start_packet == LIMIT_UINT64_T && end_packet != LIMIT_UINT64_T) {
-                throw std::underflow_error("Error: start == MAX, end != MAX");
-            }
-            return ((start_packet == end_packet) && (start_packet == LIMIT_UINT64_T));
-        }
-
-        bool inrange(Packet_num_len PacketNum){
-            return (PacketNum >= start_packet && PacketNum <= end_packet);
-        }
-
-        bool full(){
-            return (end_packet - start_packet) == (offsets.size() - 1);
-        }
-
-        std::pair<Packet_num_len, Packet_num_len> get_range(){
-            return std::make_pair(start_packet, end_packet);
-        }
-
-        void print_log(){}
-};
-
-/*Used to record packet transmission.*/
-class TransmissionMap{
-    private:
-        std::pair<Packet_num_len, Offset_len> startmap;
-        
-        std::pair<Packet_num_len, Offset_len> endmap;
-
-        bool use_flag = false;
-
-    public:
-        TransmissionMap() : startmap(LIMIT_UINT64_T, 0), endmap(LIMIT_UINT64_T, 0){};
-
-        ~TransmissionMap(){};
-
-        void add(Packet_num_len packetnum, Offset_len packetoffset){
-            if(startmap.first == LIMIT_UINT64_T){
-                startmap = std::make_pair(packetnum, packetoffset);
-            }
-   
-            if ((endmap.first + 1) == packetnum || endmap.first == LIMIT_UINT64_T){
-                if((endmap.first + 1) == packetnum){
-                    if(endmap.second + MAX_SEND_UDP_PAYLOAD_SIZE != packetoffset && endmap.second != 0){
-                        std::cout<<"[Error] endmap.second:"<<endmap.second<<", "<<packetoffset<<std::endl;
-                       _Exit(0);
-                    }
+            size_t round_up(Offset_len a, Offset_len b){
+                if (b == 0) {
+                    throw std::invalid_argument("Division by zero is not allowed");
                 }
-                endmap = std::make_pair(packetnum, packetoffset);
-            }else{
-                throw std::underflow_error("Error: TransmissionMap lacks enough space");
-            }      
-            use_flag = true;
-            // std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<", "<<packetnum<<", packetoffset:"<<packetoffset<<std::endl;
-        }
 
-        bool empty() {
-            if (startmap.first == LIMIT_UINT64_T && endmap.first != LIMIT_UINT64_T) {
-                throw std::underflow_error("Error: start == MAX, end != MAX");
-            }
-            return ((startmap.first == endmap.first) && (endmap.first == LIMIT_UINT64_T));
-        }  
-
-        void clear(){
-            use_flag = false;
-            // startmap = endmap = std::make_pair(LIMIT_UINT64_T, 0);
-        }
-
-        void reset(){
-            startmap = endmap = std::make_pair(LIMIT_UINT64_T, 0);
-        }
-
-        std::pair<Packet_num_len, Packet_num_len> get_range(){
-            return std::make_pair(startmap.first, endmap.first);
-        }
-
-        Offset_len get_offset(Packet_num_len packetnum_){
-            Offset_len offset_ = LIMIT_UINT64_T;
-            // std::cout<<"startmap:"<<startmap.first<<", "<<startmap.second<<", endmap:"<<endmap.first<<", "<<endmap.second<<std::endl;
-            if (packetnum_ < startmap.first || packetnum_ > endmap.first){
-                return offset_;
-            }
-            if (startmap.second == 0){
-                if (packetnum_ == startmap.first){
-                    offset_ = startmap.second;
-                }else{
-                    offset_ = 48 + (packetnum_ - startmap.first - 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
-                }
-            }else{
-                if (packetnum_ > endmap.first){
-                    std::cout<<"packetnum_("<<packetnum_<<") > endmap.first("<<endmap.first<<")"<<std::endl;
-                    _Exit(0);
-                }
-                offset_ = (packetnum_ - startmap.first) * MAX_SEND_UDP_PAYLOAD_SIZE + startmap.second;
-            }
-            return offset_;
-        }
-
-        bool full(){
-            return false;
-            return (endmap.first - startmap.first) == (ReTransmissionMapLimit - 1);
-        }
-
-        bool inrange(Packet_num_len PacketNum){
-            return (PacketNum >= startmap.first && PacketNum <= endmap.first);
-        }
-
-        void print_log(){
-            std::cout << startmap.first<<", " << startmap.second << ", " << endmap.first << ", "<< endmap.second << std::endl;
-        }
-};
-
-template<typename T, typename = typename std::enable_if<
-    std::is_same<T, TransmissionMap>::value || std::is_same<T, ReTransmissionMap>::value>::type>
-class MapSet {
-    private:
-        std::vector<T> buffer_;
-        size_t head_;
-        size_t tail_;
-        size_t capacity_;
-        size_t count_;
-
-        void expand_capacity() {
-            size_t new_capacity = capacity_ * 2;
-            std::vector<T> new_buffer(new_capacity);
-
-            // Re-arrange elements from old buffer to new buffer
-            size_t idx = head_;
-            for (size_t i = 0; i < count_; ++i) {
-                new_buffer[i] = std::move(buffer_[idx]);
-                idx = (idx + 1) % capacity_;
+                return (a + b - 1) / b;
             }
 
-            buffer_ = std::move(new_buffer);
-            capacity_ = new_capacity;
-            head_ = 0;
-            tail_ = count_;
-        }
 
-    public:
-        explicit MapSet(size_t capacity = MapSetLimit)
-            : buffer_(capacity), capacity_(capacity),
-            head_(0), tail_(0), count_(0) {}
-
-        bool empty() const {
-            return count_ == 0;
-        }
-
-        bool full() const {
-            return count_ == capacity_;
-        }
-
-        size_t size() const {
-            return count_;
-        }
-
-        size_t capacity() const {
-            return capacity_;
-        }
-
-        size_t used() const {
-            return count_;
-        }
-
-        void push() {
-            if (full()) {
-                // expand_capacity();
-            }
-            buffer_[tail_].reset();
-            // buffer_[tail_].clear();
-            tail_ = (tail_ + 1) % capacity_;
-            ++count_;
-        }
-
-        void pop() {
-            if (empty()) {
-                return;
-            }
-            buffer_[head_].clear();
-            head_ = (head_ + 1) % capacity_;
-            --count_;
-        }
-
-        T* front() {
-            if (empty()) {
-                return nullptr;
-            }
-            return &buffer_[head_];
-        }
-
-        const T* front() const {
-            if (empty()) {
-                return nullptr;
-            }
-            return &buffer_[head_];
-        }
-
-        T* back() {
-            if (empty()) {
-                return nullptr;
-            }
-            return &buffer_[(tail_ + capacity_ - 1) % capacity_];
-        }
-
-        const T* back() const {
-            if (empty()) {
-                return nullptr;
-            }
-            return &buffer_[(tail_ + capacity_ - 1) % capacity_];
-        }
-
-        void add(Packet_num_len packetnum_, Offset_len packetoffset_) {
-            auto backmap = back();
-            if (backmap == nullptr) {
-                push();
-                auto newmap = back();
-                newmap->add(packetnum_, packetoffset_);
-                return;
+            void clear(){
+                RCset_body.clear();
             }
 
-            auto maprange = backmap->get_range();
-            if ((packetnum_ == maprange.second + 1) && !backmap->full()) {
-                backmap->add(packetnum_, packetoffset_);
-            } else {
-                push();
-                auto newmap = back();
-                newmap->add(packetnum_, packetoffset_);
-            }
-        }
-
-        std::pair<Packet_num_len, Packet_num_len> get_range() {
-            if (empty()){
-                return std::make_pair(LIMIT_UINT64_T, LIMIT_UINT64_T);
-            }
-            return buffer_[head_].get_range();
-        }
-
-        void removeBeforeValue(Packet_num_len packet_) {
-            if (!empty()){
-                for (auto i = 0; i < count_; i++){
-                    auto range = get_range();
-                    if (range.second < packet_ && range.second != LIMIT_UINT64_T) {
-                        pop();
-                    } else {
-                        return;
-                    }
-                }
-            }
-        }
-
-        void for_each(const std::function<void(const T&)>& func) const {
-            size_t idx = head_;
-            for (size_t i = 0; i < count_; ++i) {
-                func(buffer_[idx]);
-                idx = (idx + 1) % capacity_;
-            }
-        }
-
-        void clear() {
-            for (auto &e: buffer_){
-                // e.clear();
-                e.reset();
-            }
-            head_ = 0;
-            tail_ = 0;
-            count_ = 0;
-        }
-
-        Offset_len get_offset(Packet_num_len PacketNum) {
-            size_t idx = head_;
-            for (size_t i = 0; i < count_; ++i) {
-                Offset_len result_offset = buffer_[idx].get_offset(PacketNum);
-                if (result_offset != LIMIT_UINT64_T) {
-                    if (i != 0) {
-                        removeBeforeValue(PacketNum);
-                    }
-                    return result_offset;
-                }
-                idx = (idx + 1) % capacity_;
-            }
-            return LIMIT_UINT64_T;
-        }
-
-        T& at(size_t i) {
-            if (i >= count_)
-                throw std::out_of_range("Index out of range");
-            return buffer_[(head_ + i) % capacity_];
-        }
-
-        size_t unused_size() const {
-            return capacity_ - count_;
-        }
-
-        T& at_unused(size_t i) {
-            if (i >= unused_size())
-                throw std::out_of_range("Unused index out of range");
-            return buffer_[(tail_ + i) % capacity_];
-        }
-
-        // T& at_unused_reverse(size_t i) {
-        //     if (i >= unused_size() )
-        //         throw std::out_of_range("Unused reverse index out of range");
-        //     size_t index = (tail_ + capacity_ - 1 - i) % capacity_;
-        //     return buffer_[index];
-        // }
-
+            ~RCset(){}
     };
 
     inline void log_print(void* src_, size_t len_, size_t print_len = LIMIT_SIZE_T) {
