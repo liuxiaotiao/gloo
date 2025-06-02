@@ -1940,20 +1940,20 @@ public:
     // }
 
     void process_acknowledge(const size_t index_){
-        auto tsa = std::chrono::high_resolution_clock::now();
+        // auto tsa = std::chrono::high_resolution_clock::now();
         auto& msg = receive_message[index_];
         auto pkt_num = msg.get_packet_number();
         auto pkt_len = msg.get_packet_length();
         auto pkt_difference = msg.get_packet_difference();
         receive_slot[index_] = 0;
-        auto tsb = std::chrono::high_resolution_clock::now();
-        std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
+        // auto tsb = std::chrono::high_resolution_clock::now();
+        // std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
 
 
         auto receivets = std::chrono::system_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
-        auto startts1 = std::chrono::high_resolution_clock::now();
+        // auto startts1 = std::chrono::high_resolution_clock::now();
         timespec ts[3]{};
         for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
             cmsg != nullptr; 
@@ -1963,8 +1963,8 @@ public:
                 break;
             }
         }
-        auto endts1 = std::chrono::high_resolution_clock::now();
-        std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
+        // auto endts1 = std::chrono::high_resolution_clock::now();
+        // std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
     
         // std::cout<<"check 2"<<std::endl;
 
@@ -1976,7 +1976,7 @@ public:
             
         // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
-        auto t1 = std::chrono::high_resolution_clock::now();
+        // auto t1 = std::chrono::high_resolution_clock::now();
         if (first_pn >= (max_acknowleged + 1)){
             // ip_print(peeraddr);
             // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
@@ -1985,16 +1985,16 @@ public:
                 update_rtt(*ackts, softwarets, hardwarets);
             }
         }
-        auto t2 = std::chrono::high_resolution_clock::now();
+        // auto t2 = std::chrono::high_resolution_clock::now();
         sendbufferqueue.completecheck(pkt_difference);
-        auto t3 = std::chrono::high_resolution_clock::now();
+        // auto t3 = std::chrono::high_resolution_clock::now();
 
-        std::cout << "removeBeforeValue+RTT: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
-          << " ns\n";
-        std::cout << "completecheck: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
-          << " ns\n";
+        // std::cout << "removeBeforeValue+RTT: "
+        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
+        //   << " ns\n";
+        // std::cout << "completecheck: "
+        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
+        //   << " ns\n";
 
         auto end_pn = pkt_num;
         bool loss = false;
@@ -2022,7 +2022,7 @@ public:
         Consider if pn is the old block.
         */
 
-        auto connection_mapstart = std::chrono::high_resolution_clock::now();
+        // auto connection_mapstart = std::chrono::high_resolution_clock::now();
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference < send_connection_difference){
                 return;
@@ -2031,8 +2031,8 @@ public:
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
             }
         });
-        auto connection_mapend = std::chrono::high_resolution_clock::now();
-        std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(connection_mapend-connection_mapstart).count()<<" ns"<<std::endl;
+        // auto connection_mapend = std::chrono::high_resolution_clock::now();
+        // std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(connection_mapend-connection_mapstart).count()<<" ns"<<std::endl;
 
 
 
@@ -2046,7 +2046,7 @@ public:
         
         
         // std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
-        auto t4 = std::chrono::high_resolution_clock::now();
+        // auto t4 = std::chrono::high_resolution_clock::now();
         if (loss && !first_loss){
             recovery.check_point();
             recovery.congestion_event(receivets);
@@ -2055,10 +2055,10 @@ public:
         }else{
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
-        auto t5 = std::chrono::high_resolution_clock::now();
-        std::cout << "recovery: "
-          << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-          << " ns\n";
+        // auto t5 = std::chrono::high_resolution_clock::now();
+        // std::cout << "recovery: "
+        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
+        //   << " ns\n";
 
         // {
         //     auto sendbufferqueue_start_index = sendbufferqueue.start();
