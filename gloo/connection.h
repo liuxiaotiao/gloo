@@ -2109,14 +2109,14 @@ public:
         // // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
         // auto t1 = std::chrono::high_resolution_clock::now();
-        // if (first_pn >= (max_acknowleged + 1)){
-        //     // ip_print(peeraddr);
-        //     // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
-        //     auto ackts = tsInfo.removeBeforeValue(first_pn);
-        //     if (ackts.has_value()){
-        //         update_rtt(*ackts, softwarets, hardwarets);
-        //     }
-        // }
+        if (first_pn >= (max_acknowleged + 1)){
+            // ip_print(peeraddr);
+            // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
+            auto ackts = tsInfo.removeBeforeValue(first_pn);
+            if (ackts.has_value()){
+                update_rtt(*ackts, softwarets, hardwarets);
+            }
+        }
         // auto t2 = std::chrono::high_resolution_clock::now();
         // sendbufferqueue.completecheck(pkt_difference);
         // auto t3 = std::chrono::high_resolution_clock::now();
