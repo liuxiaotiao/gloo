@@ -841,6 +841,7 @@ bool Pair::protocal2read(){
 
   while(true){
     received = 0;
+    auto flag4send = false;
     while (true) {
       size_t receive_number = dmludp_connection->get_slot();
       auto& msg = dmludp_connection->receive_message[receive_number].message_body;
@@ -858,7 +859,9 @@ bool Pair::protocal2read(){
       received++;
       receive_check = receive_number;
 
+      flag4send = dmludp_connection->recv_slice3(receive_number);
       dmludp_connection->update_slot();  
+      
 
       if (received == 1300) {
           break;  
@@ -888,16 +891,19 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-    // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
-    auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
-    if (flag4send){
+    if (flag4send) {
       auto connection_result = dmludp_connection->send_data2();
       // std::cout<<"connection_result:"<<connection_result<<std::endl;
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
       if (sent_result > -1){
         dmludp_connection->update_boundary();
       }
+    }
+    // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
+
+    // auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
+    if (flag4send){
       // std::cout<<"sent_result:"<<sent_result<<std::endl;
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
       /*
