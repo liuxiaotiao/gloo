@@ -1530,7 +1530,7 @@ public:
         bool send_flag_ = false;
         auto pkt_ty = receive_message[index_].get_packet_type();
         if (pkt_ty == Type::ACK){
-            process_acknowledge2(index_);
+            process_acknowledge(index_);
         }
 
         if (pkt_ty == Type::Application) {
