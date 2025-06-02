@@ -2100,11 +2100,11 @@ public:
     
         // // std::cout<<"check 2"<<std::endl;
 
-        // auto softwarets = std::chrono::system_clock::time_point(
-        //     std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
+        auto softwarets = std::chrono::system_clock::time_point(
+            std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
 
-        // auto hardwarets = std::chrono::system_clock::time_point(
-        //     std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
+        auto hardwarets = std::chrono::system_clock::time_point(
+            std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
             
         // // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
 
