@@ -1567,7 +1567,7 @@ public:
             ip_print(peeraddr);
             log_print(msg.iov[1].iov_base, 4);
         }
-
+        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         bool valid_pkt = pkt_difference >= receive_connection_difference;
         std::optional<size_t> expectedsize;
