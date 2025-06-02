@@ -2150,7 +2150,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                sendbufferqueue.pkt2ack(slot.difference, pkt, (bool)value);
+                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
             }
         });
 
@@ -2264,7 +2264,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
-                sendbufferqueue.pkt2ack(slot.difference, pkt, false);
+                sendbufferqueue.pkt2ack(slot.difference, slot.offset, false);
             }
         });
 
@@ -2382,7 +2382,7 @@ public:
                 }
 
                 auto pn = pkt_num_spaces.updatepktnum();
-                std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
+                // std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);

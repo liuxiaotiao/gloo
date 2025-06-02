@@ -206,11 +206,11 @@ namespace dmludp{
                     off = rcq.pop_front();
                     /////////////
                     auto index = 0;
-                    std::cout<<"off:"<<off<<", "<<meta_len;
+                    // std::cout<<"off:"<<off<<", "<<meta_len;
                     if (off != 0){
                         index = round_up((off - 48), 1440) + 1;
                     }
-                    std::cout<<", "<<index<<std::endl;
+                    // std::cout<<", "<<index<<std::endl;
                     
                     if (bits_set[index] == 1)
                     {

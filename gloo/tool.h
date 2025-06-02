@@ -1145,7 +1145,7 @@ class MapSet {
             for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
                 func(pkt, buffer_[index]);
                 if (within_active_range) {
-                    std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
+                    // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
                     head_ = (head_ + 1) % capacity_;
                     ++head_packet_number_;
                 }
