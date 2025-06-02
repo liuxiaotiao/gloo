@@ -1054,7 +1054,7 @@ class MapSet {
             return true;
         }
 
-        bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
+        bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) {
             if (getOffset(packet_number, out_offset, difference_)) {
                 return true;
             }
