@@ -1486,13 +1486,13 @@ public:
 
             auto test1 = std::chrono::high_resolution_clock::now();
             auto test2 = std::chrono::high_resolution_clock::now();
-            std::cout<<"choro:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(test2-test1).count()<<" ns"<<std::endl;
+            // std::cout<<"choro:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(test2-test1).count()<<" ns"<<std::endl;
 
 
             auto startts = std::chrono::high_resolution_clock::now();
             recv_slice3(i);
             auto endts = std::chrono::high_resolution_clock::now();
-            std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+            // std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
         
         
             if (pkt_ty == Type::ACK){
@@ -1503,10 +1503,10 @@ public:
             }
 
             if (pkt_ty == Type::Application){
-                auto startts = std::chrono::high_resolution_clock::now();
+                // auto startts = std::chrono::high_resolution_clock::now();
                 process_application_packet(i, isfirst);
-                auto endts = std::chrono::high_resolution_clock::now();
-                std::cout<<"process_application_packet:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+                // auto endts = std::chrono::high_resolution_clock::now();
+                // std::cout<<"process_application_packet:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
                 send_packet_type = Type::ACK;
                 send_flag_ = true;
                 isfirst = false;
