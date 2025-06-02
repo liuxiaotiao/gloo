@@ -1329,7 +1329,7 @@ public:
 
     size_t slot_index = 0;
 
-    // PacketMapRingBuffer connection_mapping;
+    PacketMapRingBuffer connection_map;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
@@ -1366,6 +1366,7 @@ public:
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_slot(RX_CONST, 0),
+    connection_map(RX_CONST),
     first_loss(false)
     {
         memset(&acknowldge_msghdr, 0, sizeof(acknowldge_msghdr));

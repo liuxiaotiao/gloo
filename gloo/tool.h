@@ -789,7 +789,7 @@ class MapSet {
             return;
         }
     }
-/*Record copy contiouns*/
+    /*Record copy contiouns*/
     class RecordInfo
     {
         private:
