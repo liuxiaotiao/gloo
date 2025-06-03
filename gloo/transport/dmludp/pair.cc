@@ -863,6 +863,9 @@ bool Pair::protocal2read(){
       receive_check = receive_number;
       flag4send = dmludp_connection->recv_slice3(receive_number);
       dmludp_connection->update_slot();  
+      if (received == 4000) {
+        break;
+      }
     }
     // auto endts = std::chrono::high_resolution_clock::now();
     // auto startts = std::chrono::high_resolution_clock::now();
