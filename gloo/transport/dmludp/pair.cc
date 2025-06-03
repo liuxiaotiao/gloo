@@ -686,7 +686,7 @@ bool Pair::protocal2read(){
         dmludp_connection->update_boundary();
       }
     }
-    dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
+    // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
 
     if (flag4send){
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
