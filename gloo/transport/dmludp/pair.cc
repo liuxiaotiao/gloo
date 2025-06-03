@@ -1035,7 +1035,7 @@ bool Pair::protocal2read(){
     }
     
   }
-  // dmludp_connection->recvCQ.receive_log();
+  dmludp_connection->recvCQ.receive_log();
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
     // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
