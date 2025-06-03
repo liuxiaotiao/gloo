@@ -890,7 +890,7 @@ bool Pair::protocal2read(){
     }
     // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
-
+    std::cout<<"protocal2read 0"<<std::endl;
     if (flag4send) {
       auto connection_result = dmludp_connection->send_data2();
       // std::cout<<"connection_result:"<<connection_result<<std::endl;
