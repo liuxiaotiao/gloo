@@ -635,199 +635,6 @@ void Pair::handleEvents(int events) {
 }
 
 
-
-// bool Pair::protocal2read(){
-//   if (state_ == CLOSED) {
-//     return false;
-//   }
-//   NonOwningPtr<UnboundBuffer> sbuf;
-//   std::array<struct iovec, 2> siov;
-//   int sioc;
-//   ssize_t rv;
-
-//   ssize_t received = 0;
-//   size_t receive_check = 0;
-
-//   while(true){
-//     received = 0;
-//     // auto startts = std::chrono::high_resolution_clock::now();
-//     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
-//       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
-//       if (retval == -1){
-//         if (errno == EAGAIN) {
-//             break;
-//         }
-//         if (errno == EINTR){
-//             continue;
-//         }
-//       }
-
-//       received++;
-//       receive_check = receive_number;
-//       if(received == 1300){
-//         break;
-//       }
-//     }
-//     // auto endts = std::chrono::high_resolution_clock::now();
-    
-//     if (received <= 0){
-//       break;
-//     }
-//     // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
-
-//     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
-//     if (flag4send){
-//       auto connection_result = dmludp_connection->send_data2();
-//       // std::cout<<"connection_result:"<<connection_result<<std::endl;
-//       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
-//       if (sent_result > -1){
-//         dmludp_connection->update_boundary();
-//       }
-//       // std::cout<<"sent_result:"<<sent_result<<std::endl;
-//       /*---------------------TODO:multiple zero offset packet-----------------------------*/
-//       /*
-//       1. zero+data
-//       2. data
-//       3. data not complete
-//       4. data complete
-//       4.1 not data
-//       4.2 with data
-//       */
-//       bool stop = false;
-//       while (true){
-//         stop = false;
-//         auto receive_status = dmludp_connection->recvCQcheck();
-//         if (receive_status == 2){
-//           int i = 0;
-//           while (true){
-//             NonOwningPtr<UnboundBuffer> rbuf;
-//             struct iovec riov = {
-//               .iov_base = nullptr,
-//               .iov_len = 0,
-//             };
-
-//             const auto rnbytes = prepareRead(rx_, rbuf, riov);
-            
-//             if (i == 1){
-//               if (rnbytes == 0){
-//                 readComplete(rbuf);
-//                 // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
-//                 dmludp_connection->update_receive_difference();
-//               }else{
-//                 // std::cout<<"2 rx_set"<<std::endl;
-//                 dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
-//                 dmludp_connection->complete_check();
-//               }
-//               break;
-//             }
-//             // std::cout<<"rx_set:"<<(void*)(riov.iov_base)<<std::endl;
-//             // std::cout<<"1 rx_set"<<std::endl;
-//             dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
-//             if(dmludp_connection->send_packet_type == 0){
-//               dmludp_connection->send_packet_type = 5;
-//             }
-//             dmludp_connection->send_packet_complete();
-//             rx_.nread += rnbytes;
-//             i++;
-//           }       
-//         }
-//         else if(receive_status == 4){
-//           /*Complete*/
-//           NonOwningPtr<UnboundBuffer> rbuf;
-//           struct iovec riov = {
-//             .iov_base = nullptr,
-//             .iov_len = 0,
-//           };
-
-//           const auto rnbytes = prepareRead(rx_, rbuf, riov);
-
-//           if (rbuf){
-//             if(dmludp_connection->send_packet_type == 0){
-//               dmludp_connection->send_packet_type = 5;
-//             }
-//             dmludp_connection->send_packet_complete();
-//             stop = true;
-//           }
-//         }
-//         else if(receive_status == 5){
-//           while (true){
-//             NonOwningPtr<UnboundBuffer> rbuf;
-//             struct iovec riov = {
-//               .iov_base = nullptr,
-//               .iov_len = 0,
-//             };
-
-//             const auto rnbytes = prepareRead(rx_, rbuf, riov);
-//             if (rnbytes == 0){
-//               readComplete(rbuf);
-//               // std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
-//               dmludp_connection->update_receive_difference();
-//               break;
-//             }
-
-//             if (rbuf){
-//               if(dmludp_connection->send_packet_type == 0){
-//                 dmludp_connection->send_packet_type = 5;
-//               }
-//               dmludp_connection->send_packet_complete();
-//               rx_.nread += rnbytes;
-//             }
-//           }
-          
-//         }
-//         else{
-//         /*unused, used status*/
-//           stop = true;
-//         }
-
-//         if (stop){
-//           break;
-//         }
-//       }
-//     }
-//     // dmludp_connection->recvCQ.receive_log();
-//     // std::cout<<"read complete"<<std::endl;
-//     {
-//       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
-//       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
-//       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
-//         auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-//         // if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
-//         if (dmludp_connection->sendbufferqueue.iscomplete_check(i)){
-//           // std::cout<<"write:"<<i<<std::endl;
-//           auto &op = tx_.front();
-//           const auto opcode = op.getOpcode();
-//           if (opcode == Op::SEND_UNBOUND_BUFFER) {
-//             sbuf = NonOwningPtr<UnboundBuffer>(op.ubuf);
-//             if (!sbuf) {
-//               return false;
-//             }
-//           }
-//           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
-//           if (op.nwritten == op.preamble.nbytes){
-//             writeComplete(op, sbuf, opcode);
-//             tx_.pop_front();
-//             dmludp_connection->sendbufferqueue.pop_front();
-//           }
-//         }else{
-//           break;
-//         }
-//       }
-//     }
-    
-//   }
-//   // dmludp_connection->recvCQ.receive_log();
-//   if (tx_.empty()) {
-//     device_->registerDescriptor(fd_, EPOLLIN, this);
-//     // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
-//   }else{
-//     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
-//     // std::cout << "tx_:" << tx_.size() << std::endl;
-//   }
-
-//   return false;
-// }
-
 bool Pair::protocal2read(){
   if (state_ == CLOSED) {
     return false;
@@ -867,46 +674,20 @@ bool Pair::protocal2read(){
         break;
       }
     }
-    // auto endts = std::chrono::high_resolution_clock::now();
-    // auto startts = std::chrono::high_resolution_clock::now();
-    // for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
-    //   auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
-    //   if (retval == -1){
-    //     if (errno == EAGAIN) {
-    //         break;
-    //     }
-    //     if (errno == EINTR){
-    //         continue;
-    //     }
-    //   }
-
-    //   received++;
-    //   receive_check = receive_number;
-    //   if(received == 1300){
-    //     break;
-    //   }
-    // }
-    // auto endts = std::chrono::high_resolution_clock::now();
     
     if (received <= 0){
       break;
     }
-    // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
-    // std::cout<<"protocal2read 0"<<std::endl;
     if (flag4send) {
       auto connection_result = dmludp_connection->send_data2();
-      // std::cout<<"connection_result:"<<connection_result<<std::endl;
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
       if (sent_result > -1){
         dmludp_connection->update_boundary();
       }
     }
-    // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
-    // std::cout<<"protocal2read 1"<<std::endl;
-    // auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
+
     if (flag4send){
-      // std::cout<<"sent_result:"<<sent_result<<std::endl;
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
       /*
       1. zero+data
@@ -934,17 +715,13 @@ bool Pair::protocal2read(){
             if (i == 1){
               if (rnbytes == 0){
                 readComplete(rbuf);
-                // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
                 dmludp_connection->update_receive_difference();
               }else{
-                // std::cout<<"2 rx_set"<<std::endl;
                 dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
                 dmludp_connection->complete_check();
               }
               break;
             }
-            // std::cout<<"rx_set:"<<(void*)(riov.iov_base)<<std::endl;
-            // std::cout<<"1 rx_set"<<std::endl;
             dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
             if(dmludp_connection->send_packet_type == 0){
               dmludp_connection->send_packet_type = 5;
@@ -983,7 +760,6 @@ bool Pair::protocal2read(){
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
               readComplete(rbuf);
-              // std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
               dmludp_connection->update_receive_difference();
               break;
             }
@@ -1008,17 +784,13 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log();
-    // std::cout<<"read complete"<<std::endl;
-    // std::cout<<"protocal2read 2"<<std::endl;
+
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
         auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-        // if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
         if (dmludp_connection->sendbufferqueue.iscomplete_check(i)){
-          // std::cout<<"write:"<<i<<std::endl;
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
           if (opcode == Op::SEND_UNBOUND_BUFFER) {
@@ -1029,7 +801,7 @@ bool Pair::protocal2read(){
           }
           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
           if (op.nwritten == op.preamble.nbytes){
-            std::cout<<dmludp_connection->sendbufferqueue.at(0).difference_flag<<", ";
+            // std::cout<<dmludp_connection->sendbufferqueue.at(0).difference_flag<<", ";
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
             dmludp_connection->sendbufferqueue.pop_front();

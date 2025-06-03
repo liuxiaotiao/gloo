@@ -2371,11 +2371,11 @@ public:
                 }
                 
                 
-                if (out_len == 4) {
-                    ip_print(peeraddr);
-                    std::cout<<pkg_difference<<", send:";
-                    log_print(send_message[sent].iov[1].iov_base, out_len);
-                }
+                // if (out_len == 4) {
+                //     ip_print(peeraddr);
+                //     std::cout<<pkg_difference<<", send:";
+                //     log_print(send_message[sent].iov[1].iov_base, out_len);
+                // }
 
                 auto pn = pkt_num_spaces.updatepktnum();
                 // std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
