@@ -17,7 +17,7 @@ namespace dmludp {
 
     inline constexpr  size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
-    inline constexpr  size_t RX_CONST = 8192;
+    inline constexpr  size_t RX_CONST = 65536;
 
     inline constexpr  size_t MAP_CONST = 65536;
 
