@@ -514,7 +514,7 @@ bool Pair::read() {
 }
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
-  // const auto opcode = this->rx_.getOpcode();
+  const auto opcode = this->rx_.getOpcode();
   // std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
