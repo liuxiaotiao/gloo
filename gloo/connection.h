@@ -2038,7 +2038,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                ip_print(peeraddr);
+                // ip_print(peeraddr);
                 // std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<", "<<value<<std::endl;
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
                 if (++bit_index == 8) {
