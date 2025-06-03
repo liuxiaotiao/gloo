@@ -1037,7 +1037,7 @@ bool Pair::protocal2read(){
   }
   ip_print(dmludp_connection->peeraddr);
   dmludp_connection->recvCQ.receive_log();
-  std::cout<<"epollin:"<<tx_.size()<<std::endl;
+  // std::cout<<"epollin:"<<tx_.size()<<std::endl;
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
     // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
