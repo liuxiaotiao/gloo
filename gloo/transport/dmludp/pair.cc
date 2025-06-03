@@ -328,8 +328,8 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-  ip_print(dmludp_connection->peeraddr);
-	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
+  // ip_print(dmludp_connection->peeraddr);
+	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -514,8 +514,8 @@ bool Pair::read() {
 }
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
-  const auto opcode = this->rx_.getOpcode();
-  std::cout<<"readComplete:"<<opcode<<std::endl;
+  // const auto opcode = this->rx_.getOpcode();
+  // std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -1042,7 +1042,7 @@ bool Pair::protocal2read(){
     
   }
   // std::cout<<"protocal2read 3"<<std::endl;
-  dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
+  // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
   // std::cout<<"epollin:"<<tx_.size()<<std::endl;
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -1344,7 +1344,7 @@ void Pair::sendAsyncMode(Op& op) {
   op.nwritten = 0;
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
-    std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+    // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
     return;
   }
   // Write may have resulted in an error.
@@ -1352,7 +1352,7 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
-  std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
+  // std::cout<<"[Debug] After tx_ push back tx_.size:"<<tx_.size()<<std::endl;
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 
