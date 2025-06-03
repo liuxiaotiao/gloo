@@ -2356,7 +2356,7 @@ public:
                 }
 
                 auto pn = pkt_num_spaces.updatepktnum();
-                std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
+                // std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
