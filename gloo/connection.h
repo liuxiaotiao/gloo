@@ -1439,8 +1439,8 @@ public:
             ip_print(peeraddr);
             log_print(msg.iov[1].iov_base, 4);
         }
-        ip_print(peeraddr);
-        std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
+        // ip_print(peeraddr);
+        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         bool valid_pkt = pkt_difference >= receive_connection_difference;
         std::optional<size_t> expectedsize;
@@ -1685,9 +1685,9 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        ip_print(peeraddr);
-        std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
-        log_print(receivevector.data(), info_len);
+        // ip_print(peeraddr);
+        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
+        // log_print(receivevector.data(), info_len);
 
 
         send_packet_type = ty;
@@ -2039,8 +2039,12 @@ public:
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
                 ip_print(peeraddr);
-                std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<", "<<value<<std::endl;
+                // std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<", "<<value<<std::endl;
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
+                if (++bit_index == 8) {
+                    bit_index = 0;
+                    ++byte_index;
+                }
             }
         });
         // auto connection_mapend = std::chrono::high_resolution_clock::now();

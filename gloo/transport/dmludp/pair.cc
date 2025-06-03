@@ -893,7 +893,7 @@ bool Pair::protocal2read(){
     }
     // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
 
-    std::cout<<"protocal2read 0"<<std::endl;
+    // std::cout<<"protocal2read 0"<<std::endl;
     if (flag4send) {
       auto connection_result = dmludp_connection->send_data2();
       // std::cout<<"connection_result:"<<connection_result<<std::endl;
@@ -903,7 +903,7 @@ bool Pair::protocal2read(){
       }
     }
     // std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()/received<<" ns/packets"<<std::endl;
-    std::cout<<"protocal2read 1"<<std::endl;
+    // std::cout<<"protocal2read 1"<<std::endl;
     // auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     if (flag4send){
       // std::cout<<"sent_result:"<<sent_result<<std::endl;
@@ -1010,7 +1010,7 @@ bool Pair::protocal2read(){
     }
     // dmludp_connection->recvCQ.receive_log();
     // std::cout<<"read complete"<<std::endl;
-    std::cout<<"protocal2read 2"<<std::endl;
+    // std::cout<<"protocal2read 2"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
@@ -1041,7 +1041,7 @@ bool Pair::protocal2read(){
     }
     
   }
-  std::cout<<"protocal2read 3"<<std::endl;
+  // std::cout<<"protocal2read 3"<<std::endl;
   dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
   // std::cout<<"epollin:"<<tx_.size()<<std::endl;
   if (tx_.empty()) {
