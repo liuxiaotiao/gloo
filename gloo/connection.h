@@ -2039,7 +2039,7 @@ public:
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
                 ip_print(peeraddr);
-                std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<std::endl;
+                std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<", "<<value<<std::endl;
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
             }
         });
