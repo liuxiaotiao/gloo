@@ -1034,6 +1034,17 @@ public:
         }
     }
 
+     void receive_log(sockaddr_storage peeraddr){
+        if (count_ == 0){
+            return;
+        }
+        ip_print(peeraddr);
+        std::cout<<"receive condition"<<std::endl;
+        for (auto i = 0; i < count_; i++){
+            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << ", " << at(i).get_status()<< std::endl;
+        }
+    }
+
 
     ~RCircularQueue() = default;
 };
