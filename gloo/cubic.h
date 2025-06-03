@@ -22,6 +22,8 @@ class Recovery{
     size_t bytes_in_flight;
 
     size_t max_datagram_size;
+
+    size_t congestion_spin{0};
     
     /*
     Last congestion event status
