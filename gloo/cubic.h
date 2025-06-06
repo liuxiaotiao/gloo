@@ -39,7 +39,7 @@ class Recovery{
 
     double prior_ssthresh;
 
-    std::chrono::system_clock::time_point prior_epoch_start;
+    std::chrono::high_resolution_clock::time_point prior_epoch_start;
 
     double prior_W_est;
 
@@ -56,7 +56,7 @@ class Recovery{
 
     double K; // Seconds
 
-    std::chrono::system_clock::time_point epoch_start;
+    std::chrono::high_resolution_clock::time_point epoch_start;
 
     double W_est; // Bytes
 
@@ -112,7 +112,7 @@ class Recovery{
     };
 
     // K = cubic_root(W_max * (1 - beta_cubic) / C) (Eq. 2)
-    void cubic_k(const std::chrono::system_clock::time_point& now){
+    void cubic_k(const std::chrono::high_resolution_clock::time_point& now){
         W_max = congestion_window;
         auto w_max = W_max / max_datagram_size;
 
@@ -121,7 +121,7 @@ class Recovery{
     }
 
     // W_cubic(t) = C * (t - K)^3 + w_max (Eq. 1)
-    double w_cubic(const std::chrono::system_clock::time_point& now) {
+    double w_cubic(const std::chrono::high_resolution_clock::time_point& now) {
         auto w_max = W_max / max_datagram_size;
         auto DeltaT = std::chrono::duration_cast<std::chrono::seconds>(now - epoch_start).count();
 
@@ -161,7 +161,7 @@ class Recovery{
     }
 
     void on_packet_ack(int received_packets, 
-        const std::chrono::system_clock::time_point& now, std::chrono::seconds min_rtt){
+        const std::chrono::high_resolution_clock::time_point& now, std::chrono::seconds min_rtt){
         if(congestionEvent == 1){
             congestion_window += received_packets * max_datagram_size;
             if (bytes_in_flight > received_packets * max_datagram_size){
@@ -197,7 +197,7 @@ class Recovery{
             }
 
             auto cubic_cwnd = congestion_window;
-            auto t = std::chrono::system_clock::now();
+            auto t = std::chrono::high_resolution_clock::now();
             if (w_cubic(t) < W_est) {
                 // AIMD friendly region (W_cubic(t) < W_est)
                 cubic_cwnd = std::max(cubic_cwnd, W_est);
@@ -223,7 +223,7 @@ class Recovery{
         }
     }
 
-    void congestion_event(const std::chrono::system_clock::time_point& now) {
+    void congestion_event(const std::chrono::high_resolution_clock::time_point& now) {
         if(congestion_window < W_max){
             W_max = congestion_window * (1.0 + BETA) / 2.0;
         }else{
@@ -257,7 +257,7 @@ class Recovery{
         }
     }
 
-    void cwnd_expect(const std::chrono::system_clock::time_point& now, std::chrono::seconds min_rtt, size_t received_packets){
+    void cwnd_expect(const std::chrono::high_resolution_clock::time_point& now, std::chrono::seconds min_rtt, size_t received_packets){
         size_t expect_window = 0;
         if(congestionEvent == 1){
             expect_window = congestion_window * 2;
@@ -276,7 +276,7 @@ class Recovery{
             }
 
             auto cubic_cwnd = congestion_window;
-            auto t = std::chrono::system_clock::now();
+            auto t = std::chrono::high_resolution_clock::now();
             if (w_cubic(t) < W_est) {
                 // AIMD friendly region (W_cubic(t) < W_est)
                 cubic_cwnd = std::max(cubic_cwnd, W_est);

@@ -47,6 +47,9 @@ using Packet_len = uint16_t;
 
 using Slot_len = uint32_t;
 
+constexpr auto RTO_MIN = std::chrono::microseconds(200);
+
+constexpr auto RTO_MAX = std::chrono::microseconds(800);
 
 class Message{
     public:
@@ -1027,9 +1030,9 @@ public:
 
     std::chrono::nanoseconds rttvar;
     
-    std::chrono::system_clock::time_point handshake;
+    std::chrono::high_resolution_clock::time_point handshake;
 
-    // RecvBuf rec_buffer;
+    uint64_t sendCount = 0;
 
     bool initial;
 
@@ -1076,9 +1079,9 @@ public:
     ts_record is used to calculate approximate send ts for each packet.
     Approximate ts ~= (2nd ts - 1st ts)/(2nd pkt - 1st pkt + 1)
     */ 
-    std::chrono::system_clock::time_point start_ts;
+    std::chrono::high_resolution_clock::time_point start_ts;
 
-    std::chrono::system_clock::time_point end_ts;
+    std::chrono::high_resolution_clock::time_point end_ts;
     
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
     std::vector<Message> send_message;
@@ -1093,8 +1096,6 @@ public:
     uint64_t ACKrange;
 
     size_t max_received = std::numeric_limits<size_t>::max();
-
-    // bool difference_flag;
 
     size_t receive_upper_bound = 0;
 
@@ -1140,7 +1141,7 @@ public:
     minrtt(0),
     rto(0),
     rttvar(0),
-    handshake(std::chrono::system_clock::now()),
+    handshake(std::chrono::high_resolution_clock::now()),
     bidirect(true),
     initial(false),
     dmludp_error(0),
@@ -1181,10 +1182,12 @@ public:
 
 
     void initial_rtt() {
-        auto arrive_time = std::chrono::system_clock::now();
+        auto arrive_time = std::chrono::high_resolution_clock::now();
         srtt = arrive_time - handshake;
         rttvar = srtt / 2;
         rto = srtt + 4 * rttvar;
+        if (rto < MyProto::RTO_MIN) rto = MyProto::RTO_MIN;
+        if (rto > MyProto::RTO_MAX) rto = MyProto::RTO_MAX;
     }
 
     /*
@@ -1201,13 +1204,12 @@ public:
         SRTT <- (1 - alpha) * SRTT + alpha * R'
         RTO <- SRTT + max (G, K*RTTVAR)
     */
-    void update_rtt(std::chrono::system_clock::time_point send_time, std::chrono::system_clock::time_point receive_time, std::chrono::system_clock::time_point receive_time2 = std::chrono::system_clock::time_point{}){
+    void update_rtt(std::chrono::high_resolution_clock::time_point send_time, std::chrono::high_resolution_clock::time_point receive_time, std::chrono::high_resolution_clock::time_point receive_time2 = std::chrono::high_resolution_clock::time_point{}){
         if (rtt_initial){
             minrtt = rtt = srtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             rttvar = srtt / 2;
             rto = srtt + 4 * rttvar;
             rtt_initial = false;
-            // std::cout<<"RTO:"<<rto.count()<< ", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
         }else{
             rtt = std::chrono::duration_cast<std::chrono::nanoseconds>(receive_time - send_time);
             if (rtt < minrtt){
@@ -1219,7 +1221,8 @@ public:
             auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
             rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
             rto = srtt + 4 * rttvar;
-            // std::cout<<"RTO:"<<rto.count()<<", "<<tmp_rttvar.count()<<", srr:"<<srtt.count()<<", rtt:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(rtt).count()<<std::endl;
+            if (rto < MyProto::RTO_MIN) rto = MyProto::RTO_MIN;
+            if (rto > MyProto::RTO_MAX) rto = MyProto::RTO_MAX;
         }    
     }
 
@@ -1246,7 +1249,7 @@ public:
     bool on_timeout(){
         bool timeout_;
         std::chrono::nanoseconds duration((uint64_t)(get_rtt()));
-        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+        std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
         if (handshake + duration < now){
             timeout_ = true;
@@ -1280,30 +1283,14 @@ public:
                 continue;
             }
             auto pkt_ty = receive_message[i].get_packet_type();
-
-            // auto test1 = std::chrono::high_resolution_clock::now();
-            // auto test2 = std::chrono::high_resolution_clock::now();
-            // std::cout<<"choro:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(test2-test1).count()<<" ns"<<std::endl;
-
-
-            // auto startts = std::chrono::high_resolution_clock::now();
-            // recv_slice3(i);
-            // auto endts = std::chrono::high_resolution_clock::now();
-            // std::cout<<"recv_slice3:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
-        
-        
+     
             if (pkt_ty == Type::ACK){
-                // auto startts = std::chrono::high_resolution_clock::now();
                 process_acknowledge(i);
-                // auto endts = std::chrono::high_resolution_clock::now();
-                // std::cout<<"process_acknowledge:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
             }
 
             if (pkt_ty == Type::Application){
-                // auto startts = std::chrono::high_resolution_clock::now();
                 process_application_packet(i, isfirst);
-                // auto endts = std::chrono::high_resolution_clock::now();
-                // std::cout<<"process_application_packet:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
+              
                 send_packet_type = Type::ACK;
                 send_flag_ = true;
                 isfirst = false;
@@ -1315,10 +1302,6 @@ public:
                 send_flag_ = false;
             }
         }
-        // auto endts = std::chrono::high_resolution_clock::now();
-        // std::cout<<"processed:"<<receive_max_index<<", "<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts-startts).count()<<" ns"<<std::endl;
-
-        // recvCQ.receive_log();
         return send_flag_;
     }
 
@@ -1355,8 +1338,6 @@ public:
             ip_print(peeraddr);
             log_print(msg.iov[1].iov_base, 4);
         }
-        // ip_print(peeraddr);
-        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
 
         bool valid_pkt = pkt_difference >= receive_connection_difference;
         std::optional<size_t> expectedsize;
@@ -1376,7 +1357,6 @@ public:
                         size_t roffset = 0;
                     };
                     auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-                    // if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
                     if ((preamble_header->opcode & ~1) == 0){
                         expectedsize = sizeof(preamble) + preamble_header->length;
                     }else{
@@ -1418,7 +1398,6 @@ public:
             }
 
             if (expectedsize){
-                // std::cout<<"opcode:"<<*expectedsize<<", "<<pkt_difference<<std::endl;
                 recvCQ.setRead(pkt_difference, *expectedsize);
             }
         }
@@ -1474,8 +1453,6 @@ public:
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_length = msg.get_packet_length();
 
-        // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<std::endl;
-        /* no operation for old packet*/
         if (pkt_num < current_loop_min){
             receive_slot[index] = 0;
             return;
@@ -1486,9 +1463,7 @@ public:
         receive_slot[index] = 1;
         if (pkt_difference >= receive_connection_difference){
             if (pkt_offset == 0){
-                // std::cout<< "1 " << (int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                 if (recvCQ.differencecheck(pkt_difference)){
-                    // std::cout<<(int)pkt_difference<<", pkt_num:"<<pkt_num <<", current_loop_min:"<<current_loop_min<<", pkt_offset:"<<pkt_offset<<", "<<receive_connection_difference<<std::endl;
                     recvCQ.indexcheck(pkt_difference);
                     if(!recvCQ.insertzero(pkt_difference, index)){
                         receive_slot[index] = 0;
@@ -1507,7 +1482,6 @@ public:
                         }else{
                             expectedsize = sizeof(preamble);
                         }
-                        // std::cout<<"pkt_difference:"<< pkt_difference<<", expectedsize:"<<*expectedsize<<", "<<preamble_header->opcode<<std::endl;
                     }
                 }else{
                     receive_slot[index] = 0;
@@ -1601,10 +1575,6 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
-        // ip_print(peeraddr);
-        // std::cout<<"send_acknowledge:"<<send_num<<", "<<ACKrange<<", "<<max_received<<std::endl;
-        // log_print(receivevector.data(), info_len);
-
 
         send_packet_type = ty;
         return sizeof(Header) + hdr->pkt_length;
@@ -1612,7 +1582,6 @@ public:
     
 
     bool check_status(){
-        // std::cout << "check_status cwnd left:" << recovery.cwnd_available() <<", "<<recovery.cwnd_enough()<<", "<<sendbufferqueue.ready()<<std::endl;
         if (recovery.cwnd_enough() && sendbufferqueue.ready()) return true;
         return false;
     }
@@ -1638,61 +1607,22 @@ public:
     }
 
     void process_acknowledge(const size_t index_){
-        // auto tsa = std::chrono::high_resolution_clock::now();
         auto& msg = receive_message[index_];
         auto pkt_num = msg.get_packet_number();
         auto pkt_len = msg.get_packet_length();
         auto pkt_difference = msg.get_packet_difference();
         receive_slot[index_] = 0;
-        // auto tsb = std::chrono::high_resolution_clock::now();
-        // std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
-
-
-        auto receivets = std::chrono::system_clock::now();
+      
+        auto receivets = std::chrono::high_resolution_clock::now()
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
-        // auto startts1 = std::chrono::high_resolution_clock::now();
-        timespec ts[3]{};
-        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
-            cmsg != nullptr; 
-            cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
-            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-                memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
-                break;
-            }
-        }
-        // auto endts1 = std::chrono::high_resolution_clock::now();
-        // std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
-    
-        // std::cout<<"check 2"<<std::endl;
-
-        auto softwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
-
-        auto hardwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
-            
-        // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
-
-        // auto t1 = std::chrono::high_resolution_clock::now();
         if (first_pn >= (max_acknowleged + 1)){
-            // ip_print(peeraddr);
-            // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
                 update_rtt(*ackts, softwarets, hardwarets);
             }
         }
-        // auto t2 = std::chrono::high_resolution_clock::now();
         sendbufferqueue.completecheck(pkt_difference);
-        // auto t3 = std::chrono::high_resolution_clock::now();
-
-        // std::cout << "removeBeforeValue+RTT: "
-        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
-        //   << " ns\n";
-        // std::cout << "completecheck: "
-        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
-        //   << " ns\n";
 
         auto end_pn = pkt_num;
         bool loss = false;
@@ -1702,32 +1632,14 @@ public:
         size_t bit_index = 0;
 
         
-        /*TODO: process max_ack and first_pn*/
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-        // std::cout<<"first_pn:"<<first_pn<<", end_pn:"<<end_pn<<", "<<max_acknowleged<<std::endl;
 
-        /*Check acknowledge packet loss*/
-        /*
-        1. first_pn < (max_acknowleged + 1) && end_pn < (max_acknowleged + 1)
-            Just check unused
-        2. first_pn < (max_acknowleged + 1) && end_pn >= (max_acknowleged + 1)
-        3. first_pn > (max_acknowleged + 1)
-            just
-        4. first_pn == (max_acknowleged + 1)
-            Just check used 
-
-        Consider if pn is the old block.
-        */
-
-        // auto connection_mapstart = std::chrono::high_resolution_clock::now();
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference < send_connection_difference){
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                // ip_print(peeraddr);
-                // std::cout<<"received:"<<pkt<<", "<<slot.difference<<", "<<slot.offset<<", "<<value<<std::endl;
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
                 if (++bit_index == 8) {
                     bit_index = 0;
@@ -1735,9 +1647,6 @@ public:
                 }
             }
         });
-        // auto connection_mapend = std::chrono::high_resolution_clock::now();
-        // std::cout<<"forEachSlotAutoRangePartial:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(connection_mapend-connection_mapstart).count()<<" ns"<<std::endl;
-
 
 
         if (max_acknowleged == LIMIT_UINT64_T){
@@ -1748,9 +1657,6 @@ public:
             }
         }
         
-        
-        // std::cout << "max_acknowleged: " << max_acknowleged << std::endl;
-        // auto t4 = std::chrono::high_resolution_clock::now();
         if (loss && !first_loss){
             recovery.check_point();
             recovery.congestion_event(receivets);
@@ -1759,20 +1665,6 @@ public:
         }else{
             recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
-        // auto t5 = std::chrono::high_resolution_clock::now();
-        // std::cout << "recovery: "
-        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
-        //   << " ns\n";
-
-        // {
-        //     auto sendbufferqueue_start_index = sendbufferqueue.start();
-        //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-        //         int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-        //         auto difference_ = sendbufferqueue.data_[index].get_difference();
-        //         std::cout << difference_ << " " ;
-        //         sendbufferqueue.data_[index].metabuf.ack_check();
-        //     }
-        // }
     }
 
     /*Update receive difference to process next block data*/
@@ -1800,30 +1692,19 @@ public:
         return recvCQ.get_status(receive_connection_difference);
     }
 
-    //  bool zerocheck(){
-    //     if (!recvCQ.empty()){
-    //         if(receive_connection_difference == recvCQ.start()){
-    //             return true;
-    //         }
-    //     }
-       
-    //     return false;
-    // }
 
     void rx_len(size_t expected){
         recvCQ.rx_len(receive_connection_difference, expected);
     }
 
     void rx_set(size_t expected, uint8_t * target_){
-        // recvCQ.rx_len(receive_connection_difference, expected);
         recvCQ.set_recv_pointer(receive_connection_difference, target_);
     }
 
     void set_send_time(){
-        handshake = std::chrono::system_clock::now();
+        handshake = std::chrono::high_resolution_clock::now();
     }
     
-
     bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         bool completed = true;
 	    dmludp_error_sent = 0;
@@ -1858,7 +1739,7 @@ public:
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
 
-        auto receivets = std::chrono::system_clock::now();
+        auto receivets = std::chrono::high_resolution_clock::now();
         recovery.check_point();
         recovery.congestion_event(receivets);
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
@@ -1896,35 +1777,13 @@ public:
                     break;
                 }
 
-                /*
-                if(high && statu_){
-                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 1, count);
-                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 2, count);
-                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 3, count);
-                }
-                connection_map.push(out_off, pkg_difference, send_round);
-                */
-                
-                
-                // if (out_len == 4) {
-                //     ip_print(peeraddr);
-                //     std::cout<<pkg_difference<<", send:";
-                //     log_print(send_message[sent].iov[1].iov_base, out_len);
-                // }
-
                 auto pn = pkt_num_spaces.updatepktnum();
-                // std::cout<<"prepareData:"<<pn<<", "<<out_off<<", "<<pkg_difference<<std::endl;
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
 
                 connection_map.push(out_off, pkg_difference);
-                
-                // if (send_status == 1){
-                //     sendbufferqueue.add_transmission(i, pn, out_off);
-                // }else if(send_status == 2){
-                //     sendbufferqueue.add_retransmission(i, pn, out_off);
-                // }
+
                 sent++;
                 sent_cwnd += out_len;
                 d_sent++;
@@ -1958,14 +1817,14 @@ public:
     }
 
     /*Use to clear send parameter*/
-    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::system_clock::time_point& start_ts = std::chrono::system_clock::time_point{}){
+    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}){
         if(send_packet_type == 0){
             return;
         }
         set_error2(err_);
         if (err_ != 0){
             if (send_packet_type == Type::Application){
-                end_ts = std::chrono::system_clock::now();
+                end_ts = std::chrono::high_resolution_clock::now();
                 if (start_index < 0){
                     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
                     _Exit(0);
@@ -2059,19 +1918,16 @@ public:
 
         int copycount = 0;
         if (!recvCQ.empty()){
-            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << recvCQ.start() << ", " << recvCQ.srcsetcheck(receive_connection_difference) << ", " << recvCQ.get_status(receive_connection_difference) << std::endl;
             if (receive_connection_difference == recvCQ.start() && (recvCQ.get_status(receive_connection_difference) == 2) && recvCQ.srcsetcheck(receive_connection_difference)){
                 auto index = recvCQ.startpos();
                 auto& msg = receive_message[index]; 
                 pkt_offset = msg.get_packet_offset();
                 pkt_difference = msg.get_packet_difference();
-                // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << recvCQ.start() << ", " << pkt_offset << std::endl;
                 recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
                 copycount += 48;
                 receive_slot[index] = 0;
                 receive_record.reset();
                 receive_connection_difference_registration = receive_connection_difference;
-                // std::cout<<"copycount:"<<copycount;
                 return;
             }
         }
@@ -2082,9 +1938,7 @@ public:
             pkt_offset = msg.get_packet_offset();
             pkt_len = msg.get_packet_length();
             pkt_difference = msg.get_packet_difference();
-            // std::cout<<"receive_connection_difference:" << receive_connection_difference << ", " << pkt_difference << ", " << pkt_offset << ", " << recvCQ.targetCheck(receive_connection_difference) << std::endl;
-            // auto& msg = receive_message[index];
-            // pkt_difference = msg.get_packet_difference();
+
             if (receive_slot[index] == 0){
                 continue;
             }
@@ -2096,9 +1950,6 @@ public:
             }
 
             if (receive_connection_difference == pkt_difference && recvCQ.targetCheck(pkt_difference)){
-                // auto& msg = receive_message[index];
-                // pkt_offset = msg.get_packet_offset();
-                // pkt_len = msg.get_packet_length();
                 
                 receive_slot[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
@@ -2230,7 +2081,7 @@ public:
     };
 
     void set_handshake(){
-        handshake = std::chrono::system_clock::now();
+        handshake = std::chrono::high_resolution_clock::now();
         end_ts = handshake;
     };
 
@@ -2259,11 +2110,6 @@ public:
             handshake_confirmed = true;
             return Type::Handshake;
         }
-
-        // if (recv_flag == true){
-        //     recv_flag = false;
-        //     return Type::ACK;
-        // }
 
         if (rtt.count() != 0){
             return Type::Application;
