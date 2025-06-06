@@ -4,6 +4,7 @@
 #include <chrono>
 namespace dmludp{
 
+const size_t SpinMAX = 5;
 // Congestion Control
 //  initial cwnd = min (10*MSS, max (2*MSS, 14600)) 
 

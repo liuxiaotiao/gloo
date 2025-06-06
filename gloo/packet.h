@@ -17,6 +17,12 @@ using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
+using Priority_len = uint8_t;
+
+using Status_len = uint8_t;
+
+using Importance_len = uint16_t;
+
     enum Type : uint8_t {
         /// Retry packet.
         Retry = 0x01,
@@ -67,7 +73,7 @@ using Packet_len = uint16_t;
 
         /*
         Importance pkt_importance;
-        Count pkt_count;
+
         Status pkt_status;
         */
 

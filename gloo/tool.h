@@ -10,42 +10,42 @@
 #include <execution>
 #include "packet.h"
 namespace dmludp {
-    inline constexpr  size_t HEADER_LENGTH = sizeof(Header);
+    inline constexpr size_t HEADER_LENGTH = sizeof(Header);
 
     // The default max_datagram_size used in congestion control.
-    inline constexpr  size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
+    inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
 
-    inline constexpr  size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
+    inline constexpr size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
-    inline constexpr  size_t RX_CONST = 8192;
+    inline constexpr size_t RX_CONST = 8192;
 
-    inline constexpr  size_t MAP_CONST = 65536;
+    inline constexpr size_t MAP_CONST = 65536;
 
-    inline constexpr  size_t ONCE_LIMIT = 1300;
+    inline constexpr size_t ONCE_LIMIT = 1300;
 
-    inline constexpr  size_t ONCE_SEND_LIMIT = ONCE_LIMIT;
+    inline constexpr size_t ONCE_SEND_LIMIT = ONCE_LIMIT;
 
-    inline constexpr  size_t ONCE_RECEIVE_LIMINT = ONCE_LIMIT;
+    inline constexpr size_t ONCE_RECEIVE_LIMINT = ONCE_LIMIT;
 
-    inline constexpr  double alpha = 0.875;
+    inline constexpr double alpha = 0.875;
 
-    inline constexpr  double beta = 0.25;
+    inline constexpr double beta = 0.25;
 
-    inline constexpr  size_t DataBlock = 16;
+    inline constexpr size_t DataBlock = 16;
 
-    inline constexpr  size_t MapSetLimit = 50;
+    inline constexpr size_t MapSetLimit = 50;
 
-    inline constexpr  size_t ReTransmissionMapLimit = 2000;
+    inline constexpr size_t ReTransmissionMapLimit = 2000;
 
-    inline constexpr  size_t LIMIT_SIZE_T = std::numeric_limits<size_t>::max();
+    inline constexpr size_t LIMIT_SIZE_T = std::numeric_limits<size_t>::max();
 
-    inline constexpr  uint64_t LIMIT_UINT64_T = std::numeric_limits<uint64_t>::max();
+    inline constexpr uint64_t LIMIT_UINT64_T = std::numeric_limits<uint64_t>::max();
 
-    inline constexpr  uint32_t LIMIT_UINT32_T = std::numeric_limits<uint32_t>::max();
+    inline constexpr uint32_t LIMIT_UINT32_T = std::numeric_limits<uint32_t>::max();
 
-    inline constexpr  uint16_t LIMIT_UINT16_T = std::numeric_limits<uint16_t>::max();
+    inline constexpr uint16_t LIMIT_UINT16_T = std::numeric_limits<uint16_t>::max();
 
-    inline constexpr  uint8_t LIMIT_UINT8_T = std::numeric_limits<uint8_t>::max();
+    inline constexpr uint8_t LIMIT_UINT8_T = std::numeric_limits<uint8_t>::max();
 
     /*a is latter received, b is former received*/
     template <typename T>
@@ -396,6 +396,21 @@ namespace dmludp {
         }
     }
 
+    /*Check send or received data for function*/
+    void log_print_fun(const char* func_name, void* src_, size_t len_) {
+        if (!src_) {
+            std::cerr <<"[" << func_name << "] Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  
+        std::cout << "[" << func_name << "]" << std::endl;
+        for (size_t i = 0; i < len_; i++) {
+            std::cout << static_cast<int>(data[i]) << " ";  
+        }
+        std::cout << std::endl;
+    }
+
     inline void ip_print (struct sockaddr_storage & peeraddr, bool port_ = false) {
         char ipstr[INET6_ADDRSTRLEN] = {0};
         uint16_t port = 0;
@@ -422,6 +437,7 @@ namespace dmludp {
             return;
         }
     }
+    
     /*Record copy contiouns*/
     class RecordInfo
     {

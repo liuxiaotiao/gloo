@@ -134,8 +134,6 @@ class MetaInfo{
 
         const Difference_len MetaDifference;
 
-        // std::vector<uint64_t> priority_offset;
-
         uint64_t difference_flag = LIMIT_UINT64_T;
 
         size_t range_len;
@@ -191,8 +189,6 @@ class MetaInfo{
         }
 
         void clear(){
-            // transmission_map.clear();
-            // retransmission_map.clear();
             metabuf.clear();
             block_type = std::numeric_limits<size_t>::max();
             difference_flag = LIMIT_UINT64_T;
@@ -317,50 +313,11 @@ class SCircularQueue {
             return data_[index_].get_difference();
         }
 
-        // std::pair<Packet_num_len, Packet_num_len> get_packet_range(Difference_len difference_, Packet_num_len pn_){
-        //     auto index = difference_ % get_capacity();
-        //     return data_[index].get_packet_range(pn_);
-        // }
-
-        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_cleared_packet_range(Difference_len difference_, Packet_num_len pn_){
-        //     auto index = difference_ % get_capacity();
-        //     return data_[index].get_cleared_packet_range(pn_);
-        // }
-
-        // std::pair<Packet_num_len, Packet_num_len> get_used_range(Difference_len difference_, Packet_num_len pn_){
-        //     auto index = difference_ % get_capacity();
-        //     return data_[index].get_used_range(pn_);
-        // }
-
-        // std::tuple<Packet_num_len, Packet_num_len, size_t, bool> get_unused_range(Difference_len difference_, Packet_num_len pn_){
-        //     auto index = difference_ % get_capacity();
-        //     return data_[index].get_unused_range(pn_);
-        // }
-
-        // void ack4offset(Difference_len difference_, Packet_num_len pn_, bool value_){
-        //     auto index = difference_ % get_capacity();
-        //     data_[index].ack4offset(pn_, value_);
-        // }
 
         void pkt2ack(Difference_len difference_, Offset_len offset_, bool value_){
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
         }
-
-        // void ack4offset2(Difference_len difference_, size_t mapindex_, Packet_num_len pn_, bool maptype_, bool value_){
-        //     auto index = difference_ % get_capacity();
-        //     data_[index].ack4offset2(pn_, mapindex_, maptype_, value_);
-        // }
-
-        // void add_transmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-        //     auto index = difference_ % get_capacity();
-        //     data_[index].add_transmission(pn_, off_);
-        // }
-
-        // void add_retransmission(Difference_len difference_, Packet_num_len pn_, Offset_len off_){
-        //     auto index = difference_ % get_capacity();
-        //     data_[index].add_retransmission(pn_, off_);
-        // }
 
         size_t get_status(Difference_len difference_){
             auto index = difference_ % get_capacity();           
@@ -373,10 +330,10 @@ class SCircularQueue {
 
         bool iscomplete(Difference_len difference_){
             auto index_ = difference_ % get_capacity();
-            if (index_ >= get_capacity()){
-                std::cerr << "bool iscomplete(Difference_len difference_) index out of boundary" << std::endl;
-                _Exit(0);
-            }
+            // if (index_ >= get_capacity()){
+            //     std::cerr << "bool iscomplete(Difference_len difference_) index out of boundary" << std::endl;
+            //     _Exit(0);
+            // }
             return data_[index_].iscomplete();
         }
 
@@ -857,31 +814,8 @@ public:
     }
 
 
-    /* 
-    Check whether the given index is within the current valid data range.
-    If it is not within the range, advance tail_ by repeatedly calling push_back()
-    until the index becomes part of the valid data.
-    */ 
     void indexcheck(Difference_len difference_) {
-        /*
-        If the queue is empty, push_back() must be called once to add an element first.
-        This ensures the valid range is no longer empty, allowing the index to be included in it.
-        */
         auto index = difference_ % get_capacity();
-        // std::cout << "index:" << index << ", " << difference_ << ", " << count_ << ", " << head_ << ", " << tail_ << std::endl;
-
-        // if (empty()) {
-        //     size_t desiredTail = (index + 1) % capacity_;
-        //     /*
-        //     Calculate the number of times push_back() needs to be called 
-        //     (i.e., the number of steps to advance from the current tail_ to desiredTail)
-        //     */ 
-        //     size_t pushes = (desiredTail + capacity_ - tail_) % capacity_;
-        //     for (size_t i = 0; i < pushes; ++i) {
-        //         push_back(difference_);
-        //     }
-        //     return;
-        // }
         
         bool inRange = false;
         if(!empty()){
@@ -970,20 +904,6 @@ public:
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
     }
-
-    // void log_print(void* src_, size_t len_) {
-    //     if (!src_) {
-    //         std::cerr << "Null pointer passed to log_print!" << std::endl;
-    //         return;
-    //     }
-        
-    //     auto* data = static_cast<uint8_t*>(src_);  
-
-    //     for (size_t i = 0; i < len_; i++) {
-    //         std::cout << static_cast<int>(data[i]) << " ";  
-    //     }
-    //     std::cout << std::endl;
-    // }
 
     void record_copy(Difference_len difference_, Offset_len offset_){
         auto index = difference_ % capacity_;
@@ -1084,7 +1004,7 @@ public:
 
     size_t send_packet_type = 0;
 
-    bool recv_flag;
+    // bool recv_flag;
 
     /*Acknowledge packet number*/
     uint64_t send_num;
@@ -1174,16 +1094,13 @@ public:
 
     size_t max_received = std::numeric_limits<size_t>::max();
 
-    bool difference_flag;
+    // bool difference_flag;
 
     size_t receive_upper_bound = 0;
 
     size_t receive_upper_limit = 0;
 
     size_t receive_upper_check = 0;
-
-    /*Receive buffer*/
-    // std::vector<uint8_t> rx_buffer;
 
     std::vector<uint8_t> receive_slot;
 
@@ -1216,7 +1133,7 @@ public:
     peeraddr(peer),
     stop_flag(true),
     stop_ack(true),
-    recv_flag(false),
+    // recv_flag(false),
     send_num(0),
     rtt(0),
     srtt(0),
@@ -1236,7 +1153,7 @@ public:
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
     low_recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
-    difference_flag(false),
+    // difference_flag(false),
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
@@ -1844,102 +1761,6 @@ public:
         // }
     }
 
-    void process_acknowledge_test(const size_t index_){
-        // auto tsa = std::chrono::high_resolution_clock::now();
-        auto& msg = receive_message[index_];
-        auto pkt_num = msg.get_packet_number();
-        auto pkt_len = msg.get_packet_length();
-        auto pkt_difference = msg.get_packet_difference();
-        receive_slot[index_] = 0;
-        // auto tsb = std::chrono::high_resolution_clock::now();
-        // std::cout<<"receive_message:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(tsb-tsa).count()<<" ns"<<std::endl;
-
-
-        auto receivets = std::chrono::system_clock::now();
-        auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
-
-        // auto startts1 = std::chrono::high_resolution_clock::now();
-        timespec ts[3]{};
-        for (cmsghdr* cmsg = CMSG_FIRSTHDR(&msg.message_body); 
-            cmsg != nullptr; 
-            cmsg = CMSG_NXTHDR(&msg.message_body, cmsg)) {
-            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
-                memcpy(ts, CMSG_DATA(cmsg), sizeof(ts));
-                break;
-            }
-        }
-        // auto endts1 = std::chrono::high_resolution_clock::now();
-        // std::cout<<"CMSG_DATA:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(endts1-startts1).count()<<" ns"<<std::endl;
-    
-        // // std::cout<<"check 2"<<std::endl;
-
-        auto softwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[0].tv_sec) + std::chrono::nanoseconds(ts[0].tv_nsec));
-
-        auto hardwarets = std::chrono::system_clock::time_point(
-            std::chrono::seconds(ts[2].tv_sec) + std::chrono::nanoseconds(ts[2].tv_nsec));
-            
-        // // std::cout<<"process_acknowledge:"<<pkt_difference<<", first_pn:"<<first_pn << ", " << pkt_num << ", " << (max_acknowleged+1)<<std::endl;
-
-        // auto t1 = std::chrono::high_resolution_clock::now();
-        if (first_pn >= (max_acknowleged + 1)){
-            // ip_print(peeraddr);
-            // std::cout<<"pkt_num:"<<pkt_num << ", " << first_pn << ", " << (max_acknowleged+1) <<", "<<tsInfo.size()<< std::endl;
-            auto ackts = tsInfo.removeBeforeValue(first_pn);
-            if (ackts.has_value()){
-                update_rtt(*ackts, softwarets, hardwarets);
-            }
-        }
-        // auto t2 = std::chrono::high_resolution_clock::now();
-        sendbufferqueue.completecheck(pkt_difference);
-        // auto t3 = std::chrono::high_resolution_clock::now();
-
-        // std::cout << "removeBeforeValue+RTT: "
-        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() 
-        //   << " ns\n";
-        // std::cout << "completecheck: "
-        //   << std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count()
-        //   << " ns\n";
-
-        auto end_pn = pkt_num;
-        bool loss = false;
-        size_t total_send = end_pn - first_pn + 1;
-        auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
-        size_t byte_index = 0;
-        size_t bit_index = 0;
-
-        
-        auto sendbufferqueue_start_index = sendbufferqueue.start();
-        auto pn = first_pn;
-
-        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-            if (slot.difference < send_connection_difference){
-                return;
-            }else{
-                size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
-            }
-        });
-
-        if (max_acknowleged == LIMIT_UINT64_T){
-            max_acknowleged = end_pn;
-        }else{
-            if (end_pn > max_acknowleged){
-                max_acknowleged = end_pn;
-            }
-        }
-
-        if (loss && !first_loss){
-            recovery.check_point();
-            recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-            first_loss = true;
-        }else{
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        }
-    }
-
-
     /*Update receive difference to process next block data*/
     void update_receive_difference(){
         recvCQ.pop_front();
@@ -1965,15 +1786,15 @@ public:
         return recvCQ.get_status(receive_connection_difference);
     }
 
-     bool zerocheck(){
-        if (!recvCQ.empty()){
-            if(receive_connection_difference == recvCQ.start()){
-                return true;
-            }
-        }
+    //  bool zerocheck(){
+    //     if (!recvCQ.empty()){
+    //         if(receive_connection_difference == recvCQ.start()){
+    //             return true;
+    //         }
+    //     }
        
-        return false;
-    }
+    //     return false;
+    // }
 
     void rx_len(size_t expected){
         recvCQ.rx_len(receive_connection_difference, expected);
@@ -1990,9 +1811,6 @@ public:
     
 
     bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
-        /*
-        triger data preparation
-        */
         bool completed = true;
 	    dmludp_error_sent = 0;
 
@@ -2032,69 +1850,6 @@ public:
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
 
-    // ssize_t prepareData() {
-    //     Type ty = Type::Application;
-    //     ssize_t out_len = 0; 
-    //     Offset_len out_off = 0;
-    //     size_t i = 0;
-    //     ssize_t tramssioning_index = -1;
-
-    //     size_t cwnd_limit = recovery.cwnd_available();
-    //     if (cwnd_limit <= 0){
-    //         return 0;
-    //     }
-
-    //     const size_t sent_limit = cwnd_limit;
-    //     size_t sent = 0;      
-    //     size_t sent_cwnd = 0; 
-    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
-    //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
-    //         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-    //         int d_sent = 0;
-    //         auto pkg_difference = sendbufferqueue.get_difference(i);
-    //         while (true){
-    //             size_t send_status = sendbufferqueue.get_status(i);
-    //             if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
-    //                 std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
-    //                 _Exit(0);
-    //             }
-    //             auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);
-                
-    //             if (out_len == -1) {
-    //                 break;
-    //             }
-
-    //             if (out_len == 4) {
-    //                 ip_print(peeraddr);
-    //                 std::cout<<pkg_difference<<", send:";
-    //                 log_print(send_message[sent].iov[1].iov_base, out_len);
-    //             }
-
-    //             auto pn = pkt_num_spaces.updatepktnum();
-       
-    //             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
-    //             recovery.on_packet_sent(out_len);
-                
-    //             if (send_status == 1){
-    //                 sendbufferqueue.add_transmission(i, pn, out_off);
-    //             }else if(send_status == 2){
-    //                 sendbufferqueue.add_retransmission(i, pn, out_off);
-    //             }
-    //             sent++;
-    //             sent_cwnd += out_len;
-    //             d_sent++;
-    //             if (sent_cwnd >= sent_limit || sent >= send_message.size()){
-    //                 break;
-    //             }           
-    //         }
-    //         if (sent_cwnd >= sent_limit || sent >= send_message.size()){
-    //             break;
-    //         }
-    //     }
-
-    //     return sent;
-    // }
-
     ssize_t prepareData() {
         Type ty = Type::Application;
         ssize_t out_len = 0; 
@@ -2126,6 +1881,15 @@ public:
                 if (out_len == -1) {
                     break;
                 }
+
+                /*
+                if(high && statu_){
+                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 1, count);
+                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 2, count);
+                    send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, 3, count);
+                }
+                connection_map.push(out_off, pkg_difference, send_round);
+                */
                 
                 
                 // if (out_len == 4) {
@@ -2162,21 +1926,6 @@ public:
         return sent;
     }
     
-
-    /*Check send or received data for function*/
-    void log_print_fun(const char* func_name, void* src_, size_t len_) {
-        if (!src_) {
-            std::cerr <<"[" << func_name << "] Null pointer passed to log_print!" << std::endl;
-            return;
-        }
-        
-        auto* data = static_cast<uint8_t*>(src_);  
-        std::cout << "[" << func_name << "]" << std::endl;
-        for (size_t i = 0; i < len_; i++) {
-            std::cout << static_cast<int>(data[i]) << " ";  
-        }
-        std::cout << std::endl;
-    }
 
     /*Prepare send packets*/
     std::pair<ssize_t, ssize_t> send_packet(){
@@ -2497,10 +2246,10 @@ public:
             return Type::Handshake;
         }
 
-        if (recv_flag == true){
-            recv_flag = false;
-            return Type::ACK;
-        }
+        // if (recv_flag == true){
+        //     recv_flag = false;
+        //     return Type::ACK;
+        // }
 
         if (rtt.count() != 0){
             return Type::Application;
