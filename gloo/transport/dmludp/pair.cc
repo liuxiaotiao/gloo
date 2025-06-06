@@ -806,7 +806,7 @@ bool Pair::protocal2read(){
           }
           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
           if (op.nwritten == op.preamble.nbytes){
-            std::cout<<dmludp_connection->sendbufferqueue.at(0).difference_flag<<", ";
+            // std::cout<<dmludp_connection->sendbufferqueue.at(0).difference_flag<<", ";
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
             dmludp_connection->sendbufferqueue.pop_front();
