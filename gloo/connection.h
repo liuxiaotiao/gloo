@@ -1159,7 +1159,7 @@ public:
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_slot(RX_CONST, 0),
-    connection_map(RX_CONST),
+    connection_map(MAP_CONST),
     first_loss(false)
     {
         memset(&acknowldge_msghdr, 0, sizeof(acknowldge_msghdr));
