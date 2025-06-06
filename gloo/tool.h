@@ -396,20 +396,6 @@ namespace dmludp {
         }
     }
 
-    /*Check send or received data for function*/
-    void log_print_fun(const char* func_name, void* src_, size_t len_) {
-        if (!src_) {
-            std::cerr <<"[" << func_name << "] Null pointer passed to log_print!" << std::endl;
-            return;
-        }
-        
-        auto* data = static_cast<uint8_t*>(src_);  
-        std::cout << "[" << func_name << "]" << std::endl;
-        for (size_t i = 0; i < len_; i++) {
-            std::cout << static_cast<int>(data[i]) << " ";  
-        }
-        std::cout << std::endl;
-    }
 
     inline void ip_print (struct sockaddr_storage & peeraddr, bool port_ = false) {
         char ipstr[INET6_ADDRSTRLEN] = {0};

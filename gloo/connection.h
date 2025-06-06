@@ -1623,6 +1623,21 @@ public:
         current_loop_min = current_loop_max + 1;
     }
 
+     /*Check send or received data for function*/
+    void log_print_fun(const char* func_name, void* src_, size_t len_) {
+        if (!src_) {
+            std::cerr <<"[" << func_name << "] Null pointer passed to log_print!" << std::endl;
+            return;
+        }
+        
+        auto* data = static_cast<uint8_t*>(src_);  
+        std::cout << "[" << func_name << "]" << std::endl;
+        for (size_t i = 0; i < len_; i++) {
+            std::cout << static_cast<int>(data[i]) << " ";  
+        }
+        std::cout << std::endl;
+    }
+
     void process_acknowledge(const size_t index_){
         // auto tsa = std::chrono::high_resolution_clock::now();
         auto& msg = receive_message[index_];
