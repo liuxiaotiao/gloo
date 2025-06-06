@@ -1327,7 +1327,6 @@ public:
         auto pkt_ty = receive_message[index_].get_packet_type();
         if (pkt_ty == Type::ACK){
             process_acknowledge(index_);
-            auto endts = std::chrono::high_resolution_clock::now();
         }
 
         if (pkt_ty == Type::Application) {
