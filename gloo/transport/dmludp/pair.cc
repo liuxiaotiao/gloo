@@ -942,7 +942,7 @@ bool Pair::protocal2send(){
         new_value.it_interval.tv_nsec = 0;
 
         if (timerfd_settime(timer_fd, 0, &new_value, NULL) == -1) {
-          std::cout<<"delay.count() % 1000000000"<<std::endl;
+          std::cout<<"delay.count() % 1000000000"<<delay.count() % 1000000000<<std::endl;
           perror("timerfd_settime");
           return 1;
         }
@@ -967,7 +967,7 @@ bool Pair::protocal2send(){
   new_value.it_interval.tv_nsec = 0;
 
   if (timerfd_settime(timer_fd, 0, &new_value, NULL) == -1) {
-    std::cout<<"delay.count() % 1000000000"<<std::endl;
+    std::cout<<"delay.count() % 1000000000"<<delay.count() % 1000000000<<std::endl;
     perror("timerfd_settime");
     return 1;
   }
