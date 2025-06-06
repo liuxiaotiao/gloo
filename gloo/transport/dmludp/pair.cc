@@ -1023,16 +1023,16 @@ bool Pair::protocal2read(){
     
 //   }
 
-  if (tx_.empty()) {
-    device_->registerDescriptor(fd_, EPOLLIN, this);
-    // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
-  }else{
-    device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
-    // std::cout << "tx_:" << tx_.size() << std::endl;
-  }
+//   if (tx_.empty()) {
+//     device_->registerDescriptor(fd_, EPOLLIN, this);
+//     // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
+//   }else{
+//     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
+//     // std::cout << "tx_:" << tx_.size() << std::endl;
+//   }
 
-  return false;
-}
+//   return false;
+// }
 
 bool Pair::protocal2send(){
   if (state_ == CLOSED) {
