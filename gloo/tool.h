@@ -643,7 +643,7 @@ namespace dmludp {
             tail_(0),
             head_packet_number_(start_packet_number) {}
 
-        bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ == 0) {
+        bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
                 std::cout<<"PacketMapRingBuffer full"<<std::endl;
