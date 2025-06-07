@@ -1186,8 +1186,8 @@ public:
         srtt = arrive_time - handshake;
         rttvar = srtt / 2;
         rto = srtt + 4 * rttvar;
-        if (rto < MyProto::RTO_MIN) rto = MyProto::RTO_MIN;
-        if (rto > MyProto::RTO_MAX) rto = MyProto::RTO_MAX;
+        if (rto < RTO_MIN) rto = RTO_MIN;
+        if (rto > RTO_MAX) rto = RTO_MAX;
     }
 
     /*
@@ -1221,8 +1221,8 @@ public:
             auto tmp_rttvar = std::chrono::duration<double, std::nano>((1 - beta) * rttvar.count() + beta * std::abs(diff.count()));
             rttvar = std::chrono::duration_cast<std::chrono::nanoseconds>(tmp_rttvar);
             rto = srtt + 4 * rttvar;
-            if (rto < MyProto::RTO_MIN) rto = MyProto::RTO_MIN;
-            if (rto > MyProto::RTO_MAX) rto = MyProto::RTO_MAX;
+            if (rto < RTO_MIN) rto = RTO_MIN;
+            if (rto > RTO_MAX) rto = RTO_MAX;
         }    
     }
 
