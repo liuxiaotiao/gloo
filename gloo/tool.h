@@ -643,15 +643,17 @@ namespace dmludp {
             tail_(0),
             head_packet_number_(start_packet_number) {}
 
-        bool push(uint64_t offset, Difference_len difference_) {
+        bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ == 0) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
                 std::cout<<"PacketMapRingBuffer full"<<std::endl;
                 return false; 
             }
 
-            buffer_[tail_].offset = offset;
+            buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
+            // buffer_[tail_].round = sendround_;
+            // buffer_[tail_].priority = priority_;
             tail_ = next_tail;
             return true;
         }
@@ -843,7 +845,7 @@ namespace dmludp {
         struct Slot {
             uint64_t offset;
             uint32_t difference;
-            uint16_t len_;
+            uint16_t len;
             uint16_t priority;
         };
 

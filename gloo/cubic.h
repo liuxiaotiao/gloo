@@ -22,6 +22,8 @@ class Recovery{
 
     // bool app_limit;
 
+    size_t losscount{1};
+
     size_t bytes_in_flight;
 
     size_t max_datagram_size;
@@ -226,6 +228,11 @@ class Recovery{
     }
 
     void congestion_event(const std::chrono::high_resolution_clock::time_point& now) {
+        if (++losscount == 3){
+            return;
+        }else {
+            losscount = 1;
+        }
         if(congestion_window < W_max){
             W_max = congestion_window * (1.0 + BETA) / 2.0;
         }else{

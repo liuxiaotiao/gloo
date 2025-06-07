@@ -1007,8 +1007,6 @@ public:
 
     size_t send_packet_type = 0;
 
-    // bool recv_flag;
-
     /*Acknowledge packet number*/
     uint64_t send_num;
 
@@ -1032,7 +1030,7 @@ public:
     
     std::chrono::high_resolution_clock::time_point handshake;
 
-    uint64_t sendCount = 0;
+    uint64_t sendRound = 0;
 
     bool initial;
 
@@ -1783,6 +1781,7 @@ public:
                 recovery.on_packet_sent(out_len);
 
                 connection_map.push(out_off, pkg_difference);
+                // connection_map.push(out_off, pkg_difference, sendRound);
 
                 sent++;
                 sent_cwnd += out_len;
@@ -1797,6 +1796,10 @@ public:
         }
 
         return sent;
+    }
+
+    void RoundRecord() {
+        
     }
     
 

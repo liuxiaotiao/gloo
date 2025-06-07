@@ -203,11 +203,11 @@ namespace dmludp{
             ack_count = 0;
             rcq.clear();
             acknowldge_status = true;
-            if (iovecs_len == 1) {
-                lastpacketOffset = 0;
-            } else {
-                lastpacketOffset = 48 + (meta_ptr2_len / 1440)* 1440;
-            }
+            // if (iovecs_len == 1) {
+            //     lastpacketOffset = 0;
+            // } else {
+            //     lastpacketOffset = 48 + (meta_ptr2_len / 1440)* 1440;
+            // }
         }
 
         ssize_t off_front(){
@@ -224,6 +224,7 @@ namespace dmludp{
                     meta_pos++;
                     if (meta_left <= 0){
                         meta_left = 0;
+                        lastpacketOffset = off;
                         meta_status = MetaFlag::Retransmission;
                     }
                 }
