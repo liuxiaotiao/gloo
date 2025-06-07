@@ -1613,7 +1613,7 @@ public:
         auto pkt_difference = msg.get_packet_difference();
         receive_slot[index_] = 0;
       
-        auto receivets = std::chrono::high_resolution_clock::now()
+        auto receivets = std::chrono::high_resolution_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
         if (first_pn >= (max_acknowleged + 1)){
