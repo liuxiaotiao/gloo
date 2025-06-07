@@ -1619,7 +1619,7 @@ public:
         if (first_pn >= (max_acknowleged + 1)){
             auto ackts = tsInfo.removeBeforeValue(first_pn);
             if (ackts.has_value()){
-                update_rtt(*ackts, softwarets, hardwarets);
+                update_rtt(*ackts, receivets, receivets);
             }
         }
         sendbufferqueue.completecheck(pkt_difference);
