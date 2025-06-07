@@ -45,6 +45,22 @@ namespace dmludp{
                 return value;
             }
 
+         
+            const T& front() const {
+                if (empty()) {
+                    throw std::runtime_error("Queue is empty, cannot access front element.");
+                }
+                return data_[head_];
+            }
+
+            const T& back() const {
+                if (empty()) {
+                    throw std::runtime_error("Queue is empty, cannot access back element.");
+                }
+                size_t last_index = (tail_ + capacity_ - 1) % capacity_;
+                return data_[last_index];
+            }
+
             size_t size() const {
                 if (tail_ >= head_) {
                     return tail_ - head_;
@@ -72,7 +88,7 @@ namespace dmludp{
         public:
             ssize_t last_value;
 
-            SendBufferCircularQueue(size_t capacity = 50000) 
+            SendBufferCircularQueue(size_t capacity = 65536) 
                 : CircularQueue<uint64_t>(capacity), last_value(-1) 
             {}
 
@@ -128,6 +144,10 @@ namespace dmludp{
 
         size_t ack_count = 0;
 
+        bool acknowldge_status = true;
+
+        uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
+
         public:
 
         SendBuf(size_t packet_len): 
@@ -182,6 +202,12 @@ namespace dmludp{
             // retranmission_map.clear();
             ack_count = 0;
             rcq.clear();
+            acknowldge_status = true;
+            if (iovecs_len == 1) {
+                lastpacketOffset = 0;
+            } else {
+                lastpacketOffset = 48 + (meta_ptr2_len / 1440)* 1440;
+            }
         }
 
         ssize_t off_front(){
@@ -223,25 +249,67 @@ namespace dmludp{
         }
 
 
+        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
+        //     /* 6.6
+        //     In fact, we didn't do extra operation for received packet, we just need to modify the timeout packet and delay ack packet
+        //     */
+        //     if (is_drop){
+        //         /*bits_set.set(buffer_offset_convertor(in_offset));*/
+        //         auto index = 0;
+        //         if (in_offset >= 48){
+        //             index = (in_offset - 48) / send_buffer_size + 1;
+        //         }else{
+        //             index = in_offset / send_buffer_size;
+        //         }
+        //         if (bits_set[index] == 0){
+        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
+        //             bits_set.set(index);
+        //             ack_count++;
+        //         }
+        //     }else{
+        //         /*
+        //         NO pop front cause duplicate packet sent again and again.
+        //         */
+        //         ////////////////
+        //         auto index = 0;
+        //         if (in_offset >= 48){
+        //             index = (in_offset - 48) / send_buffer_size + 1;
+        //         }else{
+        //             index = in_offset / send_buffer_size;
+        //         }
+        //         if (bits_set[index] == 0){
+        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
+        //             rcq.push_back(in_offset);
+        //         }
+        //         // rcq.push_back(in_offset);
+        //         ///////////////
+        //     }
+        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
+        //     if (ack_count == bits_set.size()){
+        //         meta_status = MetaFlag::Complete;
+        //     }
+        // } 
+
         void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
             if (is_drop){
-                /*bits_set.set(buffer_offset_convertor(in_offset));*/
-                auto index = 0;
-                if (in_offset >= 48){
-                    index = (in_offset - 48) / send_buffer_size + 1;
-                }else{
-                    index = in_offset / send_buffer_size;
-                }
-                if (bits_set[index] == 0){
-                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
-                    bits_set.set(index);
-                    ack_count++;
+                if (acknowldge_status) {
+                    if (in_offset == lastpacketOffset) {
+                        ack_count = bits_set.size() - rcq.size();
+                        acknowldge_status = false;
+                    }
+                } else {
+                    auto index = 0;
+                    if (in_offset >= 48){
+                        index = (in_offset - 48) / send_buffer_size + 1;
+                    }else{
+                        index = in_offset / send_buffer_size;
+                    }
+                    if (bits_set[index] == 0){
+                        bits_set.set(index);
+                        ack_count++;
+                    }
                 }
             }else{
-                /*
-                NO pop front cause duplicate packet sent again and again.
-                */
-                ////////////////
                 auto index = 0;
                 if (in_offset >= 48){
                     index = (in_offset - 48) / send_buffer_size + 1;
@@ -249,17 +317,71 @@ namespace dmludp{
                     index = in_offset / send_buffer_size;
                 }
                 if (bits_set[index] == 0){
-                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
                     rcq.push_back(in_offset);
                 }
-                // rcq.push_back(in_offset);
-                ///////////////
+
+                if (acknowldge_status && in_offset == lastpacketOffset) {
+                    ack_count = bits_set.size() - rcq.size();
+                    acknowldge_status = false;
+                }
             }
+            
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
             if (ack_count == bits_set.size()){
                 meta_status = MetaFlag::Complete;
             }
-        } 
+        }
+
+
+        /*
+        The retransmission message are decided by first MaxpacketOffset
+        Future improvement: reduce rcq real push_back, using virtual_head and virtual_tail to control message
+        */
+        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
+        //     if (is_drop){
+        //         if (acknowldge_status) {
+        //             if (in_offset == lastpacketOffset) {
+        //                 ack_count = bits_set.size() - rcq.size();
+        //             }
+        //         } else {
+        //             auto index = 0;
+        //             if (in_offset >= 48){
+        //                 index = (in_offset - 48) / send_buffer_size + 1;
+        //             }else{
+        //                 index = in_offset / send_buffer_size;
+        //             }
+        //             if (bits_set[index] == 0){
+        //                 bits_set.set(index);
+        //                 ack_count++;
+        //             }
+        //         }
+        //     }else{
+        //         if (acknowldge_status) {
+        //              auto index = 0;
+        //             if (in_offset >= 48){
+        //                 index = (in_offset - 48) / send_buffer_size + 1;
+        //             }else{
+        //                 index = in_offset / send_buffer_size;
+        //             }
+        //             if (bits_set[index] == 0){
+        //                 rcq.push_back(in_offset);
+        //             }
+        //         } 
+
+        //         if (acknowldge_status && in_offset == lastpacketOffset) {
+        //             ack_count = bits_set.size() - rcq.size();
+        //         }
+        //     }
+            
+        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
+        //     if (ack_count == bits_set.size()){
+        //         meta_status = MetaFlag::Complete;
+        //     }
+        // }
+
+        void RetranmissionQueueClear() {
+
+        }
 
         size_t round_up(uint64_t a, uint64_t b){
             if (b == 0) {
