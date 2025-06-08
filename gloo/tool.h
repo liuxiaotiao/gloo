@@ -652,7 +652,6 @@ namespace dmludp {
 
             buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
-            // buffer_[tail_].round = sendround_;
             // buffer_[tail_].priority = priority_;
             tail_ = next_tail;
             return true;

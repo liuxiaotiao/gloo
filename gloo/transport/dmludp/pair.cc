@@ -1114,7 +1114,6 @@ bool Pair::protocal2send(){
       accumulated++;
     }
 
-    dmludp_connection->RoundRecord();
     // auto end_time = std::chrono::system_clock::now();
     // if (sent > 0){
     //   std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count()/sent<<" ns/packets"<<std::endl;
@@ -1134,9 +1133,6 @@ bool Pair::protocal2send(){
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
-      {
-
-      }
       if (!tx_.empty()){
         struct itimerspec new_value;
         memset(&new_value, 0, sizeof(new_value));

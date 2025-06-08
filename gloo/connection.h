@@ -1030,8 +1030,6 @@ public:
     
     std::chrono::high_resolution_clock::time_point handshake;
 
-    uint64_t sendRound = 0;
-
     bool initial;
 
     // Record errno
@@ -1797,11 +1795,6 @@ public:
 
         return sent;
     }
-
-    void RoundRecord() {
-        
-    }
-    
 
     /*Prepare send packets*/
     std::pair<ssize_t, ssize_t> send_packet(){
