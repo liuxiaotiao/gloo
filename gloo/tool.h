@@ -781,7 +781,11 @@ namespace dmludp {
             }
 
             for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-                func(pkt, buffer_[index]);
+                bool redundant_ack = false;
+                if (pkt < head_packet_number_) {
+                    redundant_ack = true;
+                }
+                func(pkt, buffer_[index], redundant_ack);
                 if (within_active_range) {
                     // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
                     head_ = (head_ + 1) % capacity_;

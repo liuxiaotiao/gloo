@@ -1633,12 +1633,18 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
+        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool & redundant_ack){
             if (slot.difference < send_connection_difference){
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
+
+                if ((bool)value == 0 && redundant_ack) {
+                    
+                } else {
+                    sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);
+                }
+                    
                 if (++bit_index == 8) {
                     bit_index = 0;
                     ++byte_index;
