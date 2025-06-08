@@ -311,20 +311,49 @@ namespace dmludp{
                     }
                 }
             }else{
-                auto index = 0;
-                if (in_offset >= 48){
-                    index = (in_offset - 48) / send_buffer_size + 1;
-                }else{
-                    index = in_offset / send_buffer_size;
-                }
-                if (bits_set[index] == 0){
-                    rcq.push_back(in_offset);
-                }
+                if (acknowldge_status){
+                    if (!rcq.empty()){
+                        if (in_offset > rcq.back()) {
+                            auto index = 0;
+                            if (in_offset >= 48){
+                                index = (in_offset - 48) / send_buffer_size + 1;
+                            }else{
+                                index = in_offset / send_buffer_size;
+                            }
+                            if (bits_set[index] == 0){
+                                rcq.push_back(in_offset);
+                            }
+                        }
+                    }else {
+                        auto index = 0;
+                        if (in_offset >= 48){
+                            index = (in_offset - 48) / send_buffer_size + 1;
+                        }else{
+                            index = in_offset / send_buffer_size;
+                        }
+                        if (bits_set[index] == 0){
+                            rcq.push_back(in_offset);
+                        }
+                    }
 
-                if (acknowldge_status && in_offset == lastpacketOffset) {
-                    ack_count = bits_set.size() - rcq.size();
-                    acknowldge_status = false;
+                    if (in_offset == lastpacketOffset) {
+                        ack_count = bits_set.size() - rcq.size();
+                        acknowldge_status = false;
+                    }
+                }else {
+                    auto index = 0;
+                    if (in_offset >= 48){
+                        index = (in_offset - 48) / send_buffer_size + 1;
+                    }else{
+                        index = in_offset / send_buffer_size;
+                    }
+                    if (bits_set[index] == 0){
+                        rcq.push_back(in_offset);
+                    }
                 }
+                
+
+                
             }
             
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
