@@ -75,6 +75,7 @@ Pair::Pair(
 Pair::~Pair() {
   // Needs lock so that this doesn't race with read/write of the
   // underlying file descriptor on the device thread.
+  std::cout << "Pair destructed: " << this << std::endl;
   std::lock_guard<std::mutex> lock(m_);
   if (state_ != CLOSED) {
     Pair::changeState(CLOSED);
@@ -124,6 +125,7 @@ void Pair::connect(const std::vector<char>& bytes) {
   // either role succeeds, the connection callback for the pair gets
   // called with the file descriptor for the underlying connection.
   //
+  std::cout<<"device_->connect start"<<std::endl;
   device_->connect(
       self_,
       peer,
@@ -133,7 +135,7 @@ void Pair::connect(const std::vector<char>& bytes) {
           this,
           std::placeholders::_1,
           std::placeholders::_2));
-
+  std::cout<<"device_->connect end"<<std::endl;
   // Wait for connection to be made.
   //
   // NOTE(pietern): This can be split out to a separate function so
