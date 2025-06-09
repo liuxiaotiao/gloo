@@ -230,6 +230,7 @@ namespace dmludp{
                     if (meta_left <= 0){
                         meta_left = 0;
                         lastpacketOffset = off;
+                        /*This part is conflict with */
                         meta_status = MetaFlag::Retransmission;
                     }
                 }
@@ -299,6 +300,7 @@ namespace dmludp{
             if (is_drop){
                 if (acknowldge_status) {
                     if (in_offset == lastpacketOffset) {
+                        std::cout<<"in_offset:"<<in_offset<<", "<<lastpacketOffset<<std::endl;
                         ack_count = bits_set.size() - initlosscount;
                         acknowldge_status = false;
                     }
