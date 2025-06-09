@@ -146,9 +146,9 @@ namespace dmludp{
 
         bool acknowldge_status = true;
 
+        public:
         uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
 
-        public:
         uint64_t lastlossOffset = 0;
 
         size_t initlosscount = 0;

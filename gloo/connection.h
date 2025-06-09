@@ -1638,7 +1638,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<pkt_difference<<", ";
+                std::cout<<"ACK:"<<pkt_difference<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
@@ -1729,6 +1729,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
+                std::cout<<"Timout:";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
             }
         });
@@ -1775,8 +1776,12 @@ public:
                 if (out_len == -1) {
                     break;
                 }
-
+                
                 auto pn = pkt_num_spaces.updatepktnum();
+                if (send_status == 1) {
+                    std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(i).metabuf.lastpacketOffset<<std::endl;
+                }
+
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
                 recovery.on_packet_sent(out_len);
