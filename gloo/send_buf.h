@@ -319,7 +319,7 @@ namespace dmludp{
                             }else{
                                 index = in_offset / send_buffer_size;
                             }
-                            if (bits_set[index] == 0){
+                            if (bits_set[index] == 0 && in_offset > rcq.back()){
                                 rcq.push_back(in_offset);
                             }
                         }
