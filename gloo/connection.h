@@ -383,6 +383,7 @@ class SCircularQueue {
 
         MetaInfo& at(size_t i) {
             if (i >= count_)
+                std::cout<<"i:"<<i<<", "<<count_<<std::endl;
                 throw std::out_of_range("Index out of range");
             return data_[(head_ + i) % capacity_];
         }
