@@ -317,9 +317,11 @@ class SCircularQueue {
         }
 
 
-        void pkt2ack(Difference_len difference_, Offset_len offset_, bool value_){
+        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_len pkt, bool value_){
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
+            if (data_[index].metabuf.meta_sent < 1024 * 1024)
+                std::cout<<pkt<<", "<<offset_<<", "<<difference_<<std::endl;
         }
 
         size_t get_status(Difference_len difference_){
@@ -1632,7 +1634,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, (bool)value);    
+                sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
                     ++byte_index;
@@ -1722,7 +1724,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, false);
+                sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
             }
         });
 
