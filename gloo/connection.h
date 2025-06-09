@@ -320,8 +320,10 @@ class SCircularQueue {
         void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_len pkt, bool value_){
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
-            if (data_[index].metabuf.sentComplete() < 1024 * 1024)
-                std::cout<<pkt<<", "<<offset_<<", "<<difference_<<std::endl;
+            if (data_[index].metabuf.sentComplete() < 1024 * 1024){
+                std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<data_[index].metabuf.initlosscount<<std::endl;
+            }
+                
         }
 
         size_t get_status(Difference_len difference_){

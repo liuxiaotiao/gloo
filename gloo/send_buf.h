@@ -148,11 +148,10 @@ namespace dmludp{
 
         uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
 
+        public:
         uint64_t lastlossOffset = 0;
 
         size_t initlosscount = 0;
-
-        public:
 
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
