@@ -329,6 +329,7 @@ namespace dmludp{
                                 rcq.push_back(in_offset);
                                 if (in_offset > lastlossOffset) {
                                     ++initlosscount;
+                                    lastlossOffset = in_offset;
                                 }
                             }
                         }
@@ -343,6 +344,7 @@ namespace dmludp{
                             rcq.push_back(in_offset);
                             if (in_offset > lastlossOffset) {
                                 ++initlosscount;
+                                lastlossOffset = in_offset;
                             }
                         }
                     }
