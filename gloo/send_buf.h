@@ -148,6 +148,10 @@ namespace dmludp{
 
         uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
 
+        uint64_t lastlossOffset = 0;
+
+        size_t initlosscount = 0;
+
         public:
 
         SendBuf(size_t packet_len): 
@@ -203,6 +207,8 @@ namespace dmludp{
             ack_count = 0;
             rcq.clear();
             acknowldge_status = true;
+            lastlossOffset = 0;
+            initlosscount = 0;
             // if (iovecs_len == 1) {
             //     lastpacketOffset = 0;
             // } else {
@@ -294,7 +300,7 @@ namespace dmludp{
             if (is_drop){
                 if (acknowldge_status) {
                     if (in_offset == lastpacketOffset) {
-                        ack_count = bits_set.size() - rcq.size();
+                        ack_count = bits_set.size() - initlosscount;
                         acknowldge_status = false;
                     }
                 } else {
@@ -319,8 +325,11 @@ namespace dmludp{
                             }else{
                                 index = in_offset / send_buffer_size;
                             }
-                            if (bits_set[index] == 0 && in_offset > rcq.back()){
+                            if (bits_set[index] == 0){
                                 rcq.push_back(in_offset);
+                                if (in_offset > lastlossOffset) {
+                                    ++initlosscount;
+                                }
                             }
                         }
                     }else {
@@ -332,11 +341,14 @@ namespace dmludp{
                         }
                         if (bits_set[index] == 0){
                             rcq.push_back(in_offset);
+                            if (in_offset > lastlossOffset) {
+                                ++initlosscount;
+                            }
                         }
                     }
 
                     if (in_offset == lastpacketOffset) {
-                        ack_count = bits_set.size() - rcq.size();
+                        ack_count = bits_set.size() - initlosscount;
                         acknowldge_status = false;
                     }
                 }else {
