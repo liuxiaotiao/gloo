@@ -230,6 +230,7 @@ namespace dmludp{
                     if (meta_left <= 0){
                         meta_left = 0;
                         lastpacketOffset = off;
+                        std::cout<<"off_front:"<<lastpacketOffset<<", "<<off<<std::endl;
                         /*This part is conflict with */
                         meta_status = MetaFlag::Retransmission;
                     }
