@@ -21,7 +21,7 @@ using Priority_len = uint8_t;
 
 using Status_len = uint8_t;
 
-using Importance_len = uint16_t;
+using Block_len = uint16_t;
 
     enum Type : uint8_t {
         /// Retry packet.
@@ -70,13 +70,12 @@ using Importance_len = uint16_t;
 
         // The data length of the application packet
         Packet_len pkt_length;
+ 
+        // Priority_len pkt_priority;
 
-        /*
-        Importance pkt_importance;
+        // Block_len pkt_important_block;
 
-        Status pkt_status;
-        */
-
+        // Status_len pkt_status;
 
         Header(
             Type first = Type::Application, 

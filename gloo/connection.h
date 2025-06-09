@@ -1084,7 +1084,6 @@ public:
 
     std::vector<RCMessage> receive_message;
     
-    // EAGAIN recovery.
     ssize_t start_index = -1;
 
     ssize_t end_index = -1;
@@ -1130,7 +1129,6 @@ public:
     peeraddr(peer),
     stop_flag(true),
     stop_ack(true),
-    // recv_flag(false),
     send_num(0),
     rtt(0),
     srtt(0),
@@ -1150,11 +1148,9 @@ public:
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
     low_recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
-    // difference_flag(false),
     send_status_flag(0),
     acknowldge_iov(3, {nullptr, 0}),
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
-    // rx_buffer(MAX_SEND_UDP_PAYLOAD_SIZE * RX_CONST, 0),
     receive_slot(RX_CONST, 0),
     connection_map(MAP_CONST),
     first_loss(false)
@@ -1971,13 +1967,13 @@ public:
         recvCQ.processCheck(receive_connection_difference);       
     }
 
-    void set_send_status(int status_){
-        send_status_flag = status_;
-    }
+    // void set_send_status(int status_){
+    //     send_status_flag = status_;
+    // }
 
-    size_t get_send_status(){
-        return send_status_flag;
-    }
+    // size_t get_send_status(){
+    //     return send_status_flag;
+    // }
 
     size_t get_error_sent(){
         return dmludp_error_sent;
@@ -2017,7 +2013,6 @@ public:
     }
 
     //Send single packet
-    // size_t send_data(msghdr)
     size_t send_data(uint8_t* out){
         size_t total_len = HEADER_LENGTH;
 

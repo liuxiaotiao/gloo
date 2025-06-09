@@ -10,13 +10,24 @@
 #include <iostream>   // std::cout, std::endl
 #include <string>     // std::string
 #include <algorithm> 
+#include <immintrin.h> // AVX2
 #include "tool.h"
 
 namespace dmludp{
     enum class MetaFlag : uint8_t {
         Initial = 1,       
         Retransmission,
-        Complete  
+        Complete,
+        LowInitial,
+        LowRetransmission,
+        LowComplete
+    };
+
+
+    enum class TopKFlag : uint8_t {
+        AllTopK = 1,       
+        NoTopK,
+        PartialTopK
     };
 
     template <typename T>
@@ -121,24 +132,29 @@ namespace dmludp{
 
         void* meta_ptr2 = nullptr;
 
-        // ssize_t meta_ptr2_len; 
         size_t meta_ptr2_len;
 
         uint64_t meta_len;
 
         ssize_t meta_left;
 
-        size_t meta_sent = 0;;
+        size_t meta_sent = 0;
 
         ssize_t meta_pos;
 
         std::vector<uint64_t> meta_len2;
 
+        SendBufferCircularQueue topkqueue;
+
         SendBufferCircularQueue rcq;
+
+        SendBufferCircularQueue rcqlow;
 
         DynamicBitset bits_set;
 
         MetaFlag meta_status = MetaFlag::Initial;
+
+        MetaFlag meta_status_low = MetaFlag::LowInitial;
 
         size_t send_buffer_size;
 
@@ -146,7 +162,11 @@ namespace dmludp{
 
         bool acknowldge_status = true;
 
+        bool TopKStatus = true;
+
         uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
+
+        std::vector<uint64_t> Topk;
 
         public:
 
@@ -167,9 +187,37 @@ namespace dmludp{
             return meta_sent;
         }
 
-        void add_Meta(struct iovec* iovecs, int iovecs_len){
+        int largestMultipleBelow(int a) {
+            return ((a - 1) / 1440) * 1440;
+        }
+
+        bool has_greater_avx2(const float* arr, size_t n, float threshold) {
+            __m256 thresh = _mm256_set1_ps(threshold);
+            size_t i = 0;
+            for (; i + 8 <= n; i += 8) {
+                __m256 data = _mm256_loadu_ps(arr + i);
+                __m256 cmp  = _mm256_cmp_ps(data, thresh, _CMP_GT_OQ);
+                if (_mm256_movemask_ps(cmp)) return true;
+            }
+            for (; i < n; ++i)
+                if (arr[i] > threshold) return true;
+            return false;
+        }
+                
+        /*
+        1. All TopK
+        2. No TopK
+        3. Partial
+        */
+        void add_Meta(struct iovec* iovecs, int iovecs_len, uint32_t topkthreshold){
+            if () {
+
+            }
+
             meta_status = MetaFlag::Initial;
             meta_sent = 0;
+
+            meta_status_low = MetaFlag::LowInitial;
 
             meta_ptr = nullptr;
             meta_ptr_len = 0;
@@ -210,9 +258,115 @@ namespace dmludp{
             // }
         }
 
-        ssize_t off_front(){
+
+         /*
+        Reconsider control message position;
+        */
+        ssize_t off_front_auto() {
+            if (TopKStatus == TopKFlag::AllTopK) {
+                return off_front_alltopK();
+            } else if (TopKStatus == TopKFlag::NoTopK) {
+               return off_front_notopK();
+            } else {
+                return off_front_partialtopK();
+            }
+        }
+
+        ssize_t off_front_notopK () {
+            ssize_t off = -1;
+            if (meta_status == MetaFlag::Initial) {
+                meta_status = MetaFlag::Retransmission;
+                off = 0;
+            } else if (meta_status == MetaFlag::Retransmission){
+                off = 0;
+            }
+            return -1;
+        }
+
+        /*Used for all TopK*/
+        ssize_t off_front_alltopK(){
             ssize_t off = -1;
             if(meta_status == MetaFlag::Initial){
+                if (meta_left > 0){
+                    if (meta_pos == 0){
+                        off = meta_pos * send_buffer_size;
+                        meta_left -= 48;
+                        meta_pos++;
+                    }else{
+                        off = (meta_pos - 1) * send_buffer_size + 48;
+                        meta_left -= send_buffer_size;
+                    }
+                    
+                    if (meta_left <= 0){
+                        meta_left = 0;
+                        lastpacketOffset = off;
+                        meta_status = MetaFlag::Retransmission;
+                    }
+                }
+            }else if(meta_status == MetaFlag::Retransmission){
+                if (!rcq.empty()){
+                    off = rcq.pop_front();
+                    auto index = 0;
+                    if (off != 0){
+                        index = round_up((off - 48), 1440) + 1;
+                    }
+                    
+                    if (bits_set[index] == 1)
+                    {
+                        off = -1;
+                    }
+                }
+            }
+            return off;
+        }
+
+        ssize_t off_front_partialtopK() {
+            ssize_t off = -1;
+            if(meta_status == MetaFlag::Initial){
+                if (meta_pos == 0){
+                    off = 0;
+                    meta_pos++;
+                }else{
+                    off = Topk.pop_front() + 48;
+                }
+                
+                if (Topk.empty()){
+                    lastpacketOffset = off;
+                    meta_status = MetaFlag::Retransmission;
+                }
+            }else if(meta_status == MetaFlag::Retransmission){
+                if (!rcq.empty()){
+                    off = rcq.pop_front();
+                    auto index = 0;
+                    if (off != 0){
+                        index = round_up((off - 48), 1440) + 1;
+                    }
+                    
+                    if (bits_set[index] == 1)
+                    {
+                        off = -1;
+                    }
+                }
+            }
+            return off;
+        }
+
+        /*
+        Reconsider control message position;
+        */
+        ssize_t off_front_low_auto() {
+            if (TopKStatus == TopKFlag::AllTopK) {
+                return -1;
+            } else if (TopKStatus == TopKFlag::NoTopK) {
+                return off_front_low_notopk();
+            } else {
+                return off_front_low_partialtopk();
+            }
+        }
+
+        ssize_t off_front_low_notopk(){
+            ssize_t off = -1;
+            if(meta_status_low == MetaFlag::LowInitial){
                 if (meta_left > 0){
                     if (meta_pos == 0){
                         off = meta_pos * send_buffer_size;
@@ -225,10 +379,10 @@ namespace dmludp{
                     if (meta_left <= 0){
                         meta_left = 0;
                         lastpacketOffset = off;
-                        meta_status = MetaFlag::Retransmission;
+                        meta_status = MetaFlag::LowRetransmission;
                     }
                 }
-            }else if(meta_status == MetaFlag::Retransmission){
+            }else if(meta_status == MetaFlag::LowRetransmission){
                 if (!rcq.empty()){
                     off = rcq.pop_front();
                     /////////////
@@ -249,115 +403,116 @@ namespace dmludp{
             return off;
         }
 
-        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
-        //     /* 6.6
-        //     In fact, we didn't do extra operation for received packet, we just need to modify the timeout packet and delay ack packet
-        //     */
-        //     if (is_drop){
-        //         /*bits_set.set(buffer_offset_convertor(in_offset));*/
-        //         auto index = 0;
-        //         if (in_offset >= 48){
-        //             index = (in_offset - 48) / send_buffer_size + 1;
-        //         }else{
-        //             index = in_offset / send_buffer_size;
-        //         }
-        //         if (bits_set[index] == 0){
-        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
-        //             bits_set.set(index);
-        //             ack_count++;
-        //         }
-        //     }else{
-        //         /*
-        //         NO pop front cause duplicate packet sent again and again.
-        //         */
-        //         ////////////////
-        //         auto index = 0;
-        //         if (in_offset >= 48){
-        //             index = (in_offset - 48) / send_buffer_size + 1;
-        //         }else{
-        //             index = in_offset / send_buffer_size;
-        //         }
-        //         if (bits_set[index] == 0){
-        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
-        //             rcq.push_back(in_offset);
-        //         }
-        //         // rcq.push_back(in_offset);
-        //         ///////////////
-        //     }
-        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
-        //     if (ack_count == bits_set.size()){
-        //         meta_status = MetaFlag::Complete;
-        //     }
-        // } 
 
         void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
+            /* 6.6
+            In fact, we didn't do extra operation for received packet, we just need to modify the timeout packet and delay ack packet
+            */
             if (is_drop){
-                if (acknowldge_status) {
-                    if (in_offset == lastpacketOffset) {
-                        ack_count = bits_set.size() - rcq.size();
-                        acknowldge_status = false;
-                    }
-                } else {
-                    auto index = 0;
-                    if (in_offset >= 48){
-                        index = (in_offset - 48) / send_buffer_size + 1;
-                    }else{
-                        index = in_offset / send_buffer_size;
-                    }
-                    if (bits_set[index] == 0){
-                        bits_set.set(index);
-                        ack_count++;
-                    }
+                /*bits_set.set(buffer_offset_convertor(in_offset));*/
+                auto index = 0;
+                if (in_offset >= 48){
+                    index = (in_offset - 48) / send_buffer_size + 1;
+                }else{
+                    index = in_offset / send_buffer_size;
+                }
+                if (bits_set[index] == 0){
+                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
+                    bits_set.set(index);
+                    ack_count++;
                 }
             }else{
-                if (acknowldge_status){
-                    if (!rcq.empty()){
-                        if (in_offset > rcq.back()) {
-                            auto index = 0;
-                            if (in_offset >= 48){
-                                index = (in_offset - 48) / send_buffer_size + 1;
-                            }else{
-                                index = in_offset / send_buffer_size;
-                            }
-                            if (bits_set[index] == 0){
-                                rcq.push_back(in_offset);
-                            }
-                        }
-                    }else {
-                        auto index = 0;
-                        if (in_offset >= 48){
-                            index = (in_offset - 48) / send_buffer_size + 1;
-                        }else{
-                            index = in_offset / send_buffer_size;
-                        }
-                        if (bits_set[index] == 0){
-                            rcq.push_back(in_offset);
-                        }
-                    }
-
-                    if (in_offset == lastpacketOffset) {
-                        ack_count = bits_set.size() - rcq.size();
-                        acknowldge_status = false;
-                    }
-                }else {
-                    auto index = 0;
-                    if (in_offset >= 48){
-                        index = (in_offset - 48) / send_buffer_size + 1;
-                    }else{
-                        index = in_offset / send_buffer_size;
-                    }
-                    if (bits_set[index] == 0){
-                        rcq.push_back(in_offset);
-                    }
+                /*
+                NO pop front cause duplicate packet sent again and again.
+                */
+                ////////////////
+                auto index = 0;
+                if (in_offset >= 48){
+                    index = (in_offset - 48) / send_buffer_size + 1;
+                }else{
+                    index = in_offset / send_buffer_size;
                 }
-                
+                if (bits_set[index] == 0){
+                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
+                    rcq.push_back(in_offset);
+                }
+                // rcq.push_back(in_offset);
+                ///////////////
             }
-            
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
             if (ack_count == bits_set.size()){
                 meta_status = MetaFlag::Complete;
             }
-        }
+        } 
+
+        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
+        //     if (is_drop){
+        //         if (acknowldge_status) {
+        //             if (in_offset == lastpacketOffset) {
+        //                 ack_count = bits_set.size() - rcq.size();
+        //                 acknowldge_status = false;
+        //             }
+        //         } else {
+        //             auto index = 0;
+        //             if (in_offset >= 48){
+        //                 index = (in_offset - 48) / send_buffer_size + 1;
+        //             }else{
+        //                 index = in_offset / send_buffer_size;
+        //             }
+        //             if (bits_set[index] == 0){
+        //                 bits_set.set(index);
+        //                 ack_count++;
+        //             }
+        //         }
+        //     }else{
+        //         if (acknowldge_status){
+        //             if (!rcq.empty()){
+        //                 if (in_offset > rcq.back()) {
+        //                     auto index = 0;
+        //                     if (in_offset >= 48){
+        //                         index = (in_offset - 48) / send_buffer_size + 1;
+        //                     }else{
+        //                         index = in_offset / send_buffer_size;
+        //                     }
+        //                     if (bits_set[index] == 0){
+        //                         rcq.push_back(in_offset);
+        //                     }
+        //                 }
+        //             }else {
+        //                 auto index = 0;
+        //                 if (in_offset >= 48){
+        //                     index = (in_offset - 48) / send_buffer_size + 1;
+        //                 }else{
+        //                     index = in_offset / send_buffer_size;
+        //                 }
+        //                 if (bits_set[index] == 0){
+        //                     rcq.push_back(in_offset);
+        //                 }
+        //             }
+
+        //             if (in_offset == lastpacketOffset) {
+        //                 ack_count = bits_set.size() - rcq.size();
+        //                 acknowldge_status = false;
+        //             }
+        //         }else {
+        //             auto index = 0;
+        //             if (in_offset >= 48){
+        //                 index = (in_offset - 48) / send_buffer_size + 1;
+        //             }else{
+        //                 index = in_offset / send_buffer_size;
+        //             }
+        //             if (bits_set[index] == 0){
+        //                 rcq.push_back(in_offset);
+        //             }
+        //         }
+                
+        //     }
+            
+        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
+        //     if (ack_count == bits_set.size()){
+        //         meta_status = MetaFlag::Complete;
+        //     }
+        // }
 
 
         /*
