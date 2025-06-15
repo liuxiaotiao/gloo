@@ -238,11 +238,11 @@ class SCircularQueue {
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
             }
-            // if (iovecs_len == 1) {
-            //     std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
-            // } else {
-            //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
-            // }
+            if (iovecs_len == 1) {
+                std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
+            } else {
+                std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
+            }
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
@@ -1785,9 +1785,9 @@ public:
                 }
                 
                 auto pn = pkt_num_spaces.updatepktnum();
-                // if (send_status == 1) {
-                //     std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
-                // }
+                if (send_status == 1) {
+                    std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
+                }
 
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
