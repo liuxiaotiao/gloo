@@ -327,9 +327,9 @@ class SCircularQueue {
             auto status1 = data_[index].metabuf.get_status();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
             auto status2 = data_[index].metabuf.get_status();
-            // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
-            //     std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
-            // }
+            if (data_[index].metabuf.sentComplete() < 1024 * 1024){
+                std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
+            }
                 
         }
 
@@ -1645,7 +1645,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                // std::cout<<"ACK:"<<pkt_difference<<", ";
+                std::cout<<"ACK:"<<pkt_difference<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
@@ -1736,7 +1736,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
-                // std::cout<<"Timout:";
+                std::cout<<"Timout:";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
             }
         });
