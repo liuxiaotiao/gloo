@@ -238,6 +238,11 @@ class SCircularQueue {
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
             }
+            // if (iovecs_len == 1) {
+            //     std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
+            // } else {
+            //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
+            // }
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
@@ -322,9 +327,9 @@ class SCircularQueue {
             auto status1 = data_[index].metabuf.get_status();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
             auto status2 = data_[index].metabuf.get_status();
-            if (data_[index].metabuf.sentComplete() < 1024 * 1024){
-                std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
-            }
+            // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
+            //     std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
+            // }
                 
         }
 
@@ -382,9 +387,10 @@ class SCircularQueue {
         }
 
         MetaInfo& at(size_t i) {
-            if (i >= count_)
+            if (i >= count_){
                 std::cout<<"i:"<<i<<", "<<count_<<std::endl;
                 throw std::out_of_range("Index out of range");
+            }
             return data_[(head_ + i) % capacity_];
         }
 
@@ -1332,11 +1338,11 @@ public:
             return;
         }
 
-        if (pkt_len == 4) {
-            std::cout<<"receive from:";
-            ip_print(peeraddr);
-            log_print(msg.iov[1].iov_base, 4);
-        }
+        // if (pkt_len == 4) {
+        //     std::cout<<"receive from:";
+        //     ip_print(peeraddr);
+        //     log_print(msg.iov[1].iov_base, 4);
+        // }
 
         bool valid_pkt = pkt_difference >= receive_connection_difference;
         std::optional<size_t> expectedsize;
@@ -1639,7 +1645,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"ACK:"<<pkt_difference<<", ";
+                // std::cout<<"ACK:"<<pkt_difference<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
@@ -1730,7 +1736,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
-                std::cout<<"Timout:";
+                // std::cout<<"Timout:";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
             }
         });
@@ -1779,9 +1785,9 @@ public:
                 }
                 
                 auto pn = pkt_num_spaces.updatepktnum();
-                if (send_status == 1) {
-                    std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(i).metabuf.lastpacketOffset<<std::endl;
-                }
+                // if (send_status == 1) {
+                //     std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
+                // }
 
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);

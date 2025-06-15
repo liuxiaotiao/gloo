@@ -30,6 +30,12 @@ namespace dmludp{
         PartialTopK
     };
 
+    enum class PacketStatus : uint8_t {
+        Reliable = 1,
+        NonReliable,
+        NonReliableRetransmit
+    }
+
     template <typename T>
         class CircularQueue {
         public:
@@ -38,7 +44,7 @@ namespace dmludp{
             size_t tail_;
             size_t capacity_;
 
-            CircularQueue(size_t capacity = 1000) 
+            CircularQueue(size_t capacity = 1024) 
                 : data_(capacity), head_(0), tail_(0), capacity_(capacity)
             {}
 

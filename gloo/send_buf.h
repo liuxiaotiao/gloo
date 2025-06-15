@@ -208,11 +208,11 @@ namespace dmludp{
             acknowldge_status = true;
             lastlossOffset = 0;
             initlosscount = 0;
-            // if (iovecs_len == 1) {
-            //     lastpacketOffset = 0;
-            // } else {
-            //     lastpacketOffset = 48 + (meta_ptr2_len / 1440)* 1440;
-            // }
+            if (iovecs_len == 1) {
+                lastpacketOffset = 0;
+            } else {
+                lastpacketOffset = 48 + (meta_ptr2_len / 1440)* 1440;
+            }
         }
 
         ssize_t off_front(){
@@ -229,8 +229,8 @@ namespace dmludp{
                     meta_pos++;
                     if (meta_left <= 0){
                         meta_left = 0;
-                        lastpacketOffset = off;
-                        std::cout<<"off_front:"<<lastpacketOffset<<", "<<off<<std::endl;
+                        // lastpacketOffset = off;
+                        // std::cout<<"off_front:"<<lastpacketOffset<<", "<<off<<std::endl;
                         /*This part is conflict with */
                         meta_status = MetaFlag::Retransmission;
                     }
@@ -301,7 +301,7 @@ namespace dmludp{
             if (is_drop){
                 if (acknowldge_status) {
                     if (in_offset == lastpacketOffset) {
-                        std::cout<<"in_offset:"<<in_offset<<", "<<lastpacketOffset<<std::endl;
+                        // std::cout<<"in_offset:"<<in_offset<<", "<<lastpacketOffset<<std::endl;
                         ack_count = bits_set.size() - initlosscount;
                         acknowldge_status = false;
                     }
