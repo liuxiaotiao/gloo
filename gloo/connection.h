@@ -328,7 +328,7 @@ class SCircularQueue {
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
             auto status2 = data_[index].metabuf.get_status();
             // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
-            std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
+            // std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
             // }
                 
         }
@@ -1462,7 +1462,7 @@ public:
             receive_slot[index] = 0;
             return;
         }
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset;
+        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -1564,7 +1564,7 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<std::endl;
+        // std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<std::endl;
 
         size_t info_len = (max_received - current_loop_min + 1 + 7) / 8;
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
@@ -1642,7 +1642,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
+        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
             if (slot.difference < pkt_difference){
                 if (++bit_index == 8) {
@@ -1653,7 +1653,7 @@ public:
                 return;  
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
+                // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
