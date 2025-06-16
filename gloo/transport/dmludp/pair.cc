@@ -725,10 +725,7 @@ bool Pair::protocal2read(){
             
             if (i == 1){
               if (rnbytes == 0){
-                // ip_print(dmludp_connection->peeraddr);
-                // std::cout<<(int)dmludp_connection->receive_connection_difference<<", ";
                 readComplete(rbuf);
-                // std::cout<<"1 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
 
                 dmludp_connection->update_receive_difference();
               }else{
@@ -737,7 +734,6 @@ bool Pair::protocal2read(){
               }
               break;
             }
-            // std::cout<<"rx_set:"<<(void*)(riov.iov_base)<<std::endl;
             dmludp_connection->rx_set(rnbytes, reinterpret_cast<uint8_t*>(riov.iov_base));
             if(dmludp_connection->send_packet_type == 0){
               dmludp_connection->send_packet_type = 5;
@@ -775,10 +771,7 @@ bool Pair::protocal2read(){
 
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
-              // ip_print(dmludp_connection->peeraddr);
-              // std::cout<<(int)dmludp_connection->receive_connection_difference<<", ";
               readComplete(rbuf);
-              // std::cout<<"2 read:"<<(int)dmludp_connection->receive_connection_difference<<std::endl;
 
               dmludp_connection->update_receive_difference();
               break;
@@ -811,9 +804,7 @@ bool Pair::protocal2read(){
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
       for (auto idx = 0; idx < sendbufferqueue_count; idx++){
         auto i = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-        // if(dmludp_connection->sendbufferqueue.data_[i].iscomplete()){
         if (dmludp_connection->sendbufferqueue.iscomplete_check(i)){
-          // std::cout<<"write:"<<i<<std::endl;
           auto &op = tx_.front();
           const auto opcode = op.getOpcode();
           if (opcode == Op::SEND_UNBOUND_BUFFER) {
@@ -824,7 +815,7 @@ bool Pair::protocal2read(){
           }
           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
           if (op.nwritten == op.preamble.nbytes){
-            std::cout<<dmludp_connection->sendbufferqueue.at(0).get_difference()<<", ";
+            // std::cout<<dmludp_connection->sendbufferqueue.at(0).get_difference()<<", ";
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
             dmludp_connection->sendbufferqueue.pop_front();
@@ -839,10 +830,8 @@ bool Pair::protocal2read(){
   // dmludp_connection->recvCQ.receive_log();
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
-    // std::cout<<"registerDescriptor EPOLLIN"<<std::endl;
   }else{
     device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
-    // std::cout << "tx_:" << tx_.size() << std::endl;
   }
 
   return false;
