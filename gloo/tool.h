@@ -745,13 +745,13 @@ namespace dmludp {
             bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
             size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
 
-            std::cout << "start_packet: " << start_packet
-                << ", end_packet: " << end_packet
-                << ", full_begin: " << full_begin
-                << ", full_end: " << full_end
-                << ", actual_start: " << actual_start
-                << ", actual_end: " << actual_end
-                << std::endl;
+            // std::cout << "start_packet: " << start_packet
+            //     << ", end_packet: " << end_packet
+            //     << ", full_begin: " << full_begin
+            //     << ", full_end: " << full_end
+            //     << ", actual_start: " << actual_start
+            //     << ", actual_end: " << actual_end
+            //     << std::endl;
 
             // 如果是有效区间但不从 head_ 开始，跳跃更新 head_ 到 actual_start 对应位置
             if (within_active_range && actual_start > head_packet_number_) {
@@ -766,7 +766,7 @@ namespace dmludp {
                     // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
                     head_ = (head_ + 1) % capacity_;
                     ++head_packet_number_;
-                    std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
+                    // std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
                 }
                 index = (index + 1) % capacity_;
             }
