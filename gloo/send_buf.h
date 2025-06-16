@@ -153,6 +153,8 @@ namespace dmludp{
 
         size_t initlosscount = 0;
 
+        uint64_t lossreord = std::numeric_limits<uint64_t>::max();
+
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len)
         {
@@ -213,6 +215,7 @@ namespace dmludp{
             } else {
                 lastpacketOffset = 48 + (meta_ptr2_len / 1440) * 1440;
             }
+            lossreord = std::numeric_limits<uint64_t>::max();
         }
 
         ssize_t off_front(){
@@ -327,12 +330,25 @@ namespace dmludp{
                             }else{
                                 index = in_offset / send_buffer_size;
                             }
+                            // if (bits_set[index] == 0){
+                            //     rcq.push_back(in_offset);
+                            //     if (in_offset > lastlossOffset) {
+                            //         ++initlosscount;
+                            //         // lastlossOffset = in_offset;
+                            //     }
+                            // }
                             if (bits_set[index] == 0){
                                 rcq.push_back(in_offset);
-                                if (in_offset > lastlossOffset) {
+                                if (lossreord == std::numeric_limits<uint64_t>::max()){
+                                    lossreord = in_offset;
                                     ++initlosscount;
-                                    // lastlossOffset = in_offset;
+                                } else {
+                                    if (in_offset > lossreord) {
+                                        ++initlosscount;
+                                        lossreord = in_offset;
+                                    }
                                 }
+                                
                             }
                         }
                     }else {
@@ -342,12 +358,25 @@ namespace dmludp{
                         }else{
                             index = in_offset / send_buffer_size;
                         }
+                        // if (bits_set[index] == 0){
+                        //     rcq.push_back(in_offset);
+                        //     if (in_offset > lastlossOffset) {
+                        //         ++initlosscount;
+                        //         // lastlossOffset = in_offset;
+                        //     }
+                        // }
                         if (bits_set[index] == 0){
                             rcq.push_back(in_offset);
-                            if (in_offset > lastlossOffset) {
+                            if (lossreord == std::numeric_limits<uint64_t>::max()){
+                                lossreord = in_offset;
                                 ++initlosscount;
-                                // lastlossOffset = in_offset;
+                            } else {
+                                if (in_offset > lossreord) {
+                                    ++initlosscount;
+                                    lossreord = in_offset;
+                                }
                             }
+                            
                         }
                     }
 

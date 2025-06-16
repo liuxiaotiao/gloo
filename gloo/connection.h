@@ -1521,7 +1521,7 @@ public:
 
         if (pkt_difference >= receive_connection_difference){
             receivevector[byte_index] |= (1 << bit_index);  
-            std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
+            // std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist);
             if (exist){
@@ -1793,9 +1793,9 @@ public:
                 }
                 
                 auto pn = pkt_num_spaces.updatepktnum();
-                if (send_status == 1) {
-                    std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
-                }
+                // if (send_status == 1) {
+                //     std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
+                // }
 
        
                 send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
