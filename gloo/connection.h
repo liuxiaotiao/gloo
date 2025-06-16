@@ -322,7 +322,7 @@ class SCircularQueue {
         }
 
 
-        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_len pkt, bool value_){
+        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, bool value_){
             auto index = difference_ % get_capacity();
             auto status1 = data_[index].metabuf.get_status();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
@@ -1640,7 +1640,7 @@ public:
 
         
         auto sendbufferqueue_start_index = sendbufferqueue.start();
-        uint64_t pn = first_pn;
+        auto pn = first_pn;
 
         std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
