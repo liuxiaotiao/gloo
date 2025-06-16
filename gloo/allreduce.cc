@@ -32,6 +32,7 @@ class IndexManager {
       void hello() {  }
 };
 
+static IndexManager TopkManger;
 
 // Forward declaration of ring algorithm implementation.
 void ring(
