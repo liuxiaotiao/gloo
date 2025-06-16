@@ -758,6 +758,7 @@ namespace dmludp {
                     // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
                     head_ = (head_ + 1) % capacity_;
                     ++head_packet_number_;
+                    std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
                 }
                 index = (index + 1) % capacity_;
             }

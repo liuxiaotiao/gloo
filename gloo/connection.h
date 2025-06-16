@@ -1644,9 +1644,9 @@ public:
 
         std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-            // if (slot.difference < pkt_difference){
-            //     return;
-            // }else{
+            if (slot.difference < pkt_difference){
+                /*Do nothing*/
+            }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
                 std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
@@ -1654,7 +1654,7 @@ public:
                     bit_index = 0;
                     ++byte_index;
                 }
-            // }
+            }
         });
 
 
