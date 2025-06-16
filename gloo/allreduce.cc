@@ -26,6 +26,8 @@ using ReduceRangeFunction = std::function<void(size_t, size_t)>;
 using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
 
 class IndexManager {
+  private:
+    
   public:
       IndexManager()  { }
       ~IndexManager() { }

@@ -1645,7 +1645,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"ACK:"<<pkt_difference<<", ";
+                std::cout<<"ACK:"<<pkt_difference<<", "<<pkt<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
