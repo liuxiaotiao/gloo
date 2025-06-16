@@ -730,33 +730,6 @@ namespace dmludp {
             return true;
         }
 
-        // template <typename Func>
-        // bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
-        //     if (start_packet >= end_packet) return false;
-
-        //     uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-        //     uint64_t full_end = head_packet_number_ + size();
-
-        //     uint64_t actual_start = std::max(start_packet, full_begin);
-        //     uint64_t actual_end = std::min(end_packet, full_end);
-
-        //     if (actual_start >= actual_end) return false;
-
-        //     bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
-        //     size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
-
-        //     for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-        //         func(pkt, buffer_[index]);
-        //         if (within_active_range && pkt == head_packet_number_) {
-        //             head_ = (head_ + 1) % capacity_;
-        //             ++head_packet_number_;
-        //         }
-        //         index = (index + 1) % capacity_;
-        //     }
-
-        //     return true;
-        // }
-
         template <typename Func>
         bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
             if (start_packet >= end_packet) return false;

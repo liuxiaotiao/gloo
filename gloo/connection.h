@@ -327,9 +327,9 @@ class SCircularQueue {
             auto status1 = data_[index].metabuf.get_status();
             data_[index].metabuf.acknowledege_and_drop(offset_, value_);
             auto status2 = data_[index].metabuf.get_status();
-            if (data_[index].metabuf.sentComplete() < 1024 * 1024){
-                std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
-            }
+            // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
+            std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
+            // }
                 
         }
 
