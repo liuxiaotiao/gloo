@@ -1462,7 +1462,7 @@ public:
             receive_slot[index] = 0;
             return;
         }
-        
+        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;

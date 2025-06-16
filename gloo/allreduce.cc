@@ -25,6 +25,14 @@ using ReductionFunction = AllreduceOptions::Func;
 using ReduceRangeFunction = std::function<void(size_t, size_t)>;
 using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
 
+class IndexManager {
+  public:
+      IndexManager()  { }
+      ~IndexManager() { }
+      void hello() {  }
+};
+
+
 // Forward declaration of ring algorithm implementation.
 void ring(
     const detail::AllreduceOptionsImpl& opts,
