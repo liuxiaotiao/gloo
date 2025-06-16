@@ -238,11 +238,11 @@ class SCircularQueue {
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
             }
-            if (iovecs_len == 1) {
-                std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
-            } else {
-                std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
-            }
+            // if (iovecs_len == 1) {
+            //     std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
+            // } else {
+            //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
+            // }
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
@@ -1744,7 +1744,7 @@ public:
             if (slot.difference <= send_connection_difference){
                 return;
             }else{
-                std::cout<<"Timout:";
+                // std::cout<<"Timout:";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
             }
         });
