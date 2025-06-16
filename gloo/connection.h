@@ -1643,24 +1643,56 @@ public:
         auto pn = first_pn;
 
         // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
-        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
+        // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
+        //     if (slot.difference < pkt_difference){
+        //         if (++bit_index == 8) {
+        //             bit_index = 0;
+        //             ++byte_index;
+        //         }
+        //         /*Do nothing*/
+        //         return;  
+        //     }else{
+        //         size_t value = (ack_src[byte_index] >> bit_index) & 1;
+        //         // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
+        //         sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
+        //         if (++bit_index == 8) {
+        //             bit_index = 0;
+        //             ++byte_index;
+        //         }
+        //     }
+        // });
+
+        connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
                 if (++bit_index == 8) {
                     bit_index = 0;
                     ++byte_index;
                 }
                 /*Do nothing*/
-                return;  
+                // return;  
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
-                if (++bit_index == 8) {
-                    bit_index = 0;
-                    ++byte_index;
+                if (delay){
+                    if (value) {
+                        sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);  
+                    }
+                    if (++bit_index == 8) {
+                        bit_index = 0;
+                        ++byte_index;
+                    }
+                }else {
+                    // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
+                    sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
+                    if (++bit_index == 8) {
+                        bit_index = 0;
+                        ++byte_index;
+                    }
                 }
+                
             }
         });
+
+
 
 
         if (max_acknowleged == LIMIT_UINT64_T){
