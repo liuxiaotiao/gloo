@@ -1462,7 +1462,7 @@ public:
             receive_slot[index] = 0;
             return;
         }
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<std::endl;
+        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -1521,6 +1521,7 @@ public:
 
         if (pkt_difference >= receive_connection_difference){
             receivevector[byte_index] |= (1 << bit_index);  
+            std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist);
             if (exist){
@@ -1645,7 +1646,7 @@ public:
                 return;
             }else{
                 size_t value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"ACK:"<<pkt_difference<<", "<<pkt<<", ";
+                std::cout<<"ACK:"<<pkt_difference<<", "<<bit_index<<", "<<byte_index<<", ";
                 sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
                 if (++bit_index == 8) {
                     bit_index = 0;
