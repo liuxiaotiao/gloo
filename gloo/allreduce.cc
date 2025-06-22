@@ -105,7 +105,7 @@ BroadcastRangeFunction genLocalBroadcastFunction(const BufferVector& out) {
   };
 }
 
-void allreduce(const detail::AllreduceOptionsImpl& opts) {
+void allreduce(const detail::AllreduceOptionsImpl& opts, const std::vector<uint64_t> topkbitmap = {}) {
   if (opts.elements == 0) {
     return;
   }
@@ -684,8 +684,8 @@ void bcube(
 
 } // namespace
 
-void allreduce(const AllreduceOptions& opts) {
-  allreduce(opts.impl_);
+void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> topkbitmap = {}) {
+  allreduce(opts.impl_, topkbitmap);
 }
 
 } // namespace gloo
