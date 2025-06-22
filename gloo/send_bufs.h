@@ -16,7 +16,10 @@ namespace dmludp{
     enum class MetaFlag : uint8_t {
         Initial = 1,       
         Retransmission,
-        Complete  
+        Complete,
+        Initial_unimportance,
+        Retransmission_unimportance,
+        Complete_unimportance
     };
 
     template <typename T>
@@ -116,15 +119,13 @@ namespace dmludp{
  
     class SendBuf{
         private:
-        /* SendMetaBuf*/
+        /* SendMetaBuf */
         void* meta_ptr = nullptr;
 
-        // ssize_t meta_ptr_len;
         size_t meta_ptr_len;
 
         void* meta_ptr2 = nullptr;
 
-        // ssize_t meta_ptr2_len; 
         size_t meta_ptr2_len;
 
         uint64_t meta_len;
@@ -135,39 +136,66 @@ namespace dmludp{
 
         ssize_t meta_pos;
 
-        std::vector<uint64_t> meta_len2;
+        /*Important queue info*/
+        SendBufferCircularQueue rcq_important;
 
-        SendBufferCircularQueue rcq;
+        MetaFlag meta_status_important = MetaFlag::Initial;
 
+        size_t ack_count_important = 0;
+
+        size_t packet_count_important = 0;
+
+        bool acknowldge_status_important = true;
+
+        /*Unimportant queue info*/
+        SendBufferCircularQueue rcq_unimportant;
+
+        MetaFlag meta_status_unimportant = MetaFlag::Initial_unimportance;
+
+        size_t ack_count_unimportant = 0;
+
+        size_t ack_count_unimportant = 0;
+
+        size_t packet_count_unimportant = 0;
+
+        bool acknowldge_status_unimportant = true;
+        
+        /*Record all retransmission data received info*/
         DynamicBitset bits_set;
 
-        MetaFlag meta_status = MetaFlag::Initial;
-
+        /*Each packet maximum payload*/
         size_t send_buffer_size;
 
-        size_t ack_count = 0;
+        // size_t ack_count = 0;
 
-        bool acknowldge_status = true;
+        // bool acknowldge_status = true;
 
         public:
-        uint64_t lastpacketOffset = std::numeric_limits<uint64_t>::max();
+        /*Important part*/
+        uint64_t lastpacketOffset_important = std::numeric_limits<uint64_t>::max();
 
-        uint64_t lastlossOffset = 0;
+        uint64_t lastlossOffset_important = 0;
 
-        size_t initlosscount = 0;
+        size_t initlosscount_important = 0;
 
-        uint64_t lossreord = std::numeric_limits<uint64_t>::max();
+        uint64_t lossreord_important = std::numeric_limits<uint64_t>::max();
+
+        /*Unimportant part*/
+        uint64_t lastpacketOffset_unimportant = std::numeric_limits<uint64_t>::max();
+
+        uint64_t lastlossOffset_unimportant = 0;
+
+        size_t initlosscount_unimportant = 0;
+
+        uint64_t lossreord_unimportant = std::numeric_limits<uint64_t>::max();
 
         SendBuf(size_t packet_len): 
-        send_buffer_size(packet_len)
-        {
-            meta_len2.resize(2);
-        };
+        send_buffer_size(packet_len){};
 
         ~SendBuf(){};
 
-        bool is_empty(){
-            if (rcq.empty() && meta_left <= 0) return true;
+        bool is_empty() {
+            if (rcq_important.empty() && rcq_unimportant.empty() && meta_left <= 0) return true;
             return false;
         }
 
@@ -176,9 +204,10 @@ namespace dmludp{
         }
 
         void add_Meta(struct iovec* iovecs, int iovecs_len){
-            meta_status = MetaFlag::Initial;
+            // meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
+            /*Meta data*/
             meta_ptr = nullptr;
             meta_ptr_len = 0;
             meta_ptr2 = nullptr;
@@ -190,13 +219,11 @@ namespace dmludp{
                 meta_left += iovecs[i].iov_len;
                 meta_sent += iovecs[i].iov_len;
                 meta_len += (iovecs[i].iov_len + send_buffer_size - 1)/send_buffer_size;
-                meta_len2[i] = iovecs[i].iov_len;
                 if (i == 0){
                     meta_ptr = iovecs[i].iov_base;
                     meta_ptr_len = iovecs[i].iov_len;
                 }else{
                     meta_ptr2 = iovecs[i].iov_base;
-                    // std::cout<<"meta_ptr2:"<<meta_ptr2<<std::endl;
                     meta_ptr2_len = iovecs[i].iov_len;
                 }
             }
@@ -204,112 +231,133 @@ namespace dmludp{
             meta_pos = 0;
             if(meta_len != bits_set.size()){
                 bits_set.resize(meta_len);
-                // retranmission_map.resize(meta_len);
             }
+
             bits_set.clear();
-            // retranmission_map.clear();
-            ack_count = 0;
-            rcq.clear();
-            acknowldge_status = true;
-            lastlossOffset = 0;
-            initlosscount = 0;
-            if (iovecs_len == 1) {
-                lastpacketOffset = 0;
+
+            /*Importance init*/
+            rcq_important.clear();
+            ack_count_important = 0;
+            packet_count_important = 0;
+            acknowldge_status_important = true;
+            meta_status_important = MetaFlag::Initial;
+
+            lastlossOffset_important = 0;
+            initlosscount_important = 0;
+            lossreord_important = std::numeric_limits<uint64_t>::max();
+            
+            /*Unimportance init*/
+            if (iovecs_len != 1) {
+                rcq_unimportant.clear();
+                ack_count_unimportant = 0;
+                packet_count_unimportant = 0;
+                acknowldge_status_unimportant = true;
+                acknowldge_status_unimportant = MetaFlag::Initial_unimportance;
+
+                lastlossOffset_unimportant = 0;
+                initlosscount_unimportant = 0;
+                lossreord_unimportant = std::numeric_limits<uint64_t>::max();
             } else {
-                lastpacketOffset = 48 + (meta_ptr2_len / MAX_SEND_UDP_PAYLOAD_SIZE) * MAX_SEND_UDP_PAYLOAD_SIZE;
+                acknowldge_status_unimportant = MetaFlag::Complete_unimportance;
             }
-            lossreord = std::numeric_limits<uint64_t>::max();
+
+           
+            if (iovecs_len == 1) {
+                lastpacketOffset_important = 0;
+            } else {
+                lastlossOffset_important = 0;
+                auto importantIndex = bitmap.last_one();
+                auto unimportantIndex = bitmap.last_zero();
+                if (importantIndex != -1) {
+                    lastlossOffset_important = 48 + (importantIndex + 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
+                }
+
+                if (unimportantIndex != 1) {
+                    lastlossOffset_unimportant = 48 + (unimportantIndex + 1) * MAX_SEND_UDP_PAYLOAD_SIZE;
+                }else {
+                    acknowldge_status_unimportant = MetaFlag::Complete_unimportance;
+                }
+            }
         }
 
-        ssize_t off_front(){
+        ssize_t off_front_important(){
             ssize_t off = -1;
-            if(meta_status == MetaFlag::Initial){
+            if(meta_status_important == MetaFlag::Initial){
                 if (meta_left > 0){
                     if (meta_pos == 0){
                         off = meta_pos * send_buffer_size;
                         meta_left -= 48;
+                        packet_count_important++;
                     }else{
-                        off = (meta_pos - 1) * send_buffer_size + 48;
-                        meta_left -= send_buffer_size;
+                        auto index = bitmap.next_one();
+                        if (index != -1) {
+                            off = index * send_buffer_size + 48;
+                            meta_left -= send_buffer_size;
+                            packet_count_important++;
+                        } else {  
+                            meta_status_important = MetaFlag::Retransmission;
+                        }
+                        
                     }
                     meta_pos++;
                     if (meta_left <= 0){
                         meta_left = 0;
-                        // lastpacketOffset = off;
-                        // std::cout<<"off_front:"<<lastpacketOffset<<", "<<off<<std::endl;
-                        /*This part is conflict with */
-                        meta_status = MetaFlag::Retransmission;
+                        meta_status_important = MetaFlag::Retransmission;
                     }
                 }
-            }else if(meta_status == MetaFlag::Retransmission){
-                if (!rcq.empty()){
-                    off = rcq.pop_front();
-                    /////////////
+            }else if(meta_status_important == MetaFlag::Retransmission){
+                if (!rcq_important.empty()){
+                    off = rcq_important.pop_front();
                     auto index = 0;
-                    // std::cout<<"off:"<<off<<", "<<meta_len;
                     if (off != 0){
                         index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
-                    // std::cout<<", "<<index<<std::endl;
                     
                     if (bits_set[index] == 1)
                     {
                         off = -1;
                     }
-                    ///////////////
                 }
             }
             return off;
         }
 
-        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
-        //     /* 6.6
-        //     In fact, we didn't do extra operation for received packet, we just need to modify the timeout packet and delay ack packet
-        //     */
-        //     if (is_drop){
-        //         /*bits_set.set(buffer_offset_convertor(in_offset));*/
-        //         auto index = 0;
-        //         if (in_offset >= 48){
-        //             index = (in_offset - 48) / send_buffer_size + 1;
-        //         }else{
-        //             index = in_offset / send_buffer_size;
-        //         }
-        //         if (bits_set[index] == 0){
-        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
-        //             bits_set.set(index);
-        //             ack_count++;
-        //         }
-        //     }else{
-        //         /*
-        //         NO pop front cause duplicate packet sent again and again.
-        //         */
-        //         ////////////////
-        //         auto index = 0;
-        //         if (in_offset >= 48){
-        //             index = (in_offset - 48) / send_buffer_size + 1;
-        //         }else{
-        //             index = in_offset / send_buffer_size;
-        //         }
-        //         if (bits_set[index] == 0){
-        //             // std::cout<<"in_offset:"<<in_offset<<std::endl;
-        //             rcq.push_back(in_offset);
-        //         }
-        //         // rcq.push_back(in_offset);
-        //         ///////////////
-        //     }
-        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
-        //     if (ack_count == bits_set.size()){
-        //         meta_status = MetaFlag::Complete;
-        //     }
-        // } 
+        ssize_t off_front_unimportant(){
+            ssize_t off = -1;
+            if(meta_status_unimportant == MetaFlag::Initial_unimportance){
+                if (meta_left > 0){
+                    auto index = bitmap.next_zero();
+                    if (index != -1) {
+                        off = index * send_buffer_size + 48;
+                        meta_left -= send_buffer_size;
+                    } else {
+                        meta_status_unimportant = MetaFlag::Retransmission_unimportance;
+                    }
+                }
+            }else if(meta_status_unimportant == MetaFlag::Retransmission_unimportance){
+                if (!rcq_unimportant.empty()){
+                    off = rcq_unimportant.pop_front();
+                    auto index = 0;
+                    if (off != 0){
+                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
+                    }
+                    
+                    if (bits_set[index] == 1)
+                    {
+                        off = -1;
+                    }
+                }
+            }
+            return off;
+        }
 
         void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
             if (is_drop){
-                if (acknowldge_status) {
-                    if (in_offset == lastpacketOffset) {
+                if (acknowldge_status_important) {
+                    if (in_offset == lastpacketOffset_important) {
                         // std::cout<<"in_offset:"<<in_offset<<", "<<lastpacketOffset<<std::endl;
-                        ack_count = bits_set.size() - initlosscount;
-                        acknowldge_status = false;
+                        ack_count_important = packet_count_important - initlosscount_important;
+                        acknowldge_status_important = false;
                     }
                 } else {
                     auto index = 0;
@@ -320,11 +368,11 @@ namespace dmludp{
                     }
                     if (bits_set[index] == 0){
                         bits_set.set(index);
-                        ack_count++;
+                        ack_count_important++;
                     }
                 }
             }else{
-                if (acknowldge_status){
+                if (acknowldge_status_important){
                     if (!rcq.empty()){
                         if (in_offset > rcq.back()) {
                             auto index = 0;
@@ -333,22 +381,16 @@ namespace dmludp{
                             }else{
                                 index = in_offset / send_buffer_size;
                             }
-                            // if (bits_set[index] == 0){
-                            //     rcq.push_back(in_offset);
-                            //     if (in_offset > lastlossOffset) {
-                            //         ++initlosscount;
-                            //         // lastlossOffset = in_offset;
-                            //     }
-                            // }
+                  
                             if (bits_set[index] == 0){
                                 rcq.push_back(in_offset);
-                                if (lossreord == std::numeric_limits<uint64_t>::max()){
-                                    lossreord = in_offset;
-                                    ++initlosscount;
+                                if (lossreord_important == std::numeric_limits<uint64_t>::max()){
+                                    lossreord_important = in_offset;
+                                    ++initlosscount_important;
                                 } else {
-                                    if (in_offset > lossreord) {
-                                        ++initlosscount;
-                                        lossreord = in_offset;
+                                    if (in_offset > lossreord_important) {
+                                        ++initlosscount_important;
+                                        lossreord_important = in_offset;
                                     }
                                 }
                                 
@@ -361,31 +403,25 @@ namespace dmludp{
                         }else{
                             index = in_offset / send_buffer_size;
                         }
-                        // if (bits_set[index] == 0){
-                        //     rcq.push_back(in_offset);
-                        //     if (in_offset > lastlossOffset) {
-                        //         ++initlosscount;
-                        //         // lastlossOffset = in_offset;
-                        //     }
-                        // }
+             
                         if (bits_set[index] == 0){
                             rcq.push_back(in_offset);
-                            if (lossreord == std::numeric_limits<uint64_t>::max()){
-                                lossreord = in_offset;
-                                ++initlosscount;
+                            if (lossreord_important == std::numeric_limits<uint64_t>::max()){
+                                lossreord_important = in_offset;
+                                ++initlosscount_important;
                             } else {
-                                if (in_offset > lossreord) {
-                                    ++initlosscount;
-                                    lossreord = in_offset;
+                                if (in_offset > lossreord_important) {
+                                    ++initlosscount_important;
+                                    lossreord_important = in_offset;
                                 }
                             }
                             
                         }
                     }
 
-                    if (in_offset == lastpacketOffset) {
-                        ack_count = bits_set.size() - initlosscount;
-                        acknowldge_status = false;
+                    if (in_offset == lastpacketOffset_important) {
+                        ack_count_important = packet_count_important - initlosscount_important;
+                        acknowldge_status_important = false;
                     }
                 }else {
                     auto index = 0;
@@ -401,61 +437,100 @@ namespace dmludp{
                 
             }
             
-            // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
-            if (ack_count == bits_set.size()){
-                meta_status = MetaFlag::Complete;
+            if (ack_count_important == packet_count_important){
+                meta_status_important = MetaFlag::Complete;
             }
         }
 
+        void acknowledege_and_drop_unimportant(uint64_t in_offset, bool is_drop){
+            if (is_drop){
+                if (acknowldge_status_unimportant) {
+                    if (in_offset == lastpacketOffset_unimportant) {
+                        // std::cout<<"in_offset:"<<in_offset<<", "<<lastpacketOffset<<std::endl;
+                        ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
+                        acknowldge_status_unimportant = false;
+                    }
+                } else {
+                    auto index = 0;
+                    if (in_offset >= 48){
+                        index = (in_offset - 48) / send_buffer_size + 1;
+                    }else{
+                        index = in_offset / send_buffer_size;
+                    }
+                    if (bits_set[index] == 0){
+                        bits_set.set(index);
+                        ack_count_unimportant++;
+                    }
+                }
+            }else{
+                if (acknowldge_status_unimportant){
+                    if (!rcq.empty()){
+                        if (in_offset > rcq.back()) {
+                            auto index = 0;
+                            if (in_offset >= 48){
+                                index = (in_offset - 48) / send_buffer_size + 1;
+                            }else{
+                                index = in_offset / send_buffer_size;
+                            }
+                  
+                            if (bits_set[index] == 0){
+                                rcq.push_back(in_offset);
+                                if (lossreord_unimportant == std::numeric_limits<uint64_t>::max()){
+                                    lossreord_unimportant = in_offset;
+                                    ++initlosscount_unimportant;
+                                } else {
+                                    if (in_offset > lossreord_unimportant) {
+                                        ++initlosscount_unimportant;
+                                        lossreord_unimportant = in_offset;
+                                    }
+                                }
+                                
+                            }
+                        }
+                    }else {
+                        auto index = 0;
+                        if (in_offset >= 48){
+                            index = (in_offset - 48) / send_buffer_size + 1;
+                        }else{
+                            index = in_offset / send_buffer_size;
+                        }
+             
+                        if (bits_set[index] == 0){
+                            rcq.push_back(in_offset);
+                            if (lossreord_unimportant == std::numeric_limits<uint64_t>::max()){
+                                lossreord_unimportant = in_offset;
+                                ++initlosscount_unimportant;
+                            } else {
+                                if (in_offset > lossreord_unimportant) {
+                                    ++initlosscount_unimportant;
+                                    lossreord_unimportant = in_offset;
+                                }
+                            }
+                            
+                        }
+                    }
 
-        /*
-        The retransmission message are decided by first MaxpacketOffset
-        Future improvement: reduce rcq real push_back, using virtual_head and virtual_tail to control message
-        */
-        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop){
-        //     if (is_drop){
-        //         if (acknowldge_status) {
-        //             if (in_offset == lastpacketOffset) {
-        //                 ack_count = bits_set.size() - rcq.size();
-        //             }
-        //         } else {
-        //             auto index = 0;
-        //             if (in_offset >= 48){
-        //                 index = (in_offset - 48) / send_buffer_size + 1;
-        //             }else{
-        //                 index = in_offset / send_buffer_size;
-        //             }
-        //             if (bits_set[index] == 0){
-        //                 bits_set.set(index);
-        //                 ack_count++;
-        //             }
-        //         }
-        //     }else{
-        //         if (acknowldge_status) {
-        //              auto index = 0;
-        //             if (in_offset >= 48){
-        //                 index = (in_offset - 48) / send_buffer_size + 1;
-        //             }else{
-        //                 index = in_offset / send_buffer_size;
-        //             }
-        //             if (bits_set[index] == 0){
-        //                 rcq.push_back(in_offset);
-        //             }
-        //         } 
-
-        //         if (acknowldge_status && in_offset == lastpacketOffset) {
-        //             ack_count = bits_set.size() - rcq.size();
-        //         }
-        //     }
+                    if (in_offset == lastpacketOffset_unimportant) {
+                        ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
+                        acknowldge_status_unimportant = false;
+                    }
+                }else {
+                    auto index = 0;
+                    if (in_offset >= 48){
+                        index = (in_offset - 48) / send_buffer_size + 1;
+                    }else{
+                        index = in_offset / send_buffer_size;
+                    }
+                    if (bits_set[index] == 0){
+                        rcq.push_back(in_offset);
+                    }
+                }
+                
+            }
             
-        //     // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
-        //     if (ack_count == bits_set.size()){
-        //         meta_status = MetaFlag::Complete;
-        //     }
-        // }
-
-        void RetranmissionQueueClear() {
-
+            if (ack_count_unimportant == packet_count_unimportant){
+                meta_status_unimportant = MetaFlag::Complete_unimportance;
+            }
         }
 
         size_t round_up(uint64_t a, uint64_t b){
@@ -497,24 +572,51 @@ namespace dmludp{
             return stop;
         }
 
-        bool written_complete(){
-            return meta_status == MetaFlag::Complete;
+
+        bool emit_unimportance(struct iovec& out, ssize_t& out_len, uint64_t& out_off){
+            bool stop = false;
+            
+            out_len = 0;
+            auto tmp_off = off_front_unimportant();
+
+            if (tmp_off == -1){
+                out_len = -1;
+                stop = true;
+                return stop;
+            }
+            out_off = tmp_off;
+            if (out_off == 0){
+                out_len = meta_ptr_len;
+                out.iov_base = meta_ptr;
+                out.iov_len = meta_ptr_len;
+            }else{
+                out_len = std::min(send_buffer_size, size_t(meta_ptr2_len - (out_off - 48)));
+                out.iov_base = reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(meta_ptr2) + out_off - 48);
+                out.iov_len = out_len;
+            }      
+
+            return stop;
         }
 
+        bool written_complete(){
+            return meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance;
+        }
 
         void clear(){
             meta_pos = -1;
             meta_sent = 0;
             meta_len = 0;
             meta_left = 0;
-            for(auto &e :meta_len2){
-                e = 0;
-            }
         };
 
-        size_t get_status(){
-            return static_cast<size_t>(meta_status);
+        size_t get_status_importance(){
+            return static_cast<size_t>(meta_status_important);
         }
+
+        size_t get_status_unimportance(){
+            return static_cast<size_t>(meta_status_unimportant);
+        }
+
 
         void to_json() const{
             std::cout << "{";

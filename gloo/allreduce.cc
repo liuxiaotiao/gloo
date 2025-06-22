@@ -24,6 +24,7 @@ using BufferVector = std::vector<std::unique_ptr<transport::UnboundBuffer>>;
 using ReductionFunction = AllreduceOptions::Func;
 using ReduceRangeFunction = std::function<void(size_t, size_t)>;
 using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
+std::vector<int> global_vec = {1, 2, 3};
 
 class IndexManager {
   private:
@@ -686,6 +687,11 @@ void bcube(
 
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap) {
   allreduce(opts.impl_, topkbitmap);
+}
+
+// getter
+std::span<const int> get_global_span() {
+    return std::span<const int>(global_vec);
 }
 
 } // namespace gloo

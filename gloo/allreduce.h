@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <span>
 
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"
@@ -191,5 +192,7 @@ class AllreduceOptions {
 };
 
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap = {});
+
+std::span<const int> get_global_span();
 
 } // namespace gloo

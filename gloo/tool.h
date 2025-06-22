@@ -842,4 +842,201 @@ namespace dmludp {
         size_t tail_;
         uint64_t head_packet_number_;
     };
+
+
+    class NewPacketMapRingBuffer {
+    public:
+        explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
+            : capacity_(capacity),
+            buffer_(capacity),
+            head_(0),
+            tail_(0),
+            head_packet_number_(start_packet_number) {}
+
+        bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
+            size_t next_tail = (tail_ + 1) % capacity_;
+            if (next_tail == head_) {
+                std::cout<<"PacketMapRingBuffer full"<<std::endl;
+                return false; 
+            }
+
+            buffer_[tail_].offset = offset_;
+            buffer_[tail_].difference = difference_;
+            // buffer_[tail_].priority = priority_;
+            tail_ = next_tail;
+            return true;
+        }
+
+        bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) {
+            uint64_t current_size = size();
+            uint64_t tail_packet_number = head_packet_number_ + current_size;
+
+            if (packet_number < head_packet_number_ || packet_number >= tail_packet_number) {
+                return false;
+            }
+
+            if (packet_number > head_packet_number_) {
+                size_t advance = packet_number - head_packet_number_;
+                head_ = (head_ + advance) % capacity_;
+                head_packet_number_ = packet_number;
+            }
+
+            size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
+            out_offset = buffer_[index].offset;
+            return true;
+        }
+
+        bool tryFindDeletedOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
+            uint64_t buffer_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t buffer_end = head_packet_number_ + size();  
+
+            if (packet_number < buffer_begin || packet_number >= buffer_end) {
+                return false;  
+            }
+
+            size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
+            out_offset = buffer_[index].offset;
+            difference_ = buffer_[index].difference;
+            return true;
+        }
+
+        bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) {
+            if (getOffset(packet_number, out_offset, difference_)) {
+                return true;
+            }
+            return tryFindDeletedOffset(packet_number, out_offset, difference_);
+        }
+
+        std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) {
+            uint64_t offset;
+            Difference_len diff;
+            if (findOffsetAuto(packet_number, offset, diff)) {
+                return std::make_pair(offset, diff);
+            }
+            return std::nullopt;
+        }
+
+        template <typename Func>
+        bool forEachSlotAutoRange(uint64_t start_packet, uint64_t end_packet, Func&& func) const {
+            if (start_packet >= end_packet) return false;
+
+            
+            uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t full_end = head_packet_number_ + size();
+
+            if (start_packet < full_begin || end_packet > full_end) {
+                return false;  
+            }
+
+            size_t base_index = (head_ + (start_packet - head_packet_number_)) % capacity_;
+            size_t index = base_index;
+
+            for (uint64_t pkt = start_packet; pkt < end_packet; ++pkt) {
+                func(pkt, buffer_[index]);
+                index = (index + 1) % capacity_;
+            }
+
+            return true;
+        }
+
+        template <typename Func>
+        bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
+            if (start_packet >= end_packet) return false;
+
+            uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
+            uint64_t full_end = head_packet_number_ + size();
+
+            uint64_t actual_start = std::max(start_packet, full_begin);
+            uint64_t actual_end = std::min(end_packet, full_end);
+
+            if (actual_start >= actual_end) return false;
+
+            bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
+            size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
+
+            if (within_active_range && actual_start > head_packet_number_) {
+                size_t advance = actual_start - head_packet_number_;
+                head_ = (head_ + advance) % capacity_;
+                head_packet_number_ = actual_start;
+            }
+
+            for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
+                bool delayed = false;
+                if (pkt < head_packet_number_) {
+                    delayed = true;
+                }
+                func(pkt, buffer_[index], delayed);
+                if (within_active_range) {
+                    head_ = (head_ + 1) % capacity_;
+                    ++head_packet_number_;
+                }
+                index = (index + 1) % capacity_;
+            }
+
+            return true;
+        }
+
+
+        bool pop() {
+            if (empty()) return false;
+            head_ = (head_ + 1) % capacity_;
+            ++head_packet_number_;
+            return true;
+        }
+
+        std::vector<std::pair<uint64_t, uint64_t>> getAllMappings() const {
+            std::vector<std::pair<uint64_t, uint64_t>> mappings;
+            mappings.reserve(size());
+
+            size_t idx = head_;
+            uint64_t pkt = head_packet_number_;
+            while (idx != tail_) {
+                mappings.emplace_back(pkt, buffer_[idx].offset);
+                idx = (idx + 1) % capacity_;
+                ++pkt;
+            }
+
+            return mappings;
+        }
+
+        bool empty() const {
+            return head_ == tail_;
+        }
+
+        size_t size() const {
+            if (tail_ >= head_) return tail_ - head_;
+            return capacity_ - head_ + tail_;
+        }
+
+        size_t capacity() const {
+            return capacity_ - 1; 
+        }
+
+        size_t freeSlots() const {
+            return capacity() - size();
+        }
+
+        uint64_t packetNumberBegin() const {
+            return head_packet_number_;
+        }
+
+        uint64_t packetNumberEnd() const {
+            return head_packet_number_ + size();
+        }
+
+    private:
+        struct Slot {
+            uint64_t offset; /*Control message: offset = std::numeric_limits<uint64_t>::max() - 1*/
+            uint32_t difference;
+            uint16_t len;
+            uint8_t importance; /*Different cwnd*/
+            uint8_t status; /*Unimportant packet will be drop when it marked as retransmission status*/
+        };
+
+        size_t capacity_;
+        std::vector<Slot> buffer_;
+        size_t head_;
+        size_t tail_;
+        uint64_t head_packet_number_;
+    };
 }
