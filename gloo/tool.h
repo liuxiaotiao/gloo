@@ -745,7 +745,6 @@ namespace dmludp {
             bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
             size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
 
-            // 如果是有效区间但不从 head_ 开始，跳跃更新 head_ 到 actual_start 对应位置
             if (within_active_range && actual_start > head_packet_number_) {
                 size_t advance = actual_start - head_packet_number_;
                 head_ = (head_ + advance) % capacity_;

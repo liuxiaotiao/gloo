@@ -27,11 +27,14 @@ namespace dmludp{
             size_t tail_;
             size_t capacity_;
 
-            CircularQueue(size_t capacity = 1000) 
+            CircularQueue(size_t capacity = 1024) 
                 : data_(capacity), head_(0), tail_(0), capacity_(capacity)
             {}
 
             virtual void push_back(const T value) {
+                if (full()) {
+                    throw std::runtime_error("Queue is full, cannot add element.");
+                }
                 data_[tail_] = value;
                 tail_ = (tail_ + 1) % capacity_;
             }
@@ -213,7 +216,7 @@ namespace dmludp{
             if (iovecs_len == 1) {
                 lastpacketOffset = 0;
             } else {
-                lastpacketOffset = 48 + (meta_ptr2_len / 1440) * 1440;
+                lastpacketOffset = 48 + (meta_ptr2_len / MAX_SEND_UDP_PAYLOAD_SIZE) * MAX_SEND_UDP_PAYLOAD_SIZE;
             }
             lossreord = std::numeric_limits<uint64_t>::max();
         }
@@ -245,7 +248,7 @@ namespace dmludp{
                     auto index = 0;
                     // std::cout<<"off:"<<off<<", "<<meta_len;
                     if (off != 0){
-                        index = round_up((off - 48), 1440) + 1;
+                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
                     // std::cout<<", "<<index<<std::endl;
                     

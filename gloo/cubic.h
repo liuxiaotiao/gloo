@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <chrono>
+#include "tool.h"
 namespace dmludp{
 
 const size_t MAX_CWND = 3000 * 1440;
@@ -73,7 +74,7 @@ class Recovery{
 
     const size_t INITIAL_WINDOW_PACKETS = 10;
 
-    const size_t PACKET_SIZE = 1440;
+    const size_t PACKET_SIZE = MAX_SEND_UDP_PAYLOAD_SIZE;
 
     const size_t INI_WIN = INITIAL_WINDOW_PACKETS * PACKET_SIZE;
 
@@ -93,12 +94,12 @@ class Recovery{
     // app_limit(false),
     bytes_in_flight(0),
     max_datagram_size(pkt_size),
-    prior_cwnd(1440 * pkt_size),
+    prior_cwnd(MAX_SEND_UDP_PAYLOAD_SIZE * pkt_size),
     prior_W_max(INI_SSTHREAD),
     prior_cubic_k(0.0),
     prior_ssthresh(INI_SSTHREAD),
     prior_W_est(0),
-    congestion_window(1440 * 10),
+    congestion_window(MAX_SEND_UDP_PAYLOAD_SIZE * 10),
     W_max(INI_WIN),
     ssthresh(INI_SSTHREAD * pkt_size),
     K(0.0),

@@ -23,13 +23,14 @@ namespace dmludp{
         LowComplete
     };
 
-
+    /*Send mode, no totally TopK mode, because control message is required */
     enum class TopKFlag : uint8_t {
         AllTopK = 1,       
         NoTopK,
         PartialTopK
     };
 
+    /*Mark Packet status, espically less importance packet, will automaticly drop after only retransmission*/
     enum class PacketStatus : uint8_t {
         Reliable = 1,
         NonReliable,
@@ -120,20 +121,15 @@ namespace dmludp{
                 last_value = -1;
             }
 
-            ssize_t get_last_value() const {
-                return last_value;
-            }
-
             ~SendBufferCircularQueue(){};
     };
 
  
     class SendBuf{
         private:
-        /* SendMetaBuf*/
+        /*SendMetaBuf */
         void* meta_ptr = nullptr;
 
-        // ssize_t meta_ptr_len;
         size_t meta_ptr_len;
 
         void* meta_ptr2 = nullptr;
@@ -193,8 +189,8 @@ namespace dmludp{
             return meta_sent;
         }
 
-        int largestMultipleBelow(int a) {
-            return ((a - 1) / 1440) * 1440;
+        uint64_t largestMultipleBelow(uint64_t a) {
+            return ((a - 1) / MAX_SEND_UDP_PAYLOAD_SIZE) * MAX_SEND_UDP_PAYLOAD_SIZE;
         }
 
         bool has_greater_avx2(const float* arr, size_t n, float threshold) {
@@ -314,7 +310,7 @@ namespace dmludp{
                     off = rcq.pop_front();
                     auto index = 0;
                     if (off != 0){
-                        index = round_up((off - 48), 1440) + 1;
+                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
                     
                     if (bits_set[index] == 1)
@@ -345,7 +341,7 @@ namespace dmludp{
                     off = rcq.pop_front();
                     auto index = 0;
                     if (off != 0){
-                        index = round_up((off - 48), 1440) + 1;
+                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
                     
                     if (bits_set[index] == 1)
@@ -395,7 +391,7 @@ namespace dmludp{
                     auto index = 0;
                     // std::cout<<"off:"<<off<<", "<<meta_len;
                     if (off != 0){
-                        index = round_up((off - 48), 1440) + 1;
+                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
                     // std::cout<<", "<<index<<std::endl;
                     

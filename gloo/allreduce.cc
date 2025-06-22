@@ -27,7 +27,7 @@ using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
 
 class IndexManager {
   private:
-    
+  
   public:
       IndexManager()  { }
       ~IndexManager() { }
@@ -206,8 +206,8 @@ void ring(
   // rounding it up to the nearest multiple of the element size.
   // For example, if maxSegmentSize = 10, and elementSize = 4,
   // then after rounding up: segmentSize = 12;
-  const size_t maxSegmentBytes = opts.elementSize *
-      std::max((size_t)1, opts.maxSegmentSize / opts.elementSize);
+  const size_t maxSegmentBytes = opts.elementSize * /*opts.elementSize = 4*/
+      std::max((size_t)1, opts.maxSegmentSize / opts.elementSize); /*opts.maxSegmentSize = 1M*/
 
   // Compute how many segments make up the input buffer.
   //
@@ -313,7 +313,6 @@ void ring(
         out[0]->waitSend(opts.timeout);
       }
     }
-    // std::cout<<"index:"<<i<<std::endl;
     // Issue new send and receive operation in all but the final two
     // iterations. At that point we have already sent all data we
     // needed to and only have to wait for the final segments to be
@@ -322,18 +321,14 @@ void ring(
       // Compute send and receive offsets and lengths for this iteration.
       auto cur = computeReduceScatterOffsets(i);
       if (cur.recvLength > 0) {
-	      // std::cout<<"start tmp->recv 1"<<std::endl;
         tmp->recv(recvRank, slot, segmentOffset[i & 0x1], cur.recvLength);
-        // std::cout<<"end tmp->recv 1"<<std::endl;
       }
       if (cur.sendLength > 0) {
         // Prepare out[0]->ptr to hold the local reduction for this segment
         if (i < numSegmentsPerRank) {
           reduceInputs(cur.sendOffset, cur.sendLength);
         }
-        // std::cout<<"start out[0]->send 1"<<std::endl;
         out[0]->send(sendRank, slot, cur.sendOffset, cur.sendLength);
-        // std::cout<<"end out[0]->send 1"<<std::endl;
       }
     }
   }
@@ -397,14 +392,10 @@ void ring(
     if (i < (numSegments - numSegmentsPerRank)) {
       auto cur = computeAllgatherOffsets(i);
       if (cur.recvLength > 0) {
-	     // std::cout<<"start out[0]->recv 2"<<std::endl;
         out[0]->recv(recvRank, slot, cur.recvOffset, cur.recvLength);
-	//std::cout<<"end out[0]->recv 2"<<std::endl;
       }
       if (cur.sendLength > 0) {
-	  //    std::cout<<"start out[0]->send 2"<<std::endl;
         out[0]->send(sendRank, slot, cur.sendOffset, cur.sendLength);
-	//std::cout<<"end out[0]->send 2"<<std::endl;
         // Broadcast first segments to outputs buffers.
         if (i < numSegmentsPerRank) {
           broadcastOutputs(cur.sendOffset, cur.sendLength);
