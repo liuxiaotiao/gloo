@@ -643,6 +643,8 @@ namespace dmludp {
             tail_(0),
             head_packet_number_(start_packet_number) {}
 
+        ~PacketMapRingBuffer(){};
+
         bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
@@ -846,12 +848,14 @@ namespace dmludp {
 
     class NewPacketMapRingBuffer {
     public:
-        explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
+        explicit NewPacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
             : capacity_(capacity),
             buffer_(capacity),
             head_(0),
             tail_(0),
             head_packet_number_(start_packet_number) {}
+
+        ~NewPacketMapRingBuffer(){};
 
         bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
             size_t next_tail = (tail_ + 1) % capacity_;
