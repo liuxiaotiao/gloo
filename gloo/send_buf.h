@@ -349,7 +349,8 @@ namespace dmludp{
             }
 
             std::cout<<"add_Meta:"<< static_cast<uint32_t>(meta_status_important) << ", " << static_cast<uint32_t>(meta_status_unimportant)
-                <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << std::endl;
+                <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << ", " << bitmapview.size_ 
+                <<", " << importantIndex << std::endl;
         } 
 
         ssize_t off_front_important(){
