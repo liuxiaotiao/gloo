@@ -1875,10 +1875,12 @@ public:
                     if (!ack_value && !loss_unimportant) {
                         loss_unimportant = true;
                     } 
+                    ++total_unimportant;
                 } else {
                     if (!ack_value && !loss_important) {
                         loss_important = true;
                     } 
+                    ++total_important;
                 }
                 /*Do nothing*/
                 // return;  
@@ -1887,6 +1889,7 @@ public:
                 if (delay){
                     if (ack_value) {
                         if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                            ++total_unimportant;
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
                             /* Unimportant channel: unreliable */
                             sendbufferqueue.pkt2ack_unimportant(
@@ -1907,6 +1910,7 @@ public:
                                 // }
                             }
                         } else {
+                            ++total_important;
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
                                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                             } else {
@@ -1920,6 +1924,7 @@ public:
                     }
                 }else {
                     if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                        ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_important = true;
                         } 
@@ -1938,6 +1943,7 @@ public:
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status));
                         }
                     } else {
+                        ++total_important;
                         /* Important channel: reliable */
                         if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
@@ -2072,16 +2078,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
 
-        // connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool & delayed){
-        //     if (slot.difference <= send_connection_difference){
-        //         return;
-        //     }else{
-        //         // std::cout<<"Timout:";
-        //         sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false, slot.block_flag, slot.unimportant_flag);
-        //     }
-        // });
-
-         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
+        connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
                 if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
                     /* Unimportant channel: unreliable */
@@ -2100,13 +2097,6 @@ public:
             } else {
                 /* Important channel: reliable */
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                // if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
-                //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                // } else {
-                //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                // } 
-                // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
-                //     (bool)ack_value, slot.block_flag, slot.unimportant_flag);
             }
         });
 
