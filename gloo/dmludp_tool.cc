@@ -10,7 +10,7 @@
 #include <execution>
 #include <cassert>
 #include <immintrin.h>
-#include "tool.h"
+#include "dmludp_tool.h"
 namespace dmludp {
     // struct BitPos {
     //     int64_t last_one = -1;
