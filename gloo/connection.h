@@ -2056,7 +2056,7 @@ public:
                 } else {
                     bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE;
                 }
-
+                std::cout<<"bitmaplen:"<<bitmaplen<<std::endl;
                 Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen - 1);
             } else {
@@ -2233,7 +2233,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
-                    std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
+                    // std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
                     isElicit = out_off == ELICIT_OFFSET;
                     /* Elicit or not*/
                     if (isElicit) {
@@ -2285,7 +2285,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
-                    std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Unimportant)<<", "<<static_cast<uint32_t>(Type::ElicitAck)<<std::endl;
+                    // std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Unimportant)<<", "<<static_cast<uint32_t>(Type::ElicitAck)<<std::endl;
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, 1, Type::ElicitAck);
