@@ -278,7 +278,7 @@ namespace dmludp{
                 // auto importantIndex = bitmap.find_last_1_and_0();
                 // auto unimportantIndex = bitmap.last_zero();
 
-                BitPos pos = bitmap.find_last_1_and_0();
+                BitPos pos = importance_bitmap.find_last_1_and_0();
                 importantIndex = pos.last_one;
                 unimportantIndex = pos.last_zero;
 
@@ -345,7 +345,7 @@ namespace dmludp{
                             meta_status_important = MetaFlag::Retransmission;
                         }
                     }else{
-                        auto index = bitmap.next_one_avx512();
+                        auto index = importance_bitmap.next_one_avx512();
                         if (index != -1) {
                             off = index * send_buffer_size + 48;
                             meta_left -= send_buffer_size;
@@ -401,7 +401,7 @@ namespace dmludp{
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
                 if (meta_left > 0){
-                    auto index = bitmap.next_zero(); 
+                    auto index = importance_bitmap.next_zero(); 
                     if (index != -1) {
                         off = index * send_buffer_size + 48;
                         meta_left -= send_buffer_size;
