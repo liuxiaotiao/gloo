@@ -3,10 +3,7 @@ set(GLOO_SRCS)
 
 # GLOO_HDRS is the list of header files that we need to install.
 set(GLOO_HDRS)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-#add_compile_options(-mavx512f)
+
 
 set_source_files_properties(dmludp_tool.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw")
 
@@ -32,7 +29,7 @@ list(APPEND GLOO_SRCS
   "${CMAKE_CURRENT_SOURCE_DIR}/reduce.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/scatter.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/types.cc"
-  "${CMAKE_CURRENT_SOURCE_DIR}/dmludp_tool.cc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tool.cc"
   )
 
 list(APPEND GLOO_HDRS
@@ -67,7 +64,7 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/cubic.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/dmludp_tool.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tool.h"
   )
 
 if(USE_CUDA)

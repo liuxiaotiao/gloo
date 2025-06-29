@@ -10,7 +10,7 @@
 #include <execution>
 #include <cassert>
 #include <immintrin.h>
-#include "dmludp_tool.h"
+#include "tool.h"
 namespace dmludp {
     // struct BitPos {
     //     int64_t last_one = -1;
@@ -169,7 +169,7 @@ namespace dmludp {
     //     size_t next_one_index_;
     //     size_t next_zero_index_;
     // };
-    BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
+    BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
                               size_t offset_start, size_t offset_end) {
         BitPos result;
         size_t start_word = offset_start / 64;
@@ -204,7 +204,7 @@ namespace dmludp {
         return result;
     }
 
-    int64_t find_next_bit_avx512(std::span<const uint64_t> bits, size_t num_bits,
+    int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end, bool find_one) {
         const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
         size_t byte_start = offset_start / 8;
@@ -240,7 +240,7 @@ namespace dmludp {
         : bits_(), start_bit_(0), end_bit_(0), num_bits_(0),
         next_one_index_(0), next_zero_index_(0) {}
 
-    BitmapSpan::BitmapSpan(std::span<const uint64_t> data, size_t start_bit, size_t end_bit)
+    BitmapSpan::BitmapSpan(Span<const uint64_t> data, size_t start_bit, size_t end_bit)
         : bits_(data), start_bit_(start_bit), end_bit_(end_bit),
         num_bits_(end_bit >= start_bit ? end_bit - start_bit + 1 : 0),
         next_one_index_(start_bit), next_zero_index_(start_bit) {
@@ -254,7 +254,7 @@ namespace dmludp {
         return pos;
     }
 
-    void BitmapSpan::reset_span(std::span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit) {
+    void BitmapSpan::reset_span(Span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit) {
         assert(new_start_bit <= new_end_bit);
         bits_ = new_bits;
         start_bit_ = new_start_bit;

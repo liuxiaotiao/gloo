@@ -12,7 +12,7 @@
 #include "cubic.h"
 #include "recv_buf.h"
 #include "send_buf.h"
-#include "dmludp_tool.h"
+#include "tool.h"
 #include <cmath>
 #include <typeinfo>
 #include <dlfcn.h>
@@ -22,8 +22,7 @@
 #include <optional>
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
-#include <span>
-#pragma message("DEBUG: included span in FILENAME")
+// #pragma message("DEBUG: included span in FILENAME")
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
 #define BENCH_END(name) \
@@ -191,7 +190,7 @@ class MetaInfo{
         }
 
         void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, 
-            std::span<uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
+            Span<uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
             if (difference_flag != LIMIT_UINT64_T){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
                 _Exit(0);
@@ -267,7 +266,7 @@ class SCircularQueue {
             }
         }
 
-        void push_back(struct iovec* iovecs, int iovecs_len, int type_, std::span<uint64_t> bitmapspan = {}, uint64_t startbit = 0, uint64_t endbit = 0) {
+        void push_back(struct iovec* iovecs, int iovecs_len, int type_, Span<uint64_t> bitmapspan = {}, uint64_t startbit = 0, uint64_t endbit = 0) {
             if (full()){
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
@@ -1853,11 +1852,29 @@ public:
         //     }
         // });
 
+        size_t total_important = 0;
+        size_t total_unimportant = 0;
+        size_t total_important_received = 0;
+        size_t total_unimportant_received = 0;
+
+        bool loss_important = false;
+        bool loss_unimportant = false;
+
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
                 if (++bit_index == 8) {
                     bit_index = 0;
                     ++byte_index;
+                }
+                size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
+                if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                    if (!ack_value && !loss_unimportant) {
+                        loss_unimportant = true;
+                    } 
+                } else {
+                    if (!ack_value && !loss_important) {
+                        loss_important = true;
+                    } 
                 }
                 /*Do nothing*/
                 // return;  
@@ -1899,6 +1916,9 @@ public:
                     }
                 }else {
                     if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                        if (!ack_value && !loss_unimportant) {
+                            loss_important = true;
+                        } 
                         if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
                             /* Unimportant channel: unreliable */
                             sendbufferqueue.pkt2ack_unimportant(
@@ -1918,6 +1938,9 @@ public:
                         if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else {
+                            if (!ack_value && !loss_important) {
+                                loss_important = true;
+                            } 
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                         } 
                         // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
@@ -1939,15 +1962,31 @@ public:
                 max_acknowleged = end_pn;
             }
         }
-        
-        if (loss && !first_loss){
+
+        if (!loss_important) {
+            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        } else {
             recovery.check_point();
             recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-            first_loss = true;
-        }else{
-            recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
+
+        if (!loss_unimportant) {
+            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        } else {
+            low_recovery.check_point();
+            low_recovery.congestion_event(receivets);
+            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
+        
+        // if (loss && !first_loss){
+        //     recovery.check_point();
+        //     recovery.congestion_event(receivets);
+        //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        //     first_loss = true;
+        // }else{
+        //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // }
     }
 
     /*Update receive difference to process next block data*/
@@ -2000,7 +2039,7 @@ public:
             if (iovecs[1].iov_len < 2 * 1024 * 1024){
                 auto bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
 
-                std::span<uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
+                Span<uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen);
             } else {
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_);

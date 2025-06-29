@@ -10,10 +10,9 @@
 #include <iostream>   
 #include <string>     
 #include <algorithm> 
-#include <span>
-#pragma message("DEBUG: included span in FILENAME")
+// #pragma message("DEBUG: included span in FILENAME")
 #include <immintrin.h>
-#include "dmludp_tool.h"
+#include "tool.h"
 
 namespace dmludp{
     enum class Channel : uint8_t {
@@ -221,7 +220,7 @@ namespace dmludp{
             return meta_sent;
         }
 
-        void add_Meta(struct iovec* iovecs, int iovecs_len, std::span<uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
+        void add_Meta(struct iovec* iovecs, int iovecs_len, Span<uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
             // meta_status = MetaFlag::Initial;
             meta_sent = 0;
 

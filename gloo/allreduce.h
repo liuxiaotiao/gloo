@@ -11,7 +11,6 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <span>
 
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"

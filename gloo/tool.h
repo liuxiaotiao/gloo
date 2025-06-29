@@ -1367,21 +1367,39 @@ namespace dmludp {
         size_t next_zero_index_;
     };*/
 
+
+    // 简易自定义 span
+    template <typename T>
+    class Span {
+    public:
+        MySpan() : data_(nullptr), size_(0) {}
+        MySpan(const T* data, size_t size) : data_(data), size_(size) {}
+        const T* data() const { return data_; }
+        size_t size() const { return size_; }
+        const T& operator[](size_t idx) const {
+            assert(idx < size_);
+            return data_[idx];
+        }
+    private:
+        const T* data_;
+        size_t size_;
+    };
+
     // 仅声明，不实现
-    BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
+    BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end);
 
-    int64_t find_next_bit_avx512(std::span<const uint64_t> bits, size_t num_bits,
+    int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end, bool find_one);
 
     class BitmapSpan {
     public:
         BitmapSpan();
-        BitmapSpan(std::span<const uint64_t> data, size_t start_bit, size_t end_bit);
+        BitmapSpan(Span<const uint64_t> data, size_t start_bit, size_t end_bit);
 
         BitPos find_last_1_and_0() const;
 
-        void reset_span(std::span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit);
+        void reset_span(Span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit);
 
         int64_t next_one_avx512();
         int64_t next_zero_avx512();
@@ -1389,7 +1407,7 @@ namespace dmludp {
         void reset_next_indices();
 
     private:
-        std::span<const uint64_t> bits_;
+        Span<const uint64_t> bits_;
         size_t start_bit_;
         size_t end_bit_;
         size_t num_bits_;
