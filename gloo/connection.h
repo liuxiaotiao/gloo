@@ -382,7 +382,6 @@ class SCircularQueue {
             Difference_len difference_, 
             Offset_len offset_, 
             Packet_num_len pkt, 
-            Channel channel_,  
             bool ack_value_,
             PktStatus pktstatus_){
 
