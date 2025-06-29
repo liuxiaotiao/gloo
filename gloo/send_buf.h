@@ -270,7 +270,7 @@ namespace dmludp{
 
             importance_bitmap.reset_span(bitmapview, start_index, end_index);
 
-            if (iovecs_len != 1) {
+            if (iovecs_len != 1 && !bitmapview.empty()) {
                 /*
                 1. Only important: importantIndex(!0), unimportantIndex(-1)
                 2. Only unimportant: importantIndex(-1), unimportantIndex(!0)
