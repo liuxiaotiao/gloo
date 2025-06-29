@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <omp.h>
 #include <thread>
+#include <span>
 #include <execution>
 #include "packet.h"
 namespace dmludp {

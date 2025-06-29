@@ -10,6 +10,7 @@
 #include <iostream>   
 #include <string>     
 #include <algorithm> 
+#include <span>
 #include "tool.h"
 
 namespace dmludp{
@@ -165,8 +166,6 @@ namespace dmludp{
         SendBufferCircularQueue rcq_unimportant;
 
         MetaFlag meta_status_unimportant = MetaFlag::Initial_unimportance;
-
-        size_t ack_count_unimportant = 0;
 
         size_t ack_count_unimportant = 0;
 
