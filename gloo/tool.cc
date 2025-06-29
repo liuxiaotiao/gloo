@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <omp.h>
 #include <thread>
-#include <span>
 #include <execution>
 #include <cassert>
 #include <immintrin.h>
