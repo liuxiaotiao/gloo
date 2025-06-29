@@ -266,7 +266,7 @@ class SCircularQueue {
             }
         }
 
-        void push_back(struct iovec* iovecs, int iovecs_len, int type_, Span<uint64_t> bitmapspan = {}, uint64_t startbit = 0, uint64_t endbit = 0) {
+        void push_back(struct iovec* iovecs, int iovecs_len, int type_, Span<const uint64_t> bitmapspan = {}, uint64_t startbit = 0, uint64_t endbit = 0) {
             if (full()){
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
