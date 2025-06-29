@@ -296,6 +296,6 @@ namespace dmludp {
     }   
 
     bool BitmapSpan::empty() {
-        return bits.empty();
+        return bits_.empty() || num_bits_ == 0;;
     }
 }
