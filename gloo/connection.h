@@ -2077,9 +2077,11 @@ public:
         auto pn = max_acknowleged + 1;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
-
+        size_t total_important = 0;
+        size_t total_unimportant = 0;
         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                total_unimportant++;
                 if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
                     /* Unimportant channel: unreliable */
                     sendbufferqueue.pkt2ack_unimportant(
@@ -2095,6 +2097,7 @@ public:
                     // sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false)
                 }
             } else {
+                total_important++;
                 /* Important channel: reliable */
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             }
@@ -2108,7 +2111,11 @@ public:
         auto receivets = std::chrono::high_resolution_clock::now();
         recovery.check_point();
         recovery.congestion_event(receivets);
-        recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+
+        low_recovery.check_point();
+        low_recovery.congestion_event(receivets);
+        low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
 
     // ssize_t prepareData() {
