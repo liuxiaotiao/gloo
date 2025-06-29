@@ -190,7 +190,7 @@ class MetaInfo{
         }
 
         void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, 
-            Span<uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
+            Span<const uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
             if (difference_flag != LIMIT_UINT64_T){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
                 _Exit(0);

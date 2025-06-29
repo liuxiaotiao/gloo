@@ -1374,6 +1374,10 @@ namespace dmludp {
     public:
         Span() : data_(nullptr), size_(0) {}
         Span(const T* data, size_t size) : data_(data), size_(size) {}
+
+        template <typename U, std::enable_if_t<std::is_convertible_v<U (*)[], T (*)[]>, int> = 0>
+        Span(const Span<U>& other) : data_(other.data()), size_(other.size()) {}
+
         const T* data() const { return data_; }
         size_t size() const { return size_; }
         const T& operator[](size_t idx) const {
