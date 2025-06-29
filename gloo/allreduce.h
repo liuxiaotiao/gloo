@@ -192,6 +192,6 @@ class AllreduceOptions {
 
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap = {});
 
-std::span<const int> get_global_span();
+// std::span<const int> get_global_span();
 
 } // namespace gloo
