@@ -2041,10 +2041,15 @@ public:
 
         if (iovecs_len != 1) {
             if (iovecs[1].iov_len < 2 * 1024 * 1024){
-                auto bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
+                size_t bitmaplen = 0;
+                if (iovecs[1].iov_len % MAX_SEND_UDP_PAYLOAD_SIZE != 0) {
+                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
+                } else {
+                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE;
+                }
 
                 Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
-                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen);
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen - 1);
             } else {
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_);
             }  
