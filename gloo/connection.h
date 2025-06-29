@@ -2001,12 +2001,12 @@ public:
                 auto bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
 
                 std::span<uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
-                sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list, bitmapview, 0, bitmaplen);
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen);
             } else {
-                sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_);
             }  
         } else {
-            sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
+            sendbufferqueue.push_back(iovecs, iovecs_len, type_);
         }
 
         

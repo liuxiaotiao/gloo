@@ -73,6 +73,7 @@
         "stack": "cpp",
         "numeric": "cpp",
         "memory": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "regex": "cpp"
     }
 }
