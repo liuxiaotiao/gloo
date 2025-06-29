@@ -2205,13 +2205,13 @@ public:
 
                     if (isElicit) {
                         // connection_map.push(0, pkg_difference, 1, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), ty);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<uint8_t>(ty));
                     } else {
                         // connection_map.push(out_off, pkg_difference, 1);
                         if (out_status){
-                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable_special), ty);
+                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable_special), static_cast<uint8_t>(ty));
                         } else {
-                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), ty);
+                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<uint8_t>(ty));
 
                         }
                     }
@@ -2247,10 +2247,10 @@ public:
 
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, pkt_status, Tpye::Elicit);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, pkt_status, static_cast<uint8_t>(Tpye::Elicit));
                         recovery.on_packet_sent(out_len);
 
-                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), Tpye::Elicit);
+                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<uint8_t>(Tpye::Elicit));
                     } else {
                         bool complete_flag = pkt_status == PktStatus::Unimportant_partialreliable;
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Unimportant, out_blocks, (uint8_t)complete_flag);
