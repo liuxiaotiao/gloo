@@ -89,7 +89,7 @@ class Message{
             Block_len blocks_ = std::numeric_limits<Block_len>::max(), 
             Status_len status_ = 0, Type_len ty_ = Type::Application) {
             if (ty_ != Type::Application){
-                message_header.pkt_ty = ty_;
+                message_header.ty = ty_;
             }
             message_header.pkt_num = pn;
             message_header.offset = offset;
@@ -200,7 +200,7 @@ class MetaInfo{
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
-            if (priotity_list != {}){
+            if (!priotity_list.empty()){
                 metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, startbit);
             } else {
                 metabuf.add_Meta(iovecs, iovecs_len);
@@ -1310,7 +1310,7 @@ public:
         acknowldge_header.resize(sizeof(Header));
 
         bitmap_vector.resize(24);
-        for (auto i = 0; i < bitmap_vector; i++){
+        for (auto i = 0; i < bitmap_vector.size(); i++){
             e = 24 - i;
         }
     };

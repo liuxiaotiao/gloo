@@ -396,7 +396,7 @@ namespace dmludp{
         }
 
         ssize_t off_front_unimportant (PktStatus & packet_status) {
-            packet_status = PktStatus::Unimportant_reliable
+            packet_status = PktStatus::Unimportant_reliable;
             ssize_t off = -1;
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
@@ -406,7 +406,7 @@ namespace dmludp{
                         off = index * send_buffer_size + 48;
                         meta_left -= send_buffer_size;
                         // meta_status_unimportant = MetaFlag::Initial_unimportance;
-                        packet_status = MetaFlag::Initial_unimportance;
+                        // packet_status = MetaFlag::Initial_unimportance;
                         if (off == lastpacketOffset_unimportant) {
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
@@ -743,7 +743,7 @@ namespace dmludp{
         }
 
         void ack_check(){
-            std::cout << "ack_count:" << ack_count << ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq.size() << std::endl;
+            std::cout << "ack_count:" << ack_count_important << ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq.size() << std::endl;
         }
 
 
