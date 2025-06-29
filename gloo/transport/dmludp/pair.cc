@@ -725,8 +725,8 @@ bool Pair::protocal2read(){
             
             if (i == 1){
               if (rnbytes == 0){
-                ip_print(dmludp_connection->peeraddr);
                 std::cout<<dmludp_connection->receive_connection_difference<<", ";
+                ip_print(dmludp_connection->peeraddr);
                 readComplete(rbuf);
 
                 dmludp_connection->update_receive_difference();
@@ -773,8 +773,8 @@ bool Pair::protocal2read(){
 
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
-              ip_print(dmludp_connection->peeraddr);
               std::cout<<dmludp_connection->receive_connection_difference<<", ";
+              ip_print(dmludp_connection->peeraddr);       
               readComplete(rbuf);
 
               dmludp_connection->update_receive_difference();
