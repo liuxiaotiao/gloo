@@ -748,7 +748,7 @@ namespace dmludp{
         }
 
 
-        bool emit(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks, uint8_t & status_){
+        bool emit(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks /* Important packet count */, uint8_t & status_ /* Contain unimportant completeness */){
             bool stop = false;
             
             out_len = 0;
@@ -773,7 +773,7 @@ namespace dmludp{
                     out.iov_len = out_len;
                 }  
             } else {
-                /* Special */
+                /* Special(Elicitack) */
                 out_off = ELICIT_OFFSET;
                 out_len = 0;
                 out.iov_base = nullptr;
@@ -789,13 +789,15 @@ namespace dmludp{
 
             if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
                 status_ = 1;
+            } else {
+                status_ = 0;
             }
 
             return stop;
         }
 
 
-        bool emit_unimportance(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks, PktStatus & status_){
+        bool emit_unimportance(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks, PktStatus & status_ /* Contain completeness */){
             bool stop = false;
             
             out_len = 0;
@@ -813,6 +815,7 @@ namespace dmludp{
 
             out_off = tmp_off;
             if (out_off == 0){
+                /* offset 0 cannot be unimportant */
                 out_len = meta_ptr_len;
                 out.iov_base = meta_ptr;
                 out.iov_len = meta_ptr_len;

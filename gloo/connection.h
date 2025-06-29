@@ -2278,7 +2278,7 @@ public:
 
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, static_cast<Status_len>(pkt_status), Type::ElicitAck);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, 1, Type::ElicitAck);
                         recovery.on_packet_sent(out_len);
 
                         connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), Type::ElicitAck);
@@ -2287,7 +2287,7 @@ public:
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Unimportant), out_blocks, (uint8_t)complete_flag);
                         recovery.on_packet_sent(out_len);
 
-                        connection_map.push(out_off, pkg_difference, out_blocks,static_cast<uint8_t>(pkt_status), ty);
+                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(pkt_status), ty);
                     }
                     
 
