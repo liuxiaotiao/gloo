@@ -464,7 +464,7 @@ namespace dmludp{
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
                     } else {
-                        std::cout<<"off_front_unimportant error"<<std::endl;
+                        std::cout<<"off_front_unimportant error:"<<importance_bitmap.empty()<<", "<<bits_set.size()<<std::endl;
                         _Exit(0);
                         meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                     }
