@@ -505,7 +505,7 @@ class metarecebuf{
 
         size_t important_packet_count = 0; /* Important packet statics */
 
-        std::optional<size_t> expected_important_packets = std::nullopt; /* Real important packet should be*/
+        std::optional<uint64_t> expected_important_packets = std::nullopt; /* Real important packet should be*/
 
         std::optional<uint8_t> unimportant_packets_status = std::nullopt;
 
@@ -629,7 +629,11 @@ class metarecebuf{
 
         void set_blocks(Block_len blocks_) {
             if (!expected_important_packets.has_value()) {
-                expected_important_packets = blocks_;
+                if (blocks_ == NO_UNIMPORTANT_BLOCK) {
+                    expected_important_packets = std::numeric_limits<uint64_t>::max();
+                } else {
+                    expected_important_packets = blocks_;
+                }  
             }
         }
 

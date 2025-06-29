@@ -53,6 +53,8 @@ namespace dmludp {
 
     inline constexpr uint16_t BLOCK_DEFAULT = LIMIT_UINT16_T;
 
+    inline constexpr uint16_t NO_UNIMPORTANT_BLOCK = LIMIT_UINT16_T - 1;
+
     /*a is latter received, b is former received*/
     template <typename T>
     typename std::enable_if<std::is_unsigned<T>::value, bool>::type
