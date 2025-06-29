@@ -2235,6 +2235,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
+                    std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
                     isElicit = out_off == ELICIT_OFFSET;
                     /* Elicit or not*/
                     if (isElicit) {
@@ -2286,7 +2287,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
-
+                    std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Unimportant)<<", "<<static_cast<uint32_t>(Type::ElicitAck)<<std::endl;
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, 1, Type::ElicitAck);
