@@ -351,7 +351,7 @@ namespace dmludp{
 
         ssize_t off_front_important(){
             ssize_t off = -1;
-            if (bitmapview.empty()) {
+            if (importance_bitmap.empty()) {
                 if(meta_status_important == MetaFlag::Initial){
                     if (meta_left > 0){
                         if (meta_pos == 0){
@@ -834,13 +834,13 @@ namespace dmludp{
                 
 
             if (meta_status_important != MetaFlag::Initial) {
-                if (bitmapview.empty()) {
+                if (importance_bitmap.empty()) {
                     blocks = NO_UNIMPORTANT_BLOCK;
                 } else {
                     blocks = packet_count_important;
                 }
             } else {
-                if (bitmapview.empty()) {
+                if (importance_bitmap.empty()) {
                     blocks = NO_UNIMPORTANT_BLOCK;
                 } else {
                     blocks = BLOCK_DEFAULT;
