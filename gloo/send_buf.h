@@ -232,6 +232,14 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
+            if (!bitmapview.empty()){
+                for (auto i = 0 ; i < bitmapview.size() ; i++) {
+                    std::cout<<bitmapview[i]<<" ";
+                }
+                std::cout<<std::endl;
+            }
+            
+
             /* Store buffer info: pointer + length */
             for (auto i = 0; i < iovecs_len; i++){
                 meta_left += iovecs[i].iov_len;
