@@ -852,7 +852,7 @@ namespace dmludp{
                 }
             }
 
-            if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
+            if (meta_status_unimportant == MetaFlag::Complete_unimportance || meta_status_unimportant == MetaFlag::Ack_complete_unimportance) {
                 status_ = 1;
             } else {
                 status_ = 0;
