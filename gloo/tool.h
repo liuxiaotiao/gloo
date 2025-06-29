@@ -9,6 +9,7 @@
 #include <thread>
 #include <span>
 #include <execution>
+#include <cassert>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
@@ -878,7 +879,7 @@ namespace dmludp {
             buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
             buffer_[tail_].pkt_status = packet_status_;
-            buffer_[tail_].type = ty_;
+            buffer_[tail_].pkt_ty = ty_;
             tail_ = next_tail;
             return true;
         }

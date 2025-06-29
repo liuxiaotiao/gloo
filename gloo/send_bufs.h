@@ -201,6 +201,10 @@ namespace dmludp{
 
         uint64_t lossreord_unimportant = std::numeric_limits<uint64_t>::max();
 
+        ssize_t importantIndex = -1;
+
+        ssize_t unimportantIndex = -1;
+
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len){};
 
@@ -275,8 +279,8 @@ namespace dmludp{
                 // auto unimportantIndex = bitmap.last_zero();
 
                 BitPos pos = bitmap.find_last_1_and_0();
-                auto importantIndex = pos.last_one;
-                auto unimportantIndex = pos.last_zero;
+                importantIndex = pos.last_one;
+                unimportantIndex = pos.last_zero;
 
                 if (importantIndex != -1 && unimportantIndex == -1){
                     lastpacketOffset_important = 48 + importantIndex * MAX_SEND_UDP_PAYLOAD_SIZE;
@@ -350,7 +354,7 @@ namespace dmludp{
                                 meta_status_important = MetaFlag::Retransmission;
                             }
                         } else {  
-                            std::cout<< "off_front_important index could be -1" << std::Endl;
+                            std::cout<< "off_front_important index could be -1" << std::endl;
                             _Exit(0);
                         }  
                     }
@@ -391,7 +395,7 @@ namespace dmludp{
             return off;
         }
 
-        ssize_t off_front_unimportant (PktStatus & packet_status == PktStatus::Unimportant_reliable) {
+        ssize_t off_front_unimportant (PktStatus & packet_status = PktStatus::Unimportant_reliable) {
             ssize_t off = -1;
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
