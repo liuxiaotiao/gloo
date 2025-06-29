@@ -32,7 +32,7 @@ list(APPEND GLOO_SRCS
   "${CMAKE_CURRENT_SOURCE_DIR}/reduce.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/scatter.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/types.cc"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tool.cc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dmludp_tool.cc"
   )
 
 list(APPEND GLOO_HDRS
@@ -67,7 +67,7 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/cubic.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tool.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dmludp_tool.h"
   )
 
 if(USE_CUDA)
