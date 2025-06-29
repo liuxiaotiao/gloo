@@ -12,7 +12,7 @@
 #include "cubic.h"
 #include "recv_buf.h"
 #include "send_buf.h"
-#include "tool.h"
+#include "tool.cc"
 #include <cmath>
 #include <typeinfo>
 #include <dlfcn.h>
@@ -22,7 +22,6 @@
 #include <optional>
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
-#include <immintrin.h>
 #include <span>
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()

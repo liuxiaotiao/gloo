@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #add_compile_options(-mavx512f)
 
+set_source_files_properties(tool.cc PROPERTIES COMPILE_FLAGS "-mavx512f")
+
 # set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/connection.h PROPERTIES COMPILE_FLAGS "-O3")
 # set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h PROPERTIES COMPILE_FLAGS "-O3")
 # set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h PROPERTIES COMPILE_FLAGS "-O3")
@@ -29,6 +31,7 @@ list(APPEND GLOO_SRCS
   "${CMAKE_CURRENT_SOURCE_DIR}/reduce.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/scatter.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/types.cc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tool.cc"
   )
 
 list(APPEND GLOO_HDRS

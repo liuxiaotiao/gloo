@@ -10,7 +10,6 @@
 #include <span>
 #include <execution>
 #include <cassert>
-#include <immintrin.h>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
@@ -1224,7 +1223,7 @@ namespace dmludp {
     // ===============================
     // 查找最后 1 和 0（标量高效版）
     // ===============================
-    inline BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
+    /*inline BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
                                         size_t offset_start, size_t offset_end) {
         BitPos result;
         size_t start_word = offset_start / 64;
@@ -1358,6 +1357,36 @@ namespace dmludp {
             next_one_index_ = start_bit_;
             next_zero_index_ = start_bit_;
         }
+
+    private:
+        std::span<const uint64_t> bits_;
+        size_t start_bit_;
+        size_t end_bit_;
+        size_t num_bits_;
+        size_t next_one_index_;
+        size_t next_zero_index_;
+    };*/
+
+    // 仅声明，不实现
+    BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
+                                size_t offset_start, size_t offset_end);
+
+    int64_t find_next_bit_avx512(std::span<const uint64_t> bits, size_t num_bits,
+                                size_t offset_start, size_t offset_end, bool find_one);
+
+    class BitmapSpan {
+    public:
+        BitmapSpan();
+        BitmapSpan(std::span<const uint64_t> data, size_t start_bit, size_t end_bit);
+
+        BitPos find_last_1_and_0() const;
+
+        void reset_span(std::span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit);
+
+        int64_t next_one_avx512();
+        int64_t next_zero_avx512();
+
+        void reset_next_indices();
 
     private:
         std::span<const uint64_t> bits_;
