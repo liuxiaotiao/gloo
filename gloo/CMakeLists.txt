@@ -5,6 +5,7 @@ set(GLOO_SRCS)
 set(GLOO_HDRS)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 #add_compile_options(-mavx512f)
 
 set_source_files_properties(tool.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw")
