@@ -11,7 +11,7 @@
 #include "packet.h"
 #include "cubic.h"
 #include "recv_buf.h"
-#include "send_bufs.h"
+#include "send_buf.h"
 #include "tool.h"
 #include <cmath>
 #include <typeinfo>
