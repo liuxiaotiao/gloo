@@ -1836,7 +1836,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
+        std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<std::endl;
         // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
         //     if (slot.difference < pkt_difference){
         //         if (++bit_index == 8) {
