@@ -302,7 +302,7 @@ namespace dmludp{
                     packet_count_important = meta_len;
                 } else {
                     BitPos pos = importance_bitmap.find_last_1_and_0();
-                    std::cout<<"pos.last_one:"<< pos.last_one <<", " <<  pos.last_zero<<std::endl;
+                    std::cout<<"pos.last_one:"<< pos.last_one <<", " <<  pos.last_zero<<", "<<start_index<<", "<<end_index<<std::endl;
                     importantIndex = pos.last_one;
                     unimportantIndex = pos.last_zero;
 
