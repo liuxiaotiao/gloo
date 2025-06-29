@@ -11,6 +11,7 @@
 #include <string>     
 #include <algorithm> 
 #include <span>
+#pragma message("DEBUG: included span in FILENAME")
 #include <immintrin.h>
 #include "dmludp_tool.h"
 
