@@ -276,7 +276,6 @@ class SCircularQueue {
             // } else {
             //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
             // }
-            std::cout<<lastest_difference<<", "<<ip_print(peeraddr)<<", ";
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, endbit);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
@@ -2039,6 +2038,8 @@ public:
         if (sendbufferqueue.full()){
             return false;
         }
+        std::cout<<sendbufferqueue.lastest_difference<<", ";
+        ip_print(peeraddr);
 
         if (iovecs_len != 1) {
             if (iovecs[1].iov_len < 2 * 1024 * 1024 && iovecs[1].iov_len > MAX_SEND_UDP_PAYLOAD_SIZE){
