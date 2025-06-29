@@ -59,7 +59,7 @@ list(APPEND GLOO_HDRS
   "${CMAKE_CURRENT_SOURCE_DIR}/dmludp.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/connection.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/send_bufs.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/send_buf.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/packet.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/cubic.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/tool.h"
