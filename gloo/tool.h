@@ -1380,6 +1380,7 @@ namespace dmludp {
             assert(idx < size_);
             return data_[idx];
         }
+        bool empty() { return size_ == 0; }
     private:
         const T* data_;
         size_t size_;
