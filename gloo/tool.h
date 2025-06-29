@@ -1372,8 +1372,8 @@ namespace dmludp {
     template <typename T>
     class Span {
     public:
-        MySpan() : data_(nullptr), size_(0) {}
-        MySpan(const T* data, size_t size) : data_(data), size_(size) {}
+        Span() : data_(nullptr), size_(0) {}
+        Span(const T* data, size_t size) : data_(data), size_(size) {}
         const T* data() const { return data_; }
         size_t size() const { return size_; }
         const T& operator[](size_t idx) const {
