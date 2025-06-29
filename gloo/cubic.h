@@ -3,6 +3,7 @@
 #include <cmath>
 #include <chrono>
 #include "tool.h"
+#include <immintrin.h>
 namespace dmludp{
 
 const size_t MAX_CWND = 3000 * 1440;

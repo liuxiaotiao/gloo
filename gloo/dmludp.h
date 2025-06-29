@@ -5,6 +5,7 @@
 #include "gloo/recv_buf.h"
 #include "gloo/send_buf.h"
 #include "gloo/packet.h"
+#include <immintrin.h>
 
 
 using namespace dmludp;
