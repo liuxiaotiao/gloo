@@ -355,22 +355,22 @@ class SCircularQueue {
         }
 
 
-        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
-            Channel channel_,  bool value_){
-            auto index = difference_ % get_capacity();
-            // auto status1 = data_[index].metabuf.get_status();
-            if (channel_ == Channel::Important) {
-                data_[index].metabuf.acknowledege_and_drop(offset_, value_);
-            } else {
-                data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, value_);
-            }
-            // data_[index].metabuf.acknowledege_and_drop(offset_, value_);
-            // auto status2 = data_[index].metabuf.get_status();
-            // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
-            // std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
-            // }
+        // void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
+        //     Channel channel_,  bool value_){
+        //     auto index = difference_ % get_capacity();
+        //     // auto status1 = data_[index].metabuf.get_status();
+        //     if (channel_ == Channel::Important) {
+        //         data_[index].metabuf.acknowledege_and_drop(offset_, value_);
+        //     } else {
+        //         data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, value_);
+        //     }
+        //     // data_[index].metabuf.acknowledege_and_drop(offset_, value_);
+        //     // auto status2 = data_[index].metabuf.get_status();
+        //     // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
+        //     // std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
+        //     // }
                 
-        }
+        // }
 
         void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
             bool value_, bool unreliabelStatus_){
@@ -395,9 +395,9 @@ class SCircularQueue {
             return data_[index].metabuf.get_status();
         }
 
-        bool emit(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_){
-            return data_[index_].metabuf.emit(src_, len_, off_);
-        }
+        // bool emit(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_){
+        //     return data_[index_].metabuf.emit(src_, len_, off_);
+        // }
 
         bool emit_important(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_, 
             Block_len &block_, Status_len &status_, bool & packetType){
@@ -2182,7 +2182,7 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 Status_len out_status = 0;
                 while (true){
-                    size_t send_status = sendbufferqueue.get_status(i);
+                    // size_t send_status = sendbufferqueue.get_status(i);
                     bool isElicit = false;
                     if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
@@ -2233,7 +2233,7 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 PktStatus pkt_status;
                 while (true){
-                    size_t send_status = sendbufferqueue.get_status(i);
+                    // size_t send_status = sendbufferqueue.get_status(i);
                     if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
