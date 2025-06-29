@@ -2039,7 +2039,7 @@ public:
                         slot.offset, 
                         pkt, 
                         false, 
-                        false);
+                        static_cast<PktStatus>(slot.pkt_status));
                 } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
                     /* Nothing to do */
                 } else {
