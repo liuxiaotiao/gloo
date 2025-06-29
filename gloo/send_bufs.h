@@ -219,7 +219,7 @@ namespace dmludp{
             return meta_sent;
         }
 
-        void add_Meta(struct iovec* iovecs, int iovecs_len, std::span<uint64_t> bitmapview, uint64_t start_index, uint64_t end_index){
+        void add_Meta(struct iovec* iovecs, int iovecs_len, std::span<uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
             // meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
@@ -401,7 +401,7 @@ namespace dmludp{
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
                 if (meta_left > 0){
-                    auto index = importance_bitmap.next_zero(); 
+                    auto index = importance_bitmap.next_zero_avx512(); 
                     if (index != -1) {
                         off = index * send_buffer_size + 48;
                         meta_left -= send_buffer_size;
