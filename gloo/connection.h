@@ -390,10 +390,10 @@ class SCircularQueue {
             data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, ack_value_, pktstatus_);
         }
 
-        size_t get_status(Difference_len difference_){
-            auto index = difference_ % get_capacity();           
-            return data_[index].metabuf.get_status();
-        }
+        // size_t get_status(Difference_len difference_){
+        //     auto index = difference_ % get_capacity();           
+        //     return data_[index].metabuf.get_status();
+        // }
 
         // bool emit(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_){
         //     return data_[index_].metabuf.emit(src_, len_, off_);
@@ -1313,7 +1313,7 @@ public:
 
         bitmap_vector.resize(24);
         for (auto i = 0; i < bitmap_vector.size(); i++){
-            e = 24 - i;
+            bitmap_vector[i] = 24 - i;
         }
     };
 
