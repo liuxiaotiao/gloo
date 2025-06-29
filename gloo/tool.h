@@ -871,7 +871,7 @@ namespace dmludp {
         3. unimportant packet retransmission
         */
 
-        bool push(uint64_t offset_, Difference_len difference_, Block_len blockInfo, Packet_status_len packet_status_, uint8_t ty_ = 3) {
+        bool push(uint64_t offset_, Difference_len difference_, Block_len blockInfo, Packet_status_len packet_status_, uint8_t channel_, uint8_t ty_ = 3) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
                 std::cout<<"PacketMapRingBuffer full"<<std::endl;
@@ -883,6 +883,7 @@ namespace dmludp {
             buffer_[tail_].blockinfo = (blockInfo == LIMIT_UINT16_T) ;
             buffer_[tail_].pkt_status = packet_status_;
             buffer_[tail_].pkt_ty = ty_;
+            buffer_[tail_].channel = channel_;
             tail_ = next_tail;
             return true;
         }
