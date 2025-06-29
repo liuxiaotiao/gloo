@@ -1997,7 +1997,7 @@ public:
         // }else{
         //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         // }
-        std::cout<<recovery.cwnd_available<<", "<<low_recovery.cwnd_available<<std::endl;
+        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<std::endl;
     }
 
     /*Update receive difference to process next block data*/
