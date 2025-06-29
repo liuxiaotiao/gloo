@@ -10,6 +10,7 @@
 #include <span>
 #include <execution>
 #include <cassert>
+#include <immintrin.h>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
@@ -1058,8 +1059,6 @@ namespace dmludp {
         size_t tail_;
         uint64_t head_packet_number_;
     };
-
-
     
     // class BitmapSpan {
     // public:
