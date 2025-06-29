@@ -395,7 +395,8 @@ namespace dmludp{
             return off;
         }
 
-        ssize_t off_front_unimportant (PktStatus & packet_status = PktStatus::Unimportant_reliable) {
+        ssize_t off_front_unimportant (PktStatus & packet_status) {
+            packet_status = PktStatus::Unimportant_reliable
             ssize_t off = -1;
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
@@ -630,7 +631,7 @@ namespace dmludp{
                      
                 }
             }
-
+        }
             
 
         // void acknowledege_and_drop_unimportant(uint64_t in_offset, bool is_drop, PktStatus pktstatus_ = PktStatus::Unimportant_unreliable){
