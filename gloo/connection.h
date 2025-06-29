@@ -201,7 +201,7 @@ class MetaInfo{
                 _Exit(0);
             }
             if (!priotity_list.empty()){
-                metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, startbit);
+                metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, endbit);
             } else {
                 metabuf.add_Meta(iovecs, iovecs_len);
             }
