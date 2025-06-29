@@ -27,6 +27,7 @@
 #include <sys/timerfd.h>
 #include <linux/udp.h>
 #include <stdlib.h>
+#include <immintrin.h>
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
 #include "gloo/transport/dmludp/buffer.h"

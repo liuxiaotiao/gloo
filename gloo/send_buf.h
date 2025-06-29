@@ -11,6 +11,7 @@
 #include <string>     
 #include <algorithm> 
 #include <span>
+#include <immintrin.h>
 #include "tool.h"
 
 namespace dmludp{
