@@ -12,7 +12,7 @@
 #include <algorithm> 
 #include <span>
 #include <immintrin.h>
-#include "tool.cc"
+#include "tool.h"
 
 namespace dmludp{
     enum class Channel : uint8_t {
