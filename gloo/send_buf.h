@@ -220,7 +220,7 @@ namespace dmludp{
             return meta_sent;
         }
 
-        void add_Meta(struct iovec* iovecs, int iovecs_len, Span<uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
+        void add_Meta(struct iovec* iovecs, int iovecs_len, Span<const uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
             // meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
