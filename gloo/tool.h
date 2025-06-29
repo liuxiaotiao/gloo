@@ -1408,6 +1408,8 @@ namespace dmludp {
 
         void reset_span(Span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit);
 
+        bool empty();
+
         int64_t next_one_avx512();
         int64_t next_zero_avx512();
 

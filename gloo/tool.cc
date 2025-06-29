@@ -294,4 +294,8 @@ namespace dmludp {
         next_one_index_ = start_bit_;
         next_zero_index_ = start_bit_;
     }   
+
+    bool BitmapSpan::empty() {
+        return start_bit_ == end_bit_;
+    }
 }
