@@ -11,7 +11,7 @@
 #include "packet.h"
 #include "cubic.h"
 #include "recv_buf.h"
-#include "send_buf.h"
+#include "send_bufs.h"
 #include "tool.h"
 #include <cmath>
 #include <typeinfo>
@@ -22,6 +22,7 @@
 #include <optional>
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
+#include <span>
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
 #define BENCH_END(name) \
@@ -45,6 +46,12 @@ using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
+using Importance_len = uint8_t;
+
+using Important_blocks_len = uint16_t;
+
+using Status_len = uint8_t;
+
 using Slot_len = uint32_t;
 
 constexpr auto RTO_MIN = std::chrono::microseconds(200);
@@ -61,7 +68,7 @@ class Message{
 
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header);
+            iov[0].iov_len = sizeof(Header) - 5; /*Don't send padding part*/
 
             iov[1] = {nullptr, 0};
 
@@ -77,11 +84,20 @@ class Message{
             iov[1].iov_len = length;
         }
 
-        void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, Packet_len length) {
+        void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
+            Packet_len length, Importance_len importance_, 
+            Block_len blocks_ = std::numeric_limits<Block_len>::max(), 
+            Status_len status_ = 0, Type_len ty_ = Type::Application) {
+            if (ty_ != Type::Application){
+                message_header.pkt_ty = ty_;
+            }
             message_header.pkt_num = pn;
             message_header.offset = offset;
             message_header.difference = difference;
             message_header.pkt_length = (Packet_num_len)length;
+            message_header.pkt_importance = importance_;
+            message_header.pkt_important_block = blocks_;
+            message_header.pkt_status = status_;
         }
 
         Packet_num_len get_packet_number(){
@@ -102,6 +118,18 @@ class Message{
 
         uint16_t get_packet_length(){
             return message_header.get_pkt_length();
+        }
+
+        Importance_len get_packet_importance(){
+            return message_header.get_pkt_importance();
+        }
+
+        Block_len get_blocks(){
+            return message_header.get_important_blocks();
+        }
+
+        Status_len get_connection_status(){
+            return message_header.get_transmissionstatus();
         }
 
 
@@ -161,7 +189,8 @@ class MetaInfo{
             return difference_flag;
         }
 
-        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, 
+            std::span<uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
             if (difference_flag != LIMIT_UINT64_T){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
                 _Exit(0);
@@ -171,7 +200,11 @@ class MetaInfo{
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
-            metabuf.add_Meta(iovecs, iovecs_len);
+            if (priotity_list != {}){
+                metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, startbit);
+            } else {
+                metabuf.add_Meta(iovecs, iovecs_len);
+            }
             range_len = 0;
             block_type = type_;
             for (auto i = 0; i < iovecs_len; i++){
@@ -233,7 +266,7 @@ class SCircularQueue {
             }
         }
 
-        void push_back(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}) {
+        void push_back(struct iovec* iovecs, int iovecs_len, int type_, std::span<uint64_t> bitmapspan = {}, uint64_t startbit = 0, uint64_t endbit = 0) {
             if (full()){
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
@@ -243,7 +276,7 @@ class SCircularQueue {
             // } else {
             //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
             // }
-            data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, priotity_list);
+            data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, endbit);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
             count_++;
@@ -322,15 +355,39 @@ class SCircularQueue {
         }
 
 
-        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, bool value_){
+        void pkt2ack(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
+            Channel channel_,  bool value_){
             auto index = difference_ % get_capacity();
-            auto status1 = data_[index].metabuf.get_status();
-            data_[index].metabuf.acknowledege_and_drop(offset_, value_);
-            auto status2 = data_[index].metabuf.get_status();
+            // auto status1 = data_[index].metabuf.get_status();
+            if (channel_ == Channel::Important) {
+                data_[index].metabuf.acknowledege_and_drop(offset_, value_);
+            } else {
+                data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, value_);
+            }
+            // data_[index].metabuf.acknowledege_and_drop(offset_, value_);
+            // auto status2 = data_[index].metabuf.get_status();
             // if (data_[index].metabuf.sentComplete() < 1024 * 1024){
             // std::cout<<difference_<<", "<<pkt<<", "<<offset_<<", "<<value_<<", "<<data_[index].metabuf.initlosscount<<", "<<status1<<", "<<status2<<std::endl;
             // }
                 
+        }
+
+        void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
+            bool value_, bool unreliabelStatus_){
+            auto index = difference_ % get_capacity();
+            data_[index].metabuf.acknowledege_and_drop(offset_, value_, unreliabelStatus_);
+        }
+
+        void pkt2ack_unimportant(
+            Difference_len difference_, 
+            Offset_len offset_, 
+            Packet_num_len pkt, 
+            Channel channel_,  
+            bool ack_value_,
+            PktStatus pktstatus_){
+
+            auto index = difference_ % get_capacity();
+            data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, ack_value_, pktstatus_);
         }
 
         size_t get_status(Difference_len difference_){
@@ -340,6 +397,16 @@ class SCircularQueue {
 
         bool emit(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_){
             return data_[index_].metabuf.emit(src_, len_, off_);
+        }
+
+        bool emit_important(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_, 
+            Block_len &block_, Status_len &status_, bool & packetType){
+            return data_[index_].metabuf.emit(src_, len_, off_);
+        }
+
+        bool emit_unimportant(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_,
+            Block_len &block_, PktStatus &status_){
+            return data_[index_].metabuf.emit_unimportance(src_, len_, off_, block_, status_);
         }
 
         bool iscomplete(Difference_len difference_){
@@ -437,6 +504,11 @@ class metarecebuf{
 
         Slot_len offset0_index = std::numeric_limits<Slot_len>::max();
 
+        size_t important_packet_count = 0; /* Important packet statics */
+
+        std::optional<size_t> expected_important_packets = std::nullopt; /* Real important packet should be*/
+
+        std::optional<uint8_t> unimportant_packets_status = std::nullopt;
 
         /*
         0: unused, waiting
@@ -478,6 +550,12 @@ class metarecebuf{
             rdifference = 0;
             status_ = 0;
             offset0_index = std::numeric_limits<Slot_len>::max();
+
+            /* Unimportant related */
+            important_packet_count = 0;
+            expected_important_packets = std::nullopt;
+            unimportant_packets_status = std::nullopt;
+
             for (auto &e:source_len){
                 e = 0;
             }
@@ -531,7 +609,7 @@ class metarecebuf{
             complete_flag = true;
         }
 
-        bool find(Offset_len pkt_offset, Packet_len pkt_length){
+        bool find(Offset_len pkt_offset, Packet_len pkt_length, Importance_len pkt_importance){
             auto exist = receive_offset.find(pkt_offset);
             if (!exist){
                 if (pkt_offset == 0){
@@ -543,8 +621,23 @@ class metarecebuf{
                 receive_offset.insert(pkt_offset);
                 metabuf.reg(pkt_length);
                 received += pkt_length;
+                if (pkt_importance == 1) {
+                    ++important_packet_count;
+                }
             }
             return exist;
+        }
+
+        void set_blocks(Block_len blocks_) {
+            if (!expected_important_packets.has_value()) {
+                expected_important_packets = blocks_;
+            }
+        }
+
+        void set_unimportant_status(){
+            if (!unimportant_packets_status.has_value()){
+                unimportant_packets_status = 1;
+            }
         }
 
         void startcomplete(){
@@ -559,7 +652,15 @@ class metarecebuf{
                 total += e;
             }
             status_ = 4;
-            if (received == total || complete_flag){
+
+            if (important_packet_count > expected_important_packets) {
+                std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" << expected_important_packets << std::endl;
+                _Exit(0);
+            }
+        
+            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
+
+            if (received == total || complete_){
                 status_ = 5;
                 // std::cout<<"completecheck, received:"<<received<<", "<<total<<std::endl;
             } 
@@ -586,7 +687,16 @@ class metarecebuf{
             if (total == 0){
                 return false;
             }
-            if (received == total || complete_flag){
+
+            if (important_packet_count > expected_important_packets) {
+                std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" << expected_important_packets << std::endl;
+                _Exit(0);
+            }
+        
+            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
+
+            if (received == total || complete_){
+                complete_flag = true;
                 return true;
             }
             return false;
@@ -739,10 +849,29 @@ public:
         return data_[head_].get_position();
     }
 
-    void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length, uint32_t index_, bool &exist_) {
+    void insert(Difference_len difference, Offset_len pkt_offset, Packet_len pkt_length, uint32_t index_, bool &exist_,
+        Importance_len importance_, Block_len &important_blocks, Status_len &status_){
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
-        exist_ = data_[index].find(pkt_offset, pkt_length);
+        exist_ = data_[index].find(pkt_offset, pkt_length, importance_);
+
+        if (important_blocks != std::numeric_limits<Block_len>::max()){
+            data_[index].set_blocks(important_blocks);
+        }
+        if (status_ != 0) {
+            data_[index].set_unimportant_status(status_);
+        }
+    }
+
+    void insert_control_message(Difference_len difference, Block_len important_blocks = std::numeric_limits<Block_len>::max(), Status_len status_ = 0){
+        auto index = difference % capacity_;
+        inrangecheck(index, __func__);
+        if (important_blocks != std::numeric_limits<Block_len>::max()){
+            data_[index].set_blocks(important_blocks);
+        }
+        if (status_ != 0) {
+            data_[index].set_unimportant_status(status_);
+        }
     }
 
     size_t get_status(Difference_len difference_){
@@ -1059,9 +1188,9 @@ public:
         return std::make_shared<Connection>(local, peer, true);
     };
 
-    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t handshake_header[sizeof(Header) - 5] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header)] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t fin_header[sizeof(Header) - 5] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1132,6 +1261,8 @@ public:
 
     PacketMapRingBuffer connection_map;
 
+    std::vector<uint64_t> bitmap_vector;
+
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
     handshake_completed(false),
@@ -1177,6 +1308,11 @@ public:
         receive_message.resize(RX_CONST);
 
         acknowldge_header.resize(sizeof(Header));
+
+        bitmap_vector.resize(24);
+        for (auto i = 0; i < bitmap_vector; i++){
+            e = 24 - i;
+        }
     };
 
     ~Connection(){};
@@ -1196,14 +1332,7 @@ public:
     }
 
     /*
-        handshake_confirmed
-        handshake_complete
-        
-        1st RTO:
-        SRTT <- R
-        RTTVAR <- R/2
-        RTO <- SRTT + max (G, K*RTTVAR)
-        where K = 4.
+        1st RTO: SRTT <- R， RTTVAR <- R/2， RTO <- SRTT + max (G, K*RTTVAR)， where K = 4.
 
         RTTVAR <- (1 - beta) * RTTVAR + beta * |SRTT - R'|
         SRTT <- (1 - alpha) * SRTT + alpha * R'
@@ -1301,6 +1430,12 @@ public:
                 isfirst = false;
             }
 
+            if (pkt_ty == Type::ElicitAck) {
+                process_elicit_packet(i);
+                send_packet_type = Type::ACK;
+                send_flag_ = true;
+            }
+
             if (pkt_ty == Type::Stop){
                 stop_flag = false;
                 send_packet_type = Type::Stop;
@@ -1326,12 +1461,62 @@ public:
         return send_flag_;
     }
 
+    void process_elicit_packet(size_t index){
+        auto& msg = receive_message[index];
+        Packet_num_len pkt_num = msg.get_packet_number();
+        Offset_len pkt_offset = msg.get_packet_offset();
+        Difference_len pkt_difference = msg.get_packet_difference();
+        auto pkt_length = msg.get_packet_length();
+        auto pkt_importance = msg.get_packet_importance();
+                
+        auto pkt_status = msg.get_connection_status();
+
+        receive_slot[index] = 0;
+
+        if (pkt_num < current_loop_min){
+            return;
+        }
+
+        if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
+            max_received = pkt_num;
+            /* bit map substitude byte map*/
+            send_num = pkt_num;
+        }  
+
+        size_t pos = pkt_num - current_loop_min;
+  
+        if(pos > 8000){
+            std::memset(receivevector.data(), 0, receivevector.size());
+            current_loop_min = pkt_num;
+            pos = 0;
+        }
+        size_t byte_index = pos / 8;
+        size_t bit_index = pos % 8;
+
+        if (byte_index > receivevector.size()){
+            std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
+            <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
+            _Exit(0);
+        }
+
+        if (pkt_difference >= receive_connection_difference){
+            if (pkt_status != 0){
+                recvCQ.insert_control_message(pkt_importance, pkt_status);
+            } 
+        }
+    };
+
     void process_application2(size_t index_){
         auto &msg = receive_message[index_];
         Packet_num_len pkt_num = msg.get_packet_number();
         Offset_len pkt_offset = msg.get_packet_offset();
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_len = msg.get_packet_length();
+
+        auto pkt_importance = msg.get_packet_importance();
+        
+        auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
+        auto channel_status = msg.get_connection_status(); /* Unimportant channel complete status, 1 is complete, 0 is not. */
         
         if (pkt_num < current_loop_min){
             receive_slot[index_] = 0;
@@ -1397,7 +1582,7 @@ public:
         if (valid_pkt){
             receivevector[byte_index] |= (1 << bit_index);  
             bool exist = false;
-            recvCQ.insert(pkt_difference, pkt_offset, pkt_len, index_, exist);
+            recvCQ.insert(pkt_difference, pkt_offset, pkt_len, index_, exist, pkt_importance, pkt_importance_blocks, channel_status);
             if (exist){
                 receive_slot[index_] = 0;
             }
@@ -1457,6 +1642,10 @@ public:
         Offset_len pkt_offset = msg.get_packet_offset();
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_length = msg.get_packet_length();
+        auto pkt_importance = msg.get_packet_importance();
+        
+        auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
+        auto channel_status = msg.get_connection_status(); /* Unimportant channel complete status, 1 is complete, 0 is not. */
 
         if (pkt_num < current_loop_min){
             receive_slot[index] = 0;
@@ -1523,7 +1712,7 @@ public:
             receivevector[byte_index] |= (1 << bit_index);  
             // std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
             bool exist = false;
-            recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist);
+            recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, pkt_importance, pkt_importance_blocks, channel_status); 
             if (exist){
                 receive_slot[index] = 0;
             }
@@ -1570,7 +1759,7 @@ public:
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
-        acknowldge_iov[0].iov_len = sizeof(Header);
+        acknowldge_iov[0].iov_len = sizeof(Header) - 5;
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
@@ -1584,7 +1773,7 @@ public:
 
 
         send_packet_type = ty;
-        return sizeof(Header) + hdr->pkt_length;
+        return sizeof(Header) - 5 + hdr->pkt_length;
     }
     
 
@@ -1671,18 +1860,67 @@ public:
                 /*Do nothing*/
                 // return;  
             }else{
-                size_t value = (ack_src[byte_index] >> bit_index) & 1;
+                size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
                 if (delay){
-                    if (value) {
-                        sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);  
+                    if (ack_value) {
+                        if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                            if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
+                            /* Unimportant channel: unreliable */
+                            sendbufferqueue.pkt2ack_unimportant(
+                                slot.difference, 
+                                slot.offset, 
+                                pkt, 
+                                (bool)ack_value, 
+                                static_cast<PktStatus>(slot.pkt_status));
+                            } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
+                                /* Nothing to do */
+                            } else {
+                                /* Unimportant channel: Partial reliable */
+                                if (static_cast<PktStatus>(slot.pkt_status) == PktStatus::Unimportant_partialreliable) {
+                                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true)
+                                } 
+                                // else {
+                                //     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false)
+                                // }
+                            }
+                        } else {
+                            if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                            } else {
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
+                            }  
+                        }
                     }
                     if (++bit_index == 8) {
                         bit_index = 0;
                         ++byte_index;
                     }
                 }else {
-                    // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
-                    sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
+                    if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                        if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
+                            /* Unimportant channel: unreliable */
+                            sendbufferqueue.pkt2ack_unimportant(
+                                slot.difference, 
+                                slot.offset, 
+                                pkt, 
+                                (bool)ack_value, 
+                                static_cast<PktStatus>(slot.pkt_status));
+                        } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
+                            /* Nothing to do */
+                        } else {
+                            /* Unimportant channel: Partial reliable */
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status))
+                        }
+                    } else {
+                        /* Important channel: reliable */
+                        if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                            sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                        } else {
+                            sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
+                        } 
+                        // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
+                        //     (bool)ack_value, slot.block_flag, slot.unimportant_flag);
+                    }
                     if (++bit_index == 8) {
                         bit_index = 0;
                         ++byte_index;
@@ -1691,9 +1929,6 @@ public:
                 
             }
         });
-
-
-
 
         if (max_acknowleged == LIMIT_UINT64_T){
             max_acknowleged = end_pn;
@@ -1759,7 +1994,20 @@ public:
             return false;
         }
 
-        sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
+        if (iovecs_len != 1) {
+            if (iovecs[1].iov_len < 2 * 1024 * 1024){
+                auto bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
+
+                std::span<uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list, bitmapview, 0, bitmaplen);
+            } else {
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
+            }  
+        } else {
+            sendbufferqueue.push_back(iovecs, iovecs_len, type_, priotity_list);
+        }
+
+        
         
         set_handshake();
         return completed;
@@ -1772,12 +2020,51 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto max_sent_pn = pkt_num_spaces.getpktnum();
 
-        connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool & delayed){
-            if (slot.difference <= send_connection_difference){
-                return;
+        // connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool & delayed){
+        //     if (slot.difference <= send_connection_difference){
+        //         return;
+        //     }else{
+        //         // std::cout<<"Timout:";
+        //         sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false, slot.block_flag, slot.unimportant_flag);
+        //     }
+        // });
+
+         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
+            if (slot.difference < pkt_difference){
+                if (++bit_index == 8) {
+                    bit_index = 0;
+                    ++byte_index;
+                }
+                /*Do nothing*/
+                // return;  
             }else{
-                // std::cout<<"Timout:";
-                sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, false);
+                if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                    if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
+                        /* Unimportant channel: unreliable */
+                        sendbufferqueue.pkt2ack_unimportant(
+                            slot.difference, 
+                            slot.offset, 
+                            pkt, 
+                            false, 
+                            false);
+                    } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
+                        /* Nothing to do */
+                    } else {
+                        /* Unimportant channel: Partial reliable */
+                        // sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false)
+                    }
+                } else {
+                    /* Important channel: reliable */
+                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                    // if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                    //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                    // } else {
+                    //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                    // } 
+                    // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
+                    //     (bool)ack_value, slot.block_flag, slot.unimportant_flag);
+                }
+                
             }
         });
 
@@ -1792,58 +2079,196 @@ public:
         recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
     }
 
+    // ssize_t prepareData() {
+    //     Type ty = Type::Application;
+    //     ssize_t out_len = 0; 
+    //     Offset_len out_off = 0;
+    //     size_t i = 0;
+    //     ssize_t tramssioning_index = -1;
+
+    //     size_t cwnd_limit = recovery.cwnd_available();
+    //     if (cwnd_limit <= 0){
+    //         return 0;
+    //     }
+
+    //     const size_t sent_limit = cwnd_limit;
+    //     size_t sent = 0;      
+    //     size_t sent_cwnd = 0; 
+    //     auto sendbufferqueue_start_index = sendbufferqueue.start();
+    //     for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
+    //         i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+    //         int d_sent = 0;
+    //         auto pkg_difference = sendbufferqueue.get_difference(i);
+    //         while (true){
+    //             size_t send_status = sendbufferqueue.get_status(i);
+    //             if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+    //                 std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
+    //                 _Exit(0);
+    //             }
+    //             auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);
+                
+    //             if (out_len == -1) {
+    //                 break;
+    //             }
+                
+    //             auto pn = pkt_num_spaces.updatepktnum();
+    //             // if (send_status == 1) {
+    //             //     std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
+    //             // }
+
+       
+    //             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
+    //             recovery.on_packet_sent(out_len);
+
+    //             connection_map.push(out_off, pkg_difference);
+    //             // connection_map.push(out_off, pkg_difference, sendRound);
+
+    //             sent++;
+    //             sent_cwnd += out_len;
+    //             d_sent++;
+    //             if (sent_cwnd >= sent_limit || sent >= send_message.size()){
+    //                 break;
+    //             }           
+    //         }
+    //         if (sent_cwnd >= sent_limit || sent >= send_message.size()){
+    //             break;
+    //         }
+    //     }
+
+    //     return sent;
+    // }
+
+    /*
+    1. first transmission: important + unimportant received, no action
+    2. Only important retransmission, status mark as 2 and header add important blocks
+    3. Only unimportant retransmssion, status mark as 1 and header add important block; 
+        After retransmissions, just send elicit packet with status 2 and important block to let receiver known.
+    */
     ssize_t prepareData() {
         Type ty = Type::Application;
         ssize_t out_len = 0; 
         Offset_len out_off = 0;
+
         size_t i = 0;
         ssize_t tramssioning_index = -1;
 
-        size_t cwnd_limit = recovery.cwnd_available();
-        if (cwnd_limit <= 0){
+        size_t cwnd_limit_important = recovery.cwnd_available();
+        size_t cwnd_limit_unimportant = low_recovery.cwnd_available();
+        if (cwnd_limit_important <= 0 && cwnd_limit_unimportant <= 0){
             return 0;
         }
 
-        const size_t sent_limit = cwnd_limit;
-        size_t sent = 0;      
-        size_t sent_cwnd = 0; 
+        const size_t sent_limit_important = cwnd_limit_important;
+        const size_t sent_limit_unimportant = cwnd_limit_unimportant;
+
+        /* send_message index */
+        size_t sent = 0;
+
+        size_t sent_important = 0;      
+        size_t sent_cwnd_important = 0; 
+
+        size_t sent_unimportant = 0;      
+        size_t sent_cwnd_unimportant = 0; 
+
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-            int d_sent = 0;
             auto pkg_difference = sendbufferqueue.get_difference(i);
-            while (true){
-                size_t send_status = sendbufferqueue.get_status(i);
-                if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
-                    std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
-                    _Exit(0);
+
+            /* Important */
+            if (sent_cwnd_important < sent_limit_important){
+                Block_len out_blocks = std::numeric_limits<Block_len>::max();
+                Status_len out_status = 0;
+                while (true){
+                    size_t send_status = sendbufferqueue.get_status(i);
+                    bool isElicit = false;
+                    if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                        std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
+                        _Exit(0);
+                    }
+                    auto s_flag = sendbufferqueue.emit_important(i, send_message[sent].iov[1], out_len, out_off, out_blocks, out_status);
+                    
+                    if (out_len == -1) {
+                        break;
+                    }
+                    
+                    auto pn = pkt_num_spaces.updatepktnum();
+                    isElicit = out_off == ELICIT_OFFSET;
+                    /* Elicit or not*/
+                    if (isElicit) {
+                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, out_status, Type::ElicitAck);
+                    } else {
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, out_status);
+                    }
+        
+                    recovery.on_packet_sent(out_len);
+
+                    if (isElicit) {
+                        // connection_map.push(0, pkg_difference, 1, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), ty);
+                    } else {
+                        // connection_map.push(out_off, pkg_difference, 1);
+                        if (out_status){
+                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable_special), ty);
+                        } else {
+                            connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), ty);
+
+                        }
+                    }
+
+                    sent++;
+                    sent_cwnd_important += out_len;
+                    if (sent_cwnd_important >= sent_limit_important || sent >= send_message.size()){
+                        break;
+                    }           
                 }
-                auto s_flag = sendbufferqueue.emit(i, send_message[sent].iov[1], out_len, out_off);
-                
-                if (out_len == -1) {
-                    break;
-                }
-                
-                auto pn = pkt_num_spaces.updatepktnum();
-                // if (send_status == 1) {
-                //     std::cout<<"sent:"<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<sendbufferqueue.at(idx).metabuf.lastpacketOffset<<std::endl;
-                // }
-
-       
-                send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len);
-                recovery.on_packet_sent(out_len);
-
-                connection_map.push(out_off, pkg_difference);
-                // connection_map.push(out_off, pkg_difference, sendRound);
-
-                sent++;
-                sent_cwnd += out_len;
-                d_sent++;
-                if (sent_cwnd >= sent_limit || sent >= send_message.size()){
-                    break;
-                }           
             }
-            if (sent_cwnd >= sent_limit || sent >= send_message.size()){
+            
+
+            /* Unimportant */
+            if (sent_cwnd_unimportant < sent_limit_unimportant) {
+                bool pkt_elicit = false;
+                Block_len out_blocks = std::numeric_limits<Block_len>::max();
+                PktStatus pkt_status;
+                while (true){
+                    size_t send_status = sendbufferqueue.get_status(i);
+                    if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                        std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
+                        _Exit(0);
+                    }
+
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, send_message[sent].iov[1], out_len, out_off, out_blocks, pkt_status);
+                    
+                    if (out_len == -1) {
+                        break;
+                    }
+                    
+                    auto pn = pkt_num_spaces.updatepktnum();
+
+                    if (out_off == ELICIT_OFFSET) {
+                        /* Single Elicit packet */
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, pkt_status, Tpye::Elicit);
+                        recovery.on_packet_sent(out_len);
+
+                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), Tpye::Elicit);
+                    } else {
+                        bool complete_flag = pkt_status == PktStatus::Unimportant_partialreliable;
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Unimportant, out_blocks, (uint8_t)complete_flag);
+                        recovery.on_packet_sent(out_len);
+
+                        connection_map.push(out_off, pkg_difference, out_blocks,static_cast<uint8_t>(pkt_status), ty);
+                    }
+                    
+
+                    sent++;
+                    sent_cwnd_unimportant += out_len;
+                    if (sent_cwnd_unimportant >= sent_limit_unimportant || sent >= send_message.size()){
+                        break;
+                    }           
+                }
+            }
+            
+            if ((sent_cwnd_important >= sent_limit_important && sent_cwnd_unimportant >= sent_limit_unimportant) || sent >= send_message.size()){
                 break;
             }
         }
@@ -2025,14 +2450,6 @@ public:
         // std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);       
     }
-
-    // void set_send_status(int status_){
-    //     send_status_flag = status_;
-    // }
-
-    // size_t get_send_status(){
-    //     return send_status_flag;
-    // }
 
     size_t get_error_sent(){
         return dmludp_error_sent;

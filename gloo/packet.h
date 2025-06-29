@@ -17,7 +17,9 @@ using Difference_len = uint32_t;
 
 using Packet_len = uint16_t;
 
-using Priority_len = uint8_t;
+using Importance_len = uint8_t;
+
+using Packet_status_len = uint8_t;
 
 using Status_len = uint8_t;
 
@@ -71,23 +73,31 @@ using Block_len = uint16_t;
         // The data length of the application packet
         Packet_len pkt_length;
  
-        // Priority_len pkt_priority;
+        Importance_len pkt_importance;
 
-        // Block_len pkt_important_block;
+        Block_len pkt_important_block;
 
-        // Status_len pkt_status;
+        Status_len pkt_status;
+
+        uint8_t pad[5];
 
         Header(
             Type first = Type::Application, 
             Packet_num_len pktnum = 0, 
             Offset_len off = 0,
             Difference_len difference = 0,
-            Packet_len len = 0) 
+            Packet_len len = 0,
+            Importance_len importance = 0,
+            Block_len blocks = 0,
+            Status_len status = 0) 
             : ty(first), 
             pkt_num(pktnum), 
             offset(off), 
             difference(difference),
-            pkt_length(len) {};
+            pkt_length(len),
+            pkt_importance(importance),
+            pkt_important_block(blocks),
+            pkt_status(status) {};
 
         ~Header() {};
 
@@ -127,6 +137,14 @@ using Block_len = uint16_t;
             off += sizeof(Difference_len);
             put_u16(out, pkt_length, off); // packet length
 
+            off += sizeof(Packet_len);
+            put_u8(out, pkt_importance, off);
+
+            off += sizeof(Importance_len);
+            put_u16(out, pkt_important_block, off);
+
+            off += sizeof(Block_len);
+            put_u8(out, pkt_status, off);
         };
 
         void put_u64(std::vector<uint8_t> &vec, uint64_t &input, size_t position){
@@ -185,12 +203,39 @@ using Block_len = uint16_t;
             return pkt_length;
         }
 
+        void set_importance(Importance_len importance_){
+            pkt_importance = importance_;
+        }
+
+        Importance_len get_pkt_importance(){
+            return pkt_importance;
+        }
+
+        void set_important_blocks(Block_len blocks_){
+            pkt_important_block = blocks_;
+        }
+
+        Block_len get_important_blocks(){
+            return pkt_important_block;
+        }
+
+        void set_status(Status_len status_){
+            pkt_status = status_;
+        }
+
+        Status_len get_transmissionstatus(){
+            return pkt_status;
+        }
+
         static size_t len(){
             return sizeof(Type) 
                 + sizeof(Packet_num_len) 
                 + sizeof(Offset_len) 
                 + sizeof(Difference_len) 
-                + sizeof(pkt_length);
+                + sizeof(pkt_length)
+                + sizeof(pkt_importance)
+                + sizeof(pkt_important_block)
+                + sizeof(pkt_status);
         };
     };
 

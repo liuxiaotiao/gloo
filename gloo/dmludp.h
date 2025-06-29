@@ -15,6 +15,8 @@ using Packet_num_len = uint64_t;
 
 using Priority_len = uint8_t;
 
+using Importance_len = uint8_t;
+
 using Offset_len = uint64_t;
 
 using Packet_len = uint16_t;
