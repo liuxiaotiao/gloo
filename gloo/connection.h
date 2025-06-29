@@ -1316,7 +1316,7 @@ public:
 
         bitmap_vector.resize(24);
         for (auto i = 0; i < bitmap_vector.size(); i++){
-            bitmap_vector[i] = 24 - i;
+            bitmap_vector[i] = LIMIT_UINT64_T - i;
         }
     };
 
