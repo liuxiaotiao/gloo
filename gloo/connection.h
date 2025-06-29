@@ -689,7 +689,8 @@ class metarecebuf{
             }
 
             if (important_packet_count > expected_important_packets) {
-                std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" << expected_important_packets << std::endl;
+                std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" 
+                    << (expected_important_packets.has_value() ? std::to_string(expected_important_packets.value()) : "<nullopt>") << std::endl;
                 _Exit(0);
             }
         
