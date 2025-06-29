@@ -74,6 +74,7 @@
         "numeric": "cpp",
         "memory": "cpp",
         "complex": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "span": "cpp"
     }
 }
