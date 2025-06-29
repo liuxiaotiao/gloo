@@ -232,12 +232,12 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
-            if (!bitmapview.empty()){
-                for (auto i = 0 ; i < bitmapview.size() ; i++) {
-                    std::cout<<bitmapview[i]<<" ";
-                }
-                std::cout<<std::endl;
-            }
+            // if (!bitmapview.empty()){
+            //     for (auto i = 0 ; i < bitmapview.size() ; i++) {
+            //         std::cout<<bitmapview[i]<<" ";
+            //     }
+            //     std::cout<<std::endl;
+            // }
             
 
             /* Store buffer info: pointer + length */
@@ -302,6 +302,7 @@ namespace dmludp{
                     packet_count_important = meta_len;
                 } else {
                     BitPos pos = importance_bitmap.find_last_1_and_0();
+                    std::cout<<"pos.last_one:"<< pos.last_one <<", " <<  pos.last_zero<<std::endl;
                     importantIndex = pos.last_one;
                     unimportantIndex = pos.last_zero;
 
