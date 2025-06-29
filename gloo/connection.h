@@ -87,7 +87,7 @@ class Message{
         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
             Packet_len length, Importance_len importance_, 
             Block_len blocks_ = std::numeric_limits<Block_len>::max(), 
-            Status_len status_ = 0, Type_len ty_ = Type::Application) {
+            Status_len status_ = 0, Type ty_ = Type::Application) {
             if (ty_ != Type::Application){
                 message_header.ty = ty_;
             }
@@ -2196,9 +2196,9 @@ public:
                     isElicit = out_off == ELICIT_OFFSET;
                     /* Elicit or not*/
                     if (isElicit) {
-                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, out_status, Type::ElicitAck);
+                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, out_status, Type::ElicitAck);
                     } else {
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, out_status);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Important), out_blocks, out_status);
                     }
         
                     recovery.on_packet_sent(out_len);
@@ -2247,13 +2247,13 @@ public:
 
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Important, out_blocks, pkt_status, static_cast<uint8_t>(Tpye::Elicit));
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Important), out_blocks, pkt_status, static_cast<uint8_t>(Tpye::Elicit));
                         recovery.on_packet_sent(out_len);
 
                         connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<uint8_t>(Tpye::Elicit));
                     } else {
                         bool complete_flag = pkt_status == PktStatus::Unimportant_partialreliable;
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, Channel::Unimportant, out_blocks, (uint8_t)complete_flag);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Unimportant), out_blocks, (uint8_t)complete_flag);
                         recovery.on_packet_sent(out_len);
 
                         connection_map.push(out_off, pkg_difference, out_blocks,static_cast<uint8_t>(pkt_status), ty);
