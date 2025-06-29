@@ -1886,9 +1886,9 @@ public:
                             }
                         } else {
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
-                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status)); 
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                             } else {
-                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status)); 
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                             }  
                         }
                     }
