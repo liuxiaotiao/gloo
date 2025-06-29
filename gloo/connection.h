@@ -634,7 +634,7 @@ class metarecebuf{
             }
         }
 
-        void set_unimportant_status(){
+        void set_unimportant_status(Status_len status_){
             if (!unimportant_packets_status.has_value()){
                 unimportant_packets_status = 1;
             }
@@ -1879,7 +1879,7 @@ public:
                             } else {
                                 /* Unimportant channel: Partial reliable */
                                 if (static_cast<PktStatus>(slot.pkt_status) == PktStatus::Unimportant_partialreliable) {
-                                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true)
+                                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true);
                                 } 
                                 // else {
                                 //     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false)
@@ -1911,7 +1911,7 @@ public:
                             /* Nothing to do */
                         } else {
                             /* Unimportant channel: Partial reliable */
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status))
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status));
                         }
                     } else {
                         /* Important channel: reliable */
@@ -2031,42 +2031,32 @@ public:
         //     }
         // });
 
-         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
-            if (slot.difference < pkt_difference){
-                if (++bit_index == 8) {
-                    bit_index = 0;
-                    ++byte_index;
-                }
-                /*Do nothing*/
-                // return;  
-            }else{
-                if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
-                    if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
-                        /* Unimportant channel: unreliable */
-                        sendbufferqueue.pkt2ack_unimportant(
-                            slot.difference, 
-                            slot.offset, 
-                            pkt, 
-                            false, 
-                            false);
-                    } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
-                        /* Nothing to do */
-                    } else {
-                        /* Unimportant channel: Partial reliable */
-                        // sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false)
-                    }
+         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
+            if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
+                if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
+                    /* Unimportant channel: unreliable */
+                    sendbufferqueue.pkt2ack_unimportant(
+                        slot.difference, 
+                        slot.offset, 
+                        pkt, 
+                        false, 
+                        false);
+                } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
+                    /* Nothing to do */
                 } else {
-                    /* Important channel: reliable */
-                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                    // if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
-                    //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                    // } else {
-                    //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
-                    // } 
-                    // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
-                    //     (bool)ack_value, slot.block_flag, slot.unimportant_flag);
+                    /* Unimportant channel: Partial reliable */
+                    // sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false)
                 }
-                
+            } else {
+                /* Important channel: reliable */
+                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                // if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                // } else {
+                //     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                // } 
+                // sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, 
+                //     (bool)ack_value, slot.block_flag, slot.unimportant_flag);
             }
         });
 
@@ -2200,7 +2190,7 @@ public:
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, out_status, Type::ElicitAck);
                     } else {
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Important), out_blocks, out_status);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, out_status);
                     }
         
                     recovery.on_packet_sent(out_len);
@@ -2249,13 +2239,13 @@ public:
 
                     if (out_off == ELICIT_OFFSET) {
                         /* Single Elicit packet */
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Important), out_blocks, pkt_status, static_cast<uint8_t>(Tpye::Elicit));
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, pkt_status, static_cast<uint8_t>(Tpye::Elicit));
                         recovery.on_packet_sent(out_len);
 
                         connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<uint8_t>(Tpye::Elicit));
                     } else {
                         bool complete_flag = pkt_status == PktStatus::Unimportant_partialreliable;
-                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, tatic_cast<Importance_len>(Channel::Unimportant), out_blocks, (uint8_t)complete_flag);
+                        send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Unimportant), out_blocks, (uint8_t)complete_flag);
                         recovery.on_packet_sent(out_len);
 
                         connection_map.push(out_off, pkg_difference, out_blocks,static_cast<uint8_t>(pkt_status), ty);
