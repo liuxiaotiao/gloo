@@ -400,8 +400,8 @@ class SCircularQueue {
         // }
 
         bool emit_important(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_, 
-            Block_len &block_, Status_len &status_, bool & packetType){
-            return data_[index_].metabuf.emit(src_, len_, off_);
+            Block_len &block_, Status_len &status_){
+            return data_[index_].metabuf.emit(src_, len_, off_, block_, status_);
         }
 
         bool emit_unimportant(size_t index_, struct iovec& src_, ssize_t &len_, Offset_len &off_,
