@@ -276,6 +276,7 @@ class SCircularQueue {
             // } else {
             //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
             // }
+            std::cout<<lastest_difference<<", ";
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, endbit);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
