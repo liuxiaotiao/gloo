@@ -374,6 +374,7 @@ namespace dmludp{
                             off = (meta_pos - 1) * send_buffer_size + 48;
                             meta_left -= send_buffer_size;
                         }
+                        packet_count_important++;
                         meta_pos++;
                         if (meta_left <= 0){
                             meta_left = 0;
@@ -569,12 +570,12 @@ namespace dmludp{
                   
                             if (bits_set[index] == 0){
                                 rcq_important.push_back(in_offset);
-                                if (lossreord_important == std::numeric_limits<uint64_t>::max()){
+                                if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
                                     lossreord_important = in_offset;
                                     std::cout<<"1. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                 } else {
-                                    if (in_offset > lossreord_important) {
+                                    if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
                                         std::cout<<"2. in_offset:"<<in_offset<<std::endl;
                                         ++initlosscount_important;
                                         lossreord_important = in_offset;
@@ -592,12 +593,12 @@ namespace dmludp{
                         if (bits_set[index] == 0){
                             rcq_important.push_back(in_offset);
                             /* TODO: if out of order */
-                            if (lossreord_important == std::numeric_limits<uint64_t>::max()){
+                            if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
                                 lossreord_important = in_offset;
                                 std::cout<<"3. in_offset:"<<in_offset<<std::endl;
                                 ++initlosscount_important;
                             } else {
-                                if (in_offset > lossreord_important) {
+                                if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
                                     std::cout<<"4. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                     lossreord_important = in_offset;
