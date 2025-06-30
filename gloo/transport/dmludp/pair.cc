@@ -1129,6 +1129,44 @@ void Pair::sendAsyncMode(Op& op) {
   op.nwritten = 0;
   if (!tx_.empty()) {
     tx_.push_back(std::move(op));
+
+    {
+      if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
+        std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
+        _Exit(0);
+      }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
+        // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
+        for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
+          
+          NonOwningPtr<UnboundBuffer> buf;
+          std::array<struct iovec, 2> iov;
+          int ioc;
+          auto &op = tx_[i];
+
+          const auto opcode = op.getOpcode();
+          // std::cout<<"1 i:"<<opcode<<std::endl;
+          if (opcode == Op::SEND_UNBOUND_BUFFER) {
+            buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+            if (!buf) {
+              return false;
+            }
+          }
+          const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
+          // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
+          // if (ioc == 2){
+          //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
+          // }
+          bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+          // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
+          if (!connection_written){
+            return false;
+          }
+          if(dmludp_connection->sendbufferqueue.size() == dmludp_connection->sendbufferqueue.get_capacity()){
+            break;
+          }
+        }
+      }else{}
+    }
     return;
   }
   // Write may have resulted in an error.
@@ -1136,6 +1174,43 @@ void Pair::sendAsyncMode(Op& op) {
 
   // Write didn't complete; pass to event loop
   tx_.push_back(std::move(op));
+  {
+    if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
+      std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
+      _Exit(0);
+    }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
+      // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
+      for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
+        
+        NonOwningPtr<UnboundBuffer> buf;
+        std::array<struct iovec, 2> iov;
+        int ioc;
+        auto &op = tx_[i];
+
+        const auto opcode = op.getOpcode();
+        // std::cout<<"1 i:"<<opcode<<std::endl;
+        if (opcode == Op::SEND_UNBOUND_BUFFER) {
+          buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
+          if (!buf) {
+            return false;
+          }
+        }
+        const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
+        // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
+        // if (ioc == 2){
+        //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
+        // }
+        bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+        // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
+        if (!connection_written){
+          return false;
+        }
+        if(dmludp_connection->sendbufferqueue.size() == dmludp_connection->sendbufferqueue.get_capacity()){
+          break;
+        }
+      }
+    }else{}
+  }
   device_->registerDescriptor(fd_, EPOLLIN | EPOLLOUT, this);
 }
 
