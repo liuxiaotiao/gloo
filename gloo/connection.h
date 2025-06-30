@@ -86,7 +86,7 @@ class Message{
 
         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
             Packet_len length, 
-            Block_len blocks_ = std::numeric_limits<Block_len>::max(), 
+            Block_len blocks_, 
             Type ty_) {
             message_header.ty = ty_;
             message_header.pkt_num = pn;
