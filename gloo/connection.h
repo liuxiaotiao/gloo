@@ -2004,7 +2004,7 @@ public:
         std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
         std::cout<<"send condition:" <<std::endl;
-        auto sendbufferqueue_start_index = sendbufferqueue.start();
+        // auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
             int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
             auto difference_ = sendbufferqueue.data_[index].get_difference();
