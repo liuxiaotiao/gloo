@@ -535,7 +535,7 @@ namespace dmludp{
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
                 return;
             }
-            
+
             if (is_drop){ /* received */
                 if (acknowldge_status_important) {
                     if (in_offset == lastpacketOffset_important) {
@@ -543,6 +543,7 @@ namespace dmludp{
                             std::cout<<"1. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
                             _Exit(0);
                         }
+                        std::cout<<"1. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
                         ack_count_important = packet_count_important - initlosscount_important;
                         acknowldge_status_important = false;
                     }
@@ -572,11 +573,11 @@ namespace dmludp{
                                 rcq_important.push_back(in_offset);
                                 if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
                                     lossreord_important = in_offset;
-                                    std::cout<<"1. in_offset:"<<in_offset<<std::endl;
+                                    // std::cout<<"1. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                 } else {
                                     if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
-                                        std::cout<<"2. in_offset:"<<in_offset<<std::endl;
+                                        // std::cout<<"2. in_offset:"<<in_offset<<std::endl;
                                         ++initlosscount_important;
                                         lossreord_important = in_offset;
                                     }
@@ -595,11 +596,11 @@ namespace dmludp{
                             /* TODO: if out of order */
                             if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
                                 lossreord_important = in_offset;
-                                std::cout<<"3. in_offset:"<<in_offset<<std::endl;
+                                // std::cout<<"3. in_offset:"<<in_offset<<std::endl;
                                 ++initlosscount_important;
                             } else {
                                 if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
-                                    std::cout<<"4. in_offset:"<<in_offset<<std::endl;
+                                    // std::cout<<"4. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                     lossreord_important = in_offset;
                                 }
@@ -613,6 +614,7 @@ namespace dmludp{
                             std::cout<<"2. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
                             _Exit(0);
                         }
+                        std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
                         ack_count_important = packet_count_important - initlosscount_important;
                         acknowldge_status_important = false;
                     }
@@ -830,7 +832,12 @@ namespace dmludp{
         }
 
 
-        bool emit(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks /* Important packet count */, uint8_t & status_ /* Contain unimportant completeness */){
+        bool emit(
+            struct iovec& out, ssize_t& out_len, uint64_t& out_off, 
+            uint16_t & blocks /* Important packet count */, 
+            uint8_t & status_ /* Contain unimportant completeness */
+            ){
+
             bool stop = false;
             
             out_len = 0;
