@@ -1488,5 +1488,7 @@ namespace dmludp {
         size_t num_bits_;
         size_t next_one_index_;
         size_t next_zero_index_;
+        int64_t last_found_one_ = -1;
+        int64_t last_found_zero_ = -1;
     };
 }
