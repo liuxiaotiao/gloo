@@ -202,34 +202,66 @@ namespace dmludp {
         return result;
     }
 
-    int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
-                                size_t offset_start, size_t offset_end, bool find_one) {
-        const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+    // int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
+    //                             size_t offset_start, size_t offset_end, bool find_one) {
+    //     const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+    //     size_t byte_start = offset_start / 8;
+    //     size_t byte_end = offset_end / 8;
+
+    //     for (size_t i = byte_start; i + 63 <= byte_end; i += 64) {
+    //         __m512i v = _mm512_loadu_si512(reinterpret_cast<const void*>(byte_ptr + i));
+    //         if (!find_one)
+    //             v = _mm512_xor_si512(v, _mm512_set1_epi8(-1));
+
+    //         __mmask64 mask = _mm512_cmpneq_epi8_mask(v, _mm512_setzero_si512());
+    //         if (mask != 0) {
+    //             int bit_pos = __builtin_ctzll(mask);
+    //             return static_cast<int64_t>((i * 8) + bit_pos);
+    //         }
+    //     }
+
+    //     // fallback scalar
+    //     size_t bit_tail = std::max(byte_start, byte_end - 63) * 8;
+    //     for (size_t b = bit_tail; b <= offset_end; ++b) {
+    //         if (b < offset_start) continue;
+    //         size_t word_idx = b / 64;
+    //         size_t bit_idx = b % 64;
+    //         bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
+    //         if (bit == find_one)
+    //             return static_cast<int64_t>(b);
+    //     }
+    //     return -1;
+    // }
+
+    inline int64_t find_next_bit_avx2(const uint64_t* data, size_t num_bits,
+                                  size_t offset_start, size_t offset_end,
+                                  bool find_one) {
+        const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(data);
         size_t byte_start = offset_start / 8;
         size_t byte_end = offset_end / 8;
 
-        for (size_t i = byte_start; i + 63 <= byte_end; i += 64) {
-            __m512i v = _mm512_loadu_si512(reinterpret_cast<const void*>(byte_ptr + i));
+        for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
+            __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
             if (!find_one)
-                v = _mm512_xor_si512(v, _mm512_set1_epi8(-1));
+                v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
 
-            __mmask64 mask = _mm512_cmpneq_epi8_mask(v, _mm512_setzero_si512());
+            int mask = _mm256_movemask_epi8(v);
             if (mask != 0) {
-                int bit_pos = __builtin_ctzll(mask);
-                return static_cast<int64_t>((i * 8) + bit_pos);
+                int bit_pos = __builtin_ctz(mask);
+                return static_cast<int64_t>(i * 8 + bit_pos);
             }
         }
 
-        // fallback scalar
-        size_t bit_tail = std::max(byte_start, byte_end - 63) * 8;
+        size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
         for (size_t b = bit_tail; b <= offset_end; ++b) {
             if (b < offset_start) continue;
             size_t word_idx = b / 64;
             size_t bit_idx = b % 64;
-            bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
+            bool bit = (data[word_idx] >> bit_idx) & 1ULL;
             if (bit == find_one)
                 return static_cast<int64_t>(b);
         }
+
         return -1;
     }
 
@@ -246,9 +278,10 @@ namespace dmludp {
     }
 
     BitPos BitmapSpan::find_last_1_and_0() const {
-        BitPos pos = find_last_1_and_0_impl(bits_, num_bits_, 0, end_bit_ - start_bit_);
-        if (pos.last_one != -1) pos.last_one += start_bit_;
-        if (pos.last_zero != -1) pos.last_zero += start_bit_;
+        // BitPos pos = find_last_1_and_0_impl(bits_, num_bits_, 0, end_bit_ - start_bit_);
+        BitPos pos = find_last_1_and_0_avx2(bits_, num_bits_, start_bit_, end_bit_);
+        // if (pos.last_one != -1) pos.last_one += start_bit_;
+        // if (pos.last_zero != -1) pos.last_zero += start_bit_;
         return pos;
     }
 
@@ -264,7 +297,10 @@ namespace dmludp {
 
     int64_t BitmapSpan::next_one_avx512() {
         if (next_one_index_ > end_bit_) return -1;
-        int64_t pos = find_next_bit_avx512(bits_, num_bits_,
+        // int64_t pos = find_next_bit_avx512(bits_, num_bits_,
+        //                                 next_one_index_ - start_bit_,
+        //                                 end_bit_ - start_bit_, true);
+        int64_t pos = find_next_bit_avx2(bits_, num_bits_,
                                         next_one_index_ - start_bit_,
                                         end_bit_ - start_bit_, true);
         if (pos != -1) {
@@ -278,7 +314,10 @@ namespace dmludp {
 
     int64_t BitmapSpan::next_zero_avx512() {
         if (next_zero_index_ > end_bit_) return -1;
-        int64_t pos = find_next_bit_avx512(bits_, num_bits_,
+        // int64_t pos = find_next_bit_avx512(bits_, num_bits_,
+        //                                 next_zero_index_ - start_bit_,
+        //                                 end_bit_ - start_bit_, false);
+        int64_t pos = find_next_bit_avx2(bits_, num_bits_,
                                         next_zero_index_ - start_bit_,
                                         end_bit_ - start_bit_, false);
         if (pos != -1) {

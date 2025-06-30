@@ -6,7 +6,7 @@ set(GLOO_HDRS)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set_source_files_properties(tool.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw")
+set_source_files_properties(tool.cc PROPERTIES COMPILE_FLAGS "-mavx2")
 
 # set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/connection.h PROPERTIES COMPILE_FLAGS "-O3")
 # set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/recv_buf.h PROPERTIES COMPILE_FLAGS "-O3")

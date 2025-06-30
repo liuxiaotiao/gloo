@@ -1393,12 +1393,76 @@ namespace dmludp {
         size_t size_;
     };
 
+    inline BitPos find_last_1_and_0_avx2(Span<const uint64_t> bits, size_t num_bits,
+                                     size_t offset_start, size_t offset_end) {
+        BitPos result;
+        size_t start_word = offset_start / 64;
+        size_t end_word = offset_end / 64;
+
+        for (int64_t i = static_cast<int64_t>(end_word); i >= static_cast<int64_t>(start_word); --i) {
+            uint64_t w = bits[i];
+            uint64_t mask = ~0ULL;
+
+            if (i == static_cast<int64_t>(start_word)) {
+                mask &= (~0ULL << (offset_start % 64));
+            }
+            if (i == static_cast<int64_t>(end_word)) {
+                mask &= (1ULL << ((offset_end % 64) + 1)) - 1;
+            }
+
+            w &= mask;
+            uint64_t w_inv = (~w) & mask;
+
+            if (w && result.last_one == -1) {
+                result.last_one = i * 64 + (63 - __builtin_clzll(w));
+            }
+            if (w_inv && result.last_zero == -1) {
+                result.last_zero = i * 64 + (63 - __builtin_clzll(w_inv));
+            }
+
+            if (result.last_one != -1 && result.last_zero != -1)
+                break;
+        }
+
+        return result;
+    }
+
+    inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
+                                  size_t offset_start, size_t offset_end, bool find_one) {
+        const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+        size_t byte_start = offset_start / 8;
+        size_t byte_end = offset_end / 8;
+
+        for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
+            __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
+            if (!find_one)
+                v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
+
+            int mask = _mm256_movemask_epi8(v);
+            if (mask != 0) {
+                int bit_pos = __builtin_ctz(mask);
+                return static_cast<int64_t>(i * 8 + bit_pos);
+            }
+        }
+
+        size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
+        for (size_t b = bit_tail; b <= offset_end; ++b) {
+            if (b < offset_start) continue;
+            size_t word_idx = b / 64;
+            size_t bit_idx = b % 64;
+            bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
+            if (bit == find_one)
+                return static_cast<int64_t>(b);
+        }
+        return -1;
+    }
+
     // 仅声明，不实现
     BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end);
 
-    int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
-                                size_t offset_start, size_t offset_end, bool find_one);
+    // int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
+    //                             size_t offset_start, size_t offset_end, bool find_one);
 
     class BitmapSpan {
     public:
