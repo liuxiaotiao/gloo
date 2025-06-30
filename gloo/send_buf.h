@@ -538,6 +538,10 @@ namespace dmludp{
             if (is_drop){ /* received */
                 if (acknowldge_status_important) {
                     if (in_offset == lastpacketOffset_important) {
+                        if (initlosscount_important > packet_count_important) {
+                            std::cout<<"1. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
+                            _Exit(0);
+                        }
                         ack_count_important = packet_count_important - initlosscount_important;
                         acknowldge_status_important = false;
                     }
@@ -600,6 +604,10 @@ namespace dmludp{
                     }
 
                     if (in_offset == lastpacketOffset_important) {
+                        if (initlosscount_important > packet_count_important) {
+                            std::cout<<"2. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
+                            _Exit(0);
+                        }
                         ack_count_important = packet_count_important - initlosscount_important;
                         acknowldge_status_important = false;
                     }
