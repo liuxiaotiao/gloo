@@ -534,7 +534,7 @@ namespace dmludp{
             if (in_offset == ELICIT_OFFSET) {
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
                 if (ack_count_important == packet_count_important) {
-                    std::cout<<"1. packet_count_important: "<< packet_count_important <<", " <<ack_count_important<<std::endl;
+                    std::cout<<"1 set. packet_count_important: "<< packet_count_important <<", " <<ack_count_important<<std::endl;
                     meta_status_important = MetaFlag::Complete;
                 }
                 return;
@@ -641,7 +641,7 @@ namespace dmludp{
                     std::cout<<"packet_count_important cannot be 0"<<std::endl;
                     _Exit(0);
                 }
-                std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<ack_count_important<<std::endl;
+                std::cout<<"2 set. packet_count_important: "<< packet_count_important <<", " <<ack_count_important<<std::endl;
                 meta_status_important = MetaFlag::Complete;
             }       
         }
