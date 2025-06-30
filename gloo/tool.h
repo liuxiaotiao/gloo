@@ -1461,7 +1461,7 @@ namespace dmludp {
     // }
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
-        std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
+        // std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
         const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
         size_t byte_start = offset_start / 8;
         size_t byte_end = offset_end / 8;
@@ -1477,7 +1477,7 @@ namespace dmludp {
                     if (mask & (1 << bit)) {
                         size_t bit_pos = i * 8 + bit;
                         if (bit_pos >= offset_start && bit_pos <= offset_end) {
-                            std::cout<<"bit_pos:"<<bit_pos<<std::endl;
+                            // std::cout<<"bit_pos:"<<bit_pos<<std::endl;
                             return static_cast<int64_t>(bit_pos);
                         }
                     }
