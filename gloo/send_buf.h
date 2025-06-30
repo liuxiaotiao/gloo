@@ -535,7 +535,7 @@ namespace dmludp{
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
                 return;
             }
-
+            
             if (is_drop){ /* received */
                 if (acknowldge_status_important) {
                     if (in_offset == lastpacketOffset_important) {
