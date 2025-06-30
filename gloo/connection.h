@@ -2045,8 +2045,8 @@ public:
         if (sendbufferqueue.full()){
             return false;
         }
-        std::cout<<sendbufferqueue.lastest_difference<<", ";
-        ip_print(peeraddr);
+        // std::cout<<sendbufferqueue.lastest_difference<<", ";
+        // ip_print(peeraddr);
 
         if (iovecs_len != 1) {
             if (iovecs[1].iov_len < 2 * 1024 * 1024 && iovecs[1].iov_len > MAX_SEND_UDP_PAYLOAD_SIZE){
