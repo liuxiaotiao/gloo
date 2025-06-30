@@ -1909,19 +1909,19 @@ public:
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false, false);
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value,  false);
                         } else if(slot.pkt_ty == Type::Unreliable2) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true, false);
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                         } else(slot.pkt_ty == Type::Unreliable3) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true, false);
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true);
                         }
                     }
                     if (++bit_index == 8) {
@@ -1960,7 +1960,7 @@ public:
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
-                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true);
+                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value);
                     }
 
                     if (++bit_index == 8) {
@@ -2100,30 +2100,40 @@ public:
         size_t total_important = 0;
         size_t total_unimportant = 0;
         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
-            if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
-                total_unimportant++;
-                if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
-                    /* Unimportant channel: unreliable */
-                    sendbufferqueue.pkt2ack_unimportant(
-                        slot.difference, 
-                        slot.offset, 
-                        pkt, 
-                        false, 
-                        static_cast<PktStatus>(slot.pkt_status));
-                } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
-                    /* Nothing to do */
-                } else {
-                    /* Unimportant channel: Partial reliable */
-                    // sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false)
-                }
-            } else {
-                total_important++;
-                /* Important channel: reliable */
+            if (slot.pkt_ty == Type::Application) {
+                ++total_important;
+                if (!ack_value && !loss_important) {
+                    loss_important = true;
+                } 
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+            } else if(slot.pkt_ty == Type::Application2)  {
+                ++total_important;
+                if (!ack_value && !loss_important) {
+                    loss_important = true;
+                } 
+                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+            } else if(slot.pkt_ty == Type::ElicitAck) {
+                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+            } else if(slot.pkt_ty == Type::Unreliable) {
+                ++total_unimportant;
+                if (!ack_value && !loss_unimportant) {
+                    loss_unimportant = true;
+                } 
+                sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+            } else if(slot.pkt_ty == Type::Unreliable2) {
+                ++total_unimportant;
+                if (!ack_value && !loss_unimportant) {
+                    loss_unimportant = true;
+                } 
+                sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+            } else(slot.pkt_ty == Type::Unreliable3) {
+                ++total_unimportant;
+                if (!ack_value && !loss_unimportant) {
+                    loss_unimportant = true;
+                } 
+                sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             }
         });
-
-        auto total_send = max_sent_pn - max_acknowleged;
 
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
