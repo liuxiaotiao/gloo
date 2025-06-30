@@ -612,7 +612,7 @@ namespace dmludp{
                             std::cout<<"2. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
                             _Exit(0);
                         }
-                        std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
+                        // std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
                         ack_count_important = packet_count_important - initlosscount_important;
                         acknowldge_status_important = false;
                     }
