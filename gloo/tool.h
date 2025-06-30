@@ -9,6 +9,7 @@
 #include <thread>
 // #include <span>
 // #include <execution>
+#include <immintrin.h>
 #include <cassert>
 #include "packet.h"
 namespace dmludp {
