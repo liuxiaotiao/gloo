@@ -68,7 +68,7 @@ class Message{
 
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header) - 7; /*Don't send padding part*/
+            iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
 
             iov[1] = {nullptr, 0};
 
@@ -1736,7 +1736,7 @@ public:
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
-        acknowldge_iov[0].iov_len = sizeof(Header) - 5;
+        acknowldge_iov[0].iov_len = sizeof(Header) - 7;
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
