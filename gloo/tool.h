@@ -1430,6 +1430,7 @@ namespace dmludp {
 
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
+        std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
         const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
         size_t byte_start = offset_start / 8;
         size_t byte_end = offset_end / 8;
@@ -1442,6 +1443,7 @@ namespace dmludp {
             int mask = _mm256_movemask_epi8(v);
             if (mask != 0) {
                 int bit_pos = __builtin_ctz(mask);
+                std::cout<<"bit_pos:"<<bit_pos<<std::endl;
                 return static_cast<int64_t>(i * 8 + bit_pos);
             }
         }
