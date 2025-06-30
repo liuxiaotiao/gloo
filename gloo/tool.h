@@ -1428,6 +1428,37 @@ namespace dmludp {
         return result;
     }
 
+    // inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
+    //                               size_t offset_start, size_t offset_end, bool find_one) {
+    //     std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
+    //     const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+    //     size_t byte_start = offset_start / 8;
+    //     size_t byte_end = offset_end / 8;
+
+    //     for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
+    //         __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
+    //         if (!find_one)
+    //             v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
+
+    //         int mask = _mm256_movemask_epi8(v);
+    //         if (mask != 0) {
+    //             int bit_pos = __builtin_ctz(mask);
+    //             std::cout<<"bit_pos:"<<bit_pos<<std::endl;
+    //             return static_cast<int64_t>(i * 8 + bit_pos);
+    //         }
+    //     }
+
+    //     size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
+    //     for (size_t b = bit_tail; b <= offset_end; ++b) {
+    //         if (b < offset_start) continue;
+    //         size_t word_idx = b / 64;
+    //         size_t bit_idx = b % 64;
+    //         bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
+    //         if (bit == find_one)
+    //             return static_cast<int64_t>(b);
+    //     }
+    //     return -1;
+    // }
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
         std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
@@ -1442,12 +1473,19 @@ namespace dmludp {
 
             int mask = _mm256_movemask_epi8(v);
             if (mask != 0) {
-                int bit_pos = __builtin_ctz(mask);
-                std::cout<<"bit_pos:"<<bit_pos<<std::endl;
-                return static_cast<int64_t>(i * 8 + bit_pos);
+                for (int bit = 0; bit < 32; ++bit) {
+                    if (mask & (1 << bit)) {
+                        size_t bit_pos = i * 8 + bit;
+                        if (bit_pos >= offset_start && bit_pos <= offset_end) {
+                            std::cout<<"bit_pos:"<<bit_pos<<std::endl;
+                            return static_cast<int64_t>(bit_pos);
+                        }
+                    }
+                }
             }
         }
 
+        // fallback scalar
         size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
         for (size_t b = bit_tail; b <= offset_end; ++b) {
             if (b < offset_start) continue;
@@ -1457,6 +1495,7 @@ namespace dmludp {
             if (bit == find_one)
                 return static_cast<int64_t>(b);
         }
+
         return -1;
     }
 
