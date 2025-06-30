@@ -1627,7 +1627,7 @@ public:
             receive_slot[index] = 0;
             return;
         }
-        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<(int)channel_status<<std::endl;
+        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<(int)channel_status<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -1807,7 +1807,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", ";
+        std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", "<<std::endl;
         // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
         //     if (slot.difference < pkt_difference){
         //         if (++bit_index == 8) {
