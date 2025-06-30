@@ -302,7 +302,7 @@ namespace dmludp{
                     packet_count_important = meta_len;
                 } else {
                     BitPos pos = importance_bitmap.find_last_1_and_0();
-                    std::cout<<"pos.last_one:"<< pos.last_one <<", " <<  pos.last_zero<<", "<<start_index<<", "<<end_index<<std::endl;
+                    // std::cout<<"pos.last_one:"<< pos.last_one <<", " <<  pos.last_zero<<", "<<start_index<<", "<<end_index<<std::endl;
                     importantIndex = pos.last_one;
                     unimportantIndex = pos.last_zero;
 
@@ -357,9 +357,9 @@ namespace dmludp{
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance; /* No unimportant packet need to transmission */
             }
 
-            std::cout<<"add_Meta:"<< static_cast<uint32_t>(meta_status_important) << ", " << static_cast<uint32_t>(meta_status_unimportant)
-                <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << ", " << bitmapview.size() 
-                <<", " << importantIndex << ", "<< unimportantIndex << std::endl;
+            // std::cout<<"add_Meta:"<< static_cast<uint32_t>(meta_status_important) << ", " << static_cast<uint32_t>(meta_status_unimportant)
+            //     <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << ", " << bitmapview.size() 
+            //     <<", " << importantIndex << ", "<< unimportantIndex << std::endl;
         } 
 
         ssize_t off_front_important(){

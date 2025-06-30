@@ -2056,7 +2056,7 @@ public:
                 } else {
                     bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE;
                 }
-                std::cout<<"bitmaplen:"<<bitmaplen<<std::endl;
+                // std::cout<<"bitmaplen:"<<bitmaplen<<std::endl;
                 Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen - 1);
             } else {
