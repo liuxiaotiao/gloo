@@ -1148,7 +1148,7 @@ void Pair::sendAsyncMode(Op& op) {
           if (opcode == Op::SEND_UNBOUND_BUFFER) {
             buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
             if (!buf) {
-              return false;
+              break;
             }
           }
           const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
@@ -1159,7 +1159,7 @@ void Pair::sendAsyncMode(Op& op) {
           bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
           // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
           if (!connection_written){
-            return false;
+            break;
           }
           if(dmludp_connection->sendbufferqueue.size() == dmludp_connection->sendbufferqueue.get_capacity()){
             break;
@@ -1192,7 +1192,7 @@ void Pair::sendAsyncMode(Op& op) {
         if (opcode == Op::SEND_UNBOUND_BUFFER) {
           buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
           if (!buf) {
-            return false;
+            break;
           }
         }
         const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
@@ -1203,7 +1203,7 @@ void Pair::sendAsyncMode(Op& op) {
         bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
         // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
         if (!connection_written){
-          return false;
+          break;
         }
         if(dmludp_connection->sendbufferqueue.size() == dmludp_connection->sendbufferqueue.get_capacity()){
           break;
