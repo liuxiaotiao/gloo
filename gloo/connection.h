@@ -1111,7 +1111,8 @@ public:
         ip_print(peeraddr);
         std::cout<<"receive condition"<<std::endl;
         for (auto i = 0; i < count_; i++){
-            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << ", " << at(i).get_status()<< std::endl;
+            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << ", " << at(i).get_status() 
+            << (at(i).expected_important_packets.has_value() ? std::to_string(at(i).expected_important_packets.value()) : "<nullopt>") << std::endl;
         }
     }
 
