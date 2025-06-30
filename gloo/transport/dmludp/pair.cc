@@ -801,7 +801,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log();
+    dmludp_connection->recvCQ.receive_log();
     // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
