@@ -327,7 +327,7 @@ namespace dmludp {
             pos += start_bit_;
             last_found_one_ = pos;
             next_one_index_ = pos + 1;
-            std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
+            // std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
             return pos;
         }
         last_found_one_ = -1;
