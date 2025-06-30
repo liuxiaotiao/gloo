@@ -1893,13 +1893,13 @@ public:
                         if (slot.channel == static_cast<uint8_t>(Channel::Unimportant)) {
                             ++total_unimportant;
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_reliable)) {
-                            /* Unimportant channel: unreliable */
-                            sendbufferqueue.pkt2ack_unimportant(
-                                slot.difference, 
-                                slot.offset, 
-                                pkt, 
-                                (bool)ack_value, 
-                                static_cast<PktStatus>(slot.pkt_status));
+                                /* Unimportant channel: unreliable */
+                                sendbufferqueue.pkt2ack_unimportant(
+                                    slot.difference, 
+                                    slot.offset, 
+                                    pkt, 
+                                    (bool)ack_value, 
+                                    static_cast<PktStatus>(slot.pkt_status));
                             } else if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Unimportant_unreliable)) {
                                 /* Nothing to do */
                             } else {
@@ -1913,9 +1913,7 @@ public:
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
                                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                             } else {
-                                if (ack_value == 1) {
-                                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
-                                }
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                             }  
                         }
                     }

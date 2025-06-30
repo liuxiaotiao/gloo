@@ -571,9 +571,11 @@ namespace dmludp{
                                 rcq_important.push_back(in_offset);
                                 if (lossreord_important == std::numeric_limits<uint64_t>::max()){
                                     lossreord_important = in_offset;
+                                    std::cout<<"1. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                 } else {
                                     if (in_offset > lossreord_important) {
+                                        std::cout<<"2. in_offset:"<<in_offset<<std::endl;
                                         ++initlosscount_important;
                                         lossreord_important = in_offset;
                                     }
@@ -592,9 +594,11 @@ namespace dmludp{
                             /* TODO: if out of order */
                             if (lossreord_important == std::numeric_limits<uint64_t>::max()){
                                 lossreord_important = in_offset;
+                                std::cout<<"3. in_offset:"<<in_offset<<std::endl;
                                 ++initlosscount_important;
                             } else {
                                 if (in_offset > lossreord_important) {
+                                    std::cout<<"4. in_offset:"<<in_offset<<std::endl;
                                     ++initlosscount_important;
                                     lossreord_important = in_offset;
                                 }
