@@ -533,6 +533,9 @@ namespace dmludp{
 
             if (in_offset == ELICIT_OFFSET) {
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
+                if (ack_count_important == packet_count_important) {
+                    meta_status_important = MetaFlag::Complete;
+                }
                 return;
             }
 
