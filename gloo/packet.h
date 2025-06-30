@@ -227,8 +227,8 @@ using Block_len = uint16_t;
                 + sizeof(Packet_num_len) 
                 + sizeof(Offset_len) 
                 + sizeof(Difference_len) 
-                + sizeof(pkt_length)
-                + sizeof(pkt_important_block);
+                + sizeof(Packet_len)
+                + sizeof(Block_len);
         };
     };
 

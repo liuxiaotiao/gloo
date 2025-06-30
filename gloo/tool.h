@@ -212,7 +212,7 @@ namespace dmludp {
             buffer[tail] = value;
             tail = (tail + 1) % capacity;
             ++count;
-            std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
+            // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
         }
 
         DataType dequeue() {
@@ -252,7 +252,7 @@ namespace dmludp {
 
 
         std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
-            std::cout<<"removeBeforeValue:"<<value<<std::endl;
+            // std::cout<<"removeBeforeValue:"<<value<<std::endl;
             if (isEmpty()) {
                 // return std::nullopt;
                 throw std::underflow_error("TSCircularQueue is empty(remove)");

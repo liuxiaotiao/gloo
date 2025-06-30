@@ -1628,7 +1628,7 @@ public:
             return;
         }
 
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
+        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -1808,7 +1808,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", "<<std::endl;
+        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", "<<std::endl;
         // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
         //     if (slot.difference < pkt_difference){
         //         if (++bit_index == 8) {
@@ -1977,17 +1977,17 @@ public:
         //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         // }
 
-        // ip_print(peeraddr);
-        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        ip_print(peeraddr);
+        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
-        // std::cout<<"send condition:" <<std::endl;
-        // // auto sendbufferqueue_start_index = sendbufferqueue.start();
-        // for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-        //     int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-        //     auto difference_ = sendbufferqueue.data_[index].get_difference();
-        //     std::cout << difference_ << " " ;
-        //     sendbufferqueue.data_[index].metabuf.ack_check();
-        // }
+        std::cout<<"send condition:" <<std::endl;
+        // auto sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+            auto difference_ = sendbufferqueue.data_[index].get_difference();
+            std::cout << difference_ << " " ;
+            sendbufferqueue.data_[index].metabuf.ack_check();
+        }
 
     }
 
@@ -2160,7 +2160,7 @@ public:
                     
                     auto pn = pkt_num_spaces.updatepktnum();
 
-                    std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
+                    // std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
                     isElicit = out_off == ELICIT_OFFSET;
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
