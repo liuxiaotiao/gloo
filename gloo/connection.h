@@ -1907,16 +1907,15 @@ public:
                                 if (static_cast<PktStatus>(slot.pkt_status) == PktStatus::Unimportant_partialreliable) {
                                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, static_cast<PktStatus>(slot.pkt_status));
                                 } 
-                                // else {
-                                //     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false)
-                                // }
                             }
                         } else {
                             ++total_important;
                             if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
                                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                             } else {
-                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
+                                if (ack_value == 1) {
+                                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
+                                }
                             }  
                         }
                     }
