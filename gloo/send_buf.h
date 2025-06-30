@@ -552,9 +552,7 @@ namespace dmludp{
                     if (in_offset >= 48){
                         index = (in_offset - 48) / send_buffer_size + 1;
                     }
-                    // else{
-                    //     index = in_offset / send_buffer_size;
-                    // }
+
                     if (bits_set[index] == 0){
                         bits_set.set(index);
                         ack_count_important++;
@@ -635,6 +633,10 @@ namespace dmludp{
             }
             
             if (ack_count_important == packet_count_important && meta_status_unimportant == MetaFlag::Ack_complete_unimportance){
+                if (packet_count_important == 0) {
+                    std::cout<<"packet_count_important cannot be 0"<<std::endl;
+                    _Exit(0);
+                }
                 meta_status_important = MetaFlag::Complete;
             }       
         }
