@@ -825,7 +825,7 @@ namespace dmludp{
         void ack_check(){
             std::cout << "ack_count:" << ack_count_important << ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq_important.size() <<
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
-            ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant <<
+            ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important
             << std::endl;
         }
 
