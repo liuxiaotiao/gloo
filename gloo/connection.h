@@ -2099,35 +2099,25 @@ public:
         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.pkt_ty == Type::Application) {
                 ++total_important;
-                if (!ack_value && !loss_important) {
-                    loss_important = true;
-                } 
+        
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Application2)  {
                 ++total_important;
-                if (!ack_value && !loss_important) {
-                    loss_important = true;
-                } 
+     
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::ElicitAck) {
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Unreliable) {
                 ++total_unimportant;
-                if (!ack_value && !loss_unimportant) {
-                    loss_unimportant = true;
-                } 
+      
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else if(slot.pkt_ty == Type::Unreliable2) {
                 ++total_unimportant;
-                if (!ack_value && !loss_unimportant) {
-                    loss_unimportant = true;
-                } 
+         
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else(slot.pkt_ty == Type::Unreliable3) {
                 ++total_unimportant;
-                if (!ack_value && !loss_unimportant) {
-                    loss_unimportant = true;
-                } 
+           
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             }
         });
