@@ -1514,87 +1514,87 @@ public:
     };
 
     void process_application2(size_t index_){
-        auto &msg = receive_message[index_];
-        Packet_num_len pkt_num = msg.get_packet_number();
-        Offset_len pkt_offset = msg.get_packet_offset();
-        Difference_len pkt_difference = msg.get_packet_difference();
-        auto pkt_len = msg.get_packet_length();
+        // auto &msg = receive_message[index_];
+        // Packet_num_len pkt_num = msg.get_packet_number();
+        // Offset_len pkt_offset = msg.get_packet_offset();
+        // Difference_len pkt_difference = msg.get_packet_difference();
+        // auto pkt_len = msg.get_packet_length();
         
-        auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
+        // auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
         
-        if (pkt_num < current_loop_min){
-            receive_slot[index_] = 0;
-            return;
-        }
-
-        // if (pkt_len == 4) {
-        //     std::cout<<"receive from:";
-        //     ip_print(peeraddr);
-        //     log_print(msg.iov[1].iov_base, 4);
+        // if (pkt_num < current_loop_min){
+        //     receive_slot[index_] = 0;
+        //     return;
         // }
 
-        bool valid_pkt = pkt_difference >= receive_connection_difference;
-        std::optional<size_t> expectedsize;
-        if (valid_pkt){
-            if (pkt_offset == 0){
-                recvCQ.indexcheck(pkt_difference);
-                if(!recvCQ.insertzero(pkt_difference, index_)){
-                    receive_slot[index_] = 0;
-                }else{
-                    receive_slot[index_] = 1;
-                    struct preamble {
-                        size_t nbytes = 0;
-                        size_t opcode = 0;
-                        size_t slot = 0;
-                        size_t offset = 0;
-                        size_t length = 0;
-                        size_t roffset = 0;
-                    };
-                    auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-                    if ((preamble_header->opcode & ~1) == 0){
-                        expectedsize = sizeof(preamble) + preamble_header->length;
-                    }else{
-                        expectedsize = sizeof(preamble);
-                    }
-                }
-            }else{
-                receive_slot[index_] = 1;
-            }
-        }else{
-            receive_slot[index_] = 0;
-        }
+        // // if (pkt_len == 4) {
+        // //     std::cout<<"receive from:";
+        // //     ip_print(peeraddr);
+        // //     log_print(msg.iov[1].iov_base, 4);
+        // // }
 
-        if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
-            max_received = pkt_num;
-            send_num = pkt_num;
-        }  
+        // bool valid_pkt = pkt_difference >= receive_connection_difference;
+        // std::optional<size_t> expectedsize;
+        // if (valid_pkt){
+        //     if (pkt_offset == 0){
+        //         recvCQ.indexcheck(pkt_difference);
+        //         if(!recvCQ.insertzero(pkt_difference, index_)){
+        //             receive_slot[index_] = 0;
+        //         }else{
+        //             receive_slot[index_] = 1;
+        //             struct preamble {
+        //                 size_t nbytes = 0;
+        //                 size_t opcode = 0;
+        //                 size_t slot = 0;
+        //                 size_t offset = 0;
+        //                 size_t length = 0;
+        //                 size_t roffset = 0;
+        //             };
+        //             auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
+        //             if ((preamble_header->opcode & ~1) == 0){
+        //                 expectedsize = sizeof(preamble) + preamble_header->length;
+        //             }else{
+        //                 expectedsize = sizeof(preamble);
+        //             }
+        //         }
+        //     }else{
+        //         receive_slot[index_] = 1;
+        //     }
+        // }else{
+        //     receive_slot[index_] = 0;
+        // }
+
+        // if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
+        //     max_received = pkt_num;
+        //     send_num = pkt_num;
+        // }  
    
-        size_t pos = pkt_num - current_loop_min;
+        // size_t pos = pkt_num - current_loop_min;
   
-        if(pos > 8000){
-            pos = 0;
-        }
-        size_t byte_index = pos / 8;
-        size_t bit_index = pos % 8;
+        // if(pos > 8000){
+        //     pos = 0;
+        // }
+        // size_t byte_index = pos / 8;
+        // size_t bit_index = pos % 8;
 
-        if (byte_index > receivevector.size()){
-            std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
-            <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
-            _Exit(0);
-        }
+        // if (byte_index > receivevector.size()){
+        //     std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
+        //     <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
+        //     _Exit(0);
+        // }
 
-        if (valid_pkt){
-            receivevector[byte_index] |= (1 << bit_index);  
-            bool exist = false;
-            recvCQ.insert(pkt_difference, pkt_offset, pkt_len, index_, exist, pkt_importance, pkt_importance_blocks, channel_status);
-            if (exist){
-                receive_slot[index_] = 0;
-            }
+        // if (valid_pkt){
+        //     receivevector[byte_index] |= (1 << bit_index);  
+        //     bool exist = false;
+        //     recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
+        //     if (exist){
+        //         receive_slot[index_] = 0;
+        //     }
 
-            if (expectedsize){
-                recvCQ.setRead(pkt_difference, *expectedsize);
-            }
-        }
+        //     if (expectedsize){
+        //         recvCQ.setRead(pkt_difference, *expectedsize);
+        //     }
+        // }
     }
 
 
@@ -2115,7 +2115,7 @@ public:
                 ++total_unimportant;
          
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
-            } else(slot.pkt_ty == Type::Unreliable3) {
+            } else {
                 ++total_unimportant;
            
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
@@ -2396,7 +2396,7 @@ public:
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck);
                     } else {
-                        if (out_status == 0) {
+                        if (out_status == 1) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
                             connection_map.push(ELICIT_OFFSET, pkg_difference, Type::Application2);
                         } else {
