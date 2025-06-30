@@ -1519,11 +1519,8 @@ public:
         Offset_len pkt_offset = msg.get_packet_offset();
         Difference_len pkt_difference = msg.get_packet_difference();
         auto pkt_len = msg.get_packet_length();
-
-        auto pkt_importance = msg.get_packet_importance();
         
         auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
-        auto channel_status = msg.get_connection_status(); /* Unimportant channel complete status, 1 is complete, 0 is not. */
         
         if (pkt_num < current_loop_min){
             receive_slot[index_] = 0;
@@ -1916,7 +1913,7 @@ public:
                                 loss_unimportant = true;
                             } 
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
-                        } else(slot.pkt_ty == Type::Unreliable3) {
+                        } else {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
@@ -1940,9 +1937,9 @@ public:
                         if (!ack_value && !loss_important) {
                             loss_important = true;
                         } 
-                        sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                        sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
                     } else if(slot.pkt_ty == Type::ElicitAck) {
-                        sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                        sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
                     } else if(slot.pkt_ty == Type::Unreliable) {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
@@ -1955,7 +1952,7 @@ public:
                             loss_unimportant = true;
                         } 
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
-                    } else(slot.pkt_ty == Type::Unreliable3) {
+                    } else {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
