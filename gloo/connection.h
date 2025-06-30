@@ -1729,7 +1729,7 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        // std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<std::endl;
+        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<std::endl;
 
         size_t info_len = (max_received - current_loop_min + 1 + 7) / 8;
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
