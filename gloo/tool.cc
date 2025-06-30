@@ -322,11 +322,12 @@ namespace dmludp {
         }
         int64_t pos = find_next_bit_avx2(bits_, num_bits_,
                                         next_one_index_ - start_bit_,
-                                        end_bit_ - start_bit_, true);
+                                        end_bit_, true);
         if (pos != -1) {
             pos += start_bit_;
             last_found_one_ = pos;
             next_one_index_ = pos + 1;
+            std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
             return pos;
         }
         last_found_one_ = -1;
