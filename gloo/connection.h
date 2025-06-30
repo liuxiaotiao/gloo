@@ -376,6 +376,7 @@ class SCircularQueue {
         void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
             bool value_, bool unreliabelStatus_){
             auto index = difference_ % get_capacity();
+            std::cout<<"pkt2ack_important:" << difference_<< ", " << offset_<< ", " <<std::endl;
             data_[index].metabuf.acknowledege_and_drop(offset_, value_, unreliabelStatus_);
         }
 
