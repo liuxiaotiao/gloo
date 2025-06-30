@@ -183,7 +183,7 @@ class MetaInfo{
                 _Exit(0);
             }
             difference_flag = difference_;
-            if ((difference_flag % 16) != MetaDifference){
+            if ((difference_flag % DataBlock) != MetaDifference){
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
