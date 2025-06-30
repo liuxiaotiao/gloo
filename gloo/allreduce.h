@@ -75,7 +75,7 @@ struct AllreduceOptionsImpl {
   // This is the maximum size of each I/O operation (send/recv) of which
   // two are in flight at all times. A smaller value leads to more
   // overhead and a larger value leads to poor cache behavior.
-  static constexpr size_t kMaxSegmentSize = 1024 * 1024;
+  static constexpr size_t kMaxSegmentSize = 2 * 1024 * 1024;
 
   // Internal use only. This is used to exercise code paths where we
   // have more than 2 segments per rank without making the tests slow
