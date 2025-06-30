@@ -1836,7 +1836,7 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", ";
+        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", ";
         // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
         //     if (slot.difference < pkt_difference){
         //         if (++bit_index == 8) {
@@ -1997,7 +1997,7 @@ public:
         // }else{
         //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         // }
-        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
     }
 
     /*Update receive difference to process next block data*/
