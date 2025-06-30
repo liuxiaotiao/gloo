@@ -34,7 +34,7 @@ namespace dmludp {
 
     inline constexpr double beta = 0.25;
 
-    inline constexpr size_t DataBlock = 16;
+    inline constexpr size_t DataBlock = 32;
 
     inline constexpr size_t MapSetLimit = 50;
 
