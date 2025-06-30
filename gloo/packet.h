@@ -48,11 +48,15 @@ using Block_len = uint16_t;
         /// Fin
         Fin = 0x07,
 
-        StartAck = 0x08,
+        Application2 = 0x08, /* with ElicitAck */
 
-        FastAck = 0x09,
+        Unreliable = 0x09, /* fisrt transmission */
 
-        Unknown = 0x10,
+        Unreliable2 = 0x10, /* retransmission */
+
+        Unreliable3 = 0x11, /* With ElicitAck */
+
+        Unknown = 0x12,
     };
 
 // Avoid memory alignment
@@ -74,13 +78,13 @@ using Block_len = uint16_t;
         // The data length of the application packet
         Packet_len pkt_length;
  
-        Importance_len pkt_importance;
+        // Importance_len pkt_importance;
 
         Block_len pkt_important_block;
 
-        Status_len pkt_status;
+        // Status_len pkt_status;
 
-        uint8_t pad[5];
+        uint8_t pad[7];
 
         Header(
             Type first = Type::Application, 
@@ -96,9 +100,9 @@ using Block_len = uint16_t;
             offset(off), 
             difference(difference),
             pkt_length(len),
-            pkt_importance(importance),
-            pkt_important_block(blocks),
-            pkt_status(status) {};
+            // pkt_importance(importance),
+            pkt_important_block(blocks) {};
+            // pkt_status(status) {};
 
         ~Header() {};
 
@@ -119,10 +123,16 @@ using Block_len = uint16_t;
                 first = 0x06;
             }else if (ty == Type::Fin){
                 first = 0x07;
-            }else if (ty == Type::StartAck){
+            }else if (ty == Type::Application2){
                 first = 0x08;
-            }else{
+            }else if (ty == Type::Unreliable){
                 first = 0x09;
+            }else if (ty == Type::Unreliable2){
+                first = 0x10;
+            }else if (ty == Type::Unreliable3){
+                first = 0x11;
+            }else{
+                first = 0x12;
             }
             put_u8(out, first, off); // Type
             
@@ -139,13 +149,13 @@ using Block_len = uint16_t;
             put_u16(out, pkt_length, off); // packet length
 
             off += sizeof(Packet_len);
-            put_u8(out, pkt_importance, off);
+            // put_u8(out, pkt_importance, off);
 
-            off += sizeof(Importance_len);
+            // off += sizeof(Importance_len);
             put_u16(out, pkt_important_block, off);
 
-            off += sizeof(Block_len);
-            put_u8(out, pkt_status, off);
+            // off += sizeof(Block_len);
+            // put_u8(out, pkt_status, off);
         };
 
         void put_u64(std::vector<uint8_t> &vec, uint64_t &input, size_t position){
@@ -204,14 +214,6 @@ using Block_len = uint16_t;
             return pkt_length;
         }
 
-        void set_importance(Importance_len importance_){
-            pkt_importance = importance_;
-        }
-
-        Importance_len get_pkt_importance(){
-            return pkt_importance;
-        }
-
         void set_important_blocks(Block_len blocks_){
             pkt_important_block = blocks_;
         }
@@ -220,23 +222,13 @@ using Block_len = uint16_t;
             return pkt_important_block;
         }
 
-        void set_status(Status_len status_){
-            pkt_status = status_;
-        }
-
-        Status_len get_transmissionstatus(){
-            return pkt_status;
-        }
-
         static size_t len(){
             return sizeof(Type) 
                 + sizeof(Packet_num_len) 
                 + sizeof(Offset_len) 
                 + sizeof(Difference_len) 
                 + sizeof(pkt_length)
-                + sizeof(pkt_importance)
-                + sizeof(pkt_important_block)
-                + sizeof(pkt_status);
+                + sizeof(pkt_important_block);
         };
     };
 
