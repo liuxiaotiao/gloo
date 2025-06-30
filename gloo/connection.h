@@ -386,7 +386,7 @@ class SCircularQueue {
             Packet_num_len pkt, 
             bool ack_value_,
             PktStatus pktstatus_){
-
+            std::cout<<"pkt2ack_unimportant:" << difference_<< ", " << offset_<< ", " <<std::endl;
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, ack_value_, pktstatus_);
         }
