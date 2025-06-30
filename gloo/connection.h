@@ -1911,11 +1911,16 @@ public:
                             }
                         } else {
                             ++total_important;
-                            if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
-                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                            if (slot.pkt_ty == static_cast<uint8_t>(Type::ElicitAck)) {
+                                sendbufferqueue.pkt2ack_important(slot.difference, ELICIT_OFFSET, pkt, (bool)ack_value, (bool)ack_value); 
                             } else {
-                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
-                            }  
+                                if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                                } else {
+                                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
+                                }  
+                            }
+                            
                         }
                     }
                     if (++bit_index == 8) {
@@ -1945,14 +1950,19 @@ public:
                     } else {
                         ++total_important;
                         /* Important channel: reliable */
-                        if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
-                            sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                        if (slot.pkt_ty == static_cast<uint8_t>(Type::ElicitAck)) {
+                            sendbufferqueue.pkt2ack_important(slot.difference, ELICIT_OFFSET, pkt, (bool)ack_value, (bool)ack_value); 
                         } else {
-                            if (!ack_value && !loss_important) {
-                                loss_important = true;
+                            if (slot.pkt_status == static_cast<uint8_t>(PktStatus::Important_reliable_special)) {
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
+                            } else {
+                                if (!ack_value && !loss_important) {
+                                    loss_important = true;
+                                } 
+                                sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                             } 
-                            sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
-                        } 
+                        }
+                        
                     }
                     if (++bit_index == 8) {
                         bit_index = 0;
@@ -2247,7 +2257,7 @@ public:
                     isElicit = out_off == ELICIT_OFFSET;
                     /* Elicit or not*/
                     if (isElicit) {
-                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, out_status, Type::ElicitAck);
+                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, 1, Type::ElicitAck);
                     } else {
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, out_status);
                     }
@@ -2256,7 +2266,7 @@ public:
 
                     if (isElicit) {
                         // connection_map.push(0, pkg_difference, 1, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<Importance_len>(Channel::Important), static_cast<uint8_t>(ty));
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<Importance_len>(Channel::Important), static_cast<uint8_t>(Type::ElicitAck));
                     } else {
                         // connection_map.push(out_off, pkg_difference, 1);
                         if (out_status){
@@ -2301,7 +2311,7 @@ public:
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Important), out_blocks, 1, Type::ElicitAck);
                         recovery.on_packet_sent(out_len);
 
-                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<Importance_len>(Channel::Important), Type::ElicitAck);
+                        connection_map.push(out_off, pkg_difference, out_blocks, static_cast<uint8_t>(PktStatus::Important_reliable), static_cast<Importance_len>(Channel::Important), static_cast<uint8_t>(Type::ElicitAck));
                     } else {
                         bool complete_flag = pkt_status == PktStatus::Unimportant_partialreliable;
                         send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, static_cast<Importance_len>(Channel::Unimportant), out_blocks, (uint8_t)complete_flag);
