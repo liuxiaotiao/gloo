@@ -187,7 +187,7 @@ class MetaInfo{
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
-            std::cout<<"difference_:" << difference_<<", ";
+            // std::cout<<"difference_:" << difference_<<", ";
             if (!priotity_list.empty()){
                 metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, endbit);
             } else {
@@ -989,7 +989,7 @@ public:
                 // std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
                 return inRange;
             }
-            std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
+            std::cout << "index:" << (int)index << ", " << head_ << ", " << tail_ << std::endl;
             std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;       
             _Exit(0);
         }

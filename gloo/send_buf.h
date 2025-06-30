@@ -354,9 +354,9 @@ namespace dmludp{
                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance; /* No unimportant packet need to transmission */
             }
 
-            std::cout<<"add_Meta:"<< static_cast<uint32_t>(meta_status_important) << ", " << static_cast<uint32_t>(meta_status_unimportant)
-                <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << ", " << bitmapview.size() 
-                <<", " << importantIndex << ", "<< unimportantIndex << std::endl;
+            // std::cout<<"add_Meta:"<< static_cast<uint32_t>(meta_status_important) << ", " << static_cast<uint32_t>(meta_status_unimportant)
+            //     <<", " << importance_bitmap.empty() << ", " << iovecs_len << ", " << bits_set.size() << ", " << bitmapview.size() 
+            //     <<", " << importantIndex << ", "<< unimportantIndex << std::endl;
         } 
 
         ssize_t off_front_important(){
