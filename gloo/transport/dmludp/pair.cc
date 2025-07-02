@@ -128,15 +128,28 @@ void Pair::connect(const std::vector<char>& bytes) {
   //
   std::cout<<"device_->connect start"<<std::endl;
 
+  std::weak_ptr<Pair> weak_self = shared_from_this();
+  // device_->connect(
+  //     self_,
+  //     peer,
+  //     timeout_,
+  //     std::bind(
+  //         &Pair::connectCallback,
+  //         this,
+  //         std::placeholders::_1,
+  //         std::placeholders::_2));
   device_->connect(
-      self_,
-      peer,
-      timeout_,
-      std::bind(
-          &Pair::connectCallback,
-          this,
-          std::placeholders::_1,
-          std::placeholders::_2));
+    self_,
+    peer,
+    timeout_,
+    [weak_self](std::shared_ptr<gloo::transport::dmludp::Socket> socket,
+      gloo::transport::dmludp::Error error) {
+        if (auto self = weak_self.lock()) {
+            self->connectCallback(socket, error);
+        }
+        // 如果对象已析构（lock失败），什么都不做，安全
+      }
+  );
   std::cout<<"device_->connect end"<<std::endl;
   // Wait for connection to be made.
   //
