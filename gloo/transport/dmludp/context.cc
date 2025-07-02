@@ -28,8 +28,8 @@ Context::~Context() {
   device_.reset();
 }
 
-std::unique_ptr<transport::Pair>& Context::createPair(int rank) {
-  pairs_[rank] = std::unique_ptr<transport::Pair>(
+std::shared_ptr<transport::Pair>& Context::createPair(int rank) {
+  pairs_[rank] = std::shared_ptr<transport::Pair>(
       new dmludp::Pair(this, device_.get(), rank, getTimeout()));
   return pairs_[rank];
 }

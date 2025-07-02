@@ -44,9 +44,9 @@ class Context {
   const int rank;
   const int size;
 
-  virtual std::unique_ptr<Pair>& getPair(int rank);
+  virtual std::shared_ptr<Pair>& getPair(int rank);
 
-  virtual std::unique_ptr<Pair>& createPair(int rank) = 0;
+  virtual std::shared_ptr<Pair>& createPair(int rank) = 0;
 
   // Creates unbound buffer to be used with the ranks in this context.
   // It is not bound to a specific rank, but still bound to this
@@ -84,7 +84,7 @@ class Context {
   // that getPair() returns a reference to this type. Functions
   // internal to this class can cast these points to the native
   // transport specific type.
-  std::vector<std::unique_ptr<Pair>> pairs_;
+  std::vector<std::shared_ptr<Pair>> pairs_;
 
   // Default timeout for new pairs (e.g. during initialization) and
   // any kind of send/recv operation.

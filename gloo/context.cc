@@ -36,7 +36,7 @@ std::shared_ptr<transport::Device>& Context::getDevice() {
   return device_;
 }
 
-std::unique_ptr<transport::Pair>& Context::getPair(int i) {
+std::shared_ptr<transport::Pair>& Context::getPair(int i) {
   GLOO_ENFORCE(transportContext_, "Transport context not set!");
   return transportContext_->getPair(i);
 }

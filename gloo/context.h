@@ -34,7 +34,7 @@ class Context {
 
   std::shared_ptr<transport::Device>& getDevice();
 
-  std::unique_ptr<transport::Pair>& getPair(int i);
+  std::shared_ptr<transport::Pair>& getPair(int i);
 
   // Factory function to create an unbound buffer for use with the
   // transport used for this context. Use this function to avoid tying
