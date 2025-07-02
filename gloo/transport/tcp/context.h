@@ -35,7 +35,7 @@ class Context : public ::gloo::transport::Context,
 
   virtual ~Context();
 
-  std::unique_ptr<transport::Pair>& createPair(int rank) override;
+  std::shared_ptr<transport::Pair>& createPair(int rank) override;
 
   std::unique_ptr<transport::UnboundBuffer> createUnboundBuffer(
       void* ptr,
