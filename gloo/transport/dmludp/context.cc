@@ -31,7 +31,7 @@ Context::~Context() {
 std::shared_ptr<transport::Pair>& Context::createPair(int rank) {
   // pairs_[rank] = std::shared_ptr<transport::Pair>(
   //     new dmludp::Pair(this, device_.get(), rank, getTimeout()));
-  pairs_[rank] = std::make_shared<tcp::Pair>(this, device_.get(), rank, getTimeout());
+  pairs_[rank] = std::make_shared<dmludp::Pair>(this, device_.get(), rank, getTimeout());
   return pairs_[rank];
 }
 
