@@ -30,11 +30,11 @@ class Algorithm {
   const int contextRank_;
   const int contextSize_;
 
-  std::unique_ptr<transport::Pair>& getPair(int i);
+  std::shared_ptr<transport::Pair>& getPair(int i);
 
   // Helpers for ring algorithms
-  std::unique_ptr<transport::Pair>& getLeftPair();
-  std::unique_ptr<transport::Pair>& getRightPair();
+  std::shared_ptr<transport::Pair>& getLeftPair();
+  std::shared_ptr<transport::Pair>& getRightPair();
 };
 
 // Type of reduction function.

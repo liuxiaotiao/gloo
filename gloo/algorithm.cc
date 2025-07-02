@@ -23,19 +23,19 @@ Algorithm::Algorithm(const std::shared_ptr<Context>& context)
 // Have to provide implementation for pure virtual destructor.
 Algorithm::~Algorithm() noexcept(false) {}
 
-std::unique_ptr<transport::Pair>& Algorithm::getPair(int i) {
+std::shared_ptr<transport::Pair>& Algorithm::getPair(int i) {
   return context_->getPair(i);
 }
 
 // Helper for ring algorithms
-std::unique_ptr<transport::Pair>& Algorithm::getLeftPair() {
+std::shared_ptr<transport::Pair>& Algorithm::getLeftPair() {
   auto rank = (context_->size + context_->rank - 1) % context_->size;
   GLOO_ENFORCE(context_->getPair(rank), "pair missing (index ", rank, ")");
   return context_->getPair(rank);
 }
 
 // Helper for ring algorithms
-std::unique_ptr<transport::Pair>& Algorithm::getRightPair() {
+std::shared_ptr<transport::Pair>& Algorithm::getRightPair() {
   auto rank = (context_->rank + 1) % context_->size;
   GLOO_ENFORCE(context_->getPair(rank), "pair missing (index ", rank, ")");
   return context_->getPair(rank);
