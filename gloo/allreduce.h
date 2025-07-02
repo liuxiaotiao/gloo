@@ -14,7 +14,7 @@
 
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"
-#include "tool.h"
+#include "gloo/tool.h"
 
 namespace gloo {
 

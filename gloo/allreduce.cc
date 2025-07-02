@@ -24,7 +24,7 @@ using BufferVector = std::vector<std::unique_ptr<transport::UnboundBuffer>>;
 using ReductionFunction = AllreduceOptions::Func;
 using ReduceRangeFunction = std::function<void(size_t, size_t)>;
 using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
-std::vector<int> global_vec = {1, 2, 3};
+std::vector<uint64_t> global_vec = {1, 2, 3};
 
 class IndexManager {
   private:
