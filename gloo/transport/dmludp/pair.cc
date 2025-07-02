@@ -69,6 +69,7 @@ Pair::Pair(
       innertimer(*this){
         timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
         // device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+        std::cout << "Pair ctor: " << this << std::endl;
       }
 
 // Destructor performs a "soft" close.
@@ -126,6 +127,7 @@ void Pair::connect(const std::vector<char>& bytes) {
   // called with the file descriptor for the underlying connection.
   //
   std::cout<<"device_->connect start"<<std::endl;
+
   device_->connect(
       self_,
       peer,
@@ -148,6 +150,7 @@ void Pair::connect(const std::vector<char>& bytes) {
 }
 
 void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
+  std::cout << "connectCallback this = " << this << std::endl;
   std::lock_guard<std::mutex> lock(m_);
   if (error) {
     signalException(GLOO_ERROR_MSG(error.what()));

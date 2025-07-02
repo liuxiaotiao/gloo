@@ -1,1 +1,1 @@
-Continus receive packets and batch process them.
+v6.0 comes from v5.0.2.2.2.2

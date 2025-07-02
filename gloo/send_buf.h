@@ -187,8 +187,6 @@ namespace dmludp{
         /* Important part */
         uint64_t lastpacketOffset_important = std::numeric_limits<uint64_t>::max();
 
-        bool lastlossOffset_important = false;
-
         size_t initlosscount_important = 0;
 
         uint64_t lossreord_important = std::numeric_limits<uint64_t>::max();
@@ -229,15 +227,7 @@ namespace dmludp{
             meta_ptr2_len = 0; 
             meta_left = 0;
             meta_len = 0;
-
-            // if (!bitmapview.empty()){
-            //     for (auto i = 0 ; i < bitmapview.size() ; i++) {
-            //         std::cout<<bitmapview[i]<<" ";
-            //     }
-            //     std::cout<<std::endl;
-            // }
             
-
             /* Store buffer info: pointer + length */
             for (auto i = 0; i < iovecs_len; i++){
                 meta_left += iovecs[i].iov_len;
@@ -267,7 +257,6 @@ namespace dmludp{
             acknowldge_status_important = true;
             meta_status_important = MetaFlag::Initial;
 
-            lastlossOffset_important = false;
             initlosscount_important = 0;
             lossreord_important = std::numeric_limits<uint64_t>::max();
 

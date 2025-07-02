@@ -24,7 +24,7 @@ namespace dmludp {
 
     inline constexpr size_t MAP_CONST = 65536;
 
-    inline constexpr size_t ONCE_LIMIT = 1300;
+    inline constexpr size_t ONCE_LIMIT = 1024;
 
     inline constexpr size_t ONCE_SEND_LIMIT = ONCE_LIMIT;
 
@@ -36,9 +36,9 @@ namespace dmludp {
 
     inline constexpr size_t DataBlock = 32;
 
-    inline constexpr size_t MapSetLimit = 50;
+    inline constexpr size_t MapSetLimit = 64;
 
-    inline constexpr size_t ReTransmissionMapLimit = 2000;
+    inline constexpr size_t ReTransmissionMapLimit = 2048;
 
     inline constexpr size_t LIMIT_SIZE_T = std::numeric_limits<size_t>::max();
 
@@ -83,7 +83,7 @@ namespace dmludp {
 
     public:
         explicit DynamicBitset(size_t size = 0) : num_bits(size) {
-            data.reserve(5200);
+            data.reserve(8192);
             ensure_capacity(size);
         }
 
@@ -644,218 +644,6 @@ namespace dmludp {
         }
     };
 
-    // class PacketMapRingBuffer {
-    // public:
-    //     explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
-    //         : capacity_(capacity),
-    //         buffer_(capacity),
-    //         head_(0),
-    //         tail_(0),
-    //         head_packet_number_(start_packet_number) {}
-
-    //     ~PacketMapRingBuffer(){};
-
-    //     bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
-    //         size_t next_tail = (tail_ + 1) % capacity_;
-    //         if (next_tail == head_) {
-    //             std::cout<<"PacketMapRingBuffer full"<<std::endl;
-    //             return false; 
-    //         }
-
-    //         buffer_[tail_].offset = offset_;
-    //         buffer_[tail_].difference = difference_;
-    //         // buffer_[tail_].priority = priority_;
-    //         tail_ = next_tail;
-    //         return true;
-    //     }
-
-    //     bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) {
-    //         uint64_t current_size = size();
-    //         uint64_t tail_packet_number = head_packet_number_ + current_size;
-
-    //         if (packet_number < head_packet_number_ || packet_number >= tail_packet_number) {
-    //             return false;
-    //         }
-
-    //         if (packet_number > head_packet_number_) {
-    //             size_t advance = packet_number - head_packet_number_;
-    //             head_ = (head_ + advance) % capacity_;
-    //             head_packet_number_ = packet_number;
-    //         }
-
-    //         size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
-    //         out_offset = buffer_[index].offset;
-    //         return true;
-    //     }
-
-    //     bool tryFindDeletedOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
-    //         // 考虑最早还能访问到的 packet_number 是：
-    //         uint64_t buffer_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t buffer_end = head_packet_number_ + size();  // 当前最大 packet_number（非包含）
-
-    //         if (packet_number < buffer_begin || packet_number >= buffer_end) {
-    //             return false;  // 被覆盖了
-    //         }
-
-    //         size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
-    //         out_offset = buffer_[index].offset;
-    //         difference_ = buffer_[index].difference;
-    //         return true;
-    //     }
-
-    //     bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) {
-    //         if (getOffset(packet_number, out_offset, difference_)) {
-    //             return true;
-    //         }
-    //         return tryFindDeletedOffset(packet_number, out_offset, difference_);
-    //     }
-
-    //     std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) {
-    //         uint64_t offset;
-    //         Difference_len diff;
-    //         if (findOffsetAuto(packet_number, offset, diff)) {
-    //             return std::make_pair(offset, diff);
-    //         }
-    //         return std::nullopt;
-    //     }
-
-    //     template <typename Func>
-    //     bool forEachSlotAutoRange(uint64_t start_packet, uint64_t end_packet, Func&& func) const {
-    //         if (start_packet >= end_packet) return false;
-
-            
-    //         uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t full_end = head_packet_number_ + size();
-
-    //         if (start_packet < full_begin || end_packet > full_end) {
-    //             return false;  
-    //         }
-
-    //         size_t base_index = (head_ + (start_packet - head_packet_number_)) % capacity_;
-    //         size_t index = base_index;
-
-    //         for (uint64_t pkt = start_packet; pkt < end_packet; ++pkt) {
-    //             func(pkt, buffer_[index]);
-    //             index = (index + 1) % capacity_;
-    //         }
-
-    //         return true;
-    //     }
-
-    //     template <typename Func>
-    //     bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
-    //         if (start_packet >= end_packet) return false;
-
-    //         uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t full_end = head_packet_number_ + size();
-
-    //         uint64_t actual_start = std::max(start_packet, full_begin);
-    //         uint64_t actual_end = std::min(end_packet, full_end);
-
-    //         if (actual_start >= actual_end) return false;
-
-    //         bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
-    //         size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
-
-    //         if (within_active_range && actual_start > head_packet_number_) {
-    //             size_t advance = actual_start - head_packet_number_;
-    //             head_ = (head_ + advance) % capacity_;
-    //             head_packet_number_ = actual_start;
-    //         }
-
-    //         // for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-    //         //     func(pkt, buffer_[index]);
-    //         //     if (within_active_range) {
-    //         //         // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
-    //         //         head_ = (head_ + 1) % capacity_;
-    //         //         ++head_packet_number_;
-    //         //         // std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
-    //         //     }
-    //         //     index = (index + 1) % capacity_;
-    //         // }
-
-    //         for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-    //             bool delayed = false;
-    //             if (pkt < head_packet_number_) {
-    //                 delayed = true;
-    //             }
-    //             func(pkt, buffer_[index], delayed);
-    //             if (within_active_range) {
-    //                 // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
-    //                 head_ = (head_ + 1) % capacity_;
-    //                 ++head_packet_number_;
-    //                 // std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
-    //             }
-    //             index = (index + 1) % capacity_;
-    //         }
-
-    //         return true;
-    //     }
-
-
-    //     bool pop() {
-    //         if (empty()) return false;
-    //         head_ = (head_ + 1) % capacity_;
-    //         ++head_packet_number_;
-    //         return true;
-    //     }
-
-    //     std::vector<std::pair<uint64_t, uint64_t>> getAllMappings() const {
-    //         std::vector<std::pair<uint64_t, uint64_t>> mappings;
-    //         mappings.reserve(size());
-
-    //         size_t idx = head_;
-    //         uint64_t pkt = head_packet_number_;
-    //         while (idx != tail_) {
-    //             mappings.emplace_back(pkt, buffer_[idx].offset);
-    //             idx = (idx + 1) % capacity_;
-    //             ++pkt;
-    //         }
-
-    //         return mappings;
-    //     }
-
-    //     bool empty() const {
-    //         return head_ == tail_;
-    //     }
-
-    //     size_t size() const {
-    //         if (tail_ >= head_) return tail_ - head_;
-    //         return capacity_ - head_ + tail_;
-    //     }
-
-    //     size_t capacity() const {
-    //         return capacity_ - 1; 
-    //     }
-
-    //     size_t freeSlots() const {
-    //         return capacity() - size();
-    //     }
-
-    //     uint64_t packetNumberBegin() const {
-    //         return head_packet_number_;
-    //     }
-
-    //     uint64_t packetNumberEnd() const {
-    //         return head_packet_number_ + size();
-    //     }
-
-    // private:
-    //     struct Slot {
-    //         uint64_t offset;
-    //         uint32_t difference;
-    //         uint16_t len;
-    //         uint16_t priority;
-    //     };
-
-    //     size_t capacity_;
-    //     std::vector<Slot> buffer_;
-    //     size_t head_;
-    //     size_t tail_;
-    //     uint64_t head_packet_number_;
-    // };
-
-
     class PacketMapRingBuffer {
     public:
         explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
@@ -1045,15 +833,6 @@ namespace dmludp {
         }
 
     private:
-        // struct Slot {
-        //     uint64_t offset; /* Control message: offset = std::numeric_limits<uint64_t>::max() - 1 */
-        //     uint32_t difference;
-        //     uint8_t pkt_ty; /* Elicit or Application */
-        //     uint8_t blockinfo; /* contain: 0 / 1 */
-        //     uint8_t channel; /* Different cwnd */
-        //     uint8_t pkt_status; /* Unimportant packet will be drop when it marked as retransmission status */
-        // };
-
         struct Slot {
             uint64_t offset; /* Control message: offset = std::numeric_limits<uint64_t>::max() - 1 */
             uint32_t difference;
@@ -1068,154 +847,6 @@ namespace dmludp {
         uint64_t head_packet_number_;
     };
     
-    // class BitmapSpan {
-    // public:
-    //     // 默认构造
-    //     BitmapSpan() = default;
-
-    //     // 区间构造
-    //     BitmapSpan(std::span<const uint64_t> span, size_t start, size_t end) {
-    //         reset(span, start, end);
-    //     }
-
-    //     // 重设span与区间
-    //     void reset(std::span<const uint64_t> span, size_t start, size_t end) {
-    //         data_ = span;
-    //         start_ = start;
-    //         end_ = end;
-    //         curr_one_index_ = start_;
-    //         curr_zero_index_ = start_;
-    //         assert_valid();
-    //     }
-
-    //     // 查找区间最低位1和0，返回（最低1全局位置，最低0全局位置），没有则-1
-    //     std::pair<int64_t, int64_t> lowest_one_zero_pos() const {
-    //         assert_valid();
-    //         int64_t lowest_one = -1, lowest_zero = -1;
-    //         size_t start_word = start_ / 64;
-    //         size_t start_off  = start_ % 64;
-    //         size_t end_word   = (end_ - 1) / 64;
-    //         size_t end_off    = (end_ - 1) % 64;
-
-    //         // 单word区间
-    //         if (start_word == end_word) {
-    //             uint64_t mask = ((1ULL << (end_off - start_off + 1)) - 1) << start_off;
-    //             uint64_t v1 = data_[start_word] & mask;
-    //             uint64_t v0 = (~data_[start_word]) & mask;
-    //             if (v1 != 0) lowest_one = start_word * 64 + __builtin_ctzll(v1);
-    //             if (v0 != 0) lowest_zero = start_word * 64 + __builtin_ctzll(v0);
-    //             return {lowest_one, lowest_zero};
-    //         }
-
-    //         // 头word
-    //         uint64_t head_mask = ~0ULL << start_off;
-    //         uint64_t v1 = data_[start_word] & head_mask;
-    //         uint64_t v0 = (~data_[start_word]) & head_mask;
-    //         if (v1 != 0 && lowest_one == -1) lowest_one = start_word * 64 + __builtin_ctzll(v1);
-    //         if (v0 != 0 && lowest_zero == -1) lowest_zero = start_word * 64 + __builtin_ctzll(v0);
-
-    //         // 中间word
-    //         for (size_t i = start_word + 1; i < end_word; ++i) {
-    //             if (lowest_one == -1 && data_[i] != 0)
-    //                 lowest_one = i * 64 + __builtin_ctzll(data_[i]);
-    //             if (lowest_zero == -1 && ~data_[i] != 0)
-    //                 lowest_zero = i * 64 + __builtin_ctzll(~data_[i]);
-    //             if (lowest_one != -1 && lowest_zero != -1) break;
-    //         }
-
-    //         // 尾word
-    //         uint64_t tail_mask = (1ULL << (end_off + 1)) - 1;
-    //         v1 = data_[end_word] & tail_mask;
-    //         v0 = (~data_[end_word]) & tail_mask;
-    //         if (v1 != 0 && lowest_one == -1) lowest_one = end_word * 64 + __builtin_ctzll(v1);
-    //         if (v0 != 0 && lowest_zero == -1) lowest_zero = end_word * 64 + __builtin_ctzll(v0);
-
-    //         return {lowest_one, lowest_zero};
-    //     }
-
-    //     // 从index起查下一个1（全局位置，不存在-1）
-    //     int64_t next_one(size_t index) const {
-    //         if (index < start_ || index >= end_) return -1;
-    //         size_t word = index / 64;
-    //         size_t bit_in_word = index % 64;
-    //         size_t end_word = (end_ - 1) / 64;
-    //         size_t end_off = (end_ - 1) % 64;
-
-    //         uint64_t tail_mask = ~0ULL;
-    //         if (word == end_word) tail_mask = (1ULL << (end_off + 1)) - 1;
-    //         uint64_t mask = tail_mask & (~0ULL << bit_in_word);
-    //         uint64_t v = data_[word] & mask;
-    //         if (v != 0) return word * 64 + __builtin_ctzll(v);
-
-    //         for (size_t i = word + 1; i <= end_word; ++i) {
-    //             uint64_t word_mask = (i == end_word) ? ((1ULL << (end_off + 1)) - 1) : ~0ULL;
-    //             v = data_[i] & word_mask;
-    //             if (v != 0) return i * 64 + __builtin_ctzll(v);
-    //         }
-    //         return -1;
-    //     }
-
-    //     // 从index起查下一个0（全局位置，不存在-1）
-    //     int64_t next_zero(size_t index) const {
-    //         if (index < start_ || index >= end_) return -1;
-    //         size_t word = index / 64;
-    //         size_t bit_in_word = index % 64;
-    //         size_t end_word = (end_ - 1) / 64;
-    //         size_t end_off = (end_ - 1) % 64;
-
-    //         uint64_t tail_mask = ~0ULL;
-    //         if (word == end_word) tail_mask = (1ULL << (end_off + 1)) - 1;
-    //         uint64_t mask = tail_mask & (~0ULL << bit_in_word);
-    //         uint64_t v = (~data_[word]) & mask;
-    //         if (v != 0) return word * 64 + __builtin_ctzll(v);
-
-    //         for (size_t i = word + 1; i <= end_word; ++i) {
-    //             uint64_t word_mask = (i == end_word) ? ((1ULL << (end_off + 1)) - 1) : ~0ULL;
-    //             v = (~data_[i]) & word_mask;
-    //             if (v != 0) return i * 64 + __builtin_ctzll(v);
-    //         }
-    //         return -1;
-    //     }
-
-    //     // 自动推进查找游标，查下一个1
-    //     int64_t next_one_index() {
-    //         if (curr_one_index_ >= end_) return -1;
-    //         int64_t idx = next_one(curr_one_index_);
-    //         curr_one_index_ = (idx == -1 ? end_ : idx + 1);
-    //         return idx;
-    //     }
-
-    //     // 自动推进查找游标，查下一个0
-    //     int64_t next_zero_index() {
-    //         if (curr_zero_index_ >= end_) return -1;
-    //         int64_t idx = next_zero(curr_zero_index_);
-    //         curr_zero_index_ = (idx == -1 ? end_ : idx + 1);
-    //         return idx;
-    //     }
-
-    //     // 手动设置查找游标
-    //     void set_one_index(size_t idx) { curr_one_index_ = idx; }
-    //     void set_zero_index(size_t idx) { curr_zero_index_ = idx; }
-
-    //     // 区间大小（bit数）
-    //     size_t bit_size() const { return end_ > start_ ? end_ - start_ : 0; }
-
-    //     // 全局起始和结束
-    //     size_t start() const { return start_; }
-    //     size_t end() const { return end_; }
-
-    // private:
-    //     std::span<const uint64_t> data_{};
-    //     size_t start_ = 0, end_ = 0;
-    //     size_t curr_one_index_ = 0, curr_zero_index_ = 0;
-
-    //     void assert_valid() const {
-    // #ifndef NDEBUG
-    //         assert(data_.data() != nullptr && end_ > start_);
-    //         assert(data_.size() * 64 >= end_);
-    // #endif
-    //     }
-    // };
 
 
     struct BitPos {
@@ -1228,153 +859,6 @@ namespace dmludp {
         bool has_next = false;
         int64_t second = -1;
     };
-
-    // ===============================
-    // 查找最后 1 和 0（标量高效版）
-    // ===============================
-    /*inline BitPos find_last_1_and_0_impl(std::span<const uint64_t> bits, size_t num_bits,
-                                        size_t offset_start, size_t offset_end) {
-        BitPos result;
-        size_t start_word = offset_start / 64;
-        size_t end_word = offset_end / 64;
-        size_t start_offset = offset_start % 64;
-        size_t end_offset = offset_end % 64;
-
-        for (int64_t i = static_cast<int64_t>(end_word); i >= static_cast<int64_t>(start_word); --i) {
-            uint64_t word = bits[i];
-            uint64_t mask = ~0ULL;
-            if (i == static_cast<int64_t>(start_word))
-                mask &= (~0ULL << start_offset);
-            if (i == static_cast<int64_t>(end_word))
-                mask &= (1ULL << (end_offset + 1)) - 1;
-
-            size_t bits_from = i * 64;
-            if (bits_from + 64 > num_bits) {
-                size_t valid_bits = num_bits - bits_from;
-                mask &= (valid_bits >= 64) ? ~0ULL : ((1ULL << valid_bits) - 1);
-            }
-
-            uint64_t masked = word & mask;
-            uint64_t masked_inv = (~word) & mask;
-
-            if (masked)
-                result.last_one = std::max(result.last_one,
-                                        static_cast<int64_t>(i * 64 + (63 - __builtin_clzll(masked))));
-            if (masked_inv)
-                result.last_zero = std::max(result.last_zero,
-                                            static_cast<int64_t>(i * 64 + (63 - __builtin_clzll(masked_inv))));
-        }
-        return result;
-    }
-
-    // ===============================
-    // AVX-512 查找下一个 bit（1 或 0）
-    // ===============================
-    inline int64_t find_next_bit_avx512(std::span<const uint64_t> bits, size_t num_bits,
-                                        size_t offset_start, size_t offset_end, bool find_one) {
-        const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
-        size_t byte_start = offset_start / 8;
-        size_t byte_end = offset_end / 8;
-
-        for (size_t i = byte_start; i + 63 <= byte_end; i += 64) {
-            __m512i v = _mm512_loadu_si512(reinterpret_cast<const void*>(byte_ptr + i));
-            if (!find_one)
-                v = _mm512_xor_si512(v, _mm512_set1_epi8(-1));
-
-            __mmask64 mask = _mm512_cmpneq_epi8_mask(v, _mm512_setzero_si512());
-            if (mask != 0) {
-                int bit_pos = __builtin_ctzll(mask);
-                return static_cast<int64_t>((i * 8) + bit_pos);
-            }
-        }
-
-        // fallback scalar
-        size_t bit_tail = std::max(byte_start, byte_end - 63) * 8;
-        for (size_t b = bit_tail; b <= offset_end; ++b) {
-            if (b < offset_start) continue;
-            size_t word_idx = b / 64;
-            size_t bit_idx = b % 64;
-            bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
-            if (bit == find_one)
-                return static_cast<int64_t>(b);
-        }
-        return -1;
-    }
-
-    // ===============================
-    // BitmapSpan 类
-    // ===============================
-    class BitmapSpan {
-    public:
-        BitmapSpan()
-        : bits_(), start_bit_(0), end_bit_(0), num_bits_(0),
-          next_one_index_(0), next_zero_index_(0) {}
-
-        BitmapSpan(std::span<const uint64_t> data, size_t start_bit, size_t end_bit)
-            : bits_(data), start_bit_(start_bit), end_bit_(end_bit),
-            num_bits_(end_bit >= start_bit ? end_bit - start_bit + 1 : 0),
-            next_one_index_(start_bit), next_zero_index_(start_bit) {
-            assert(start_bit <= end_bit);
-        }
-
-        BitPos find_last_1_and_0() const {
-            BitPos pos = find_last_1_and_0_impl(bits_, num_bits_, 0, end_bit_ - start_bit_);
-            if (pos.last_one != -1) pos.last_one += start_bit_;
-            if (pos.last_zero != -1) pos.last_zero += start_bit_;
-            return pos;
-        }
-
-        void reset_span(std::span<const uint64_t> new_bits, size_t new_start_bit, size_t new_end_bit) {
-            assert(new_start_bit <= new_end_bit);
-            bits_ = new_bits;
-            start_bit_ = new_start_bit;
-            end_bit_ = new_end_bit;
-            num_bits_ = end_bit_ - start_bit_ + 1;
-            next_one_index_ = start_bit_;
-            next_zero_index_ = start_bit_;
-        }
-
-        int64_t next_one_avx512() {
-            if (next_one_index_ > end_bit_) return -1;
-            int64_t pos = find_next_bit_avx512(bits_, num_bits_,
-                                            next_one_index_ - start_bit_,
-                                            end_bit_ - start_bit_, true);
-            if (pos != -1) {
-                pos += start_bit_;
-                next_one_index_ = pos + 1;
-                return pos;
-            }
-            next_one_index_ = end_bit_ + 1;
-            return -1;
-        }
-
-        int64_t next_zero_avx512() {
-            if (next_zero_index_ > end_bit_) return -1;
-            int64_t pos = find_next_bit_avx512(bits_, num_bits_,
-                                            next_zero_index_ - start_bit_,
-                                            end_bit_ - start_bit_, false);
-            if (pos != -1) {
-                pos += start_bit_;
-                next_zero_index_ = pos + 1;
-                return pos;
-            }
-            next_zero_index_ = end_bit_ + 1;
-            return -1;
-        }
-
-        void reset_next_indices() {
-            next_one_index_ = start_bit_;
-            next_zero_index_ = start_bit_;
-        }
-
-    private:
-        std::span<const uint64_t> bits_;
-        size_t start_bit_;
-        size_t end_bit_;
-        size_t num_bits_;
-        size_t next_one_index_;
-        size_t next_zero_index_;
-    };*/
 
 
     // 简易自定义 span
@@ -1433,37 +917,6 @@ namespace dmludp {
         return result;
     }
 
-    // inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
-    //                               size_t offset_start, size_t offset_end, bool find_one) {
-    //     std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
-    //     const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
-    //     size_t byte_start = offset_start / 8;
-    //     size_t byte_end = offset_end / 8;
-
-    //     for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
-    //         __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
-    //         if (!find_one)
-    //             v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
-
-    //         int mask = _mm256_movemask_epi8(v);
-    //         if (mask != 0) {
-    //             int bit_pos = __builtin_ctz(mask);
-    //             std::cout<<"bit_pos:"<<bit_pos<<std::endl;
-    //             return static_cast<int64_t>(i * 8 + bit_pos);
-    //         }
-    //     }
-
-    //     size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
-    //     for (size_t b = bit_tail; b <= offset_end; ++b) {
-    //         if (b < offset_start) continue;
-    //         size_t word_idx = b / 64;
-    //         size_t bit_idx = b % 64;
-    //         bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
-    //         if (bit == find_one)
-    //             return static_cast<int64_t>(b);
-    //     }
-    //     return -1;
-    // }
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
         // std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
@@ -1507,9 +960,6 @@ namespace dmludp {
     // 仅声明，不实现
     BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end);
-
-    // int64_t find_next_bit_avx512(Span<const uint64_t> bits, size_t num_bits,
-    //                             size_t offset_start, size_t offset_end, bool find_one);
 
     class BitmapSpan {
     public:

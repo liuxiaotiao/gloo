@@ -14,6 +14,7 @@
 
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"
+#include "tool.h"
 
 namespace gloo {
 
@@ -193,5 +194,7 @@ class AllreduceOptions {
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap = {});
 
 // std::span<const int> get_global_span();
+
+Span<const uint64_t> get_global_span();
 
 } // namespace gloo

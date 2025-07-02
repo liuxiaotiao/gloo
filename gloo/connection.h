@@ -373,10 +373,6 @@ class SCircularQueue {
 
         bool iscomplete(Difference_len difference_){
             auto index_ = difference_ % get_capacity();
-            // if (index_ >= get_capacity()){
-            //     std::cerr << "bool iscomplete(Difference_len difference_) index out of boundary" << std::endl;
-            //     _Exit(0);
-            // }
             return data_[index_].iscomplete();
         }
 
@@ -480,11 +476,11 @@ class metarecebuf{
         4: used, not complete
         5: used, complete
            |---1
-        0 -|   |     |---4
-           |   |     |   | 
-           |---2--3--|   5
-                     |   |
-                     |----
+        0 -|   |     |---4----
+           |   |     |       | 
+           |---2--3--|       5
+                     |       |
+                     |--------
         */
         size_t status_ = 0;
 
@@ -618,12 +614,6 @@ class metarecebuf{
                 total += e;
             }
             status_ = 4;
-
-            // if (important_packet_count > expected_important_packets) {
-            //     std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" << 
-            //     (expected_important_packets.has_value() ? std::to_string(expected_important_packets.value()) : "<nullopt>")<< std::endl;
-            //     _Exit(0);
-            // }
         
             bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
@@ -654,12 +644,6 @@ class metarecebuf{
             if (total == 0){
                 return false;
             }
-
-            // if (important_packet_count > expected_important_packets) {
-            //     std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" 
-            //         << (expected_important_packets.has_value() ? std::to_string(expected_important_packets.value()) : "<nullopt>") << std::endl;
-            //     _Exit(0);
-            // }
         
             bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
@@ -783,7 +767,6 @@ public:
         data_[head_].clear();
         head_ = (head_ + 1) % capacity_;
         --count_;
-        // std::cout << "recvCQ pop_front:" << count_ << std::endl;
     }
 
     size_t size() const {
@@ -1093,18 +1076,11 @@ public:
     /// Whether the connection handshake has been confirmed.
     bool handshake_confirmed;
 
-    /// Whether the connection is closed.
-    bool closed;
-
     bool server;
 
     struct sockaddr_storage localaddr;
 
     struct sockaddr_storage peeraddr;
-    
-    bool stop_flag;
-
-    bool stop_ack;
 
     // map for received application pktnum and corresponding offset
     std::vector<uint8_t> receivevector;
@@ -1140,13 +1116,8 @@ public:
     
     std::chrono::high_resolution_clock::time_point handshake;
 
-    bool initial;
-
     // Record errno
     size_t dmludp_error;
-
-    // Used to record how many packet has been sent before EAGAIN
-    size_t dmludp_error_sent;
 
     static std::shared_ptr<Connection> connect(sockaddr_storage local, sockaddr_storage peer) {
         return std::make_shared<Connection>(local, peer, false);
@@ -1170,10 +1141,6 @@ public:
     WILL BE DROPPEP 
     */
     Difference_len receive_connection_difference;
-
-    Difference_len receive_connection_difference_registration;
-
-    Difference_len receive_connection_difference_acknowlege;
 
     size_t current_loop_min;
 
@@ -1202,11 +1169,7 @@ public:
 
     size_t max_received = std::numeric_limits<size_t>::max();
 
-    size_t receive_upper_bound = 0;
-
     size_t receive_upper_limit = 0;
-
-    size_t receive_upper_check = 0;
 
     std::vector<uint8_t> receive_slot;
 
@@ -1231,16 +1194,17 @@ public:
 
     std::vector<uint64_t> bitmap_vector;
 
+    bool reliable_lastpacket = true;
+
+    bool unreliable_lastpacket = true;
+
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
     handshake_completed(false),
     handshake_confirmed(false),
-    closed(false),
     server(server),
     localaddr(local),
     peeraddr(peer),
-    stop_flag(true),
-    stop_ack(true),
     send_num(0),
     rtt(0),
     srtt(0),
@@ -1249,13 +1213,10 @@ public:
     rttvar(0),
     handshake(std::chrono::high_resolution_clock::now()),
     bidirect(true),
-    initial(false),
+    // initial(false),
     dmludp_error(0),
-    dmludp_error_sent(0),
     send_connection_difference(0),
     receive_connection_difference(0),
-    receive_connection_difference_registration(LIMIT_UINT32_T),
-    receive_connection_difference_acknowlege(LIMIT_UINT32_T),
     current_loop_min(0),
     current_loop_max(0),
     recovery(MAX_SEND_UDP_PAYLOAD_SIZE),
@@ -1332,7 +1293,6 @@ public:
         return rto;
     }
 
-
     // Merge to intial_rtt
     void set_rtt(uint64_t inter){
         if (bidirect){
@@ -1374,7 +1334,7 @@ public:
 
     /*Process control message and application packet*/
     bool recv_slice2(size_t rx_count, size_t receive_max_index, struct timespec ts = {0, 0}){
-        receive_upper_bound = rx_count;
+        // receive_upper_bound = rx_count;
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         // auto startts = std::chrono::high_resolution_clock::now();
@@ -1424,7 +1384,6 @@ public:
             }
 
             if (pkt_ty == Type::Stop){
-                stop_flag = false;
                 send_packet_type = Type::Stop;
                 send_flag_ = false;
             }
@@ -1598,7 +1557,7 @@ public:
                 initial_rtt();
             }
             handshake_completed = true;
-            initial = true;
+            // initial = true;
         }
 
         //If receiver receives a Handshake packet, it will be prepared to send a Handshank.
@@ -2057,7 +2016,6 @@ public:
     
     bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         bool completed = true;
-	    dmludp_error_sent = 0;
 
         if (sendbufferqueue.full()){
             return false;
@@ -2170,7 +2128,6 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 Status_len out_status = 0;
                 while (true){
-                    // size_t send_status = sendbufferqueue.get_status(i);
                     bool isElicit = false;
                     if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
@@ -2184,7 +2141,6 @@ public:
                     
                     auto pn = pkt_num_spaces.updatepktnum();
 
-                    // std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
                     isElicit = out_off == ELICIT_OFFSET;
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
@@ -2216,7 +2172,6 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 PktStatus pkt_status;
                 while (true){
-                    // size_t send_status = sendbufferqueue.get_status(i);
                     if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
@@ -2274,7 +2229,7 @@ public:
             if(end_index != -1){
                 start_index = 0;
             }
-            send_packet_type = Type::Application;
+            send_packet_type = Type::Application; /* Type::Application/Type::Application2/Type::Unreliable/Type::Unreliable2/Type::Unreliable/Type::ElicitAck */
         }
         return std::make_pair(start_index, end_index);
     }
@@ -2316,7 +2271,6 @@ public:
     }
 
     void update_boundary(){
-        // memset(receivevector.data(), 0, receivevector.size());
         for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
     }
@@ -2369,11 +2323,6 @@ public:
         return idx;
     }
 
-
-    bool registration_check(){
-        return receive_connection_difference == receive_connection_difference_registration;
-    }
-
     void process_application_copy(){
         Offset_len pkt_offset;
         Packet_len pkt_len;
@@ -2390,7 +2339,7 @@ public:
                 copycount += 48;
                 receive_slot[index] = 0;
                 receive_record.reset();
-                receive_connection_difference_registration = receive_connection_difference;
+                // receive_connection_difference_registration = receive_connection_difference;
                 return;
             }
         }
@@ -2438,25 +2387,12 @@ public:
         recvCQ.processCheck(receive_connection_difference);       
     }
 
-    size_t get_error_sent(){
-        return dmludp_error_sent;
-    }
-
     size_t get_dmludp_error(){
         return dmludp_error;
     }
 
     void set_error2(size_t err){
         dmludp_error = err;
-    }
-
-    void set_error(size_t err, size_t application_sent){
-        dmludp_error = err;
-	    if (application_sent != 0){
-            dmludp_error_sent += application_sent;
-        }else{
-            dmludp_error_sent = 0;
-        }
     }
 
     bool transmission_complete(){
@@ -2490,7 +2426,7 @@ public:
 
         if (ty == Type::Handshake && !server){
             memcpy(out, handshake_header, HEADER_LENGTH);
-            initial = true;
+            // initial = true;
         }
 
         if (ty == Type::ACK){
@@ -2530,9 +2466,9 @@ public:
         return total_len;
     };
 
-    bool is_stopped(){
-        return stop_flag && stop_ack && initial;
-    };
+    // bool is_stopped(){
+    //     return stop_flag && stop_ack && initial;
+    // };
 
     void set_handshake(){
         handshake = std::chrono::high_resolution_clock::now();
@@ -2546,12 +2482,6 @@ public:
     /// Returns true if the connection handshake is complete.
     bool is_established(){
         return handshake_completed;
-    };
-
-    /// Returns true if the connection is closed.
-    /// If this returns true, the connection object can be dropped.
-    bool is_closed() {
-        return closed;
     };
     
     Type write_pkt_type(){
