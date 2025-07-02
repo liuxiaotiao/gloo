@@ -127,7 +127,7 @@ class WriteValueOperation final
       : loop_(std::move(loop)),
         socket_(std::move(socket)),
         fn_(std::move(fn)),
-        t_(std::move(t)) {}
+        t_(std::move(t)) {std::cout<<"construct WriteValueOperation:"<<this<<std::endl;}
 
   void run() {
     // Cannot initialize leak until after the object has been
@@ -136,6 +136,7 @@ class WriteValueOperation final
     leak_ = this->shared_from_this();
     // Register with loop only after we've leaked the shared_ptr,
     // because we unleak it when the event loop thread calls.
+    std::cout<<"WriteValueOperation:"<<this<<std::endl;
     loop_->registerDescriptor(socket_->fd(), EPOLLOUT | EPOLLONESHOT, this);
   }
 
