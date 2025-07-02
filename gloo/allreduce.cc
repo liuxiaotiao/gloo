@@ -689,9 +689,9 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
   allreduce(opts.impl_, topkbitmap);
 }
 
-// getter
-Span<const uint64_t> get_global_span() {
-    return std::span<const int>(global_vec);
-}
+// // getter
+// Span<const uint64_t> get_global_span() {
+//     return std::span<const int>(global_vec);
+// }
 
 } // namespace gloo

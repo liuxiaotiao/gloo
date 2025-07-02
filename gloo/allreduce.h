@@ -195,6 +195,6 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
 
 // std::span<const int> get_global_span();
 
-Span<const uint64_t> get_global_span();
+// Span<const uint64_t> get_global_span();
 
 } // namespace gloo
