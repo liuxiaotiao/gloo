@@ -25,7 +25,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <linux/udp.h>
+// #include <linux/udp.h>
+#include <netinet/udp.h>
 #include <stdlib.h>
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
