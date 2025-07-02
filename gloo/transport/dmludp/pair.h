@@ -95,7 +95,7 @@ struct Op {
   size_t nbytes = 0;
 };
 
-class Pair : public ::gloo::transport::Pair, public Handler {
+class Pair : public ::gloo::transport::Pair, public Handler, public std::enable_shared_from_this<Pair> {
  protected:
   enum state {
     INITIALIZING = 1,

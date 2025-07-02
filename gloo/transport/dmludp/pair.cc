@@ -128,7 +128,7 @@ void Pair::connect(const std::vector<char>& bytes) {
   //
   std::cout<<"device_->connect start"<<std::endl;
 
-  std::weak_ptr<Pair> weak_self = std::enable_shared_from_this();
+  std::weak_ptr<Pair> weak_self = shared_from_this();
   // device_->connect(
   //     self_,
   //     peer,
