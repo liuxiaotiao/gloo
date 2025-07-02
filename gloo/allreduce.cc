@@ -691,7 +691,7 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
 
 // getter
 dmludp::Span<const uint64_t> get_global_span() {
-    return std::span<const uint64_t>(global_vec);
+    return dmludp::Span<const uint64_t>(global_vec);
 }
 
 } // namespace gloo
