@@ -21,8 +21,6 @@ enum CongestionControlAlgorithm {
 class Recovery{
     public:
 
-    // bool app_limit;
-
     size_t losscount{1};
 
     size_t bytes_in_flight;
@@ -53,7 +51,7 @@ class Recovery{
     congestion_window, W_max, K,
     ssthresh, epoch_start, W_est
     */
-    double congestion_window;// Bytes
+    double congestion_window; // Bytes
 
     double W_max;// Bytes
 
@@ -82,16 +80,15 @@ class Recovery{
 
     const size_t AVOID_SSTHREAD = PACKET_SIZE * 3000;
 
-    const double BETA = 0.7;
+    const double BETA;
 
-    const double C = 0.4;
+    const double C;
 
     const double ROLLBACK_THRESHOLD_PERCENT = 0.8;
 
     const double ALPHA_AIMD = 3.0 * (1.0 - BETA) / (1.0 + BETA); // 3.0 * (1.0 - BETA) / (1.0 + BETA) ~= 0.53
 
-    Recovery(size_t pkt_size):
-    // app_limit(false),
+    Recovery(size_t pkt_size, size_t Beta_value = 0.7, size_t C_value = 0.3):
     bytes_in_flight(0),
     max_datagram_size(pkt_size),
     prior_cwnd(MAX_SEND_UDP_PAYLOAD_SIZE * pkt_size),
@@ -106,7 +103,9 @@ class Recovery{
     W_est(0),
     cwnd_inc(0),
     congestionEvent(1),
-    alpha_aimd(1){
+    alpha_aimd(1),
+    BETA(Beta_value),
+    C(C_value){
     };
 
     ~Recovery(){};
@@ -338,6 +337,10 @@ class Recovery{
     // if congestion < last w_max, resize to wmax=(1 + beta)*cwnd
     void on_packet_sent(size_t pktlen){
         bytes_in_flight += pktlen;
+    }
+
+    void clearinflight() {
+        bytes_in_flight = 0;
     }
 
     size_t cwnd_available() {

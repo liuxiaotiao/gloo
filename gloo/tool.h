@@ -7,8 +7,6 @@
 #include <arpa/inet.h>
 #include <omp.h>
 #include <thread>
-// #include <span>
-// #include <execution>
 #include <immintrin.h>
 #include <cassert>
 #include "packet.h"
@@ -186,13 +184,171 @@ namespace dmludp {
     };
 
     /*Send timestamp queue*/
+    // class TSCircularQueue{
+    // private:
+    //     /*first packet number + timestamp, last packet number + timestamp*/
+    //     using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
+    //                             std::pair<uint64_t, std::chrono::system_clock::time_point>>;
+    //     using TimeStamp = std::chrono::system_clock::time_point;
+    //     std::vector<DataType> buffer; 
+    //     size_t head;                  
+    //     size_t tail;                 
+    //     size_t capacity;              
+    //     size_t count;                 
+
+    // public:
+    //     explicit TSCircularQueue(size_t capacity = 1024)
+    //         : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
+
+    //     ~TSCircularQueue(){}
+
+    //     void enqueue(const DataType& value) {
+    //         if (isFull()) {
+    //             throw std::overflow_error("TSCircularQueue is full(enqueue)");
+    //         }
+    //         // std::cout<<"1 enqueue:"<<count<<std::endl;
+    //         buffer[tail] = value;
+    //         tail = (tail + 1) % capacity;
+    //         ++count;
+    //         // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
+    //     }
+
+    //     DataType dequeue() {
+    //         if (isEmpty()) {
+    //             throw std::underflow_error("TSCircularQueue is empty(deque)");
+    //         }
+    //         DataType value = buffer[head];
+    //         head = (head + 1) % capacity;
+    //         --count;
+    //         return value;
+    //     }
+
+    //     DataType front() const {
+    //         if (isEmpty()) {
+    //             throw std::underflow_error("TSCircularQueue is empty(front)");
+    //         }
+    //         return buffer[head];
+    //     }
+
+    //     bool isEmpty() const {
+    //         return count == 0;
+    //     }
+
+    //     bool isFull() const {
+    //         return count == capacity;
+    //     }
+
+    //     size_t size() {
+    //         return count;
+    //     }
+
+    //     void clear() {
+    //         head = 0;
+    //         tail = 0;
+    //         count = 0;
+    //     }
+
+
+    //     std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
+    //         // std::cout<<"removeBeforeValue:"<<value<<std::endl;
+    //         if (isEmpty()) {
+    //             // return std::nullopt;
+    //             throw std::underflow_error("TSCircularQueue is empty(remove)");
+    //         }
+    //         // std::cout << "start removeBeforeValue:" << value << std::endl;
+
+    //         TimeStamp result;
+
+    //         bool has = false;
+    //         while (size() > 0) {
+    //             const auto& item = front();  
+    //             if (item.second.first < value){
+    //                 // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+    //                 dequeue();
+    //             }
+
+    //             if (item.first.first <= value && item.second.first >= value){
+    //                 // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+    //                 if (item.first.first == item.second.first){
+    //                     result = item.first.second;
+    //                 }else{
+    //                     result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+    //                 }
+    //                 has = true;
+    //                 break;
+    //             }
+
+    //             if (value < item.first.first){
+    //                 // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
+    //                 break;
+    //             }
+            
+    //         }
+
+    //         if(has){
+    //             return result;
+    //         }else{
+    //             return std::nullopt;
+    //         }
+    //     }
+
+    //     DataType& at(size_t i) {
+    //         if (i >= count)
+    //             throw std::out_of_range("Index out of range");
+    //         return buffer[(head + i) % capacity];
+    //     }
+
+    //     size_t unused_size() const {
+    //         return capacity - count;
+    //     }
+
+    //     DataType& at_unused(size_t i) {
+    //         if (i >= unused_size())
+    //             throw std::out_of_range("Unused index out of range");
+    //         return buffer[(tail + i) % capacity];
+    //     }
+
+
+    //     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
+    //         enqueue({{key1, ts1}, {key2, ts2}});
+    //     }
+
+    //     void printQueue() const {
+    //         std::cout << "Queue contents: " << std::endl;
+    //         for (size_t i = 0; i < count; ++i) {
+    //             size_t actualIndex = (head + i) % capacity;
+    //             const auto& item = buffer[actualIndex];
+    //             std::cout << "[" << item.first.first << ", " << item.second.first << "]" << std::endl;
+    //         }
+    //     }
+    // };
+
+    inline uint64_t now_ns() {
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+        ).count();
+    }
+
     class TSCircularQueue{
     private:
+        struct Slot
+        {
+            uint64_t startpkt;
+            uint64_t startts;
+            uint64_t endpkt;
+            uint64_t endts;
+            uint64_t reliablepkt;
+            uint64_t unreliablepkt;
+            uint8_t reliable_loss;
+            uint8_t unreliable_loss;
+            uint8_t _reserved[14]; 
+        };
+        
         /*first packet number + timestamp, last packet number + timestamp*/
         using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
                                 std::pair<uint64_t, std::chrono::system_clock::time_point>>;
         using TimeStamp = std::chrono::system_clock::time_point;
-        std::vector<DataType> buffer; 
+        std::vector<Slot> buffer; 
         size_t head;                  
         size_t tail;                 
         size_t capacity;              
@@ -204,15 +360,22 @@ namespace dmludp {
 
         ~TSCircularQueue(){}
 
-        void enqueue(const DataType& value) {
+        void enqueue(uint64_t key1, uint64_t ts1, uint64_t key2, uint64_t ts2, uint64_t lastreliable, uint64_t lastunreliable) {
             if (isFull()) {
                 throw std::overflow_error("TSCircularQueue is full(enqueue)");
             }
-            // std::cout<<"1 enqueue:"<<count<<std::endl;
-            buffer[tail] = value;
+            buffer[tail].{
+                key1, // startpkt
+                ts1, // endpkt
+                key2, // startts
+                ts2, // endts
+                lastreliable, // reliablepkt
+                lastunreliable, // unreliablepkt
+                false, // reliable_loss
+                false  // unreliable_loss
+            }
             tail = (tail + 1) % capacity;
             ++count;
-            // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
         }
 
         DataType dequeue() {
@@ -224,6 +387,8 @@ namespace dmludp {
             --count;
             return value;
         }
+
+        uint64_t get_last
 
         DataType front() const {
             if (isEmpty()) {
@@ -265,12 +430,10 @@ namespace dmludp {
             while (size() > 0) {
                 const auto& item = front();  
                 if (item.second.first < value){
-                    // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     dequeue();
                 }
 
                 if (item.first.first <= value && item.second.first >= value){
-                    // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     if (item.first.first == item.second.first){
                         result = item.first.second;
                     }else{
@@ -281,7 +444,6 @@ namespace dmludp {
                 }
 
                 if (value < item.first.first){
-                    // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     break;
                 }
             
@@ -312,7 +474,7 @@ namespace dmludp {
 
 
         void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
-            enqueue({{key1, ts1}, {key2, ts2}});
+            enqueue(key1, now_ns(ts1), key2, now_ns(ts2));
         }
 
         void printQueue() const {
@@ -517,133 +679,6 @@ namespace dmludp {
             }
     };
 
-    /*In receive side, it's used to record msghdr index*/
-    template<typename T, size_t Capacity>
-    class SPSCQueue {
-        static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2");
-
-        std::vector<T> buffer;
-        size_t head = 0;
-        size_t tail = 0;
-
-    public:
-        SPSCQueue() : buffer(Capacity = 330000) {}
-
-        bool enqueue(const T& item) {
-            size_t next_tail = (tail + 1) & (Capacity - 1);
-            if (next_tail == __atomic_load_n(&head, __ATOMIC_ACQUIRE)) {
-                return false; // full
-            }
-            buffer[tail] = item;
-            __atomic_thread_fence(__ATOMIC_RELEASE);
-            tail = next_tail;
-            return true;
-        }
-
-        std::optional<T> dequeue() {
-            __atomic_thread_fence(__ATOMIC_ACQUIRE);
-            size_t cur_tail = __atomic_load_n(&tail, __ATOMIC_ACQUIRE);
-            if (head == cur_tail) {
-                return std::nullopt; // empty
-            }
-
-            __builtin_prefetch(&buffer[(head + 1) & (Capacity - 1)], 0, 1);
-
-            T item = buffer[head];
-            head = (head + 1) & (Capacity - 1);
-            return item;
-        }
-    };
-
-    template<typename T, size_t Capacity>
-    class FIFOQueue {
-        static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2");
-
-        alignas(64) size_t head_ = 0;
-        alignas(64) size_t tail_ = 0;
-        std::vector<T> buffer_;
-
-    public:
-        FIFOQueue() : buffer_(Capacity) {}
-
-        bool enqueue(const T& item) {
-            size_t next_tail = (tail_ + 1) & (Capacity - 1);
-            if (next_tail == head_) return false;
-            buffer_[tail_] = item;
-            tail_ = next_tail;
-            return true;
-        }
-
-        std::optional<T> dequeue() {
-            if (head_ == tail_) std::nullopt;
-            T out = buffer_[head_];
-            head_ = (head_ + 1) & (Capacity - 1);
-            return out;
-        }
-
-        size_t enqueue_batch(const T* data, size_t max_count) {
-            size_t space = (head_ - tail_ - 1) & (Capacity - 1);
-            size_t count = std::min(max_count, space);
-
-            size_t first_chunk = std::min(count, Capacity - tail_);
-            for (size_t i = 0; i < first_chunk; ++i) {
-                buffer_[tail_ + i] = data[i];
-            }
-            size_t second_chunk = count - first_chunk;
-            for (size_t i = 0; i < second_chunk; ++i) {
-                buffer_[i] = data[first_chunk + i];
-            }
-
-            tail_ = (tail_ + count) & (Capacity - 1);
-            return count;
-        }
-
-        size_t dequeue_batch(T* out, size_t max_count) {
-            size_t available = size();
-            size_t count = std::min(max_count, available);
-
-            size_t first_chunk = std::min(count, Capacity - head_);
-            for (size_t i = 0; i < first_chunk; ++i) {
-                out[i] = buffer_[head_ + i];
-            }
-            size_t second_chunk = count - first_chunk;
-            for (size_t i = 0; i < second_chunk; ++i) {
-                out[first_chunk + i] = buffer_[i];
-            }
-
-            head_ = (head_ + count) & (Capacity - 1);
-            return count;
-        }
-
-        size_t dequeue_batch(std::vector<T>& out, size_t max_count) {
-            size_t available = size();
-            size_t count = std::min(max_count, available);
-
-            size_t first_chunk = std::min(count, Capacity - head_);
-            out.insert(out.end(), buffer_.begin() + head_, buffer_.begin() + head_ + first_chunk);
-
-            size_t second_chunk = count - first_chunk;
-            if (second_chunk > 0) {
-                out.insert(out.end(), buffer_.begin(), buffer_.begin() + second_chunk);
-            }
-
-            head_ = (head_ + count) & (Capacity - 1);
-            return count;
-        }
-
-        inline size_t size() const {
-            return (tail_ - head_) & (Capacity - 1);
-        }
-
-        inline bool empty() const {
-            return head_ == tail_;
-        }
-
-        void clear() {
-            head_ = tail_ = 0;
-        }
-    };
-
     class PacketMapRingBuffer {
     public:
         explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
@@ -661,16 +696,19 @@ namespace dmludp {
         3. unimportant packet retransmission
         */
 
-        bool push(uint64_t offset_, Difference_len difference_,  Type ty_) {
+        bool push(uint64_t offset_, Difference_len difference_,  Type ty_, uint16_t payload_, Packet_num_len pkt) {
             size_t next_tail = (tail_ + 1) % capacity_;
+            
             if (next_tail == head_) {
                 std::cout<<"PacketMapRingBuffer full"<<std::endl;
                 return false; 
             }
+            assert((pkt - start_packet_number + 1)!= size());
 
             buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
             buffer_[tail_].pkt_ty = ty_;
+            buffer_[tail_].payload = payload_ + Header::len();
             tail_ = next_tail;
             return true;
         }
@@ -837,7 +875,8 @@ namespace dmludp {
             uint64_t offset; /* Control message: offset = std::numeric_limits<uint64_t>::max() - 1 */
             uint32_t difference;
             Type pkt_ty; /* Elicit or Application */
-            uint8_t pad[24];
+            uint16_t payload;
+            uint8_t pad[22];
         };
 
         size_t capacity_;
@@ -882,7 +921,8 @@ namespace dmludp {
         const T* data_;
         size_t size_;
     };
-
+    
+    /* high bit to low bit */
     inline BitPos find_last_1_and_0_avx2(Span<const uint64_t> bits, size_t num_bits,
                                      size_t offset_start, size_t offset_end) {
         BitPos result;
@@ -917,9 +957,9 @@ namespace dmludp {
         return result;
     }
 
+    /* low bit to high bit */
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
-        // std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
         const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
         size_t byte_start = offset_start / 8;
         size_t byte_end = offset_end / 8;
@@ -935,7 +975,6 @@ namespace dmludp {
                     if (mask & (1 << bit)) {
                         size_t bit_pos = i * 8 + bit;
                         if (bit_pos >= offset_start && bit_pos <= offset_end) {
-                            // std::cout<<"bit_pos:"<<bit_pos<<std::endl;
                             return static_cast<int64_t>(bit_pos);
                         }
                     }
@@ -957,7 +996,56 @@ namespace dmludp {
         return -1;
     }
 
-    // 仅声明，不实现
+    // inline int64_t find_prev_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
+    //                               size_t offset_start, size_t offset_end, bool find_one) {
+    //     const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+    //     size_t byte_start = offset_start / 8;
+    //     size_t byte_end = offset_end / 8;
+
+    //     // 从高字节到低字节，每次处理32字节（256bit）
+    //     for (int64_t i = static_cast<int64_t>(byte_end) - 31; i >= static_cast<int64_t>(byte_start); i -= 32) {
+    //         int64_t actual_i = i < 0 ? 0 : i;
+    //         int64_t block_size = (i < 0) ? (i + 32) : 32;
+    //         int64_t block_end = actual_i + block_size - 1;
+
+    //         __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + actual_i));
+    //         if (!find_one)
+    //             v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
+
+    //         int mask = _mm256_movemask_epi8(v);
+    //         if (mask != 0) {
+    //             // 这里要从高位（bit31）到低位（bit0）遍历
+    //             for (int bit = 31; bit >= 0; --bit) {
+    //                 if (mask & (1 << bit)) {
+    //                     size_t bit_pos = (actual_i + bit) * 8;
+    //                     // bit_pos ~ bit_pos+7，对应8个bit，依次从高位往低位
+    //                     for (int bit_in_byte = 7; bit_in_byte >= 0; --bit_in_byte) {
+    //                         size_t full_bit_index = bit_pos + bit_in_byte;
+    //                         if (full_bit_index < offset_start || full_bit_index > offset_end)
+    //                             continue;
+    //                         size_t word_idx = full_bit_index / 64;
+    //                         size_t bit_idx = full_bit_index % 64;
+    //                         bool bitval = (bits[word_idx] >> (63 - bit_idx)) & 1ULL;
+    //                         if (bitval == find_one)
+    //                             return static_cast<int64_t>(full_bit_index);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // fallback scalar
+    //     for (int64_t b = static_cast<int64_t>(offset_end); b >= static_cast<int64_t>(offset_start); --b) {
+    //         size_t word_idx = b / 64;
+    //         size_t bit_idx = b % 64;
+    //         bool bit = (bits[word_idx] >> (63 - bit_idx)) & 1ULL;
+    //         if (bit == find_one)
+    //             return b;
+    //     }
+
+    //     return -1;
+    // }
+
     BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
                                 size_t offset_start, size_t offset_end);
 

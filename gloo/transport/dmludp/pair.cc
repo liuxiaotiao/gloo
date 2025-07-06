@@ -187,7 +187,13 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   fd_ = socket->release();
 
   // Register with loop for socket readability.
-  device_->registerDescriptor(fd_, EPOLLIN, this);
+  // device_->registerDescriptor(fd_, EPOLLIN, this);
+  device_->registerDescriptor(fd_, EPOLLIN,
+    [weak_self = weak_from_this()](int fd, int events) {
+        if (auto self = weak_self.lock()) {
+            self->onReadEvent(fd, events);
+        }
+    });
 
   // We're done: update state and wake up waiting threads.
   changeState(CONNECTED);
@@ -869,7 +875,6 @@ bool Pair::protocal2send(){
     std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
     _Exit(0);
   }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-    // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
     for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
       
       NonOwningPtr<UnboundBuffer> buf;
@@ -878,7 +883,6 @@ bool Pair::protocal2send(){
       auto &op = tx_[i];
 
       const auto opcode = op.getOpcode();
-      // std::cout<<"1 i:"<<opcode<<std::endl;
       if (opcode == Op::SEND_UNBOUND_BUFFER) {
         buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
         if (!buf) {
@@ -886,12 +890,7 @@ bool Pair::protocal2send(){
         }
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-      // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
-      // if (ioc == 2){
-      //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
-      // }
       bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
-      // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
       if (!connection_written){
         return false;
       }
@@ -902,10 +901,8 @@ bool Pair::protocal2send(){
   }else{}
 
   auto accumulated = 0;
-  // std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
-      // std::cout<<"!dmludp_connection->check_status()"<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
@@ -913,10 +910,6 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::system_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    // std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()
-    // << ", " << dmludp_connection->max_acknowleged
-    // << ", " << dmludp_connection->pkt_num_spaces.getpktnum()
-    // << std::endl;
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
@@ -936,22 +929,6 @@ bool Pair::protocal2send(){
       accumulated++;
     }
 
-    // auto end_time = std::chrono::system_clock::now();
-    // if (sent > 0){
-    //   std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count()/sent<<" ns/packets"<<std::endl;
-    // }
-
-    // struct sockaddr_in peer_addr;
-    // socklen_t addr_len = sizeof(peer_addr);
-    // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-    //     perror("getpeername failed");
-    //     return 1;
-    // }
-
-    // char ip_str[INET_ADDRSTRLEN];
-    // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
-
-    // std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
@@ -961,7 +938,6 @@ bool Pair::protocal2send(){
         auto delay = dmludp_connection->get_rto();
         new_value.it_value.tv_sec = delay.count() / 1000000000;
         new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-        // std::cout<<"1 rto:"<<delay.count()<<std::endl;
         new_value.it_interval.tv_sec = 0;  
         new_value.it_interval.tv_nsec = 0;
 
@@ -972,6 +948,7 @@ bool Pair::protocal2send(){
         }
 
         device_->registerDescriptor(timer_fd, EPOLLIN, &(this->innertimer));
+        dmludp_connection->zerosentclear();
       }
       
       return true;
@@ -980,13 +957,11 @@ bool Pair::protocal2send(){
     }
   }
 
-  // std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(new_value));
   auto delay = dmludp_connection->get_rto();
   new_value.it_value.tv_sec = delay.count() / 1000000000;
   new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-  // std::cout<<"2 rto:"<<delay.count()<<std::endl;
   new_value.it_interval.tv_sec = 0;  
   new_value.it_interval.tv_nsec = 0;
 

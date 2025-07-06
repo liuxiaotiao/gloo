@@ -52,11 +52,11 @@ using Block_len = uint16_t;
 
         Unreliable = 0x09, /* fisrt transmission */
 
-        Unreliable2 = 0x10, /* retransmission */
+        Unreliable2 = 0xA, /* retransmission */
 
-        Unreliable3 = 0x11, /* With ElicitAck */
+        Unreliable3 = 0xB, /* With ElicitAck */
 
-        Unknown = 0x12,
+        Unknown = 0xC,
     };
 
 // Avoid memory alignment

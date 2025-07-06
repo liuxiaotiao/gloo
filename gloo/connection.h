@@ -22,7 +22,6 @@
 #include <optional>
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
-// #pragma message("DEBUG: included span in FILENAME")
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
 #define BENCH_END(name) \
@@ -1194,9 +1193,11 @@ public:
 
     std::vector<uint64_t> bitmap_vector;
 
-    bool reliable_lastpacket = true;
+    uint64_t reliable_lastpacket = LIMIT_UINT64_T;
 
-    bool unreliable_lastpacket = true;
+    uint64_t unreliable_lastpacket = LIMIT_UINT64_T;
+
+    std::optional<uint32_t> max_received_difference;
 
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
@@ -1213,7 +1214,6 @@ public:
     rttvar(0),
     handshake(std::chrono::high_resolution_clock::now()),
     bidirect(true),
-    // initial(false),
     dmludp_error(0),
     send_connection_difference(0),
     receive_connection_difference(0),
@@ -1293,6 +1293,11 @@ public:
         return rto;
     }
 
+    void zerosentclear () {
+        recovery.clearinflight();
+        low_recovery.clearinflight();  
+    }
+
     // Merge to intial_rtt
     void set_rtt(uint64_t inter){
         if (bidirect){
@@ -1334,10 +1339,8 @@ public:
 
     /*Process control message and application packet*/
     bool recv_slice2(size_t rx_count, size_t receive_max_index, struct timespec ts = {0, 0}){
-        // receive_upper_bound = rx_count;
         receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
-        // auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
             if (receive_slot[i] == 1)
             {
@@ -1391,22 +1394,6 @@ public:
         return send_flag_;
     }
 
-    bool recv_slice3(size_t index_){
-        bool send_flag_ = false;
-        auto pkt_ty = receive_message[index_].get_packet_type();
-        if (pkt_ty == Type::ACK){
-            process_acknowledge(index_);
-        }
-
-        if (pkt_ty == Type::Application) {
-            process_application2(index_);
-            send_packet_type = Type::ACK;
-            send_flag_ = true;
-        }
-
-        return send_flag_;
-    }
-
     void process_elicit_packet(size_t index){
         auto& msg = receive_message[index];
         Packet_num_len pkt_num = msg.get_packet_number();
@@ -1447,91 +1434,6 @@ public:
         }
     };
 
-    void process_application2(size_t index_){
-        // auto &msg = receive_message[index_];
-        // Packet_num_len pkt_num = msg.get_packet_number();
-        // Offset_len pkt_offset = msg.get_packet_offset();
-        // Difference_len pkt_difference = msg.get_packet_difference();
-        // auto pkt_len = msg.get_packet_length();
-        
-        // auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
-        
-        // if (pkt_num < current_loop_min){
-        //     receive_slot[index_] = 0;
-        //     return;
-        // }
-
-        // // if (pkt_len == 4) {
-        // //     std::cout<<"receive from:";
-        // //     ip_print(peeraddr);
-        // //     log_print(msg.iov[1].iov_base, 4);
-        // // }
-
-        // bool valid_pkt = pkt_difference >= receive_connection_difference;
-        // std::optional<size_t> expectedsize;
-        // if (valid_pkt){
-        //     if (pkt_offset == 0){
-        //         recvCQ.indexcheck(pkt_difference);
-        //         if(!recvCQ.insertzero(pkt_difference, index_)){
-        //             receive_slot[index_] = 0;
-        //         }else{
-        //             receive_slot[index_] = 1;
-        //             struct preamble {
-        //                 size_t nbytes = 0;
-        //                 size_t opcode = 0;
-        //                 size_t slot = 0;
-        //                 size_t offset = 0;
-        //                 size_t length = 0;
-        //                 size_t roffset = 0;
-        //             };
-        //             auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //             if ((preamble_header->opcode & ~1) == 0){
-        //                 expectedsize = sizeof(preamble) + preamble_header->length;
-        //             }else{
-        //                 expectedsize = sizeof(preamble);
-        //             }
-        //         }
-        //     }else{
-        //         receive_slot[index_] = 1;
-        //     }
-        // }else{
-        //     receive_slot[index_] = 0;
-        // }
-
-        // if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
-        //     max_received = pkt_num;
-        //     send_num = pkt_num;
-        // }  
-   
-        // size_t pos = pkt_num - current_loop_min;
-  
-        // if(pos > 8000){
-        //     pos = 0;
-        // }
-        // size_t byte_index = pos / 8;
-        // size_t bit_index = pos % 8;
-
-        // if (byte_index > receivevector.size()){
-        //     std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
-        //     <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
-        //     _Exit(0);
-        // }
-
-        // if (valid_pkt){
-        //     receivevector[byte_index] |= (1 << bit_index);  
-        //     bool exist = false;
-        //     recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
-        //     if (exist){
-        //         receive_slot[index_] = 0;
-        //     }
-
-        //     if (expectedsize){
-        //         recvCQ.setRead(pkt_difference, *expectedsize);
-        //     }
-        // }
-    }
-
-
     /*Max received index*/
     size_t boundary(){
         return receive_upper_limit;
@@ -1569,11 +1471,6 @@ public:
         return read_;
     };
 
-    /*
-    TODO（3/2）:
-    1. skip pakcet older than this round minimum packet -> DONE
-    2. add new flag to shrink receive message queue.
-    */
     void process_application_packet(size_t index, bool important, bool unreliableInfo){
         auto& msg = receive_message[index];
         Packet_num_len pkt_num = msg.get_packet_number();
@@ -1592,35 +1489,7 @@ public:
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
-        // if (pkt_difference >= receive_connection_difference){
-        //     recvCQ.indexcheck(pkt_difference);
-        //     if (pkt_offset == 0){
-        //         if (recvCQ.differencecheck(pkt_difference)){
-        //             if(!recvCQ.insertzero(pkt_difference, index)){
-        //                 receive_slot[index] = 0;
-        //             }else{
-        //                 struct preamble {
-        //                     size_t nbytes = 0;
-        //                     size_t opcode = 0;
-        //                     size_t slot = 0;
-        //                     size_t offset = 0;
-        //                     size_t length = 0;
-        //                     size_t roffset = 0;
-        //                 };
-        //                 auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //                 if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
-        //                     expectedsize = sizeof(preamble) + preamble_header->length;
-        //                 }else{
-        //                     expectedsize = sizeof(preamble);
-        //                 }
-        //             }
-        //         }else{
-        //             receive_slot[index] = 0;
-        //         }
-        //     }
-        // }else{
-        //     receive_slot[index] = 0;
-        // }
+    
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             if (pkt_offset == 0){
@@ -1740,7 +1609,7 @@ public:
     
 
     bool check_status(){
-        if (recovery.cwnd_enough() && sendbufferqueue.ready()) return true;
+        if ((recovery.cwnd_enough() || low_recovery.cwnd_enough()) && sendbufferqueue.ready()) return true;
         return false;
     }
 
@@ -1792,26 +1661,6 @@ public:
         
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
-
-        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", "<<std::endl;
-        // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-        //     if (slot.difference < pkt_difference){
-        //         if (++bit_index == 8) {
-        //             bit_index = 0;
-        //             ++byte_index;
-        //         }
-        //         /*Do nothing*/
-        //         return;  
-        //     }else{
-        //         size_t value = (ack_src[byte_index] >> bit_index) & 1;
-        //         // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
-        //         sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
-        //         if (++bit_index == 8) {
-        //             bit_index = 0;
-        //             ++byte_index;
-        //         }
-        //     }
-        // });
 
         size_t total_important = 0;
         size_t total_unimportant = 0;
@@ -2082,14 +1931,19 @@ public:
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
 
-        auto receivets = std::chrono::high_resolution_clock::now();
-        recovery.check_point();
-        recovery.congestion_event(receivets);
-        recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        if (total_important != 0) {
+            auto receivets = std::chrono::high_resolution_clock::now();
+            recovery.check_point();
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
 
-        low_recovery.check_point();
-        low_recovery.congestion_event(receivets);
-        low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        if (total_unimportant !=0){
+            low_recovery.check_point();
+            low_recovery.congestion_event(receivets);
+            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
+        
     }
 
      ssize_t prepareData() {
@@ -2144,14 +1998,14 @@ public:
                     isElicit = out_off == ELICIT_OFFSET;
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
                     } else {
                         if (out_status == 1) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
-                            connection_map.push(out_off, pkg_difference, Type::Application2);
+                            connection_map.push(out_off, pkg_difference, Type::Application2, pn);
                         } else {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
-                            connection_map.push(out_off, pkg_difference, Type::Application);
+                            connection_map.push(out_off, pkg_difference, Type::Application, pn);
                         }
                     }
         
@@ -2186,17 +2040,17 @@ public:
                     auto pn = pkt_num_spaces.updatepktnum();
                     if (out_off == ELICIT_OFFSET) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
                     } else {
                         if (pkt_status == PktStatus::Unimportant_reliable) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable, pn);
                         } else if (pkt_status == PktStatus::Unimportant_unreliable) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable2);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable2);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable2, pn);
                         } else {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable3);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable3);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable3, pn);
                         }
                     }
 

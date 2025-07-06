@@ -116,6 +116,12 @@ void allreduce(const detail::AllreduceOptionsImpl& opts, const std::vector<uint6
   const std::vector<std::unique_ptr<transport::UnboundBuffer>>& out = opts.out;
   const auto slot = Slot::build(kAllreduceSlotPrefix, opts.tag);
 
+  if (!topkbitmap.empty()) {
+    global_manager.add_or_replace_by_tag(std::move(topkbitmap),opts.tag);
+  }
+  
+  global_manager.update_index(opts.tag);
+
   // Sanity checks
   GLOO_ENFORCE_GT(out.size(), 0);
   GLOO_ENFORCE(opts.elementSize > 0);
@@ -690,8 +696,21 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
 }
 
 // getter
-dmludp::Span<const uint64_t> get_global_span() {
+dmludp::Span<const uint64_t> get_global_span(uint64_t offset, uint64_t len) {
     return dmludp::Span<const uint64_t>(global_vec.data(), global_vec.size());
 }
 
+dmludp::Span<const uint64_t> get_global_span(size_t begin, size_t end) const {
+  const size_t block_size = 1440 / 4;
+  int64_t blocks_per_super = (global_manager.super_block_size + block_size - 1) / block_size;
+  int64_t words_per_super = (blocks_per_super + 63) / 64;
+
+  // 超级块在 bitmaps 里的起始偏移
+  size_t offset = super_block_id * words_per_super;
+
+  return global_manager.current_span();
+  if (begin > end || end > vec.size()) return {};
+  return dmludp::Span<const uint64_t>(vec.data() + begin, end - begin);
+}
+VectorGroupWithIndex<uint64_t> global_manager;
 } // namespace gloo
