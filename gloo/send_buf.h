@@ -444,13 +444,14 @@ namespace dmludp{
                             off = meta_pos * send_buffer_size;
                             meta_left -= 48;
                             packet_count_important++;
+                            
                             // std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
                             if (importantIndex == -1) {
                                 meta_status_important = MetaFlag::Retransmission;
                             }
                         }else{
                             auto index = importance_bitmap.next_one_avx512();
-                            // std::cout<<"index:"<<index<<", "<<importantIndex<<std::endl;
+                            std::cout<<"index:"<<index<<", "<<importantIndex<<std::endl;
                             
                             if (index != -1) {
                                 off = index * send_buffer_size + 48;
