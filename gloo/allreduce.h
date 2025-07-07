@@ -14,6 +14,7 @@
 
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"
+#include "gloo/tool.h"
 
 namespace gloo {
 
@@ -192,6 +193,171 @@ class AllreduceOptions {
 
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap = {});
 
-// std::span<const int> get_global_span();
+template<typename T>
+class VectorGroupWithIndex {
+public:
+    VectorGroupWithIndex() : index_(0) {}
+    explicit VectorGroupWithIndex(size_t n) : groups_(n), index_(0) {}
+
+    void set_index(size_t idx) {
+        assert(idx < groups_.size());
+        index_ = idx;
+    }
+    size_t index() const { return index_; }
+    void next() {
+        if (!groups_.empty())
+            index_ = (index_ + 1) % groups_.size();
+    }
+    dmludp::Span<T> current_vector() {
+      assert(index_ < groups_.size());
+      return dmludp::Span<T>(groups_[index_]);
+    }
+    dmludp::Span<const T> current_vector() const {
+      assert(index_ < groups_.size());
+      return dmludp::Span<const T>(groups_[index_]);
+    }
+    dmludp::Span<T> current_span(size_t begin, size_t end) {
+      assert(index_ < groups_.size());
+      assert(begin <= end && end <= groups_[index_].size());
+      return dmludp::Span<T>(groups_[index_].data() + begin, end - begin);
+    }
+    dmludp::Span<const T> current_span(size_t begin, size_t end) const {
+      assert(index_ < groups_.size());
+      assert(begin <= end && end <= groups_[index_].size());
+      return dmludp::Span<const T>(groups_[index_].data() + begin, end - begin);
+    }
+
+    void add_or_replace_by_length(const std::vector<T>& v) {
+      if (groups_.empty()) {
+        groups_.push_back(v);
+        return;
+      }
+
+      for (auto& group : groups_) {
+          if (group.size() == v.size()) {
+              group = v; 
+              return;
+          }
+      }
+      groups_.push_back(v);
+    }
+
+    void add_or_replace_by_length(std::vector<T>&& v) {
+      if (groups_.empty()){
+        groups_.push_back(std::move(v));
+        return;
+      }
+
+      for (auto& group : groups_) {
+          if (group.size() == v.size()) {
+              group = std::move(v); 
+              return;
+          }
+      }
+      groups_.push_back(std::move(v));
+    }
+
+    void add_or_replace_by_tag(std::vector<T>&& v, size_t segmentBytes, size_t tag) {
+      if (tag == 4) {
+        groups_.push_back(std::move(v));
+        segmentBytesvec.push_back(segmentBytes);
+        return;
+      } else {
+        if (tag == 7) {
+          groups_.clear();
+          groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
+          return;
+        } else if (tag > 7 && tag < 12) {
+          groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
+          return;
+        } else {
+          auto index = (tag - 7) % 5;
+          groups_[index] = std::move(v); 
+          segmentBytesvec[index] = segmentBytes;
+        }
+      }
+    }
+
+    void add_or_replace_by_tag(const std::vector<T>& v, size_t segmentBytes, size_t tag) {
+      if (tag == 4) {
+        groups_.push_back(std::move(v));
+        segmentBytesvec.push_back(segmentBytes);
+        return;
+      } else {
+        if (tag == 7) {
+          groups_.clear();
+          groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
+          return;
+        } else if (tag > 7 && tag < 12) {
+          groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
+          return;
+        } else {
+          auto index = (tag - 7) % 5;
+          groups_[index] = std::move(v); 
+          segmentBytesvec[index] = segmentBytes;
+        }
+      }
+    }
+
+    // void update_index() {
+    //   ++index_;
+    // }
+    void update_index(size_t tag) {
+      if (tag == 4){
+        index_ = 0;
+      } else {
+        index_ = (tag - 7) % 5;
+      }
+    }
+
+    void update_segmentBytes(const size_t segmentBytes){
+      superblock_bytes = segmentBytes;
+    }
+
+    dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
+      int64_t index = -1;
+      size_t bitmapID = 0;
+      size_t block_per_SuperBlock = 0;
+      for (auto i = 0; i < segmentBytesvec.size(); i++){
+        if(beginOffset % segmentBytesvec[i] == 0) {
+          bitmapID = beginOffset / segmentBytesvec[i];
+          block_per_SuperBlock = (segmentBytesvec[i] + 1440 * sizeof(uint64_t) - 1) / (1440 * sizeof(uint64_t));
+          index = i;
+          break;
+        }
+      }
+      if (index == -1){
+        std::cerr << "partialSpan: error" << std::endl;
+        _Exit(0);
+      }
+      size_t offset = block_per_SuperBlock * bitmapID;
+      return dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
+    }
+    
+    void replace_vector(size_t idx, std::vector<T>&& vec) {
+        assert(idx < groups_.size());
+        groups_[idx] = std::move(vec);
+    }
+    void replace_vector(size_t idx, const std::vector<T>& vec) {
+        assert(idx < groups_.size());
+        groups_[idx] = vec;
+    }
+    std::vector<std::vector<T>>& data() { return groups_; }
+    const std::vector<std::vector<T>>& data() const { return groups_; }
+    size_t group_count() const { return groups_.size(); }
+
+private:
+    std::vector<std::vector<T>> groups_;
+    std::vector<uint64_t> segmentBytesvec;
+    uint64_t index_ = std::numeric_limits<uint64_t>::max();
+    size_t superblock_bytes = 0;
+};
+
+extern VectorGroupWithIndex<uint64_t> global_manager;
+dmludp::Span<const uint64_t> get_global_span(uint64_t offset, uint64_t len);
 
 } // namespace gloo

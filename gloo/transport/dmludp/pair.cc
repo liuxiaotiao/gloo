@@ -32,6 +32,7 @@
 #include "gloo/transport/dmludp/buffer.h"
 #include "gloo/transport/dmludp/context.h"
 #include "gloo/transport/dmludp/unbound_buffer.h"
+#include "gloo/allreduce.h"
 
 #define FD_INVALID (-1)
 #define MAX_PACKETS 100
@@ -873,7 +874,13 @@ bool Pair::protocal2send(){
       // if (ioc == 2){
       //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
       // }
-      bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+      bool connection_written;
+      if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+        auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
+        connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
+      } else {
+        connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+      }
       // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
       if (!connection_written){
         return false;
@@ -1152,12 +1159,14 @@ void Pair::sendAsyncMode(Op& op) {
             }
           }
           const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-          // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
-          // if (ioc == 2){
-          //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
-          // }
-          bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
-          // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
+  
+           bool connection_written;
+          if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+            auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
+            connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
+          } else {
+            connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+          }
           if (!connection_written){
             break;
           }
@@ -1200,7 +1209,13 @@ void Pair::sendAsyncMode(Op& op) {
         // if (ioc == 2){
         //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
         // }
-        bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+        bool connection_written;
+        if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+          auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
+          connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
+        } else {
+          connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+        }
         // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
         if (!connection_written){
           break;

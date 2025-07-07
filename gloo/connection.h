@@ -2055,7 +2055,7 @@ public:
         handshake = std::chrono::high_resolution_clock::now();
     }
     
-    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, dmludp::Span<const uint64_t> bitmapSpan = {}){
         bool completed = true;
 	    dmludp_error_sent = 0;
 
@@ -2065,15 +2065,8 @@ public:
 
         if (iovecs_len != 1) {
             if (iovecs[1].iov_len < 2 * 1024 * 1024 && iovecs[1].iov_len > MAX_SEND_UDP_PAYLOAD_SIZE){
-                size_t bitmaplen = 0;
-                if (iovecs[1].iov_len % MAX_SEND_UDP_PAYLOAD_SIZE != 0) {
-                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
-                } else {
-                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE;
-                }
-                // std::cout<<"bitmaplen:"<<bitmaplen<<std::endl;
-                Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
-                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen - 1);
+                size_t bitmaplen = (iovecs[1].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1)/ MAX_SEND_UDP_PAYLOAD_SIZE;
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapSpan, 0, bitmaplen - 1);
             } else {
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_);
             }  

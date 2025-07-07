@@ -24,24 +24,13 @@ using BufferVector = std::vector<std::unique_ptr<transport::UnboundBuffer>>;
 using ReductionFunction = AllreduceOptions::Func;
 using ReduceRangeFunction = std::function<void(size_t, size_t)>;
 using BroadcastRangeFunction = std::function<void(size_t, size_t)>;
-std::vector<int> global_vec = {1, 2, 3};
-
-class IndexManager {
-  private:
-  
-  public:
-      IndexManager()  { }
-      ~IndexManager() { }
-      void hello() {  }
-};
-
-static IndexManager TopkManger;
 
 // Forward declaration of ring algorithm implementation.
 void ring(
     const detail::AllreduceOptionsImpl& opts,
     ReduceRangeFunction reduceInputs,
-    BroadcastRangeFunction broadcastOutputs);
+    BroadcastRangeFunction broadcastOutputs,
+    const std::vector<uint64_t> topkbitmap);
 
 // Forward declaration of bcube algorithm implementation.
 void bcube(
@@ -148,7 +137,7 @@ void allreduce(const detail::AllreduceOptionsImpl& opts, const std::vector<uint6
   switch (opts.algorithm) {
     case detail::AllreduceOptionsImpl::UNSPECIFIED:
     case detail::AllreduceOptionsImpl::RING:
-      ring(opts, reduceInputs, broadcastOutputs);
+      ring(opts, reduceInputs, broadcastOutputs, std::move(topkbitmap));
       break;
     case detail::AllreduceOptionsImpl::BCUBE:
       bcube(opts, reduceInputs, broadcastOutputs);
@@ -230,6 +219,10 @@ void ring(
   const size_t numSegmentsPerRank = numSegments / context->size;
   const size_t segmentBytes =
       roundUp((totalBytes + numSegments - 1) / numSegments, opts.elementSize);
+
+  if (!topkbitmap.empty()) {
+    global_manager.add_or_replace_by_tag(std::move(topkbitmap), segmentBytes, opts.tag);
+  }
 
   // Allocate scratch space to hold two chunks
   std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
@@ -689,9 +682,8 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
   allreduce(opts.impl_, topkbitmap);
 }
 
-// getter
-// std::span<const int> get_global_span() {
-//     return std::span<const int>(global_vec);
-// }
-
+dmludp::Span<const uint64_t> get_global_span(size_t beginOffset, size_t bytes){
+  return global_manager.partialSpan(beginOffset, bytes);
+}
+VectorGroupWithIndex<uint64_t> global_manager;
 } // namespace gloo
