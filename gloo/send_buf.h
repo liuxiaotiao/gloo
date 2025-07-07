@@ -386,9 +386,9 @@ namespace dmludp{
             /*Special unimportance no loss, both importanct and umimportance complete.*/
             if (off == -1 && meta_status_important == MetaFlag::Complete 
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
-                std::cout<<"check 1"<<std::endl;
+                // std::cout<<"check 1"<<std::endl;
                 if (!rcq_important.empty()) {
-                    std::cout<<"check 2"<<std::endl;
+                    // std::cout<<"check 2"<<std::endl;
                     off = rcq_important.pop_front();
                     return -2;
                 }   
@@ -887,7 +887,7 @@ namespace dmludp{
             
             out_len = 0;
             auto tmp_off = off_front_unimportant(status_);
-            // std::cout << debugcount<<", emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << std::endl;
+            std::cout << debugcount<<", emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << ", " << static_cast<uint32_t>(meta_status_unimportant)<< std::endl;
 
             if (tmp_off == -1){
                 out_len = -1;
