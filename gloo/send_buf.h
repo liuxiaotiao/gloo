@@ -570,6 +570,11 @@ namespace dmludp{
                 return;
             }
 
+            if (in_offset == ELICIT_OFFSET && !is_drop) {
+                rcq_important.push_back(ELICIT_OFFSET);
+                return;
+            }
+
             if (is_drop){ /* received */
                 if (acknowldge_status_important) {
                     if (in_offset == lastpacketOffset_important) {
