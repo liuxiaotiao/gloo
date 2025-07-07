@@ -237,6 +237,7 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
+            std::cout<<"check"<<std::endl;
             if (!bitmapview.empty()){
                 for (auto i = 0 ; i < bitmapview.size() ; i++) {
                     std::cout<<bitmapview[i]<<" ";
