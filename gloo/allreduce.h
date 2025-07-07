@@ -191,7 +191,7 @@ class AllreduceOptions {
   friend void allreduce(const AllreduceOptions&, const std::vector<uint64_t> &topkbitmap);
 };
 
-void allreduce(const AllreduceOptions& opts, std::vector<uint64_t> &topkbitmap = {});
+void allreduce(const AllreduceOptions& opts, std::vector<uint64_t> topkbitmap = {});
 
 template<typename T>
 class VectorGroupWithIndex {

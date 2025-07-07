@@ -684,7 +684,7 @@ void bcube(
 
 } // namespace
 
-void allreduce(const AllreduceOptions& opts, std::vector<uint64_t> &topkbitmap) {
+void allreduce(const AllreduceOptions& opts, std::vector<uint64_t> topkbitmap) {
   allreduce(opts.impl_, std::move(topkbitmap));
 }
 
