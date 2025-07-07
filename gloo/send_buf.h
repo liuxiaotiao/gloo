@@ -595,124 +595,170 @@ namespace dmludp{
                 return;
             }
 
-            if (is_drop){ /* received */
-                if (acknowldge_status_important) {
-                    if (in_offset == lastpacketOffset_important) {
-                        if (initlosscount_important > packet_count_important) {
-                            std::cout<<"1. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
-                            _Exit(0);
-                        }
-                        
-                        ack_count_important = packet_count_important - initlosscount_important;
-                        acknowldge_status_important = false;
-                    }
-                } else {
-                    if (in_offset != ELICIT_OFFSET){
-                        auto index = 0;
-                        if (in_offset >= 48){
-                            index = (in_offset - 48) / send_buffer_size + 1;
-                        }
-                        // std::cout<<"4 index;"<<index<<std::endl;
-                        if (bits_set[index] == 0){
-                            bits_set.set(index);
-                            ack_count_important++;
-                        }
-                    } else {
-                        meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
-                    }
+            if (is_drop){
+                auto index = 0;
+                if (in_offset >= 48){
+                    index = (in_offset - 48) / send_buffer_size + 1;
+                }else{
+                    index = in_offset / send_buffer_size;
                 }
-            }else{ /* loss */
-                if (acknowldge_status_important){
-                    if (!rcq_important.empty()){
-                        if (in_offset != ELICIT_OFFSET){
-                            if (in_offset > rcq_important.back()) {
-                                auto index = 0;
-                                if (in_offset >= 48){
-                                    index = (in_offset - 48) / send_buffer_size + 1;
-                                }
-                                // std::cout<<"5 index;"<<index<<std::endl;
-                                if (bits_set[index] == 0){
-                                    rcq_important.push_back(in_offset);
-                                    if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
-                                        lossreord_important = in_offset;
-                                        // std::cout<<"1. in_offset:"<<in_offset<<std::endl;
-                                        ++initlosscount_important;
-                                    } else {
-                                        if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
-                                            // std::cout<<"2. in_offset:"<<in_offset<<std::endl;
-                                            ++initlosscount_important;
-                                            lossreord_important = in_offset;
-                                        }
-                                    }
-                                    
-                                }
-                            }
-                        } else {
-                            rcq_important.push_back(ELICIT_OFFSET);
-                        }
-                    }else {
-                        if (in_offset != ELICIT_OFFSET){
-                            auto index = 0;
-                            if (in_offset >= 48){
-                                index = (in_offset - 48) / send_buffer_size + 1;
-                            }
-                            // std::cout<<"6 index;"<<index<<std::endl;
-                            if (bits_set[index] == 0){
-                                rcq_important.push_back(in_offset);
-                                /* TODO: if out of order */
-                                if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
-                                    lossreord_important = in_offset;
-                                    // std::cout<<"3. in_offset:"<<in_offset<<std::endl;
-                                    ++initlosscount_important;
-                                } else {
-                                    if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
-                                        // std::cout<<"4. in_offset:"<<in_offset<<std::endl;
-                                        ++initlosscount_important;
-                                        lossreord_important = in_offset;
-                                    }
-                                }
-                                
-                            }
-                        }else{
-                            rcq_important.push_back(ELICIT_OFFSET);
-                        }
-                    }
-
-                    if (in_offset == lastpacketOffset_important) {
-                        if (initlosscount_important > packet_count_important) {
-                            std::cout<<"2. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
-                            _Exit(0);
-                        }
-                        // std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
-                        ack_count_important = packet_count_important - initlosscount_important;
-                        acknowldge_status_important = false;
-                    }
-                }else {
-                    if (in_offset != ELICIT_OFFSET) {
-
-                        auto index = 0;
-                        if (in_offset >= 48){
-                            index = (in_offset - 48) / send_buffer_size + 1;
-                        }
-                        if (bits_set[index] == 0){
-                            rcq_important.push_back(in_offset);
-                        }
-                    } else{
-                        rcq_important.push_back(ELICIT_OFFSET);
-                    }
+                if (bits_set[index] == 0){
+                    // std::cout<<"in_offset:"<<in_offset<<std::endl;
+                    bits_set.set(index);
+                    ack_count_important++;
                 }
-                
+            }else{
+
+                if (in_offset >= 48){
+                    index = (in_offset - 48) / send_buffer_size + 1;
+                }else{
+                    index = in_offset / send_buffer_size;
+                }
+                if (bits_set[index] == 0){
+                    rcq.push_back(in_offset);
+                }
+         
             }
-
-            
+            // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
             if (ack_count_important == packet_count_important){
                 meta_status_important = MetaFlag::Complete;
-                // if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
-                //     /* Both important and unimportant complete */
-                //     rcq_important.push_back(ELICIT_OFFSET);
-                // } 
-            }       
-        }
+            }    
+        } 
+
+        // void acknowledege_and_drop(uint64_t in_offset, bool is_drop, bool realack){
+        //     if (realack) {
+        //         meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
+        //     }
+
+        //     /* Elicit packet */
+        //     if (in_offset == ELICIT_OFFSET && is_drop) {
+        //         meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
+        //         return;
+        //     }
+
+        //     if (in_offset == ELICIT_OFFSET && !is_drop) {
+        //         rcq_important.push_back(ELICIT_OFFSET);
+        //         return;
+        //     }
+
+        //     if (is_drop){ /* received */
+        //         if (acknowldge_status_important) {
+        //             if (in_offset == lastpacketOffset_important) {
+        //                 if (initlosscount_important > packet_count_important) {
+        //                     std::cout<<"1. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
+        //                     _Exit(0);
+        //                 }
+                        
+        //                 ack_count_important = packet_count_important - initlosscount_important;
+        //                 acknowldge_status_important = false;
+        //             }
+        //         } else {
+        //             if (in_offset != ELICIT_OFFSET){
+        //                 auto index = 0;
+        //                 if (in_offset >= 48){
+        //                     index = (in_offset - 48) / send_buffer_size + 1;
+        //                 }
+        //                 // std::cout<<"4 index;"<<index<<std::endl;
+        //                 if (bits_set[index] == 0){
+        //                     bits_set.set(index);
+        //                     ack_count_important++;
+        //                 }
+        //             } else {
+        //                 meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
+        //             }
+        //         }
+        //     }else{ /* loss */
+        //         if (acknowldge_status_important){
+        //             if (!rcq_important.empty()){
+        //                 if (in_offset != ELICIT_OFFSET){
+        //                     if (in_offset > rcq_important.back()) {
+        //                         auto index = 0;
+        //                         if (in_offset >= 48){
+        //                             index = (in_offset - 48) / send_buffer_size + 1;
+        //                         }
+        //                         // std::cout<<"5 index;"<<index<<std::endl;
+        //                         if (bits_set[index] == 0){
+        //                             rcq_important.push_back(in_offset);
+        //                             if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
+        //                                 lossreord_important = in_offset;
+        //                                 // std::cout<<"1. in_offset:"<<in_offset<<std::endl;
+        //                                 ++initlosscount_important;
+        //                             } else {
+        //                                 if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
+        //                                     // std::cout<<"2. in_offset:"<<in_offset<<std::endl;
+        //                                     ++initlosscount_important;
+        //                                     lossreord_important = in_offset;
+        //                                 }
+        //                             }
+                                    
+        //                         }
+        //                     }
+        //                 } else {
+        //                     rcq_important.push_back(ELICIT_OFFSET);
+        //                 }
+        //             }else {
+        //                 if (in_offset != ELICIT_OFFSET){
+        //                     auto index = 0;
+        //                     if (in_offset >= 48){
+        //                         index = (in_offset - 48) / send_buffer_size + 1;
+        //                     }
+        //                     // std::cout<<"6 index;"<<index<<std::endl;
+        //                     if (bits_set[index] == 0){
+        //                         rcq_important.push_back(in_offset);
+        //                         /* TODO: if out of order */
+        //                         if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
+        //                             lossreord_important = in_offset;
+        //                             // std::cout<<"3. in_offset:"<<in_offset<<std::endl;
+        //                             ++initlosscount_important;
+        //                         } else {
+        //                             if (in_offset > lossreord_important && in_offset != ELICIT_OFFSET) {
+        //                                 // std::cout<<"4. in_offset:"<<in_offset<<std::endl;
+        //                                 ++initlosscount_important;
+        //                                 lossreord_important = in_offset;
+        //                             }
+        //                         }
+                                
+        //                     }
+        //                 }else{
+        //                     rcq_important.push_back(ELICIT_OFFSET);
+        //                 }
+        //             }
+
+        //             if (in_offset == lastpacketOffset_important) {
+        //                 if (initlosscount_important > packet_count_important) {
+        //                     std::cout<<"2. initlosscount_important(" << initlosscount_important << ") > packet_count_important(" << packet_count_important << ")" <<std::endl;
+        //                     _Exit(0);
+        //                 }
+        //                 // std::cout<<"2. packet_count_important: "<< packet_count_important <<", " <<initlosscount_important<<std::endl;
+        //                 ack_count_important = packet_count_important - initlosscount_important;
+        //                 acknowldge_status_important = false;
+        //             }
+        //         }else {
+        //             if (in_offset != ELICIT_OFFSET) {
+
+        //                 auto index = 0;
+        //                 if (in_offset >= 48){
+        //                     index = (in_offset - 48) / send_buffer_size + 1;
+        //                 }
+        //                 if (bits_set[index] == 0){
+        //                     rcq_important.push_back(in_offset);
+        //                 }
+        //             } else{
+        //                 rcq_important.push_back(ELICIT_OFFSET);
+        //             }
+        //         }
+                
+        //     }
+
+            
+        //     if (ack_count_important == packet_count_important){
+        //         meta_status_important = MetaFlag::Complete;
+        //         // if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
+        //         //     /* Both important and unimportant complete */
+        //         //     rcq_important.push_back(ELICIT_OFFSET);
+        //         // } 
+        //     }       
+        // }
 
 
         void acknowledege_and_drop_unimportant(uint64_t in_offset, bool is_drop, bool realack){
