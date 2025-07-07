@@ -219,12 +219,17 @@ void ring(
   const size_t numSegmentsPerRank = numSegments / context->size;
   const size_t segmentBytes =
       roundUp((totalBytes + numSegments - 1) / numSegments, opts.elementSize);
+  
+  for (auto e:topkbitmap){
+    std::cout<<e<<", ";
+  }
+  std::cout<<std::endl;
 
   if (!topkbitmap.empty()) {
     global_manager.add_or_replace_by_tag(std::move(topkbitmap), segmentBytes, opts.tag);
   }
   std::cout<<"[Allreduce] rank:"<<context->rank<<", numSegments:"<<numSegments<<", segmentBytes:"<<segmentBytes<<", totalBytes:"<<totalBytes<<", "<<topkbitmap.size()<<std::endl;
-
+  
   // Allocate scratch space to hold two chunks
   std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
   std::unique_ptr<transport::UnboundBuffer> tmpBuffer =
