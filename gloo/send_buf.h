@@ -509,7 +509,10 @@ namespace dmludp{
                     auto index = importance_bitmap.next_zero_avx512(); 
                     if (index != -1) {
                         off = index * send_buffer_size + 48;
-                        meta_left -= send_buffer_size;
+                        const size_t total_size = meta_ptr_len + meta_ptr2_len;
+                        size_t remain = total_size - off;
+                        size_t pktlen = std::min(remain, MAX_SEND_UDP_PAYLOAD_SIZE);
+                        meta_left -= pktlen;
                         if (meta_left < 0) {
                             meta_left = 0;
                         }
@@ -868,7 +871,7 @@ namespace dmludp{
             std::cout << "ack_count:" << ack_count_important << ", packet_count_important:"<<packet_count_important<< ", bits_set.size:" << bits_set.size() << ",\nbits_set.count" << bits_set.count() <<", rcq_important.size:"<< rcq_important.size() <<
             ", meta_status_unimportant:" << static_cast<uint32_t>(meta_status_unimportant) << ",\nmeta_status_important:"<< static_cast<uint32_t>(meta_status_important) <<
             ", lastpacketOffset_important:" << lastpacketOffset_important << ", lastpacketOffset_unimportant:" << lastpacketOffset_unimportant << ",\ninitlosscount_important:" << initlosscount_important << ", len:" << meta_ptr_len + meta_ptr2_len 
-            << std::endl;
+            ", " << meta_sent << std::endl;
             // for (auto i = 0; i < bitMapVector.size(); i++) {
             //     std::cout<<bitMapVector[i]<<" ";
             // }
