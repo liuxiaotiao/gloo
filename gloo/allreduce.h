@@ -270,12 +270,12 @@ public:
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
           return;
-        } else if (tag > 7 && tag < 12) {
+        } else if (tag > 7 && tag <= 12) {
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
           return;
         } else {
-          auto index = (tag - 7) % 5;
+          auto index = (tag - 7) % 6;
           groups_[index] = std::move(v); 
           segmentBytesvec[index] = segmentBytes;
         }
