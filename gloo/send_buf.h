@@ -552,6 +552,8 @@ namespace dmludp{
                             std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             packet_status = PktStatus::Unimportant_partialreliable;
+                            off = -2;
+                            return off;
                             /* Merge elicit flag to last loss packet */
                         } else {
                             packet_status = PktStatus::Unimportant_unreliable;
