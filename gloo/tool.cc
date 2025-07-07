@@ -320,9 +320,12 @@ namespace dmludp {
             last_found_one_ = -1;
             return -1;
         }
-        int64_t pos = find_next_bit_avx2(bits_, num_bits_,
+        // int64_t pos = find_next_bit_avx2(bits_, num_bits_,
+        //                                 next_one_index_ - start_bit_,
+        //                                 end_bit_, true);
+        int64_t pos = find_next_bit_native(bits_.data(), num_bits_,
                                         next_one_index_ - start_bit_,
-                                        end_bit_, true);
+                                        end_bit_ - start_bit_, true);
         if (pos != -1) {
             pos += start_bit_;
             last_found_one_ = pos;
@@ -358,7 +361,10 @@ namespace dmludp {
             last_found_zero_ = -1;
             return -1;
         }
-        int64_t pos = find_next_bit_avx2(bits_, num_bits_,
+        // int64_t pos = find_next_bit_avx2(bits_, num_bits_,
+        //                                 next_zero_index_ - start_bit_,
+        //                                 end_bit_ - start_bit_, false);
+        int64_t pos = find_next_bit_native(bits_.data(), num_bits_,
                                         next_zero_index_ - start_bit_,
                                         end_bit_ - start_bit_, false);
         if (pos != -1) {

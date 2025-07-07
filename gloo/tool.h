@@ -1562,71 +1562,171 @@ namespace dmludp {
 
 
 
-    inline int64_t find_next_bit_avx2(Span<const uint64_t> bitmap, size_t num_bits,
-                                      size_t offset_start, size_t offset_end,
-                                      bool find_one) {
-    const uint8_t* bits = reinterpret_cast<const uint8_t*>(bitmap.data());
-    size_t word_start = offset_start / 64;
-    size_t word_end = offset_end / 64;
+//     inline int64_t find_next_bit_avx2(Span<const uint64_t> bitmap, size_t num_bits,
+//                                       size_t offset_start, size_t offset_end,
+//                                       bool find_one) {
+//     const uint8_t* bits = reinterpret_cast<const uint8_t*>(bitmap.data());
+//     size_t word_start = offset_start / 64;
+//     size_t word_end = offset_end / 64;
 
-    // 处理第一个word的起始偏移
-    if (offset_start % 64 != 0) {
-        size_t bit = offset_start;
-        size_t word_idx = word_start;
-        size_t start_bit = offset_start % 64;
-        size_t end_bit = 63;
-        if (word_idx == word_end) end_bit = offset_end % 64;
-        uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
-        uint64_t w = bits[word_idx] & mask;
-        if (!find_one) w = ~w & mask;
-        if (w) {
-            // 找到第一个
-            int pos = __builtin_ctzll(w);
-            return word_idx * 64 + pos;
-        }
-        word_start++;
-    }
+//     // 处理第一个word的起始偏移
+//     if (offset_start % 64 != 0) {
+//         size_t bit = offset_start;
+//         size_t word_idx = word_start;
+//         size_t start_bit = offset_start % 64;
+//         size_t end_bit = 63;
+//         if (word_idx == word_end) end_bit = offset_end % 64;
+//         uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
+//         uint64_t w = bits[word_idx] & mask;
+//         if (!find_one) w = ~w & mask;
+//         if (w) {
+//             // 找到第一个
+//             int pos = __builtin_ctzll(w);
+//             return word_idx * 64 + pos;
+//         }
+//         word_start++;
+//     }
 
-    // SIMD扫描
-    size_t i = word_start;
-    for (; i + 3 <= word_end; i += 4) {
-        __m256i v = _mm256_loadu_si256((const __m256i*)&bits[i]);
-        if (!find_one) v = _mm256_andnot_si256(v, _mm256_set1_epi64x(-1));
-        __m256i cmp = _mm256_cmpeq_epi64(v, _mm256_setzero_si256());
-        int mask = _mm256_movemask_epi8(cmp);
-        if (mask != -1) { // 有非全0的uint64_t
-            // 找到具体哪个word有1
-            for (int k = 0; k < 4; ++k) {
-                uint64_t w = bits[i + k];
-                if (!find_one) w = ~w;
-                if (w) {
-                    int pos = __builtin_ctzll(w);
-                    size_t bit_idx = (i + k) * 64 + pos;
-                    if (bit_idx >= offset_start && bit_idx <= offset_end)
-                        return bit_idx;
-                }
-            }
-        }
-    }
+//     // SIMD扫描
+//     size_t i = word_start;
+//     for (; i + 3 <= word_end; i += 4) {
+//         __m256i v = _mm256_loadu_si256((const __m256i*)&bits[i]);
+//         if (!find_one) v = _mm256_andnot_si256(v, _mm256_set1_epi64x(-1));
+//         __m256i cmp = _mm256_cmpeq_epi64(v, _mm256_setzero_si256());
+//         int mask = _mm256_movemask_epi8(cmp);
+//         if (mask != -1) { // 有非全0的uint64_t
+//             // 找到具体哪个word有1
+//             for (int k = 0; k < 4; ++k) {
+//                 uint64_t w = bits[i + k];
+//                 if (!find_one) w = ~w;
+//                 if (w) {
+//                     int pos = __builtin_ctzll(w);
+//                     size_t bit_idx = (i + k) * 64 + pos;
+//                     if (bit_idx >= offset_start && bit_idx <= offset_end)
+//                         return bit_idx;
+//                 }
+//             }
+//         }
+//     }
 
-    // 收尾处理
-    for (; i <= word_end; ++i) {
-        uint64_t w = bits[i];
-        if (!find_one) w = ~w;
-        // 修正开头或结尾
-        size_t start_bit = 0;
-        size_t end_bit = 63;
-        if (i == word_start && offset_start % 64 != 0) start_bit = offset_start % 64;
-        if (i == word_end && offset_end % 64 != 63) end_bit = offset_end % 64;
-        uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
-        w &= mask;
-        if (w) {
-            int pos = __builtin_ctzll(w);
-            return i * 64 + pos;
+//     // 收尾处理
+//     for (; i <= word_end; ++i) {
+//         uint64_t w = bits[i];
+//         if (!find_one) w = ~w;
+//         // 修正开头或结尾
+//         size_t start_bit = 0;
+//         size_t end_bit = 63;
+//         if (i == word_start && offset_start % 64 != 0) start_bit = offset_start % 64;
+//         if (i == word_end && offset_end % 64 != 63) end_bit = offset_end % 64;
+//         uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
+//         w &= mask;
+//         if (w) {
+//             int pos = __builtin_ctzll(w);
+//             return i * 64 + pos;
+//         }
+//     }
+//     return -1;
+// }
+
+    // inline int64_t find_next_bit_avx2(Span<const uint64_t> bitmap, size_t num_bits,
+    //                                   size_t offset_start, size_t offset_end,
+    //                                   bool find_one) {
+    //     const uint8_t* bits = reinterpret_cast<const uint8_t*>(bitmap.data());
+    //     size_t word_start = offset_start / 64;
+    //     size_t word_end = offset_end / 64;
+
+    //     for (auto i = word_start; i <= word_end; ++i) {
+
+    //         uint64_t w = bits[i];
+    //         if (!find_one) w = ~w;
+
+    //         // 修正开头或结尾
+    //         size_t start_bit = 0;
+    //         size_t end_bit = 63;
+    //         if (i == word_start && offset_start % 64 != 0) start_bit = offset_start % 64;
+    //         if (i == word_end && offset_end % 64 != 63) end_bit = offset_end % 64;
+
+    //         uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
+    //         w &= mask;
+
+    //         if (w) {
+    //             int pos = __builtin_ctzll(w);
+    //             return i * 64 + pos;
+    //         }
+    //     }
+
+    //     // 处理第一个word的起始偏移
+    //     if (offset_start % 64 != 0) {
+    //         size_t bit = offset_start;
+    //         size_t word_idx = word_start;
+    //         size_t start_bit = offset_start % 64;
+    //         size_t end_bit = 63;
+    //         if (word_idx == word_end) end_bit = offset_end % 64;
+    //         uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
+    //         uint64_t w = bits[word_idx] & mask;
+    //         if (!find_one) w = ~w & mask;
+    //         if (w) {
+    //             // 找到第一个
+    //             int pos = __builtin_ctzll(w);
+    //             return word_idx * 64 + pos;
+    //         }
+    //         word_start++;
+    //     }
+
+    //     // SIMD扫描
+    //     size_t i = word_start;
+    //     for (; i + 3 <= word_end; i += 4) {
+    //         __m256i v = _mm256_loadu_si256((const __m256i*)&bits[i]);
+    //         if (!find_one) v = _mm256_andnot_si256(v, _mm256_set1_epi64x(-1));
+    //         __m256i cmp = _mm256_cmpeq_epi64(v, _mm256_setzero_si256());
+    //         int mask = _mm256_movemask_epi8(cmp);
+    //         if (mask != -1) { // 有非全0的uint64_t
+    //             // 找到具体哪个word有1
+    //             for (int k = 0; k < 4; ++k) {
+    //                 uint64_t w = bits[i + k];
+    //                 if (!find_one) w = ~w;
+    //                 if (w) {
+    //                     int pos = __builtin_ctzll(w);
+    //                     size_t bit_idx = (i + k) * 64 + pos;
+    //                     if (bit_idx >= offset_start && bit_idx <= offset_end)
+    //                         return bit_idx;
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // 收尾处理
+    //     for (; i <= word_end; ++i) {
+    //         uint64_t w = bits[i];
+    //         if (!find_one) w = ~w;
+    //         // 修正开头或结尾
+    //         size_t start_bit = 0;
+    //         size_t end_bit = 63;
+    //         if (i == word_start && offset_start % 64 != 0) start_bit = offset_start % 64;
+    //         if (i == word_end && offset_end % 64 != 63) end_bit = offset_end % 64;
+    //         uint64_t mask = ((1ULL << (end_bit - start_bit + 1)) - 1) << start_bit;
+    //         w &= mask;
+    //         if (w) {
+    //             int pos = __builtin_ctzll(w);
+    //             return i * 64 + pos;
+    //         }
+    //     }
+    //     return -1;
+    // }
+
+    inline int64_t find_next_bit_native(const uint64_t* bits, size_t num_bits,
+                                    size_t offset_start, size_t offset_end,
+                                    bool find_one) {
+        if (offset_start > offset_end || offset_end >= num_bits) return -1;
+
+        for (size_t bit = offset_start; bit <= offset_end; ++bit) {
+            size_t word_idx = bit / 64;
+            size_t bit_idx = bit % 64;
+            bool val = (bits[word_idx] >> bit_idx) & 1ULL;
+            if (val == find_one) return bit;
         }
+        return -1;
     }
-    return -1;
-}
 
     // 仅声明，不实现
     BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
