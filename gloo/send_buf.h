@@ -252,10 +252,10 @@ namespace dmludp{
             bitMapVector.clear();
             bitMapVector.resize(bitmapview.size());
             memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
-            for (auto i = 0; i < bitMapVector.size(); i++) {
-                std::cout<<(uint64_t)bitMapVector[i]<<" ";
-            }
-            std::cout<<std::endl;
+            // for (auto i = 0; i < bitMapVector.size(); i++) {
+            //     std::cout<<(uint64_t)bitMapVector[i]<<" ";
+            // }
+            // std::cout<<std::endl;
 
             /* Store buffer info: pointer + length */
             for (auto i = 0; i < iovecs_len; i++){
@@ -411,7 +411,7 @@ namespace dmludp{
                         packet_count_important++;
                         meta_pos++;
                         if (meta_left <= 0){
-                            std::cout<< debugcount<<", off_front_important: off(" << off << "),  lastpacketOffset_unimportant" << lastpacketOffset_unimportant << std::endl;
+                            // std::cout<< debugcount<<", off_front_important: off(" << off << "),  lastpacketOffset_unimportant" << lastpacketOffset_unimportant << std::endl;
                             meta_left = 0;
                             meta_status_important = MetaFlag::Retransmission;
                         }
@@ -443,7 +443,7 @@ namespace dmludp{
                 } 
             } else {
                 if(meta_status_important == MetaFlag::Initial){
-                    std::cout<<"meta_status_important: Initial, meta_left:"<<meta_left<<", meta_pos:"<<meta_pos<<", importantIndex:"<<importantIndex<<", unimportantIndex:"<<unimportantIndex<<std::endl;
+                    // std::cout<<"meta_status_important: Initial, meta_left:"<<meta_left<<", meta_pos:"<<meta_pos<<", importantIndex:"<<importantIndex<<", unimportantIndex:"<<unimportantIndex<<std::endl;
                     if (meta_left > 0){
                         if (meta_pos == 0){
                             off = meta_pos * send_buffer_size;
@@ -456,13 +456,13 @@ namespace dmludp{
                             }
                         }else{
                             auto index = importance_bitmap.next_one_avx512();
-                            std::cout<< debugcount <<", index:"<<index<<", "<<importantIndex<<std::endl;
+                            // std::cout<< debugcount <<", index:"<<index<<", "<<importantIndex<<std::endl;
                             
                             if (index != -1) {
                                 off = index * send_buffer_size + 48;
                                 meta_left -= send_buffer_size;
                                 packet_count_important++;
-                                std::cout<<debugcount<<", off_front_important: off:"<<off<<", off:"<<off<<", "<< lastpacketOffset_important<<", index:"<<index<<std::endl;
+                                // std::cout<<debugcount<<", off_front_important: off:"<<off<<", off:"<<off<<", "<< lastpacketOffset_important<<", index:"<<index<<std::endl;
                                 if (index == importantIndex) {
                                     meta_status_important = MetaFlag::Retransmission;
                                 }
@@ -530,7 +530,7 @@ namespace dmludp{
                     }
                 }
             } else if(meta_status_unimportant == MetaFlag::Retransmission_unimportance){
-                std::cout<<"off_front_unimportant: meta_status_unimportance Retransmission_unimportance:"<<rcq_unimportant.size()<<std::endl;
+                // std::cout<<"off_front_unimportant: meta_status_unimportance Retransmission_unimportance:"<<rcq_unimportant.size()<<std::endl;
                 if (!rcq_unimportant.empty()){
                     while (!rcq_unimportant.empty()) {
                         off = rcq_unimportant.pop_front();
@@ -546,7 +546,7 @@ namespace dmludp{
                                 // lastlossOffset_unimportant = false;
                                 if (loss_unimportance) {
                                     /* has packet loss, should send extra elicit packet */
-                                    std::cout<<"1 MetaFlag::Complete_unimportance"<<std::endl;
+                                    // std::cout<<"1 MetaFlag::Complete_unimportance"<<std::endl;
                                     meta_status_unimportant = MetaFlag::Complete_unimportance;
                                     off = -2;
                                     packet_status = PktStatus::Important_reliable;
@@ -561,7 +561,7 @@ namespace dmludp{
                             }
                             if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
                                 // lastlossOffset_unimportant = false;
-                                std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
+                                // std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
                                 meta_status_unimportant = MetaFlag::Complete_unimportance;
                                 packet_status = PktStatus::Unimportant_partialreliable;
                                 off = -2;
@@ -781,7 +781,7 @@ namespace dmludp{
                         ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
                         acknowldge_status_unimportant = false;
                         if (initlosscount_unimportant == 0) {
-                            std::cout<<"3 MetaFlag::Complete_unimportance"<<std::endl;
+                            // std::cout<<"3 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             rcq_important.push_back(ELICIT_OFFSET);
                         }
@@ -833,7 +833,7 @@ namespace dmludp{
                         ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
                         acknowldge_status_unimportant = false;
                         if (initlosscount_unimportant == 0) {
-                            std::cout<<"4 MetaFlag::Complete_unimportance"<<std::endl;
+                            // std::cout<<"4 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             rcq_important.push_back(ELICIT_OFFSET);
                         }
