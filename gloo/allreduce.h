@@ -188,7 +188,7 @@ class AllreduceOptions {
  protected:
   detail::AllreduceOptionsImpl impl_;
 
-  friend void allreduce(const AllreduceOptions&, const std::vector<uint64_t> &topkbitmap);
+  friend void allreduce(const AllreduceOptions&, std::vector<uint64_t> topkbitmap);
 };
 
 void allreduce(const AllreduceOptions& opts, std::vector<uint64_t> topkbitmap = {});
