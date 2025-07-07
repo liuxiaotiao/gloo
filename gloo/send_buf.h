@@ -254,7 +254,7 @@ namespace dmludp{
                 }
             }
 
-            std::count<<"add_Meta: meta_ptr_len: " << meta_ptr_len << ", meta_ptr2_len: " << meta_ptr2_len 
+            std::cout<<"add_Meta: meta_ptr_len: " << meta_ptr_len << ", meta_ptr2_len: " << meta_ptr2_len 
                 << ", meta_left: " << meta_left << ", meta_len: " << meta_len << std::endl;
             
             /* Received bitset reset */
