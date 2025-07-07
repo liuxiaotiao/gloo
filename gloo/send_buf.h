@@ -244,8 +244,8 @@ namespace dmludp{
                 std::cout<<std::endl;
             }
             debugcount = difference;
-            // std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
-            //     << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
+            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
+                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
             
 
             bitMapVector.clear();
@@ -460,7 +460,7 @@ namespace dmludp{
                                     meta_status_important = MetaFlag::Retransmission;
                                 }
                             } else {  
-                                std::cout<< "off_front_important index could not be -1," << unimportantIndex << ", " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
+                                std::cout<< debugcount <<", off_front_important index could not be -1," << unimportantIndex << ", " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
                                 _Exit(0);
                             }  
                         }
