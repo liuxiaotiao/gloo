@@ -480,8 +480,7 @@ namespace dmludp{
             ssize_t off = -1;
             if (meta_status_unimportant == MetaFlag::Initial_unimportance){
                 /* Unimportant part first transmission */
-                // if (meta_left > 0){
-                if (off <= lastpacketOffset_unimportant){
+                if (meta_left > 0){
                     auto index = importance_bitmap.next_zero_avx512(); 
                     if (index != -1) {
                         off = index * send_buffer_size + 48;
