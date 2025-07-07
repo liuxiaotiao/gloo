@@ -269,8 +269,8 @@ public:
         return;
       } else {
         if (tag == 7) {
-          groups_.clear();
-          groups_.push_back(std::move(v));
+          // groups_.clear();
+          groups_[0] = std::move(v);
           segmentBytesvec.push_back(segmentBytes);
           return;
         } else if (tag > 7 && tag < 12) {
