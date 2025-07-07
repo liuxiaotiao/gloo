@@ -269,7 +269,8 @@ public:
         return;
       } else {
         if (tag == 7) {
-          // groups_.clear();
+          groups_.clear();
+          segmentBytesvec.clear();
           groups_[0] = std::move(v);
           segmentBytesvec.push_back(segmentBytes);
           return;
