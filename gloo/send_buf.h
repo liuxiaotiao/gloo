@@ -817,9 +817,9 @@ namespace dmludp{
         }
 
         void ack_check(){
-            std::cout << "ack_count:" << ack_count_important << ", packet_count_important:"<<packet_count_important<< ", bits_set.size:" << bits_set.size() << "\n, bits_set.count" << bits_set.count() <<", rcq_important.size:"<< rcq_important.size() <<
-            ", meta_status_unimportant:" << static_cast<uint32_t>(meta_status_unimportant) << "\n, meta_status_important:"<< static_cast<uint32_t>(meta_status_important) <<
-            ", lastpacketOffset_important:" << lastpacketOffset_important << ", lastpacketOffset_unimportant:" << lastpacketOffset_unimportant << "\n, initlosscount_important:" << initlosscount_important << ", len:" << meta_ptr_len + meta_ptr2_len 
+            std::cout << "ack_count:" << ack_count_important << ", packet_count_important:"<<packet_count_important<< ", bits_set.size:" << bits_set.size() << ",\n bits_set.count" << bits_set.count() <<", rcq_important.size:"<< rcq_important.size() <<
+            ", meta_status_unimportant:" << static_cast<uint32_t>(meta_status_unimportant) << ",\n meta_status_important:"<< static_cast<uint32_t>(meta_status_important) <<
+            ", lastpacketOffset_important:" << lastpacketOffset_important << ", lastpacketOffset_unimportant:" << lastpacketOffset_unimportant << ",\n initlosscount_important:" << initlosscount_important << ", len:" << meta_ptr_len + meta_ptr2_len 
             << std::endl;
             // for (auto i = 0; i < bitMapVector.size(); i++) {
             //     std::cout<<bitMapVector[i]<<" ";
