@@ -319,6 +319,13 @@ public:
     }
 
     dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
+      std::cout << " partialSpan "<<std::endl;
+      if (groups_.empty()) {
+        for (auto e : groups_[0]){
+          std::cout << e << " ";
+        }
+      }
+      std::cout << " partialSpan2 "<<std::endl;
       int64_t index = -1;
       size_t bitmapID = 0;
       size_t block_per_SuperBlock = 0;
