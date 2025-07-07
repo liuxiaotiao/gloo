@@ -266,41 +266,21 @@ public:
       if (tag == 4) {
         groups_.push_back(std::move(v));
         segmentBytesvec.push_back(segmentBytes);
-        if (!groups_.empty()) {
-          for (auto e : groups_[0]){
-            std::cout << e << " ";
-          }
-        }
         return;
       } else {
         if (tag == 7) {
           groups_.clear();
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
           return;
         } else if (tag > 7 && tag < 12) {
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
           return;
         } else {
           auto index = (tag - 7) % 5;
           groups_[index] = std::move(v); 
           segmentBytesvec[index] = segmentBytes;
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
         }
       }
     }
@@ -371,11 +351,7 @@ public:
 
     dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
       std::cout << " partialSpan "<<std::endl;
-      if (!groups_.empty()) {
-        for (auto e : groups_[0]){
-          std::cout << e << " ";
-        }
-      }
+      std::cout<<groups_[0].data()<<std::endl;
       std::cout << " partialSpan2 "<<std::endl;
       int64_t index = -1;
       size_t bitmapID = 0;
@@ -393,6 +369,8 @@ public:
         _Exit(0);
       }
       size_t offset = block_per_SuperBlock * bitmapID;
+
+      std::cout<<(groups_[0].data() + offset)<<std::endl;
 
       std::cout << "partialSpan: beginOffset: " << beginOffset << ", bytes: " << bytes 
                 << ", segmentBytesvec[" << index << "]: " << segmentBytesvec[index] 
