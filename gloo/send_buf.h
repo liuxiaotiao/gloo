@@ -703,13 +703,13 @@ namespace dmludp{
             }
 
             
-            // if (ack_count_important == packet_count_important){
-            //     meta_status_important = MetaFlag::Complete;
-            //     if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
-            //         /* Both important and unimportant complete */
-            //         rcq_important.push_back(ELICIT_OFFSET);
-            //     } 
-            // }       
+            if (ack_count_important == packet_count_important){
+                meta_status_important = MetaFlag::Complete;
+                // if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
+                //     /* Both important and unimportant complete */
+                //     rcq_important.push_back(ELICIT_OFFSET);
+                // } 
+            }       
         }
 
 
@@ -819,10 +819,10 @@ namespace dmludp{
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
-            for (auto i = 0; i < bitMapVector.size(); i++) {
-                std::cout<<bitMapVector[i]<<" ";
-            }
-            std::cout<<std::endl;
+            // for (auto i = 0; i < bitMapVector.size(); i++) {
+            //     std::cout<<bitMapVector[i]<<" ";
+            // }
+            // std::cout<<std::endl;
         }
 
 
