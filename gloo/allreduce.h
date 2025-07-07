@@ -11,7 +11,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-
+#include <stdlib.h>
 #include "gloo/context.h"
 #include "gloo/transport/unbound_buffer.h"
 #include "gloo/tool.h"
@@ -259,40 +259,48 @@ public:
       groups_.push_back(std::move(v));
     }
 
-    void add_or_replace_by_tag(std::vector<T>&& v, size_t tag) {
+    void add_or_replace_by_tag(std::vector<T>&& v, size_t segmentBytes, size_t tag) {
       if (tag == 4) {
         groups_.push_back(std::move(v));
+        segmentBytesvec.push_back(segmentBytes);
         return;
       } else {
         if (tag == 7) {
           groups_.clear();
           groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
           return;
         } else if (tag > 7 && tag < 12) {
           groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
           return;
         } else {
           auto index = (tag - 7) % 5;
           groups_[index] = std::move(v); 
+          segmentBytesvec[index] = segmentBytes;
         }
       }
     }
 
-    void add_or_replace_by_tag(const std::vector<T>& v, size_t tag) {
+    void add_or_replace_by_tag(const std::vector<T>& v, size_t segmentBytes, size_t tag) {
       if (tag == 4) {
         groups_.push_back(std::move(v));
+        segmentBytesvec.push_back(segmentBytes);
         return;
       } else {
         if (tag == 7) {
           groups_.clear();
           groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
           return;
         } else if (tag > 7 && tag < 12) {
           groups_.push_back(std::move(v));
+          segmentBytesvec.push_back(segmentBytes);
           return;
         } else {
           auto index = (tag - 7) % 5;
           groups_[index] = std::move(v); 
+          segmentBytesvec[index] = segmentBytes;
         }
       }
     }
@@ -302,10 +310,34 @@ public:
     // }
     void update_index(size_t tag) {
       if (tag == 4){
-        index_ = 4;
+        index_ = 0;
       } else {
         index_ = (tag - 7) % 5;
       }
+    }
+
+    void update_segmentBytes(const size_t segmentBytes){
+      superblock_bytes = segmentBytes;
+    }
+
+    dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) {
+      int64_t index = -1;
+      size_t bitmapID = 0;
+      size_t block_per_SuperBlock = 0;
+      for (auto i = 0; i < segmentBytesvec.size(); i++){
+        if(beginOffset % segmentBytesvec[i] == 0) {
+          bitmapID = beginOffset / segmentBytesvec[i];
+          block_per_SuperBlock = (segmentBytesvec[i] + 1440 * sizeof(uint64_t) - 1) / (1440 * sizeof(uint64_t));
+          index = i;
+          break;
+        }
+      }
+      if (index == -1){
+        std::cerr << "partialSpan: error" << std::endl;
+        _Exit(0);
+      }
+      size_t offset = block_per_SuperBlock * bitmapID;
+      dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
     }
     
     void replace_vector(size_t idx, std::vector<T>&& vec) {
@@ -322,6 +354,7 @@ public:
 
 private:
     std::vector<std::vector<T>> groups_;
+    std::vector<uint64_t> segmentBytesvec;
     uint64_t index_ = std::numeric_limits<uint64_t>::max();
     size_t superblock_bytes = 0;
 };

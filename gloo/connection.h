@@ -263,7 +263,7 @@ class SCircularQueue {
             // } else {
             //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
             // }
-            data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, endbit);
+            data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, (endbit - 1));
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
             count_++;
@@ -1863,7 +1863,7 @@ public:
         handshake = std::chrono::high_resolution_clock::now();
     }
     
-    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, dmludp::Span<const uint64_t> bitmapSpan, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         bool completed = true;
 
         if (sendbufferqueue.full()){
@@ -1872,15 +1872,10 @@ public:
 
         if (iovecs_len != 1) {
             if (iovecs[1].iov_len < 2 * 1024 * 1024 && iovecs[1].iov_len > MAX_SEND_UDP_PAYLOAD_SIZE){
-                size_t bitmaplen = 0;
-                if (iovecs[1].iov_len % MAX_SEND_UDP_PAYLOAD_SIZE != 0) {
-                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE + 1;
-                } else {
-                    bitmaplen = iovecs[1].iov_len / MAX_SEND_UDP_PAYLOAD_SIZE;
-                }
+                size_t bitmaplen = (iovecs[1].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1)/ MAX_SEND_UDP_PAYLOAD_SIZE;
                 // std::cout<<"bitmaplen:"<<bitmaplen<<std::endl;
-                Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
-                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapview, 0, bitmaplen - 1);
+                // Span<const uint64_t> bitmapview(&bitmap_vector[0], bitmaplen / 64 + 1);
+                sendbufferqueue.push_back(iovecs, iovecs_len, type_, bitmapSpan, 0, bitmaplen);
             } else {
                 sendbufferqueue.push_back(iovecs, iovecs_len, type_);
             }  
