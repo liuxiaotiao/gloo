@@ -488,7 +488,7 @@ namespace dmludp{
                         if (meta_left < 0) {
                             meta_left = 0;
                         }
-           
+                        std::cout<<"off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                         if (off == lastpacketOffset_unimportant) {
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
