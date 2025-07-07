@@ -2118,14 +2118,30 @@ public:
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
 
-        auto receivets = std::chrono::high_resolution_clock::now();
-        recovery.check_point();
-        recovery.congestion_event(receivets);
-        recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // auto receivets = std::chrono::high_resolution_clock::now();
+        // recovery.check_point();
+        // recovery.congestion_event(receivets);
+        // recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
 
-        low_recovery.check_point();
-        low_recovery.congestion_event(receivets);
-        low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // low_recovery.check_point();
+        // low_recovery.congestion_event(receivets);
+        // low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        max_acknowleged = max_sent_pn;
+        auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
+
+        if (total_important != 0) {
+            auto receivets = std::chrono::high_resolution_clock::now();
+            recovery.check_point();
+            recovery.congestion_event(receivets);
+            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
+
+        if (total_unimportant !=0){
+            auto receivets = std::chrono::high_resolution_clock::now();
+            low_recovery.check_point();
+            low_recovery.congestion_event(receivets);
+            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
     }
 
      ssize_t prepareData() {
