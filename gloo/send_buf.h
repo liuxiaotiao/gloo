@@ -237,12 +237,12 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
-            // if (!bitmapview.empty()){
-            //     for (auto i = 0 ; i < bitmapview.size() ; i++) {
-            //         std::cout<<bitmapview[i]<<" ";
-            //     }
-            //     std::cout<<std::endl;
-            // }
+            if (!bitmapview.empty()){
+                for (auto i = 0 ; i < bitmapview.size() ; i++) {
+                    std::cout<<bitmapview[i]<<" ";
+                }
+                std::cout<<std::endl;
+            }
             debugcount = difference;
             // std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
             //     << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
@@ -520,47 +520,57 @@ namespace dmludp{
                     }
                 }
             } else if(meta_status_unimportant == MetaFlag::Retransmission_unimportance){
-                while (!rcq_unimportant.empty()) {
-                    off = rcq_unimportant.pop_front();
-                    auto index = 0;
-                    if (off != 0){
-                        index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
-                    }
-                    // std::cout<<"3 index;"<<index<<std::endl;
-                    if (bits_set[index] == 1){
-                        off = -1;
-                        /* TODO: Merge lastlossOffset_unimportant and acknowldge_status_unimportant */
-                        if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
-                            // lastlossOffset_unimportant = false;
-                            if (loss_unimportance) {
-                                /* has packet loss, should send extra elicit packet */
-                                std::cout<<"1 MetaFlag::Complete_unimportance"<<std::endl;
-                                meta_status_unimportant = MetaFlag::Complete_unimportance;
-                                off = -2;
-                                packet_status = PktStatus::Important_reliable;
-                            } else {
-                                meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
-                                off = -1;
+                if (!rcq_unimportant.empty()){
+                    while (!rcq_unimportant.empty()) {
+                        off = rcq_unimportant.pop_front();
+                        auto index = 0;
+                        if (off != 0){
+                            index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
+                        }
+                        // std::cout<<"3 index;"<<index<<std::endl;
+                        if (bits_set[index] == 1){
+                            off = -1;
+                            /* TODO: Merge lastlossOffset_unimportant and acknowldge_status_unimportant */
+                            if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
+                                // lastlossOffset_unimportant = false;
+                                if (loss_unimportance) {
+                                    /* has packet loss, should send extra elicit packet */
+                                    std::cout<<"1 MetaFlag::Complete_unimportance"<<std::endl;
+                                    meta_status_unimportant = MetaFlag::Complete_unimportance;
+                                    off = -2;
+                                    packet_status = PktStatus::Important_reliable;
+                                } else {
+                                    meta_status_unimportant = MetaFlag::Ack_complete_unimportance;
+                                    off = -1;
+                                }
                             }
+                        } else { 
+                            if (!loss_unimportance) {
+                                loss_unimportance = true;
+                            }
+                            if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
+                                // lastlossOffset_unimportant = false;
+                                std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
+                                meta_status_unimportant = MetaFlag::Complete_unimportance;
+                                packet_status = PktStatus::Unimportant_partialreliable;
+                                off = -2;
+                                return off;
+                                /* Merge elicit flag to last loss packet */
+                            } else {
+                                packet_status = PktStatus::Unimportant_unreliable;
+                            }
+                            break;
                         }
-                    } else { 
-                        if (!loss_unimportance) {
-                            loss_unimportance = true;
-                        }
-                        if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
-                            // lastlossOffset_unimportant = false;
-                            std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
-                            meta_status_unimportant = MetaFlag::Complete_unimportance;
-                            packet_status = PktStatus::Unimportant_partialreliable;
-                            off = -2;
-                            return off;
-                            /* Merge elicit flag to last loss packet */
-                        } else {
-                            packet_status = PktStatus::Unimportant_unreliable;
-                        }
-                        break;
+                    } 
+                } else {
+                    if (!acknowldge_status_unimportant)
+                    {
+                        off = -2;
+                        return off;
                     }
-                } 
+                    
+                }
+                
             } 
             return off;
         }
@@ -691,13 +701,13 @@ namespace dmludp{
             }
 
             
-            if (ack_count_important == packet_count_important){
-                meta_status_important = MetaFlag::Complete;
-                if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
-                    /* Both important and unimportant complete */
-                    rcq_important.push_back(ELICIT_OFFSET);
-                } 
-            }       
+            // if (ack_count_important == packet_count_important){
+            //     meta_status_important = MetaFlag::Complete;
+            //     if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
+            //         /* Both important and unimportant complete */
+            //         rcq_important.push_back(ELICIT_OFFSET);
+            //     } 
+            // }       
         }
 
 
@@ -807,10 +817,10 @@ namespace dmludp{
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
-            // for (auto i = 0; i < bitMapVector.size(); i++) {
-            //     std::cout<<(int)bitMapVector[i]<<" ";
-            // }
-            // std::cout<<std::endl;
+            for (auto i = 0; i < bitMapVector.size(); i++) {
+                std::cout<<(int)bitMapVector[i]<<" ";
+            }
+            std::cout<<std::endl;
         }
 
 
