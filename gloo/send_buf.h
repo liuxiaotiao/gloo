@@ -444,19 +444,19 @@ namespace dmludp{
                             off = meta_pos * send_buffer_size;
                             meta_left -= 48;
                             packet_count_important++;
-                            std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
+                            // std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
                             if (importantIndex == -1) {
                                 meta_status_important = MetaFlag::Retransmission;
                             }
                         }else{
                             auto index = importance_bitmap.next_one_avx512();
-                            std::cout<<"index:"<<index<<", "<<importantIndex<<std::endl;
+                            // std::cout<<"index:"<<index<<", "<<importantIndex<<std::endl;
                             
                             if (index != -1) {
                                 off = index * send_buffer_size + 48;
                                 meta_left -= send_buffer_size;
                                 packet_count_important++;
-                                std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
+                                // std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                                 if (index == importantIndex) {
                                     meta_status_important = MetaFlag::Retransmission;
                                 }
@@ -831,9 +831,9 @@ namespace dmludp{
             uint16_t & blocks /* Important packet count */, 
             uint8_t & status_ /* Contain unimportant completeness */
             ){
-            if (meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance) {
-                std::cout<<"emit: meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance"<<std::endl;
-            }
+            // if (meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance) {
+            //     std::cout<<"emit: meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance"<<std::endl;
+            // }
 
             bool stop = false;
             
@@ -904,7 +904,7 @@ namespace dmludp{
             
             out_len = 0;
             auto tmp_off = off_front_unimportant(status_);
-            std::cout << debugcount<<", emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << ", " << static_cast<uint32_t>(meta_status_unimportant)<< std::endl;
+            // std::cout << debugcount<<", emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << ", " << static_cast<uint32_t>(meta_status_unimportant)<< std::endl;
 
             if (tmp_off == -1){
                 out_len = -1;
