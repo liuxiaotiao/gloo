@@ -228,7 +228,7 @@ void ring(
   if (!topkbitmap.empty()) {
     global_manager.add_or_replace_by_tag(std::move(topkbitmap), segmentBytes, opts.tag);
   }
-  std::cout<<"[Allreduce] rank:"<<context->rank<<", numSegments:"<<numSegments<<", segmentBytes:"<<segmentBytes<<", totalBytes:"<<totalBytes<<", "<<topkbitmap.size()<<std::endl;
+  std::cout<<"[Allreduce] rank:"<<context->rank<<", numSegments:"<<numSegments<<", segmentBytes:"<<segmentBytes<<", totalBytes:"<<totalBytes<<", "<<topkbitmap.size()<< ", opts.tag:"<<opts.tag<<std::endl;
   
   // Allocate scratch space to hold two chunks
   std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);

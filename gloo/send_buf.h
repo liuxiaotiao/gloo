@@ -403,6 +403,9 @@ namespace dmludp{
                             meta_left -= 48;
                         }else{
                             off = (meta_pos - 1) * send_buffer_size + 48;
+                            const size_t total_size = meta_ptr_len + meta_ptr2_len;
+                            size_t remain = total_size - off;
+                            size_t pktlen = std::min(remain, MAX_SEND_UDP_PAYLOAD_SIZE);
                             meta_left -= send_buffer_size;
                         }
                         packet_count_important++;
