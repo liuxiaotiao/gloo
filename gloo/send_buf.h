@@ -206,8 +206,12 @@ namespace dmludp{
 
         size_t debugcount = std::numeric_limits<size_t>::max();
 
+        std::vector<uint64_t> bitMapVector;
+
         SendBuf(size_t packet_len): 
-        send_buffer_size(packet_len){};
+        send_buffer_size(packet_len){
+            bitMapVector.reserve(64);
+        };
 
         ~SendBuf(){};
 
@@ -239,6 +243,14 @@ namespace dmludp{
             //     std::cout<<std::endl;
             // }
             debugcount = difference;
+
+            bitMapVector.clear();
+            if (!bitmapview.empty()) {
+                bitMapVector.resize(bitmapview.size());
+                std::memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
+            }
+            
+            
             
             std::cout<<"add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
                 << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
@@ -281,7 +293,7 @@ namespace dmludp{
 
             loss_unimportance = false;
 
-            importance_bitmap.reset_span(bitmapview, start_index, end_index);
+            importance_bitmap.reset_span(Span<const uint64_t>(bitMapVector.data(), bitMapVector.size()), start_index, end_index);
 
             if (iovecs_len != 1) {
                 /*
