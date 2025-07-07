@@ -83,7 +83,7 @@ namespace dmludp {
 
     public:
         explicit DynamicBitset(size_t size = 0) : num_bits(size) {
-            data.reserve(5200);
+            data.reserve(8192);
             ensure_capacity(size);
         }
 

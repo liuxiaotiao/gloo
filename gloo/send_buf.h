@@ -424,7 +424,7 @@ namespace dmludp{
                             if (tmp_off != 0){
                                 index = round_up((tmp_off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                             }
-                            
+                            std::cout<<"1 index;"<<index<<std::endl;
                             if (bits_set[index] == 1){
                                 off = -1;
                             } else {
@@ -479,7 +479,7 @@ namespace dmludp{
                             if (tmp_off != 0){
                                 index = round_up((tmp_off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                             }
-                            
+                            std::cout<<"2 index;"<<index<<std::endl;
                             if (bits_set[index] == 1){
                                 off = -1;
                             } else {
@@ -524,7 +524,7 @@ namespace dmludp{
                     if (off != 0){
                         index = round_up((off - 48), MAX_SEND_UDP_PAYLOAD_SIZE) + 1;
                     }
-
+                    std::cout<<"3 index;"<<index<<std::endl;
                     if (bits_set[index] == 1){
                         off = -1;
                         /* TODO: Merge lastlossOffset_unimportant and acknowldge_status_unimportant */
@@ -587,7 +587,7 @@ namespace dmludp{
                         if (in_offset >= 48){
                             index = (in_offset - 48) / send_buffer_size + 1;
                         }
-
+                        std::cout<<"4 index;"<<index<<std::endl;
                         if (bits_set[index] == 0){
                             bits_set.set(index);
                             ack_count_important++;
@@ -605,7 +605,7 @@ namespace dmludp{
                                 if (in_offset >= 48){
                                     index = (in_offset - 48) / send_buffer_size + 1;
                                 }
-                    
+                                std::cout<<"5 index;"<<index<<std::endl;
                                 if (bits_set[index] == 0){
                                     rcq_important.push_back(in_offset);
                                     if (lossreord_important == std::numeric_limits<uint64_t>::max() && in_offset != ELICIT_OFFSET){
@@ -631,7 +631,7 @@ namespace dmludp{
                             if (in_offset >= 48){
                                 index = (in_offset - 48) / send_buffer_size + 1;
                             }
-                
+                            std::cout<<"6 index;"<<index<<std::endl;
                             if (bits_set[index] == 0){
                                 rcq_important.push_back(in_offset);
                                 /* TODO: if out of order */
@@ -669,6 +669,7 @@ namespace dmludp{
                         if (in_offset >= 48){
                             index = (in_offset - 48) / send_buffer_size + 1;
                         }
+                        std::cout<<"7 index;"<<index<<std::endl;
                         if (bits_set[index] == 0){
                             rcq_important.push_back(in_offset);
                         }
@@ -709,7 +710,7 @@ namespace dmludp{
                             if (in_offset >= 48){
                                 index = (in_offset - 48) / send_buffer_size + 1;
                             }
-                
+                            std::cout<<"8 index;"<<index<<std::endl;
                             if (bits_set[index] == 0){
                                 rcq_unimportant.push_back(in_offset);
                                 if (lossreord_unimportant == std::numeric_limits<uint64_t>::max()){
@@ -729,7 +730,7 @@ namespace dmludp{
                         if (in_offset >= 48){
                             index = (in_offset - 48) / send_buffer_size + 1;
                         }
-            
+                        std::cout<<"9 index;"<<index<<std::endl;
                         if (bits_set[index] == 0){
                             rcq_unimportant.push_back(in_offset);
                             if (lossreord_unimportant == std::numeric_limits<uint64_t>::max()){
@@ -758,8 +759,8 @@ namespace dmludp{
                 auto index = 0;
                 if (in_offset >= 48){
                     index = (in_offset - 48) / send_buffer_size + 1;
-                }
-
+                }  
+                std::cout<<"10 index;"<<index<<std::endl;
                 if (bits_set[index] == 0){
                     bits_set.set(index);
                     ack_count_unimportant++;
