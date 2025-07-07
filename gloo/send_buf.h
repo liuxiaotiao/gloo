@@ -607,15 +607,14 @@ namespace dmludp{
                     bits_set.set(index);
                     ack_count_important++;
                 }
-            }else{
-
+            }else{ /* loss */
                 if (in_offset >= 48){
                     index = (in_offset - 48) / send_buffer_size + 1;
                 }else{
                     index = in_offset / send_buffer_size;
                 }
                 if (bits_set[index] == 0){
-                    rcq.push_back(in_offset);
+                    rcq_important.push_back(in_offset);
                 }
          
             }
