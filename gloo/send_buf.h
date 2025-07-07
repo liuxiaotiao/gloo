@@ -789,10 +789,10 @@ namespace dmludp{
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
-            for (auto i = 0; i < bitMapVector.size(); i++) {
-                std::cout<<(int)bitMapVector[i]<<" ";
-            }
-            std::cout<<std::endl;
+            // for (auto i = 0; i < bitMapVector.size(); i++) {
+            //     std::cout<<(int)bitMapVector[i]<<" ";
+            // }
+            // std::cout<<std::endl;
         }
 
 
