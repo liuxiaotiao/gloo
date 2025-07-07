@@ -325,7 +325,7 @@ public:
       for (auto i = 0; i < segmentBytesvec.size(); i++){
         if(beginOffset % segmentBytesvec[i] == 0) {
           bitmapID = beginOffset / segmentBytesvec[i];
-          block_per_SuperBlock = (segmentBytesvec[i] + 1440 * sizeof(uint64_t) - 1) / (1440 * sizeof(uint64_t));
+          block_per_SuperBlock = (segmentBytesvec[i] + 1440 * 64 - 1) / (1440 * 64);
           index = i;
           break;
         }
@@ -335,7 +335,7 @@ public:
         _Exit(0);
       }
       size_t offset = block_per_SuperBlock * bitmapID;
-      
+
       std::cout << "partialSpan: beginOffset: " << beginOffset << ", bytes: " << bytes 
                 << ", segmentBytesvec[" << index << "]: " << segmentBytesvec[index] 
                 << ", block_per_SuperBlock: " << block_per_SuperBlock 
