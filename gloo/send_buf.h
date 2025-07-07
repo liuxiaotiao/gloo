@@ -434,7 +434,7 @@ namespace dmludp{
                                     meta_status_important = MetaFlag::Retransmission;
                                 }
                             } else {  
-                                std::cout<< "off_front_important index could be -1" << std::endl;
+                                std::cout<< "off_front_important index could not be -1," << unimportantIndex << ", " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
                                 _Exit(0);
                             }  
                         }
