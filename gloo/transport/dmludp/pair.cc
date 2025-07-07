@@ -33,6 +33,7 @@
 #include "gloo/transport/dmludp/buffer.h"
 #include "gloo/transport/dmludp/context.h"
 #include "gloo/transport/dmludp/unbound_buffer.h"
+#include "gloo/allreduce.h"
 
 #define FD_INVALID (-1)
 #define MAX_PACKETS 100
