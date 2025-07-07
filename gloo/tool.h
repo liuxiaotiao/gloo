@@ -1517,7 +1517,7 @@ namespace dmludp {
             size_t bit_idx = bit % 64;
             bool val = (bits[word_idx] >> bit_idx) & 1ULL;
             if (val == find_one) {
-                std::cout << "bit_pos:" << bit << ",";
+                // std::cout << "bit_pos:" << bit << ",";
                 return bit;
             }
             ++bit;
@@ -1539,7 +1539,7 @@ namespace dmludp {
                     size_t bit_idx = pos % 64;
                     bool val = (bits[word_idx] >> bit_idx) & 1ULL;
                     if (val == find_one) {
-                        std::cout << "bit_pos:" << pos << ",";
+                        // std::cout << "bit_pos:" << pos << ",";
                         return pos;
                     }
                 }
@@ -1552,7 +1552,7 @@ namespace dmludp {
             size_t bit_idx = bit % 64;
             bool val = (bits[word_idx] >> bit_idx) & 1ULL;
             if (val == find_one) {
-                std::cout << "bit_pos:" << bit << ",";
+                // std::cout << "bit_pos:" << bit << ",";
                 return bit;
             }
         }
