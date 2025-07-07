@@ -270,8 +270,8 @@ namespace dmludp{
                 }
             }
 
-            std::cout<<"add_Meta: meta_ptr_len: " << meta_ptr_len << ", meta_ptr2_len: " << meta_ptr2_len 
-                << ", meta_left: " << meta_left << ", meta_len: " << meta_len << std::endl;
+            // std::cout<<"add_Meta: meta_ptr_len: " << meta_ptr_len << ", meta_ptr2_len: " << meta_ptr2_len 
+            //     << ", meta_left: " << meta_left << ", meta_len: " << meta_len << std::endl;
             
             /* Received bitset reset */
             meta_pos = 0;
@@ -386,7 +386,9 @@ namespace dmludp{
             /*Special unimportance no loss, both importanct and umimportance complete.*/
             if (off == -1 && meta_status_important == MetaFlag::Complete 
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
+                std::cout<<"check 1"<<std::endl;
                 if (!rcq_unimportant.empty()) {
+                    std::cout<<"check 2"<<std::endl;
                     off = rcq_unimportant.pop_front();
                     return -2;
                 }   
