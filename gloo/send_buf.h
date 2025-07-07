@@ -787,7 +787,7 @@ namespace dmludp{
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
             for (auto i = 0; i < bitMapVector.size(); i++) {
-                std::cout<<bitMapVector[i]<<" ";
+                std::cout<<(int)bitMapVector[i]<<" ";
             }
             std::cout<<std::endl;
         }
