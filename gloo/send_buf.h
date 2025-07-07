@@ -521,6 +521,7 @@ namespace dmludp{
                     }
                 }
             } else if(meta_status_unimportant == MetaFlag::Retransmission_unimportance){
+                std::cout<<"off_front_unimportant: meta_status_unimportance Retransmission_unimportance:"<<rcq_unimportant.size()<<std::endl;
                 if (!rcq_unimportant.empty()){
                     while (!rcq_unimportant.empty()) {
                         off = rcq_unimportant.pop_front();
