@@ -220,10 +220,10 @@ void ring(
   const size_t segmentBytes =
       roundUp((totalBytes + numSegments - 1) / numSegments, opts.elementSize);
   
-  for (auto e:topkbitmap){
-    std::cout<<e<<", ";
-  }
-  std::cout<<std::endl;
+  // for (auto e:topkbitmap){
+  //   std::cout<<e<<", ";
+  // }
+  // std::cout<<std::endl;
 
   if (!topkbitmap.empty()) {
     global_manager.add_or_replace_by_tag(std::move(topkbitmap), segmentBytes, opts.tag);

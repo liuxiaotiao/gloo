@@ -259,14 +259,14 @@ public:
 
     void add_or_replace_by_tag(std::vector<T>&& v, size_t segmentBytes, size_t tag) {
        std::cout<<"add_or_replace_by_tag: tag: " << tag << std::endl;
-      for (auto e : v){
-        std::cout << e << " ";
-      }
+      // for (auto e : v){
+      //   std::cout << e << " ";
+      // }
       std::cout<<std::endl;
       if (tag == 4) {
         groups_.push_back(std::move(v));
         segmentBytesvec.push_back(segmentBytes);
-        if (groups_.empty()) {
+        if (!groups_.empty()) {
           for (auto e : groups_[0]){
             std::cout << e << " ";
           }
