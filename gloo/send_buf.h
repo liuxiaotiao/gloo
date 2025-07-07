@@ -237,17 +237,17 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
-            // std::cout<<"check"<<std::endl;
-            // if (!bitmapview.empty()){
-            //     for (auto i = 0 ; i < bitmapview.size() ; i++) {
-            //         std::cout<<bitmapview[i]<<" ";
-            //     }
-            //     std::cout<<std::endl;
-            // }
+           
             debugcount = difference;
-            // std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
-            //     << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
-            
+            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
+                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
+            std::cout<<"check"<<std::endl;
+            if (!bitmapview.empty()){
+                for (auto i = 0 ; i < bitmapview.size() ; i++) {
+                    std::cout<<bitmapview[i]<<" ";
+                }
+                std::cout<<std::endl;
+            }
 
             bitMapVector.clear();
             bitMapVector.resize(bitmapview.size());
@@ -821,10 +821,10 @@ namespace dmludp{
             ", meta_status_unimportant:" << static_cast<uint32_t>(meta_status_unimportant) << ",\n meta_status_important:"<< static_cast<uint32_t>(meta_status_important) <<
             ", lastpacketOffset_important:" << lastpacketOffset_important << ", lastpacketOffset_unimportant:" << lastpacketOffset_unimportant << ",\n initlosscount_important:" << initlosscount_important << ", len:" << meta_ptr_len + meta_ptr2_len 
             << std::endl;
-            // for (auto i = 0; i < bitMapVector.size(); i++) {
-            //     std::cout<<bitMapVector[i]<<" ";
-            // }
-            // std::cout<<std::endl;
+            for (auto i = 0; i < bitMapVector.size(); i++) {
+                std::cout<<bitMapVector[i]<<" ";
+            }
+            std::cout<<std::endl;
         }
 
 
