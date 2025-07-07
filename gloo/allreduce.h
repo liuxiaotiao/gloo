@@ -261,21 +261,41 @@ public:
       if (tag == 4) {
         groups_.push_back(std::move(v));
         segmentBytesvec.push_back(segmentBytes);
+        if (groups_.empty()) {
+          for (auto e : groups_[0]){
+            std::cout << e << " ";
+          }
+        }
         return;
       } else {
         if (tag == 7) {
           groups_.clear();
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
+          if (groups_.empty()) {
+            for (auto e : groups_[0]){
+              std::cout << e << " ";
+            }
+          }
           return;
         } else if (tag > 7 && tag < 12) {
           groups_.push_back(std::move(v));
           segmentBytesvec.push_back(segmentBytes);
+          if (groups_.empty()) {
+            for (auto e : groups_[0]){
+              std::cout << e << " ";
+            }
+          }
           return;
         } else {
           auto index = (tag - 7) % 5;
           groups_[index] = std::move(v); 
           segmentBytesvec[index] = segmentBytes;
+          if (groups_.empty()) {
+            for (auto e : groups_[0]){
+              std::cout << e << " ";
+            }
+          }
         }
       }
     }
