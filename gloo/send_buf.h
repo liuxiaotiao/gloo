@@ -566,6 +566,7 @@ namespace dmludp{
                     if (!acknowldge_status_unimportant)
                     {
                         off = -2;
+                        meta_status_unimportant = MetaFlag::Complete_unimportance;
                         return off;
                     }
                     
