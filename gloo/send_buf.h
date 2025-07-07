@@ -386,10 +386,10 @@ namespace dmludp{
             /*Special unimportance no loss, both importanct and umimportance complete.*/
             if (off == -1 && meta_status_important == MetaFlag::Complete 
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
-                // if (!rcq_unimportant.empty()) {
-                    // off = rcq_unimportant.pop_front();
+                if (!rcq_unimportant.empty()) {
+                    off = rcq_unimportant.pop_front();
                     return -2;
-                // }   
+                }   
             }
             
             if (importance_bitmap.empty()) {
@@ -682,6 +682,10 @@ namespace dmludp{
             
             if (ack_count_important == packet_count_important){
                 meta_status_important = MetaFlag::Complete;
+                if (meta_status_unimportant == MetaFlag::Complete_unimportance) {
+                    /* Both important and unimportant complete */
+                    rcq_important.push_back(ELICIT_OFFSET);
+                } 
             }       
         }
 
