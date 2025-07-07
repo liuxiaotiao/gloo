@@ -1482,7 +1482,7 @@ namespace dmludp {
                     if (mask & (1 << bit)) {
                         size_t bit_pos = i * 8 + bit;
                         if (bit_pos >= offset_start && bit_pos <= offset_end) {
-                            // std::cout<<"bit_pos:"<<bit_pos<<std::endl;
+                            std::cout<<"bit_pos:"<<bit_pos<<", ";
                             return static_cast<int64_t>(bit_pos);
                         }
                     }
@@ -1497,8 +1497,11 @@ namespace dmludp {
             size_t word_idx = b / 64;
             size_t bit_idx = b % 64;
             bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
-            if (bit == find_one)
+            if (bit == find_one){
+                std::cout<<"bit_pos:"<<b<<",";
                 return static_cast<int64_t>(b);
+            }
+                
         }
 
         return -1;
