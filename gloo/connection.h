@@ -1875,7 +1875,7 @@ public:
 
                 if (ack_value) {
                     ip_print(peeraddr);
-                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ack_value: " << ack_value << std::endl;
+                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << ", ty:" << static_cast<uint32_t>(slot.pkt_ty)<<pkt << ", ack_value: " << ack_value << std::endl;
                 }
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
@@ -1896,7 +1896,7 @@ public:
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
                 if (ack_value) {
                     ip_print(peeraddr);
-                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ack_value: " << ack_value << std::endl;
+                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ty:" << static_cast<uint32_t>(slot.pkt_ty)<<", ack_value: " << ack_value << std::endl;
                 }
                 if (delay){
                     if (ack_value) {
