@@ -703,7 +703,7 @@ namespace dmludp {
         3. unimportant packet retransmission
         */
 
-        bool push(uint64_t offset_, Difference_len difference_,  Type ty_, uint16_t payload_, Packet_num_len pkt) {
+        bool push(uint64_t offset_, Difference_len difference_,  Type ty_, /*uint16_t payload_,*/ Packet_num_len pkt) {
             size_t next_tail = (tail_ + 1) % capacity_;
             
             if (next_tail == head_) {
@@ -715,7 +715,7 @@ namespace dmludp {
             buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
             buffer_[tail_].pkt_ty = ty_;
-            buffer_[tail_].payload = payload_ + Header::len();
+            // buffer_[tail_].payload = payload_ + Header::len();
             tail_ = next_tail;
             return true;
         }

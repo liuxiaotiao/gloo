@@ -356,7 +356,7 @@ namespace dmludp{
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
                 if (!rcq_unimportant.empty()) {
                     off = rcq_unimportant.pop_front();
-                    return;
+                    return off;
                 }   
             }
 

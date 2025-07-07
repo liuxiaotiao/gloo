@@ -1934,6 +1934,7 @@ public:
         }
 
         if (total_unimportant !=0){
+            auto receivets = std::chrono::high_resolution_clock::now();
             low_recovery.check_point();
             low_recovery.congestion_event(receivets);
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
