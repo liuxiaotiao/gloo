@@ -386,10 +386,10 @@ namespace dmludp{
             /*Special unimportance no loss, both importanct and umimportance complete.*/
             if (off == -1 && meta_status_important == MetaFlag::Complete 
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
-                if (!rcq_unimportant.empty()) {
-                    off = rcq_unimportant.pop_front();
-                    return off;
-                }   
+                // if (!rcq_unimportant.empty()) {
+                    // off = rcq_unimportant.pop_front();
+                    return -2;
+                // }   
             }
             
             if (importance_bitmap.empty()) {
