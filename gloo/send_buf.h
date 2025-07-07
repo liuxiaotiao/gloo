@@ -833,6 +833,7 @@ namespace dmludp{
 
         bool emit_unimportance(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks, PktStatus & status_ /* Contain completeness */){
             bool stop = false;
+            std::cout << "emit_unimportance1: meta_status_unimportant: " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
             if (meta_status_unimportant == MetaFlag::Ack_complete_unimportance || meta_status_unimportant == MetaFlag::Complete_unimportance) {
                 out_len = -1;
                 stop = true;
@@ -841,6 +842,7 @@ namespace dmludp{
             
             out_len = 0;
             auto tmp_off = off_front_unimportant(status_);
+            std::cout << "emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << std::endl;
 
             if (tmp_off == -1){
                 out_len = -1;
