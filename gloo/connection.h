@@ -1631,6 +1631,7 @@ public:
             return;
         }
 
+        ip_print(peeraddr);
         std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
@@ -1873,6 +1874,7 @@ public:
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
 
                 if (ack_value) {
+                    ip_print(peeraddr);
                     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ack_value: " << ack_value << std::endl;
                 }
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
@@ -1893,6 +1895,7 @@ public:
             }else{
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
                 if (ack_value) {
+                    ip_print(peeraddr);
                     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ack_value: " << ack_value << std::endl;
                 }
                 if (delay){
