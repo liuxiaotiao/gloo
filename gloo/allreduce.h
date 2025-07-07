@@ -305,54 +305,54 @@ public:
       }
     }
 
-    void add_or_replace_by_tag(const std::vector<T>& v, size_t segmentBytes, size_t tag) {
-      std::cout<<"add_or_replace_by_tag: tag: " << tag << std::endl;
-      for (auto e : groups_[0]){
-        std::cout << e << " ";
-      }
-      std::cout<<std::endl;
+    // void add_or_replace_by_tag(const std::vector<T>& v, size_t segmentBytes, size_t tag) {
+    //   std::cout<<"add_or_replace_by_tag: tag: " << tag << std::endl;
+    //   for (auto e : groups_[0]){
+    //     std::cout << e << " ";
+    //   }
+    //   std::cout<<std::endl;
 
-      if (tag == 4) {
-        groups_.push_back(std::move(v));
-        segmentBytesvec.push_back(segmentBytes);
-        if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
-        return;
-      } else {
-        if (tag == 7) {
-          groups_.clear();
-          groups_.push_back(std::move(v));
-          segmentBytesvec.push_back(segmentBytes);
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
-          return;
-        } else if (tag > 7 && tag < 12) {
-          groups_.push_back(std::move(v));
-          segmentBytesvec.push_back(segmentBytes);
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
-          return;
-        } else {
-          auto index = (tag - 7) % 5;
-          groups_[index] = std::move(v); 
-          segmentBytesvec[index] = segmentBytes;
-          if (groups_.empty()) {
-            for (auto e : groups_[0]){
-              std::cout << e << " ";
-            }
-          }
-        }
-      }
-    }
+    //   if (tag == 4) {
+    //     groups_.push_back(std::move(v));
+    //     segmentBytesvec.push_back(segmentBytes);
+    //     if (groups_.empty()) {
+    //         for (auto e : groups_[0]){
+    //           std::cout << e << " ";
+    //         }
+    //       }
+    //     return;
+    //   } else {
+    //     if (tag == 7) {
+    //       groups_.clear();
+    //       groups_.push_back(std::move(v));
+    //       segmentBytesvec.push_back(segmentBytes);
+    //       if (groups_.empty()) {
+    //         for (auto e : groups_[0]){
+    //           std::cout << e << " ";
+    //         }
+    //       }
+    //       return;
+    //     } else if (tag > 7 && tag < 12) {
+    //       groups_.push_back(std::move(v));
+    //       segmentBytesvec.push_back(segmentBytes);
+    //       if (groups_.empty()) {
+    //         for (auto e : groups_[0]){
+    //           std::cout << e << " ";
+    //         }
+    //       }
+    //       return;
+    //     } else {
+    //       auto index = (tag - 7) % 5;
+    //       groups_[index] = std::move(v); 
+    //       segmentBytesvec[index] = segmentBytes;
+    //       if (groups_.empty()) {
+    //         for (auto e : groups_[0]){
+    //           std::cout << e << " ";
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
     // void update_index() {
     //   ++index_;
