@@ -1464,48 +1464,101 @@ namespace dmludp {
     //     }
     //     return -1;
     // }
+    // inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
+    //                               size_t offset_start, size_t offset_end, bool find_one) {
+    //     // std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
+    //     const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
+    //     size_t byte_start = offset_start / 8;
+    //     size_t byte_end = offset_end / 8;
+
+    //     for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
+    //         __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
+    //         if (!find_one)
+    //             v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
+
+    //         int mask = _mm256_movemask_epi8(v);
+    //         if (mask != 0) {
+    //             for (int bit = 0; bit < 32; ++bit) {
+    //                 if (mask & (1 << bit)) {
+    //                     size_t bit_pos = i * 8 + bit;
+    //                     if (bit_pos >= offset_start && bit_pos <= offset_end) {
+    //                         std::cout<<"bit_pos:"<<bit_pos<<", ";
+    //                         return static_cast<int64_t>(bit_pos);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // fallback scalar
+    //     size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
+    //     for (size_t b = bit_tail; b <= offset_end; ++b) {
+    //         if (b < offset_start) continue;
+    //         size_t word_idx = b / 64;
+    //         size_t bit_idx = b % 64;
+    //         bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
+    //         if (bit == find_one){
+    //             std::cout<<"bit_pos:"<<b<<",";
+    //             return static_cast<int64_t>(b);
+    //         }
+                
+    //     }
+
+    //     return -1;
+    // }
     inline int64_t find_next_bit_avx2(Span<const uint64_t> bits, size_t num_bits,
                                   size_t offset_start, size_t offset_end, bool find_one) {
-        // std::cout<<"find_next_bit_avx2:"<<offset_start<<", "<<offset_end<<std::endl;
         const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(bits.data());
-        size_t byte_start = offset_start / 8;
-        size_t byte_end = offset_end / 8;
+        size_t bit = offset_start;
 
-        for (size_t i = byte_start; i + 31 <= byte_end; i += 32) {
-            __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + i));
+        // 1. 处理前面的非32字节对齐部分
+        while ((bit / 8) % 32 != 0 && bit <= offset_end) {
+            size_t word_idx = bit / 64;
+            size_t bit_idx = bit % 64;
+            bool val = (bits[word_idx] >> bit_idx) & 1ULL;
+            if (val == find_one) {
+                std::cout << "bit_pos:" << bit << ",";
+                return bit;
+            }
+            ++bit;
+        }
+
+        // 2. SIMD处理中间整32字节块
+        size_t simd_end = ((offset_end + 1) / 8 / 32) * 32;
+        for (; bit/8 + 31 < simd_end && bit <= offset_end; bit += 32*8) {
+            __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(byte_ptr + bit/8));
             if (!find_one)
                 v = _mm256_xor_si256(v, _mm256_set1_epi8(-1));
 
             int mask = _mm256_movemask_epi8(v);
             if (mask != 0) {
-                for (int bit = 0; bit < 32; ++bit) {
-                    if (mask & (1 << bit)) {
-                        size_t bit_pos = i * 8 + bit;
-                        if (bit_pos >= offset_start && bit_pos <= offset_end) {
-                            std::cout<<"bit_pos:"<<bit_pos<<", ";
-                            return static_cast<int64_t>(bit_pos);
-                        }
+                for (int sub = 0; sub < 32*8; ++sub) {
+                    size_t pos = bit + sub;
+                    if (pos > offset_end) break;
+                    size_t word_idx = pos / 64;
+                    size_t bit_idx = pos % 64;
+                    bool val = (bits[word_idx] >> bit_idx) & 1ULL;
+                    if (val == find_one) {
+                        std::cout << "bit_pos:" << pos << ",";
+                        return pos;
                     }
                 }
             }
         }
 
-        // fallback scalar
-        size_t bit_tail = std::max(byte_start, byte_end - 31) * 8;
-        for (size_t b = bit_tail; b <= offset_end; ++b) {
-            if (b < offset_start) continue;
-            size_t word_idx = b / 64;
-            size_t bit_idx = b % 64;
-            bool bit = (bits[word_idx] >> bit_idx) & 1ULL;
-            if (bit == find_one){
-                std::cout<<"bit_pos:"<<b<<",";
-                return static_cast<int64_t>(b);
+        // 3. 处理结尾不足32字节部分
+        for (; bit <= offset_end; ++bit) {
+            size_t word_idx = bit / 64;
+            size_t bit_idx = bit % 64;
+            bool val = (bits[word_idx] >> bit_idx) & 1ULL;
+            if (val == find_one) {
+                std::cout << "bit_pos:" << bit << ",";
+                return bit;
             }
-                
         }
 
         return -1;
-    }
+    }       
 
     // 仅声明，不实现
     BitPos find_last_1_and_0_impl(Span<const uint64_t> bits, size_t num_bits,
