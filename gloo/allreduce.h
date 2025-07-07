@@ -375,7 +375,7 @@ public:
       std::cout << "partialSpan: beginOffset: " << beginOffset << ", bytes: " << bytes 
                 << ", segmentBytesvec[" << index << "]: " << segmentBytesvec[index] 
                 << ", block_per_SuperBlock: " << block_per_SuperBlock 
-                << ", offset: " << offset << std::endl;
+                << ", offset: " << offset <<", pointer:"<< groups_[index].data() + offset << std::endl;
       return dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
     }
     
