@@ -534,6 +534,7 @@ namespace dmludp{
                             // lastlossOffset_unimportant = false;
                             if (loss_unimportance) {
                                 /* has packet loss, should send extra elicit packet */
+                                std::cout<<"1 MetaFlag::Complete_unimportance"<<std::endl;
                                 meta_status_unimportant = MetaFlag::Complete_unimportance;
                                 off = -2;
                                 packet_status = PktStatus::Important_reliable;
@@ -548,6 +549,7 @@ namespace dmludp{
                         }
                         if (rcq_unimportant.empty() && !acknowldge_status_unimportant/* ack first transmission packet mark it as true*/){
                             // lastlossOffset_unimportant = false;
+                            std::cout<<"2 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             packet_status = PktStatus::Unimportant_partialreliable;
                             /* Merge elicit flag to last loss packet */
@@ -709,6 +711,7 @@ namespace dmludp{
                         ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
                         acknowldge_status_unimportant = false;
                         if (initlosscount_unimportant == 0) {
+                            std::cout<<"3 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             rcq_important.push_back(ELICIT_OFFSET);
                         }
@@ -760,6 +763,7 @@ namespace dmludp{
                         ack_count_unimportant = packet_count_unimportant - initlosscount_unimportant;
                         acknowldge_status_unimportant = false;
                         if (initlosscount_unimportant == 0) {
+                            std::cout<<"4 MetaFlag::Complete_unimportance"<<std::endl;
                             meta_status_unimportant = MetaFlag::Complete_unimportance;
                             rcq_important.push_back(ELICIT_OFFSET);
                         }
