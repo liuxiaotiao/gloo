@@ -608,6 +608,7 @@ namespace dmludp{
                     ack_count_important++;
                 }
             }else{ /* loss */
+                auto index = 0;
                 if (in_offset >= 48){
                     index = (in_offset - 48) / send_buffer_size + 1;
                 }else{
