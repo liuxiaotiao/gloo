@@ -781,6 +781,11 @@ namespace dmludp{
                     bits_set.set(index);
                     ack_count_unimportant++;
                 }
+
+                if (rcq_unimportant.empty()){
+                    meta_status_unimportant = MetaFlag::Complete_unimportance;
+                    rcq_important.push_back(ELICIT_OFFSET);
+                }
             }
 
             // if (ack_count_unimportant == packet_count_unimportant && packet_count_unimportant != 0) {
