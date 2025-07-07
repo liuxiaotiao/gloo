@@ -1072,6 +1072,8 @@ namespace dmludp {
 
         void reset_next_indices();
 
+        size_t size() {return new_end_bit - new_start_bit + 1;}
+
     private:
         Span<const uint64_t> bits_;
         size_t start_bit_;
