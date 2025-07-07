@@ -1562,9 +1562,10 @@ namespace dmludp {
 
 
 
-    inline int64_t find_next_bit_avx2_u64(const uint64_t* bits, size_t num_bits,
+    inline int64_t find_next_bit_avx2_u64(Span<const uint64_t> bitmap, size_t num_bits,
                                       size_t offset_start, size_t offset_end,
                                       bool find_one) {
+    const uint8_t* bits = reinterpret_cast<const uint8_t*>(bitmap.data());
     size_t word_start = offset_start / 64;
     size_t word_end = offset_end / 64;
 
