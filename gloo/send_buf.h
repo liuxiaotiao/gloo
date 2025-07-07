@@ -451,7 +451,7 @@ namespace dmludp{
                             }
                         }else{
                             auto index = importance_bitmap.next_one_avx512();
-                            std::cout<<"index:"<<index<<", "<<importantIndex<<std::endl;
+                            std::cout<< debugcount <<", index:"<<index<<", "<<importantIndex<<std::endl;
                             
                             if (index != -1) {
                                 off = index * send_buffer_size + 48;
