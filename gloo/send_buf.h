@@ -663,7 +663,7 @@ namespace dmludp{
                         acknowldge_status_important = false;
                     }
                 }else {
-                    if (in_offset != ElicitAck) {
+                    if (in_offset != ELICIT_OFFSET) {
 
                         auto index = 0;
                         if (in_offset >= 48){
