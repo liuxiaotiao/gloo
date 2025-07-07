@@ -408,6 +408,7 @@ namespace dmludp{
                         packet_count_important++;
                         meta_pos++;
                         if (meta_left <= 0){
+                            std::cout<< debugcount<<", off_front_important: off(" << off << "),  lastpacketOffset_unimportant" << lastpacketOffset_unimportant << std::endl;
                             meta_left = 0;
                             meta_status_important = MetaFlag::Retransmission;
                         }
@@ -620,7 +621,7 @@ namespace dmludp{
          
             }
             // std::cout<<"acknowledege_and_drop:"<<in_offset<<", count_:"<<ack_count<<std::endl;
-            if (ack_count_important == packet_count_important){
+            if (ack_count_important == packet_count_important && meta_status_important == MetaFlag::Retransmission){
                 meta_status_important = MetaFlag::Complete;
             }    
         } 
