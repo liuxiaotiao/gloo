@@ -347,7 +347,7 @@ class SCircularQueue {
         void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
             bool value_, bool unreliabelStatus_){
             auto index = difference_ % get_capacity();
-            std::cout<<"pkt2ack_important:" << difference_<< ", " << offset_<< ", " <<value_<<std::endl;
+            // std::cout<<"pkt2ack_important:" << difference_<< ", " << offset_<< ", " <<value_<<std::endl;
             data_[index].metabuf.acknowledege_and_drop(offset_, value_, unreliabelStatus_);
         }
 
@@ -357,7 +357,7 @@ class SCircularQueue {
             Packet_num_len pkt, 
             bool ack_value_,
             bool unreliableinfo){
-            std::cout<<"pkt2ack_unimportant:" << difference_<< ", " << offset_<< ", " <<ack_value_<<std::endl;
+            // std::cout<<"pkt2ack_unimportant:" << difference_<< ", " << offset_<< ", " <<ack_value_<<std::endl;
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, ack_value_, unreliableinfo);
         }
@@ -1632,8 +1632,8 @@ public:
             return;
         }
 
-        ip_print(peeraddr);
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
+        // ip_print(peeraddr);
+        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -1922,10 +1922,10 @@ public:
                 }
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
 
-                if (ack_value) {
-                    ip_print(peeraddr);
-                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " <<pkt<< ", ty:" << static_cast<uint32_t>(slot.pkt_ty) << ", ack_value: " << ack_value << std::endl;
-                }
+                // if (ack_value) {
+                //     ip_print(peeraddr);
+                //     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " <<pkt<< ", ty:" << static_cast<uint32_t>(slot.pkt_ty) << ", ack_value: " << ack_value << std::endl;
+                // }
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
                         loss_important = true;
@@ -1943,10 +1943,10 @@ public:
                 // return;  
             }else{
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
-                if (ack_value) {
-                    ip_print(peeraddr);
-                    std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ty:" << static_cast<uint32_t>(slot.pkt_ty)<<", ack_value: " << ack_value << std::endl;
-                }
+                // if (ack_value) {
+                //     ip_print(peeraddr);
+                //     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ty:" << static_cast<uint32_t>(slot.pkt_ty)<<", ack_value: " << ack_value << std::endl;
+                // }
                 if (delay){
                     if (ack_value) {
                         if (slot.pkt_ty == Type::Application) {
