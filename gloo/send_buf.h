@@ -252,7 +252,7 @@ namespace dmludp{
             bitMapVector.resize(bitmapview.size());
             memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
             for (auto i = 0; i < bitMapVector.size(); i++) {
-                std::cout<<(int)bitMapVector[i]<<" ";
+                std::cout<<(uint64_t)bitMapVector[i]<<" ";
             }
             std::cout<<std::endl;
 
