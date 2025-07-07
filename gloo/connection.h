@@ -1074,9 +1074,9 @@ public:
         ip_print(peeraddr);
         std::cout<<"receive condition"<<std::endl;
         for (auto i = 0; i < count_; i++){
-            std::cout << "" << at(i).get_difference() << ", " << at(i).receive_offset.count() << ", " << at(i).get_status() << ", "
-            << (at(i).expected_important_packets.has_value() ? std::to_string(at(i).expected_important_packets.value()) : "<nullopt>") << ", "
-            << at(i).important_packet_count << ", "
+            std::cout << at(i).get_difference() << ", receive_offset:" << at(i).receive_offset.count() << ", get_status:" << at(i).get_status() << ", expected_important_packets:"
+            << (at(i).expected_important_packets.has_value() ? std::to_string(at(i).expected_important_packets.value()) : "<nullopt>") << ", important_packet_count:"
+            << at(i).important_packet_count << ", unimportant_packets_status:"
             << (at(i).unimportant_packets_status.has_value() ? std::to_string(at(i).unimportant_packets_status.value()) : "<nullopt>")<< std::endl;
         }
     }
