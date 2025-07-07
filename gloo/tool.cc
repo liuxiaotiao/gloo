@@ -265,7 +265,7 @@ namespace dmludp {
         return -1;
     }
 
-    // BitmapSpan方法实现
+
     BitmapSpan::BitmapSpan()
         : bits_(), start_bit_(0), end_bit_(0), num_bits_(0),
         next_one_index_(0), next_zero_index_(0) {}
