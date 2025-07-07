@@ -220,7 +220,7 @@ namespace dmludp{
             return meta_sent;
         }
 
-        void add_Meta(struct iovec* iovecs, int iovecs_len, Span<const uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
+        void add_Meta(uint64_t difference, struct iovec* iovecs, int iovecs_len, Span<const uint64_t> bitmapview = {}, uint64_t start_index = 0, uint64_t end_index = 0){
             // meta_status = MetaFlag::Initial;
             meta_sent = 0;
 
@@ -238,7 +238,7 @@ namespace dmludp{
             //     }
             //     std::cout<<std::endl;
             // }
-            ++debugcount;
+            debugcount = difference;
             
             std::cout<<"add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
                 << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
@@ -491,7 +491,7 @@ namespace dmludp{
                         if (meta_left < 0) {
                             meta_left = 0;
                         }
-                        std::cout<<debugcount<<", off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
+                        std::cout<<"off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                         if (off == lastpacketOffset_unimportant) {
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
@@ -765,7 +765,7 @@ namespace dmludp{
         }
 
         void ack_check(){
-            std::cout << debugcount <<", ack_count:" << ack_count_important << ", "<<packet_count_important<< ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq_important.size() <<
+            std::cout << "ack_count:" << ack_count_important << ", "<<packet_count_important<< ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq_important.size() <<
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;

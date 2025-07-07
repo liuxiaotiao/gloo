@@ -189,9 +189,9 @@ class MetaInfo{
             }
             // std::cout<<"difference_:" << difference_<<", ";
             if (!priotity_list.empty()){
-                metabuf.add_Meta(iovecs, iovecs_len, priotity_list, startbit, endbit);
+                metabuf.add_Meta(difference_, iovecs, iovecs_len, priotity_list, startbit, endbit);
             } else {
-                metabuf.add_Meta(iovecs, iovecs_len);
+                metabuf.add_Meta(difference_, iovecs, iovecs_len);
             }
             range_len = 0;
             block_type = type_;
