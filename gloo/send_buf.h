@@ -237,6 +237,8 @@ namespace dmludp{
             //     std::cout<<std::endl;
             // }
             
+            std::cout<<"add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
+                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
 
             /* Store buffer info: pointer + length */
             for (auto i = 0; i < iovecs_len; i++){
