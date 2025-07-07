@@ -1562,7 +1562,7 @@ namespace dmludp {
 
 
 
-    inline int64_t find_next_bit_avx2_u64(Span<const uint64_t> bitmap, size_t num_bits,
+    inline int64_t find_next_bit_avx2(Span<const uint64_t> bitmap, size_t num_bits,
                                       size_t offset_start, size_t offset_end,
                                       bool find_one) {
     const uint8_t* bits = reinterpret_cast<const uint8_t*>(bitmap.data());
