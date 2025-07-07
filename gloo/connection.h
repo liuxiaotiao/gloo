@@ -1858,6 +1858,11 @@ public:
         //     }
         // });
 
+        /**/
+        if (max_acknowleged + 1 != first_pn){
+            std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
+        }
+
         size_t total_important = 0;
         size_t total_unimportant = 0;
         size_t total_important_received = 0;
