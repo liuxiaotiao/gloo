@@ -244,9 +244,7 @@ namespace dmludp{
             //     std::cout<<std::endl;
             // }
             debugcount = difference;
-            
-            
-            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
+            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
                 << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
             
 
