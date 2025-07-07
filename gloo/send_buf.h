@@ -428,7 +428,7 @@ namespace dmludp{
                             off = meta_pos * send_buffer_size;
                             meta_left -= 48;
                             packet_count_important++;
-                            std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<std::endl;
+                            std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
                             if (importantIndex == -1) {
                                 meta_status_important = MetaFlag::Retransmission;
                             }
