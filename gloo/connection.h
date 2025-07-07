@@ -1858,11 +1858,6 @@ public:
         //     }
         // });
 
-        /**/
-        if (max_acknowleged + 1 != first_pn){
-            std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
-        }
-
         size_t total_important = 0;
         size_t total_unimportant = 0;
         size_t total_important_received = 0;
@@ -1870,6 +1865,54 @@ public:
 
         bool loss_important = false;
         bool loss_unimportant = false;
+
+        /**/
+        if (max_acknowleged + 1 != first_pn){
+            std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
+            connection_map.forEachSlotAutoRangePartial(max_acknowleged + 1, first_pn, [&](uint64_t pkt, const auto& slot, const bool& delay){
+               if (slot.pkt_ty == Type::Application) {
+                    ++total_important;
+                    if (!ack_value && !loss_important) {
+                        loss_important = true;
+                    } 
+                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                } else if(slot.pkt_ty == Type::Application2)  {
+                    ++total_important;
+                    if (!ack_value && !loss_important) {
+                        loss_important = true;
+                    } 
+                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                } else if(slot.pkt_ty == Type::ElicitAck) {
+                    sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
+                } else if(slot.pkt_ty == Type::Unreliable) {
+                    ++total_unimportant;
+                    if (!ack_value && !loss_unimportant) {
+                        loss_unimportant = true;
+                    } 
+                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+                } else if(slot.pkt_ty == Type::Unreliable2) {
+                    ++total_unimportant;
+                    if (!ack_value && !loss_unimportant) {
+                        loss_unimportant = true;
+                    } 
+                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+                } else {
+                    ++total_unimportant;
+                    if (!ack_value && !loss_unimportant) {
+                        loss_unimportant = true;
+                    } 
+                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+                }
+
+                if (++bit_index == 8) {
+                    bit_index = 0;
+                    ++byte_index;
+                }
+            });
+        }
+        
+
+       
 
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
