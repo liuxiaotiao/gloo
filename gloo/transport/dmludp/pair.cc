@@ -308,8 +308,7 @@ bool Pair::write(Op& op) {
 
     size_t msg_num = 0;
     size_t sent_size = 0;
-    // dmludp2write: delivery all data to protocal buffer
-    // return value is 
+ 
 
 
     sent_num += rv;
@@ -331,8 +330,6 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-  // ip_print(dmludp_connection->peeraddr);
-	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
@@ -518,7 +515,6 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  // std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -649,19 +645,6 @@ bool Pair::protocal2read(){
   ssize_t received = 0;
   size_t receive_check = 0;
 
-  /*Debug use*/
-  // struct sockaddr_in peer_addr;
-  // socklen_t addr_len = sizeof(peer_addr);
-  // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-  //     perror("getpeername failed");
-  //     return 1;
-  // }
-
-  // char ip_str[INET_ADDRSTRLEN];
-  // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
-
-  // std::cout << "Receive from: " << ip_str << ":" << ntohs(peer_addr.sin_port) << std::endl;
-
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
@@ -674,9 +657,7 @@ bool Pair::protocal2read(){
             continue;
         }
       }
-      // if(dmludp_connection->receive_message[receive_number].get_packet_type() == 5){
-      //   std::cout<<"Receive, "<<(int)dmludp_connection->receive_message[receive_number].get_packet_type()<<", "<<dmludp_connection->receive_message[receive_number].get_packet_number()<<std::endl;
-      // }
+    
       received++;
       receive_check = receive_number;
       if(received == 1300){
@@ -687,19 +668,15 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
-    
-    // std::cout<<"received:"<<received<<std::endl;
+
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
-    // std::cout<<"flag4send:"<<flag4send<<std::endl;
     if (flag4send){
       auto connection_result = dmludp_connection->send_data2();
-      // std::cout<<"connection_result:"<<connection_result<<std::endl;
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
       if (sent_result > -1){
         dmludp_connection->update_boundary();
       }
-      // std::cout<<"sent_result:"<<sent_result<<std::endl;
       /*---------------------TODO:multiple zero offset packet-----------------------------*/
       /*
       1. zero+data
@@ -803,7 +780,6 @@ bool Pair::protocal2read(){
       }
     }
     // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
-    // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
@@ -820,7 +796,6 @@ bool Pair::protocal2read(){
           }
           op.nwritten = dmludp_connection->sendbufferqueue.frontsent();
           if (op.nwritten == op.preamble.nbytes){
-            // std::cout<<dmludp_connection->sendbufferqueue.at(0).get_difference()<<", ";
             writeComplete(op, sbuf, opcode);
             tx_.pop_front();
             dmludp_connection->sendbufferqueue.pop_front();
@@ -832,7 +807,6 @@ bool Pair::protocal2read(){
     }
     
   }
-  // dmludp_connection->recvCQ.receive_log();
   if (tx_.empty()) {
     device_->registerDescriptor(fd_, EPOLLIN, this);
   }else{
@@ -848,12 +822,10 @@ bool Pair::protocal2send(){
   }
   
   ssize_t rv;
-  // std::cout<<"protocal2send"<<std::endl;
   if(dmludp_connection->sendbufferqueue.size() > tx_.size()){
     std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
     _Exit(0);
   }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-    // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
     for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
       
       NonOwningPtr<UnboundBuffer> buf;
@@ -862,7 +834,6 @@ bool Pair::protocal2send(){
       auto &op = tx_[i];
 
       const auto opcode = op.getOpcode();
-      // std::cout<<"1 i:"<<opcode<<std::endl;
       if (opcode == Op::SEND_UNBOUND_BUFFER) {
         buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
         if (!buf) {
@@ -870,20 +841,13 @@ bool Pair::protocal2send(){
         }
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-      // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
-      // if (ioc == 2){
-      //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
-      // }
       bool connection_written;
       if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
-        // std::cout<<"protocal2send 1"<<std::endl;
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-        // std::cout<<"bitmapSpan:"<<bitmapSpan.data()<<", "<<bitmapSpan.size()<<std::endl;
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
       } else {
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
       }
-      // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
       if (!connection_written){
         return false;
       }
@@ -894,10 +858,8 @@ bool Pair::protocal2send(){
   }else{}
 
   auto accumulated = 0;
-  // std::cout<<"protocal2send 2"<<std::endl;
   while(true){
     if(!dmludp_connection->check_status()){
-      // std::cout<<"!dmludp_connection->check_status()"<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       break;
     }
@@ -905,10 +867,6 @@ bool Pair::protocal2send(){
     auto start_time = std::chrono::system_clock::now();
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
-    // std::cout << "[send_packet] " << packet_.first << ", " << packet_.second << ", "<< dmludp_connection->recovery.cwnd_available()
-    // << ", " << dmludp_connection->max_acknowleged
-    // << ", " << dmludp_connection->pkt_num_spaces.getpktnum()
-    // << std::endl;
     
     for ( ;i <= packet_.second; i++){
       auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
@@ -928,35 +886,8 @@ bool Pair::protocal2send(){
       accumulated++;
     }
 
-    // auto end_time = std::chrono::system_clock::now();
-    // if (sent > 0){
-    //   std::cout<<"speed:"<<std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count()/sent<<" ns/packets"<<std::endl;
-    // }
-
-    // struct sockaddr_in peer_addr;
-    // socklen_t addr_len = sizeof(peer_addr);
-    // if (getpeername(fd_, (struct sockaddr*)&peer_addr, &addr_len) < 0) {
-    //     perror("getpeername failed");
-    //     return 1;
-    // }
-
-    // char ip_str[INET_ADDRSTRLEN];
-    // inet_ntop(AF_INET, &peer_addr.sin_addr, ip_str, sizeof(ip_str));
-
-    // std::cout << "Send to: " << ip_str << ":" << ntohs(peer_addr.sin_port) << ", " << sent << std::endl;
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
-
-      // std::cout<<"2 sent == 0, "<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()
-      //   <<", "<<packet_.second<<", "<<dmludp_connection->pkt_num_spaces.getpktnum()<<std::endl;
-      //  auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
-
-      // for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
-      //         int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-      //         auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
-      //         std::cout << difference_ << " " ;
-      //         dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
-      // }
 
       if (!tx_.empty()){
         struct itimerspec new_value;
@@ -964,7 +895,6 @@ bool Pair::protocal2send(){
         auto delay = dmludp_connection->get_rto();
         new_value.it_value.tv_sec = delay.count() / 1000000000;
         new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-        // std::cout<<"1 rto:"<<delay.count()<<std::endl;
         new_value.it_interval.tv_sec = 0;  
         new_value.it_interval.tv_nsec = 0;
 
@@ -983,13 +913,11 @@ bool Pair::protocal2send(){
     }
   }
 
-  // std::cout<<"protocal2send 3"<<std::endl;
   struct itimerspec new_value;
   memset(&new_value, 0, sizeof(new_value));
   auto delay = dmludp_connection->get_rto();
   new_value.it_value.tv_sec = delay.count() / 1000000000;
   new_value.it_value.tv_nsec = delay.count() % 1000000000;  
-  // std::cout<<"2 rto:"<<delay.count()<<std::endl;
   new_value.it_interval.tv_sec = 0;  
   new_value.it_interval.tv_nsec = 0;
 
@@ -1006,23 +934,18 @@ bool Pair::protocal2send(){
 
 void Pair::handleReadWrite(int events){
   if (events & EPOLLOUT){
-    // std::cout<<"EPOLLOUT start"<<std::endl;
     GLOO_ENFORCE(
     !tx_.empty(), "tx_ cannot be empty because EPOLLOUT happened");
     if (!tx_.empty()){
       protocal2send();
     }
-    // std::cout<<"EPOLLOUT end \n"<<std::endl;
-    // std::cout<<"\n"<<std::endl;
   }
 
 
   if (events & EPOLLIN) {
-    // std::cout<<"EPOLLIN start"<<std::endl;
     while (protocal2read()) {
       // Keep going
     }
-    // std::cout<<"EPOLLIN end \n"<<std::endl;
   }
 }
 
@@ -1155,7 +1078,6 @@ void Pair::sendAsyncMode(Op& op) {
         std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
         _Exit(0);
       }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-        // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
         for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
           
           NonOwningPtr<UnboundBuffer> buf;
@@ -1164,7 +1086,6 @@ void Pair::sendAsyncMode(Op& op) {
           auto &op = tx_[i];
 
           const auto opcode = op.getOpcode();
-          // std::cout<<"1 i:"<<opcode<<std::endl;
           if (opcode == Op::SEND_UNBOUND_BUFFER) {
             buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
             if (!buf) {
@@ -1176,7 +1097,6 @@ void Pair::sendAsyncMode(Op& op) {
            bool connection_written;
           if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
             auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-            // std::cout<<"bitmapSpan:"<<bitmapSpan.data()<<", "<<bitmapSpan.size()<<std::endl;
             connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
           } else {
             connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
@@ -1202,7 +1122,6 @@ void Pair::sendAsyncMode(Op& op) {
       std::cerr << "sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;
       _Exit(0);
     }else if(dmludp_connection->sendbufferqueue.size() < tx_.size()){
-      // std::cout << "2 sendbufferqueue.size:" << dmludp_connection->sendbufferqueue.size() << ", tx_:" << tx_.size() << std::endl;    
       for (auto i = dmludp_connection->sendbufferqueue.size(); i < tx_.size(); i++){
         
         NonOwningPtr<UnboundBuffer> buf;
@@ -1211,7 +1130,6 @@ void Pair::sendAsyncMode(Op& op) {
         auto &op = tx_[i];
 
         const auto opcode = op.getOpcode();
-        // std::cout<<"1 i:"<<opcode<<std::endl;
         if (opcode == Op::SEND_UNBOUND_BUFFER) {
           buf = NonOwningPtr<UnboundBuffer>(op.ubuf);
           if (!buf) {
@@ -1219,19 +1137,13 @@ void Pair::sendAsyncMode(Op& op) {
           }
         }
         const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
-        // std::cout<<"2 i:"<<i<<", "<<nbytes<<std::endl;
-        // if (ioc == 2){
-        //   std::cout<<"src:"<<(void*)iov[1].iov_base<<std::endl;
-        // }
         bool connection_written;
         if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
           auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-          // std::cout<<"bitmapSpan:"<<bitmapSpan.data()<<", "<<bitmapSpan.size()<<std::endl;
           connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
         } else {
           connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
         }
-        // std::cout<<"3 i:"<<i<<", "<<nbytes<<std::endl;
         if (!connection_written){
           break;
         }

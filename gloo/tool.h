@@ -128,14 +128,12 @@ namespace dmludp {
         void resize(size_t new_size) {
             ensure_capacity(new_size);
             if (new_size > num_bits) {
-                // std::cout<<"1 new_size:"<<new_size<<", "<<num_bits<<std::endl;
                 size_t old_block = block_index(num_bits);
                 size_t new_block = block_index(new_size);
                 if (old_block != new_block) std::fill(data.begin() + old_block + 1, data.begin() + new_block + 1, 0);
                 size_t old_offset = bit_offset(num_bits);
                 if (old_offset != 0) data[old_block] &= (1ULL << old_offset) - 1;
             } else if (new_size < num_bits) {
-                // std::cout<<"2 new_size:"<<new_size<<", "<<num_bits<<std::endl;
                 size_t new_last_block = block_index(new_size);
                 size_t new_last_offset = bit_offset(new_size);
                 if (new_last_offset != 0) {
@@ -208,11 +206,9 @@ namespace dmludp {
             if (isFull()) {
                 throw std::overflow_error("TSCircularQueue is full(enqueue)");
             }
-            // std::cout<<"1 enqueue:"<<count<<std::endl;
             buffer[tail] = value;
             tail = (tail + 1) % capacity;
             ++count;
-            // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
         }
 
         DataType dequeue() {
@@ -252,12 +248,10 @@ namespace dmludp {
 
 
         std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
-            // std::cout<<"removeBeforeValue:"<<value<<std::endl;
             if (isEmpty()) {
                 // return std::nullopt;
                 throw std::underflow_error("TSCircularQueue is empty(remove)");
             }
-            // std::cout << "start removeBeforeValue:" << value << std::endl;
 
             TimeStamp result;
 
@@ -265,12 +259,10 @@ namespace dmludp {
             while (size() > 0) {
                 const auto& item = front();  
                 if (item.second.first < value){
-                    // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     dequeue();
                 }
 
                 if (item.first.first <= value && item.second.first >= value){
-                    // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     if (item.first.first == item.second.first){
                         result = item.first.second;
                     }else{
@@ -281,7 +273,6 @@ namespace dmludp {
                 }
 
                 if (value < item.first.first){
-                    // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     break;
                 }
             
@@ -345,7 +336,6 @@ namespace dmludp {
                     std::cerr << "index:" << index << ", RCset_body.size:" << RCset_body.size() << std::endl;
                     throw std::underflow_error("[RCset]: find index beyond capacity_");
                 }
-                // std::cout<<"find:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
                 return RCset_body[index] == 1;
             }
 
@@ -355,7 +345,6 @@ namespace dmludp {
                     throw std::underflow_error("[RCset]: insert index beyond capacity_");
                 }
                 RCset_body[index] = 1;
-                // std::cout<<"insert:"<<offset_<<", "<<index<<", "<<RCset_body[index]<<std::endl;
             }
 
             size_t get_index(Offset_len offset_){
@@ -643,217 +632,6 @@ namespace dmludp {
             head_ = tail_ = 0;
         }
     };
-
-    // class PacketMapRingBuffer {
-    // public:
-    //     explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
-    //         : capacity_(capacity),
-    //         buffer_(capacity),
-    //         head_(0),
-    //         tail_(0),
-    //         head_packet_number_(start_packet_number) {}
-
-    //     ~PacketMapRingBuffer(){};
-
-    //     bool push(uint64_t offset_, Difference_len difference_, Priority_len priority_ = 0) {
-    //         size_t next_tail = (tail_ + 1) % capacity_;
-    //         if (next_tail == head_) {
-    //             std::cout<<"PacketMapRingBuffer full"<<std::endl;
-    //             return false; 
-    //         }
-
-    //         buffer_[tail_].offset = offset_;
-    //         buffer_[tail_].difference = difference_;
-    //         // buffer_[tail_].priority = priority_;
-    //         tail_ = next_tail;
-    //         return true;
-    //     }
-
-    //     bool getOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len & difference_) {
-    //         uint64_t current_size = size();
-    //         uint64_t tail_packet_number = head_packet_number_ + current_size;
-
-    //         if (packet_number < head_packet_number_ || packet_number >= tail_packet_number) {
-    //             return false;
-    //         }
-
-    //         if (packet_number > head_packet_number_) {
-    //             size_t advance = packet_number - head_packet_number_;
-    //             head_ = (head_ + advance) % capacity_;
-    //             head_packet_number_ = packet_number;
-    //         }
-
-    //         size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
-    //         out_offset = buffer_[index].offset;
-    //         return true;
-    //     }
-
-    //     bool tryFindDeletedOffset(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) const {
-    //         // 考虑最早还能访问到的 packet_number 是：
-    //         uint64_t buffer_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t buffer_end = head_packet_number_ + size();  // 当前最大 packet_number（非包含）
-
-    //         if (packet_number < buffer_begin || packet_number >= buffer_end) {
-    //             return false;  // 被覆盖了
-    //         }
-
-    //         size_t index = (head_ + (packet_number - head_packet_number_)) % capacity_;
-    //         out_offset = buffer_[index].offset;
-    //         difference_ = buffer_[index].difference;
-    //         return true;
-    //     }
-
-    //     bool findOffsetAuto(uint64_t packet_number, uint64_t& out_offset, Difference_len& difference_) {
-    //         if (getOffset(packet_number, out_offset, difference_)) {
-    //             return true;
-    //         }
-    //         return tryFindDeletedOffset(packet_number, out_offset, difference_);
-    //     }
-
-    //     std::optional<std::pair<uint64_t, Difference_len>> findOffsetAuto(uint64_t packet_number) {
-    //         uint64_t offset;
-    //         Difference_len diff;
-    //         if (findOffsetAuto(packet_number, offset, diff)) {
-    //             return std::make_pair(offset, diff);
-    //         }
-    //         return std::nullopt;
-    //     }
-
-    //     template <typename Func>
-    //     bool forEachSlotAutoRange(uint64_t start_packet, uint64_t end_packet, Func&& func) const {
-    //         if (start_packet >= end_packet) return false;
-
-            
-    //         uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t full_end = head_packet_number_ + size();
-
-    //         if (start_packet < full_begin || end_packet > full_end) {
-    //             return false;  
-    //         }
-
-    //         size_t base_index = (head_ + (start_packet - head_packet_number_)) % capacity_;
-    //         size_t index = base_index;
-
-    //         for (uint64_t pkt = start_packet; pkt < end_packet; ++pkt) {
-    //             func(pkt, buffer_[index]);
-    //             index = (index + 1) % capacity_;
-    //         }
-
-    //         return true;
-    //     }
-
-    //     template <typename Func>
-    //     bool forEachSlotAutoRangePartial(uint64_t start_packet, uint64_t end_packet, Func&& func) {
-    //         if (start_packet >= end_packet) return false;
-
-    //         uint64_t full_begin = (head_packet_number_ >= capacity_) ? (head_packet_number_ - capacity_ + 1) : 0;
-    //         uint64_t full_end = head_packet_number_ + size();
-
-    //         uint64_t actual_start = std::max(start_packet, full_begin);
-    //         uint64_t actual_end = std::min(end_packet, full_end);
-
-    //         if (actual_start >= actual_end) return false;
-
-    //         bool within_active_range = (actual_start >= head_packet_number_) && (actual_end <= head_packet_number_ + size());
-    //         size_t index = (head_ + (actual_start - head_packet_number_)) % capacity_;
-
-    //         if (within_active_range && actual_start > head_packet_number_) {
-    //             size_t advance = actual_start - head_packet_number_;
-    //             head_ = (head_ + advance) % capacity_;
-    //             head_packet_number_ = actual_start;
-    //         }
-
-    //         // for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-    //         //     func(pkt, buffer_[index]);
-    //         //     if (within_active_range) {
-    //         //         // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
-    //         //         head_ = (head_ + 1) % capacity_;
-    //         //         ++head_packet_number_;
-    //         //         // std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
-    //         //     }
-    //         //     index = (index + 1) % capacity_;
-    //         // }
-
-    //         for (uint64_t pkt = actual_start; pkt < actual_end; ++pkt) {
-    //             bool delayed = false;
-    //             if (pkt < head_packet_number_) {
-    //                 delayed = true;
-    //             }
-    //             func(pkt, buffer_[index], delayed);
-    //             if (within_active_range) {
-    //                 // std::cout<<"map:"<<pkt<<", "<<buffer_[index].offset<<", "<<buffer_[index].difference<<std::endl;
-    //                 head_ = (head_ + 1) % capacity_;
-    //                 ++head_packet_number_;
-    //                 // std::cout<<"head_packet_number_:"<<head_packet_number_<<std::endl;
-    //             }
-    //             index = (index + 1) % capacity_;
-    //         }
-
-    //         return true;
-    //     }
-
-
-    //     bool pop() {
-    //         if (empty()) return false;
-    //         head_ = (head_ + 1) % capacity_;
-    //         ++head_packet_number_;
-    //         return true;
-    //     }
-
-    //     std::vector<std::pair<uint64_t, uint64_t>> getAllMappings() const {
-    //         std::vector<std::pair<uint64_t, uint64_t>> mappings;
-    //         mappings.reserve(size());
-
-    //         size_t idx = head_;
-    //         uint64_t pkt = head_packet_number_;
-    //         while (idx != tail_) {
-    //             mappings.emplace_back(pkt, buffer_[idx].offset);
-    //             idx = (idx + 1) % capacity_;
-    //             ++pkt;
-    //         }
-
-    //         return mappings;
-    //     }
-
-    //     bool empty() const {
-    //         return head_ == tail_;
-    //     }
-
-    //     size_t size() const {
-    //         if (tail_ >= head_) return tail_ - head_;
-    //         return capacity_ - head_ + tail_;
-    //     }
-
-    //     size_t capacity() const {
-    //         return capacity_ - 1; 
-    //     }
-
-    //     size_t freeSlots() const {
-    //         return capacity() - size();
-    //     }
-
-    //     uint64_t packetNumberBegin() const {
-    //         return head_packet_number_;
-    //     }
-
-    //     uint64_t packetNumberEnd() const {
-    //         return head_packet_number_ + size();
-    //     }
-
-    // private:
-    //     struct Slot {
-    //         uint64_t offset;
-    //         uint32_t difference;
-    //         uint16_t len;
-    //         uint16_t priority;
-    //     };
-
-    //     size_t capacity_;
-    //     std::vector<Slot> buffer_;
-    //     size_t head_;
-    //     size_t tail_;
-    //     uint64_t head_packet_number_;
-    // };
 
 
     class PacketMapRingBuffer {

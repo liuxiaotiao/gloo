@@ -188,7 +188,6 @@ class MetaInfo{
                 std::cerr << "difference_flag(" << (int)difference_flag << "), MetaDifference(" << (int)MetaDifference << ")" << std::endl;
                 _Exit(0);
             }
-            // std::cout<<"difference_:" << difference_<<", ";
             if (!priotity_list.empty()){
                 metabuf.add_Meta(difference_, iovecs, iovecs_len, priotity_list, startbit, endbit);
             } else {
@@ -260,12 +259,6 @@ class SCircularQueue {
                 std::cerr << "SCircularQueue overflow" << std::endl;
                 _Exit(0);
             }
-            // if (iovecs_len == 1) {
-            //     std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs[0].iov_len<<std::endl;
-            // } else {
-            //     std::cout<<"push_back:"<<lastest_difference<<", "<<(iovecs[0].iov_len + iovecs[1].iov_len)<<std::endl;
-            // }
-            // std::cout<<"push_back:"<<lastest_difference<<", "<<iovecs_len<<", "<<bitmapspan.size()<<std::endl;
             data_[tail_].set_buffer(iovecs, iovecs_len, type_, lastest_difference, bitmapspan, startbit, endbit);
             lastest_difference++;
             tail_ = (tail_ + 1) % capacity_;
@@ -347,7 +340,6 @@ class SCircularQueue {
         void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
             bool value_, bool unreliabelStatus_){
             auto index = difference_ % get_capacity();
-            // std::cout<<"pkt2ack_important:" << difference_<< ", " << offset_<< ", " <<value_<<std::endl;
             data_[index].metabuf.acknowledege_and_drop(offset_, value_, unreliabelStatus_);
         }
 
@@ -357,7 +349,6 @@ class SCircularQueue {
             Packet_num_len pkt, 
             bool ack_value_,
             bool unreliableinfo){
-            // std::cout<<"pkt2ack_unimportant:" << difference_<< ", " << offset_<< ", " <<ack_value_<<std::endl;
             auto index = difference_ % get_capacity();
             data_[index].metabuf.acknowledege_and_drop_unimportant(offset_, ack_value_, unreliableinfo);
         }
@@ -375,10 +366,6 @@ class SCircularQueue {
 
         bool iscomplete(Difference_len difference_){
             auto index_ = difference_ % get_capacity();
-            // if (index_ >= get_capacity()){
-            //     std::cerr << "bool iscomplete(Difference_len difference_) index out of boundary" << std::endl;
-            //     _Exit(0);
-            // }
             return data_[index_].iscomplete();
         }
 
@@ -620,20 +607,12 @@ class metarecebuf{
                 total += e;
             }
             status_ = 4;
-
-            // if (important_packet_count > expected_important_packets) {
-            //     std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" << 
-            //     (expected_important_packets.has_value() ? std::to_string(expected_important_packets.value()) : "<nullopt>")<< std::endl;
-            //     _Exit(0);
-            // }
         
             bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
             if (received == total || complete_){
                 status_ = 5;
-                // std::cout<<"completecheck, received:"<<received<<", "<<total<<std::endl;
             } 
-            // std::cout<<"status_:"<<status_<<std::endl;
         }
 
         bool is_complete(){
@@ -656,12 +635,6 @@ class metarecebuf{
             if (total == 0){
                 return false;
             }
-
-            // if (important_packet_count > expected_important_packets) {
-            //     std::cout<<"[Error] important_packet_count:"<<important_packet_count<<", expected_important_packets:" 
-            //         << (expected_important_packets.has_value() ? std::to_string(expected_important_packets.value()) : "<nullopt>") << std::endl;
-            //     _Exit(0);
-            // }
         
             bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
@@ -696,7 +669,6 @@ class metarecebuf{
         }
 
         bool processComplete(){
-            // std::cout<<"processd:"<<processd<<", "<<expected<<std::endl;
             return processd == expected;
         }
 
@@ -708,7 +680,6 @@ class metarecebuf{
                 std::cout<<"[metarecebuf copy()] "<<(void*)metabuf.src<<std::endl;
                 _Exit(0);
             }
-            // if (offset_ == 0 && copy_len < 1440)
             memcpy(reinterpret_cast<uint8_t*>(metabuf.src) + offset_, reinterpret_cast<uint8_t*>(src), copy_len);
         }
 
@@ -766,9 +737,7 @@ public:
         if (count_ == capacity_){
             return false;
         }
-        // data_[tail_].clear();
         data_[tail_].set_difference(difference_);
-        // std::cout<<"push_back:" << tail_ << ", " << difference_ << std::endl;
 
         tail_ = (tail_ + 1) % capacity_;
 
@@ -785,7 +754,6 @@ public:
         data_[head_].clear();
         head_ = (head_ + 1) % capacity_;
         --count_;
-        // std::cout << "recvCQ pop_front:" << count_ << std::endl;
     }
 
     size_t size() const {
@@ -880,7 +848,6 @@ public:
     void rx_len(Difference_len difference, size_t expected) {
         auto index = difference % capacity_;
         inrangecheck(index, __func__);
-        // data_[index].addexplen(expected);
     }
 
     void setRead(Difference_len difference, size_t expected) {
@@ -940,8 +907,6 @@ public:
                 inRange = (index >= head_ || index < tail_);
             }
         }
-
-        // std::cout << "inRange:" << inRange << std::endl;
         
         if (!inRange) {
             size_t desiredTail = (index + 1) % capacity_;
@@ -978,7 +943,6 @@ public:
     /*Check data block has been registerred in queue*/
     bool inrangecheck(uint8_t index, const char* caller) {
         bool inRange = false;
-        // std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
         if (head_ < tail_) {
             inRange = (index >= head_ && index < tail_);
         } else {
@@ -987,8 +951,6 @@ public:
         
         if (!inRange) {
             if (caller == "insert"){    
-                // std::cout << "index:" << (int)index << ", " << head_ << ", " << head_ << std::endl;
-                // std::cerr << "Function '" << caller << "' called inrangecheck, but the result is false." << std::endl;  
                 return inRange;
             }
             std::cout << "index:" << (int)index << ", " << head_ << ", " << tail_ << std::endl;
@@ -1008,12 +970,7 @@ public:
     /*Copy data*/
     void copy (Difference_len difference_, Offset_len offset_, void * src_, size_t len_){
         auto index = difference_ % capacity_;
-        // std::cout<<"copy:"<<offset_<<std::endl;
         inrangecheck(index, __func__);
-        // if (offset_ > 48){
-        //     std::cout<<"copy:"<<std::endl;
-        //     log_print(src_, len_);
-        // }
         data_[index].copy(offset_, src_, len_);
         data_[index].processdlen(len_);
     }
@@ -1838,26 +1795,6 @@ public:
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         auto pn = first_pn;
 
-        // std::cout<<"process_acknowledge:"<<first_pn<<", "<<end_pn<<", "<<std::endl;
-        // connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot){
-        //     if (slot.difference < pkt_difference){
-        //         if (++bit_index == 8) {
-        //             bit_index = 0;
-        //             ++byte_index;
-        //         }
-        //         /*Do nothing*/
-        //         return;  
-        //     }else{
-        //         size_t value = (ack_src[byte_index] >> bit_index) & 1;
-        //         // std::cout<<"ACK:"<<pkt_difference<<", "<<byte_index<<", "<<bit_index<<", ";
-        //         sendbufferqueue.pkt2ack(slot.difference, slot.offset, pkt, (bool)value);    
-        //         if (++bit_index == 8) {
-        //             bit_index = 0;
-        //             ++byte_index;
-        //         }
-        //     }
-        // });
-
         size_t total_important = 0;
         size_t total_unimportant = 0;
         size_t total_important_received = 0;
@@ -1866,7 +1803,7 @@ public:
         bool loss_important = false;
         bool loss_unimportant = false;
 
-        /*Lost part*/
+        /* Lost part */
         if (max_acknowleged + 1 != first_pn){
             // std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
             connection_map.forEachSlotAutoRangePartial(max_acknowleged + 1, first_pn, [&](uint64_t pkt, const auto& slot, const bool& delay){
@@ -1913,7 +1850,7 @@ public:
         
 
        
-
+        /* ACK contain info */
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
                 if (++bit_index == 8) {
@@ -1922,10 +1859,6 @@ public:
                 }
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
 
-                // if (ack_value) {
-                //     ip_print(peeraddr);
-                //     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " <<pkt<< ", ty:" << static_cast<uint32_t>(slot.pkt_ty) << ", ack_value: " << ack_value << std::endl;
-                // }
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
                         loss_important = true;
@@ -1943,10 +1876,7 @@ public:
                 // return;  
             }else{
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
-                // if (ack_value) {
-                //     ip_print(peeraddr);
-                //     std::cout << "[ACK]:"<< "slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<   ", pkt: " << pkt << ", ty:" << static_cast<uint32_t>(slot.pkt_ty)<<", ack_value: " << ack_value << std::endl;
-                // }
+                
                 if (delay){
                     if (ack_value) {
                         if (slot.pkt_ty == Type::Application) {
@@ -2054,27 +1984,6 @@ public:
             low_recovery.congestion_event(receivets);
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
-        
-        // if (loss && !first_loss){
-        //     recovery.check_point();
-        //     recovery.congestion_event(receivets);
-        //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        //     first_loss = true;
-        // }else{
-        //     recovery.on_packet_ack(total_send, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        // }
-
-        // ip_print(peeraddr);
-        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
-        
-        // std::cout<<"send condition:" <<std::endl;
-        // // auto sendbufferqueue_start_index = sendbufferqueue.start();
-        // for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-        //     int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-        //     auto difference_ = sendbufferqueue.data_[index].get_difference();
-        //     std::cout << difference_ << " " ;
-        //     sendbufferqueue.data_[index].metabuf.ack_check();
-        // }
 
     }
 
@@ -2178,17 +2087,6 @@ public:
         max_acknowleged = max_sent_pn;
         auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
 
-        // auto receivets = std::chrono::high_resolution_clock::now();
-        // recovery.check_point();
-        // recovery.congestion_event(receivets);
-        // recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-
-        // low_recovery.check_point();
-        // low_recovery.congestion_event(receivets);
-        // low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        // max_acknowleged = max_sent_pn;
-        // auto ackts = tsInfo.removeBeforeValue(max_acknowleged);
-
         if (total_important != 0) {
             auto receivets = std::chrono::high_resolution_clock::now();
             recovery.check_point();
@@ -2254,7 +2152,6 @@ public:
                     
                     auto pn = pkt_num_spaces.updatepktnum();
 
-                    // std::cout<<"[Data] "<<pn<<", "<<pkg_difference<<", "<<out_off<<", "<<static_cast<uint32_t>(Channel::Important)<<std::endl;
                     isElicit = out_off == ELICIT_OFFSET;
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
@@ -2286,7 +2183,6 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 PktStatus pkt_status;
                 while (true){
-                    // size_t send_status = sendbufferqueue.get_status(i);
                     if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
@@ -2386,7 +2282,6 @@ public:
     }
 
     void update_boundary(){
-        // memset(receivevector.data(), 0, receivevector.size());
         for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
     }
@@ -2504,7 +2399,6 @@ public:
             }
         }
         
-        // std::cout<<"copycount:"<<copycount;
         recvCQ.processCheck(receive_connection_difference);       
     }
 

@@ -112,7 +112,6 @@ void allreduce(const detail::AllreduceOptionsImpl& opts, std::vector<uint64_t> t
 
   // Assert the size of all inputs and outputs is identical.
   const size_t totalBytes = opts.elements * opts.elementSize;
-  // std::cout<<"totalBytes:"<<totalBytes<<std::endl;
   for (size_t i = 0; i < out.size(); i++) {
     GLOO_ENFORCE_EQ(out[i]->size, totalBytes);
   }
@@ -220,15 +219,11 @@ void ring(
   const size_t segmentBytes =
       roundUp((totalBytes + numSegments - 1) / numSegments, opts.elementSize);
   
-  // for (auto e:topkbitmap){
-  //   std::cout<<e<<", ";
-  // }
-  // std::cout<<std::endl;
+
 
   if (!topkbitmap.empty()) {
     global_manager.add_or_replace_by_tag(std::move(topkbitmap), segmentBytes, opts.tag);
   }
-  // std::cout<<"[Allreduce] rank:"<<context->rank<<", numSegments:"<<numSegments<<", segmentBytes:"<<segmentBytes<<", totalBytes:"<<totalBytes<<", "<<topkbitmap.size()<< ", opts.tag:"<<opts.tag<<std::endl;
   
   // Allocate scratch space to hold two chunks
   std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
@@ -289,7 +284,6 @@ void ring(
   //   complete on iterations 2 and 3).
   //
   //
- // std::cout<<"total:"<<(numSegments - numSegmentsPerRank + 2)<<std::endl;
   for (auto i = 0; i < (numSegments - numSegmentsPerRank + 2); i++) {
     if (i >= 2) {
       // Compute send and receive offsets and lengths two iterations

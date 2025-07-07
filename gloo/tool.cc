@@ -297,24 +297,7 @@ namespace dmludp {
         last_found_zero_ = -1;
     }
 
-    // int64_t BitmapSpan::next_one_avx512() {
-    //     if (next_one_index_ > end_bit_) return -1;
-    //     // int64_t pos = find_next_bit_avx512(bits_, num_bits_,
-    //     //                                 next_one_index_ - start_bit_,
-    //     //                                 end_bit_ - start_bit_, true);
-    //     int64_t pos = find_next_bit_avx2(bits_, num_bits_,
-    //                                     next_one_index_ - start_bit_,
-    //                                     end_bit_ - start_bit_, true);
-        
-    //     if (pos != -1) {
-    //         pos += start_bit_;
-    //         next_one_index_ = pos + 1;
-    //         std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
-    //         return pos;
-    //     }
-    //     next_one_index_ = end_bit_ + 1;
-    //     return -1;
-    // }
+ 
     int64_t BitmapSpan::next_one_avx512() {
         if (next_one_index_ > end_bit_) {
             last_found_one_ = -1;
@@ -330,8 +313,7 @@ namespace dmludp {
             pos += start_bit_;
             last_found_one_ = pos;
             next_one_index_ = pos + 1;
-            // std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
-            // std::cout << "[important] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
+          
             return pos;
         }
         last_found_one_ = -1;
@@ -371,8 +353,7 @@ namespace dmludp {
             pos += start_bit_;
             last_found_zero_ = pos;
             next_zero_index_ = pos + 1;
-            // std::cout<<"next_zero_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_zero_index_<<", "<<pos<<std::endl;
-            // std::cout << "[unimportant] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
+          
             return pos;
         }
         last_found_zero_ = -1;

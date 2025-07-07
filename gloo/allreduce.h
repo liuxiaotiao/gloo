@@ -258,7 +258,6 @@ public:
     }
 
     void add_or_replace_by_tag(std::vector<T>&& v, size_t segmentBytes, size_t tag) {
-      std::cout<<std::endl;
       if (tag == 4) {
         groups_.push_back(std::move(v));
         segmentBytesvec.push_back(segmentBytes);
@@ -369,17 +368,9 @@ public:
                   << ", bitmapID: " << bitmapID << std::endl;
         _Exit(0);
       }
-      // std::cout << " partialSpan "<<std::endl;
-      // std::cout<<groups_[index].data()<<std::endl;
-      // std::cout << " partialSpan2 "<<std::endl;
+
       size_t offset = block_per_SuperBlock * bitmapID;
-
-      // std::cout<<(groups_[index].data() + offset)<<std::endl;
-
-      // std::cout << "partialSpan: beginOffset: " << beginOffset << ", bytes: " << bytes 
-      //           << ", segmentBytesvec[" << index << "]: " << segmentBytesvec[index] 
-      //           << ", block_per_SuperBlock: " << block_per_SuperBlock 
-      //           << ", offset: " << offset <<", pointer:"<< groups_[index].data() + offset << std::endl;
+     
       return dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
     }
     
