@@ -814,6 +814,9 @@ namespace dmludp{
             uint16_t & blocks /* Important packet count */, 
             uint8_t & status_ /* Contain unimportant completeness */
             ){
+            if (meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance) {
+                std::cout<<"emit: meta_status_important == MetaFlag::Complete && meta_status_unimportant == MetaFlag::Complete_unimportance"<<std::endl;
+            }
 
             bool stop = false;
             
