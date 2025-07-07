@@ -350,9 +350,7 @@ public:
     }
 
     dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
-      std::cout << " partialSpan "<<std::endl;
-      std::cout<<groups_[0].data()<<std::endl;
-      std::cout << " partialSpan2 "<<std::endl;
+    
       int64_t index = -1;
       size_t bitmapID = 0;
       size_t block_per_SuperBlock = 0;
@@ -368,9 +366,12 @@ public:
         std::cerr << "partialSpan: error" << std::endl;
         _Exit(0);
       }
+      std::cout << " partialSpan "<<std::endl;
+      std::cout<<groups_[index].data()<<std::endl;
+      std::cout << " partialSpan2 "<<std::endl;
       size_t offset = block_per_SuperBlock * bitmapID;
 
-      std::cout<<(groups_[0].data() + offset)<<std::endl;
+      std::cout<<(groups_[index].data() + offset)<<std::endl;
 
       std::cout << "partialSpan: beginOffset: " << beginOffset << ", bytes: " << bytes 
                 << ", segmentBytesvec[" << index << "]: " << segmentBytesvec[index] 
