@@ -331,8 +331,8 @@ bool Pair::write(Op& op) {
 
 void Pair::writeComplete(const Op &op, NonOwningPtr<UnboundBuffer> &buf,
                          const Op::Opcode &opcode) const {
-  // ip_print(dmludp_connection->peeraddr);
-	// std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
+  ip_print(dmludp_connection->peeraddr);
+	std::cout<<"writeComplete:"<<opcode<<", "<<tx_.size()<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       op.buf->handleSendCompletion();
