@@ -243,17 +243,18 @@ namespace dmludp{
             //     std::cout<<std::endl;
             // }
             debugcount = difference;
+            
+            
+            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
+                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
+            
 
             bitMapVector.clear();
-            if (!bitmapview.empty()) {
-                bitMapVector.resize(bitmapview.size());
-                std::memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
+            memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
+            for (auto i = 0; i < bitMapVector.size(); i++) {
+                std::cout<<bitMapVector[i]<<" ";
             }
-            
-            
-            
-            std::cout<<"add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
-                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
+            std::cout<<std::endl;
 
             /* Store buffer info: pointer + length */
             for (auto i = 0; i < iovecs_len; i++){
@@ -293,7 +294,7 @@ namespace dmludp{
 
             loss_unimportance = false;
 
-            importance_bitmap.reset_span(Span<const uint64_t>(bitMapVector.data(), bitMapVector.size()), start_index, end_index);
+            importance_bitmap.reset_span(Span<uint64_t>(bitMapVector.data(), bitMapVector.size()), start_index, end_index);
 
             if (iovecs_len != 1) {
                 /*
@@ -784,6 +785,10 @@ namespace dmludp{
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
             ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
+            for (auto i = 0; i < bitMapVector.size(); i++) {
+                std::cout<<bitMapVector[i]<<" ";
+            }
+            std::cout<<std::endl;
         }
 
 
