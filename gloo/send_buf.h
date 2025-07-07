@@ -237,16 +237,16 @@ namespace dmludp{
             meta_left = 0;
             meta_len = 0;
 
-            std::cout<<"check"<<std::endl;
-            if (!bitmapview.empty()){
-                for (auto i = 0 ; i < bitmapview.size() ; i++) {
-                    std::cout<<bitmapview[i]<<" ";
-                }
-                std::cout<<std::endl;
-            }
+            // std::cout<<"check"<<std::endl;
+            // if (!bitmapview.empty()){
+            //     for (auto i = 0 ; i < bitmapview.size() ; i++) {
+            //         std::cout<<bitmapview[i]<<" ";
+            //     }
+            //     std::cout<<std::endl;
+            // }
             debugcount = difference;
-            std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
-                << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
+            // std::cout<<debugcount<<", add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() << ", bitmapview.data(): " <<bitmapview.data()
+            //     << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
             
 
             bitMapVector.clear();
