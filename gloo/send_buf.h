@@ -440,6 +440,7 @@ namespace dmludp{
                 } 
             } else {
                 if(meta_status_important == MetaFlag::Initial){
+                    std::cout<<"meta_status_important: Initial, meta_left:"<<meta_left<<", meta_pos:"<<meta_pos<<", importantIndex:"<<importantIndex<<", unimportantIndex:"<<unimportantIndex<<std::endl;
                     if (meta_left > 0){
                         if (meta_pos == 0){
                             off = meta_pos * send_buffer_size;
