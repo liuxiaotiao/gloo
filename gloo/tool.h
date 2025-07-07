@@ -184,171 +184,13 @@ namespace dmludp {
     };
 
     /*Send timestamp queue*/
-    // class TSCircularQueue{
-    // private:
-    //     /*first packet number + timestamp, last packet number + timestamp*/
-    //     using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
-    //                             std::pair<uint64_t, std::chrono::system_clock::time_point>>;
-    //     using TimeStamp = std::chrono::system_clock::time_point;
-    //     std::vector<DataType> buffer; 
-    //     size_t head;                  
-    //     size_t tail;                 
-    //     size_t capacity;              
-    //     size_t count;                 
-
-    // public:
-    //     explicit TSCircularQueue(size_t capacity = 1024)
-    //         : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
-
-    //     ~TSCircularQueue(){}
-
-    //     void enqueue(const DataType& value) {
-    //         if (isFull()) {
-    //             throw std::overflow_error("TSCircularQueue is full(enqueue)");
-    //         }
-    //         // std::cout<<"1 enqueue:"<<count<<std::endl;
-    //         buffer[tail] = value;
-    //         tail = (tail + 1) % capacity;
-    //         ++count;
-    //         // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
-    //     }
-
-    //     DataType dequeue() {
-    //         if (isEmpty()) {
-    //             throw std::underflow_error("TSCircularQueue is empty(deque)");
-    //         }
-    //         DataType value = buffer[head];
-    //         head = (head + 1) % capacity;
-    //         --count;
-    //         return value;
-    //     }
-
-    //     DataType front() const {
-    //         if (isEmpty()) {
-    //             throw std::underflow_error("TSCircularQueue is empty(front)");
-    //         }
-    //         return buffer[head];
-    //     }
-
-    //     bool isEmpty() const {
-    //         return count == 0;
-    //     }
-
-    //     bool isFull() const {
-    //         return count == capacity;
-    //     }
-
-    //     size_t size() {
-    //         return count;
-    //     }
-
-    //     void clear() {
-    //         head = 0;
-    //         tail = 0;
-    //         count = 0;
-    //     }
-
-
-    //     std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
-    //         // std::cout<<"removeBeforeValue:"<<value<<std::endl;
-    //         if (isEmpty()) {
-    //             // return std::nullopt;
-    //             throw std::underflow_error("TSCircularQueue is empty(remove)");
-    //         }
-    //         // std::cout << "start removeBeforeValue:" << value << std::endl;
-
-    //         TimeStamp result;
-
-    //         bool has = false;
-    //         while (size() > 0) {
-    //             const auto& item = front();  
-    //             if (item.second.first < value){
-    //                 // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
-    //                 dequeue();
-    //             }
-
-    //             if (item.first.first <= value && item.second.first >= value){
-    //                 // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
-    //                 if (item.first.first == item.second.first){
-    //                     result = item.first.second;
-    //                 }else{
-    //                     result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
-    //                 }
-    //                 has = true;
-    //                 break;
-    //             }
-
-    //             if (value < item.first.first){
-    //                 // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
-    //                 break;
-    //             }
-            
-    //         }
-
-    //         if(has){
-    //             return result;
-    //         }else{
-    //             return std::nullopt;
-    //         }
-    //     }
-
-    //     DataType& at(size_t i) {
-    //         if (i >= count)
-    //             throw std::out_of_range("Index out of range");
-    //         return buffer[(head + i) % capacity];
-    //     }
-
-    //     size_t unused_size() const {
-    //         return capacity - count;
-    //     }
-
-    //     DataType& at_unused(size_t i) {
-    //         if (i >= unused_size())
-    //             throw std::out_of_range("Unused index out of range");
-    //         return buffer[(tail + i) % capacity];
-    //     }
-
-
-    //     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
-    //         enqueue({{key1, ts1}, {key2, ts2}});
-    //     }
-
-    //     void printQueue() const {
-    //         std::cout << "Queue contents: " << std::endl;
-    //         for (size_t i = 0; i < count; ++i) {
-    //             size_t actualIndex = (head + i) % capacity;
-    //             const auto& item = buffer[actualIndex];
-    //             std::cout << "[" << item.first.first << ", " << item.second.first << "]" << std::endl;
-    //         }
-    //     }
-    // };
-
-    inline uint64_t now_ns() {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch()
-        ).count();
-    }
-
     class TSCircularQueue{
     private:
-        struct Slot
-        {
-            uint64_t startpkt;
-            uint64_t startts;
-            uint64_t endpkt;
-            uint64_t endts;
-            uint64_t reliablepkt;
-            uint64_t unreliablepkt;
-            uint8_t reliable_loss;
-            uint8_t unreliable_loss;
-            uint8_t _reserved[14]; 
-        };
-        
         /*first packet number + timestamp, last packet number + timestamp*/
         using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
                                 std::pair<uint64_t, std::chrono::system_clock::time_point>>;
         using TimeStamp = std::chrono::system_clock::time_point;
-        std::vector<Slot> buffer; 
+        std::vector<DataType> buffer; 
         size_t head;                  
         size_t tail;                 
         size_t capacity;              
@@ -360,30 +202,15 @@ namespace dmludp {
 
         ~TSCircularQueue(){}
 
-        void enqueue(uint64_t key1, uint64_t ts1, uint64_t key2, uint64_t ts2, uint64_t lastreliable, uint64_t lastunreliable) {
+        void enqueue(const DataType& value) {
             if (isFull()) {
                 throw std::overflow_error("TSCircularQueue is full(enqueue)");
             }
-            buffer[tail].startpkt = key1;
-            buffer[tail].startts = ts1;
-            buffer[tail].endpkt = key2;
-            buffer[tail].endts = ts2;
-            buffer[tail].reliablepkt = lastreliable;
-            buffer[tail].unreliablepkt = lastunreliable;
-            buffer[tail].reliable_loss = false;
-            buffer[tail].unreliable_loss = false;
-            // buffer[tail].{
-            //     key1, // startpkt
-            //     ts1, // endpkt
-            //     key2, // startts
-            //     ts2, // endts
-            //     lastreliable, // reliablepkt
-            //     lastunreliable, // unreliablepkt
-            //     false, // reliable_loss
-            //     false  // unreliable_loss
-            // }
+            // std::cout<<"1 enqueue:"<<count<<std::endl;
+            buffer[tail] = value;
             tail = (tail + 1) % capacity;
             ++count;
+            // std::cout<<"enqueue:("<<value.first.first<<", "<<value.second.first<<") "<<count<<std::endl;
         }
 
         DataType dequeue() {
@@ -395,7 +222,6 @@ namespace dmludp {
             --count;
             return value;
         }
-
 
         DataType front() const {
             if (isEmpty()) {
@@ -437,10 +263,12 @@ namespace dmludp {
             while (size() > 0) {
                 const auto& item = front();  
                 if (item.second.first < value){
+                    // std::cout<<"1 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     dequeue();
                 }
 
                 if (item.first.first <= value && item.second.first >= value){
+                    // std::cout<<"3 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     if (item.first.first == item.second.first){
                         result = item.first.second;
                     }else{
@@ -451,6 +279,7 @@ namespace dmludp {
                 }
 
                 if (value < item.first.first){
+                    // std::cout<<"2 removeBeforeValue:"<< value<<", "<< item.first.first<<", "<<item.second.first<<", "<<count<<std::endl;
                     break;
                 }
             
@@ -481,7 +310,7 @@ namespace dmludp {
 
 
         void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
-            enqueue(key1, now_ns(ts1), key2, now_ns(ts2));
+            enqueue({{key1, ts1}, {key2, ts2}});
         }
 
         void printQueue() const {
@@ -493,6 +322,177 @@ namespace dmludp {
             }
         }
     };
+
+    inline uint64_t now_ns() {
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+        ).count();
+    }
+
+    // class TSCircularQueue{
+    // private:
+    //     struct Slot
+    //     {
+    //         uint64_t startpkt;
+    //         uint64_t startts;
+    //         uint64_t endpkt;
+    //         uint64_t endts;
+    //         uint64_t reliablepkt;
+    //         uint64_t unreliablepkt;
+    //         uint8_t reliable_loss;
+    //         uint8_t unreliable_loss;
+    //         uint8_t _reserved[14]; 
+    //     };
+        
+    //     /*first packet number + timestamp, last packet number + timestamp*/
+    //     using DataType = std::pair<std::pair<uint64_t, std::chrono::system_clock::time_point>,
+    //                             std::pair<uint64_t, std::chrono::system_clock::time_point>>;
+    //     using TimeStamp = std::chrono::system_clock::time_point;
+    //     std::vector<Slot> buffer; 
+    //     size_t head;                  
+    //     size_t tail;                 
+    //     size_t capacity;              
+    //     size_t count;                 
+
+    // public:
+    //     explicit TSCircularQueue(size_t capacity = 1024)
+    //         : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
+
+    //     ~TSCircularQueue(){}
+
+    //     void enqueue(uint64_t key1, uint64_t ts1, uint64_t key2, uint64_t ts2, uint64_t lastreliable, uint64_t lastunreliable) {
+    //         if (isFull()) {
+    //             throw std::overflow_error("TSCircularQueue is full(enqueue)");
+    //         }
+    //         buffer[tail].startpkt = key1;
+    //         buffer[tail].startts = ts1;
+    //         buffer[tail].endpkt = key2;
+    //         buffer[tail].endts = ts2;
+    //         buffer[tail].reliablepkt = lastreliable;
+    //         buffer[tail].unreliablepkt = lastunreliable;
+    //         buffer[tail].reliable_loss = false;
+    //         buffer[tail].unreliable_loss = false;
+    //         // buffer[tail].{
+    //         //     key1, // startpkt
+    //         //     ts1, // endpkt
+    //         //     key2, // startts
+    //         //     ts2, // endts
+    //         //     lastreliable, // reliablepkt
+    //         //     lastunreliable, // unreliablepkt
+    //         //     false, // reliable_loss
+    //         //     false  // unreliable_loss
+    //         // }
+    //         tail = (tail + 1) % capacity;
+    //         ++count;
+    //     }
+
+    //     DataType dequeue() {
+    //         if (isEmpty()) {
+    //             throw std::underflow_error("TSCircularQueue is empty(deque)");
+    //         }
+    //         DataType value = buffer[head];
+    //         head = (head + 1) % capacity;
+    //         --count;
+    //         return value;
+    //     }
+
+
+    //     DataType front() const {
+    //         if (isEmpty()) {
+    //             throw std::underflow_error("TSCircularQueue is empty(front)");
+    //         }
+    //         return buffer[head];
+    //     }
+
+    //     bool isEmpty() const {
+    //         return count == 0;
+    //     }
+
+    //     bool isFull() const {
+    //         return count == capacity;
+    //     }
+
+    //     size_t size() {
+    //         return count;
+    //     }
+
+    //     void clear() {
+    //         head = 0;
+    //         tail = 0;
+    //         count = 0;
+    //     }
+
+
+    //     std::optional<TimeStamp> removeBeforeValue(uint64_t value) {
+    //         // std::cout<<"removeBeforeValue:"<<value<<std::endl;
+    //         if (isEmpty()) {
+    //             // return std::nullopt;
+    //             throw std::underflow_error("TSCircularQueue is empty(remove)");
+    //         }
+    //         // std::cout << "start removeBeforeValue:" << value << std::endl;
+
+    //         TimeStamp result;
+
+    //         bool has = false;
+    //         while (size() > 0) {
+    //             const auto& item = front();  
+    //             if (item.second.first < value){
+    //                 dequeue();
+    //             }
+
+    //             if (item.first.first <= value && item.second.first >= value){
+    //                 if (item.first.first == item.second.first){
+    //                     result = item.first.second;
+    //                 }else{
+    //                     result = item.first.second + (item.second.second - item.first.second) * (value - item.first.first) / (item.second.first - item.first.first) ; 
+    //                 }
+    //                 has = true;
+    //                 break;
+    //             }
+
+    //             if (value < item.first.first){
+    //                 break;
+    //             }
+            
+    //         }
+
+    //         if(has){
+    //             return result;
+    //         }else{
+    //             return std::nullopt;
+    //         }
+    //     }
+
+    //     DataType& at(size_t i) {
+    //         if (i >= count)
+    //             throw std::out_of_range("Index out of range");
+    //         return buffer[(head + i) % capacity];
+    //     }
+
+    //     size_t unused_size() const {
+    //         return capacity - count;
+    //     }
+
+    //     DataType& at_unused(size_t i) {
+    //         if (i >= unused_size())
+    //             throw std::out_of_range("Unused index out of range");
+    //         return buffer[(tail + i) % capacity];
+    //     }
+
+
+    //     void updateQueue(uint64_t key1, TimeStamp ts1, uint64_t key2, TimeStamp ts2) {
+    //         enqueue(key1, now_ns(ts1), key2, now_ns(ts2));
+    //     }
+
+    //     void printQueue() const {
+    //         std::cout << "Queue contents: " << std::endl;
+    //         for (size_t i = 0; i < count; ++i) {
+    //             size_t actualIndex = (head + i) % capacity;
+    //             const auto& item = buffer[actualIndex];
+    //             std::cout << "[" << item.first.first << ", " << item.second.first << "]" << std::endl;
+    //         }
+    //     }
+    // };
 
     /*Check usage*/
     class RCset{
