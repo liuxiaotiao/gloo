@@ -388,7 +388,6 @@ namespace dmludp {
             return value;
         }
 
-        uint64_t get_last
 
         DataType front() const {
             if (isEmpty()) {
