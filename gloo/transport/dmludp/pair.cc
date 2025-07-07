@@ -941,7 +941,16 @@ bool Pair::protocal2send(){
 
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
-      std::cout<<"2 sent == 0, "<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<", "<<packet_.second<<", "<<dmludp_connection->pkt_num_spaces.getpktnum()<<std::endl;
+      std::cout<<"2 sent == 0, "<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()
+        <<", "<<packet_.second<<", "<<dmludp_connection->pkt_num_spaces.getpktnum()<<std::endl;
+       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
+
+      for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
+              int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
+              auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
+              std::cout << difference_ << " " ;
+              dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
+      }
 
       if (!tx_.empty()){
         struct itimerspec new_value;
