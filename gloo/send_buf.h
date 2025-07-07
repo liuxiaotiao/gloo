@@ -387,9 +387,9 @@ namespace dmludp{
             if (off == -1 && meta_status_important == MetaFlag::Complete 
             && meta_status_unimportant == MetaFlag::Complete_unimportance){
                 std::cout<<"check 1"<<std::endl;
-                if (!rcq_unimportant.empty()) {
+                if (!rcq_important.empty()) {
                     std::cout<<"check 2"<<std::endl;
-                    off = rcq_unimportant.pop_front();
+                    off = rcq_important.pop_front();
                     return -2;
                 }   
             }
