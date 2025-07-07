@@ -238,7 +238,7 @@ void ring(
   }
   
   global_manager.update_index(opts.tag);
-  global_manager.add_or_replace_segmentBytes_by_tag(segmentBytes, opts.tag);
+  // global_manager.add_or_replace_segmentBytes_by_tag(segmentBytes, opts.tag);
 
   // Allocate scratch space to hold two chunks
   std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
@@ -703,7 +703,7 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
 //     return dmludp::Span<const uint64_t>(global_vec.data(), global_vec.size());
 // }
 
-dmludp::Span<const uint64_t> get_global_span(size_t beginOffset, size_t bytes) const {
+dmludp::Span<const uint64_t> get_global_span(size_t beginOffset, size_t bytes){
   return global_manager.partialSpan(beginOffset, bytes);
   
   // int64_t blocks_per_super = (global_manager.super_block_size + block_size - 1) / block_size;

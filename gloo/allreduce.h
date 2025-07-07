@@ -320,7 +320,7 @@ public:
       superblock_bytes = segmentBytes;
     }
 
-    dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) {
+    dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
       int64_t index = -1;
       size_t bitmapID = 0;
       size_t block_per_SuperBlock = 0;
@@ -337,7 +337,7 @@ public:
         _Exit(0);
       }
       size_t offset = block_per_SuperBlock * bitmapID;
-      dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
+      return dmludp::Span<const uint64_t>(groups_[index].data() + offset, block_per_SuperBlock);
     }
     
     void replace_vector(size_t idx, std::vector<T>&& vec) {
