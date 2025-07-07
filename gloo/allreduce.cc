@@ -704,7 +704,7 @@ void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbi
 // }
 
 dmludp::Span<const uint64_t> get_global_span(size_t beginOffset, size_t bytes) const {
-  return partialSpan(beginOffset, bytes);
+  return global_manager.partialSpan(beginOffset, bytes);
   
   // int64_t blocks_per_super = (global_manager.super_block_size + block_size - 1) / block_size;
   // int64_t words_per_super = (blocks_per_super + 63) / 64;
