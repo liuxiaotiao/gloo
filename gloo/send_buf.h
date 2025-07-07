@@ -919,7 +919,7 @@ namespace dmludp{
                 out_len = 0;
                 out.iov_base = nullptr;
                 out.iov_len = 0;
-                std::cout << debugcount << ", emit: ElicitOffset" << std::endl;
+                // std::cout << debugcount << ", emit: ElicitOffset" << std::endl;
             }
             
                 

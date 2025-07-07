@@ -1868,7 +1868,7 @@ public:
 
         /*Lost part*/
         if (max_acknowleged + 1 != first_pn){
-            std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
+            // std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
             connection_map.forEachSlotAutoRangePartial(max_acknowleged + 1, first_pn, [&](uint64_t pkt, const auto& slot, const bool& delay){
                if (slot.pkt_ty == Type::Application) {
                     ++total_important;
