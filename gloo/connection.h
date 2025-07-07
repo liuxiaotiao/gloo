@@ -22,6 +22,7 @@
 #include <optional>
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include <linux/socket.h> 
+#include "allreduce.h"
 // #pragma message("DEBUG: included span in FILENAME")
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()

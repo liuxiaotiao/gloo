@@ -13,6 +13,7 @@
 // #pragma message("DEBUG: included span in FILENAME")
 #include <immintrin.h>
 #include "tool.h"
+#include "allreduce.h"
 
 namespace dmludp{
     enum class Channel : uint8_t {
