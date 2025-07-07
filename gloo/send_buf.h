@@ -253,6 +253,9 @@ namespace dmludp{
                     meta_ptr2_len = iovecs[i].iov_len;
                 }
             }
+
+            std::count<<"add_Meta: meta_ptr_len: " << meta_ptr_len << ", meta_ptr2_len: " << meta_ptr2_len 
+                << ", meta_left: " << meta_left << ", meta_len: " << meta_len << std::endl;
             
             /* Received bitset reset */
             meta_pos = 0;
