@@ -150,7 +150,7 @@ void allreduce(const detail::AllreduceOptionsImpl& opts, const std::vector<uint6
 void ring(
     const detail::AllreduceOptionsImpl& opts,
     ReduceRangeFunction reduceInputs,
-    BroadcastRangeFunction broadcastOutputs) {
+    BroadcastRangeFunction broadcastOutputs, const std::vector<uint64_t> topkbitmap = {}) {
   const auto& context = opts.context;
   const std::vector<std::unique_ptr<transport::UnboundBuffer>>& out = opts.out;
   const auto slot = Slot::build(kAllreduceSlotPrefix, opts.tag);
@@ -679,7 +679,7 @@ void bcube(
 } // namespace
 
 void allreduce(const AllreduceOptions& opts, const std::vector<uint64_t> &topkbitmap) {
-  allreduce(opts.impl_, topkbitmap);
+  allreduce(opts.impl_, std::move(topkbitmap));
 }
 
 dmludp::Span<const uint64_t> get_global_span(size_t beginOffset, size_t bytes){
