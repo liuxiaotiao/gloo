@@ -327,8 +327,8 @@ namespace dmludp {
             pos += start_bit_;
             last_found_one_ = pos;
             next_one_index_ = pos + 1;
-            std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
-            std::cout << "[important] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
+            // std::cout<<"next_one_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_one_index_<<", "<<pos<<std::endl;
+            // std::cout << "[important] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
             return pos;
         }
         last_found_one_ = -1;
@@ -365,8 +365,8 @@ namespace dmludp {
             pos += start_bit_;
             last_found_zero_ = pos;
             next_zero_index_ = pos + 1;
-            std::cout<<"next_zero_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_zero_index_<<", "<<pos<<std::endl;
-            std::cout << "[unimportant] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
+            // std::cout<<"next_zero_avx512:"<<start_bit_<<", "<<end_bit_<<", "<<next_zero_index_<<", "<<pos<<std::endl;
+            // std::cout << "[unimportant] bits[" << pos << "]=" << ((bits_[pos/64] >> (pos%64)) & 1ULL) << std::endl;
             return pos;
         }
         last_found_zero_ = -1;

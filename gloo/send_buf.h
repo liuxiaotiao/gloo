@@ -441,7 +441,7 @@ namespace dmludp{
                             off = meta_pos * send_buffer_size;
                             meta_left -= 48;
                             packet_count_important++;
-                            std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
+                            // std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index: -1"<<std::endl;
                             if (importantIndex == -1) {
                                 meta_status_important = MetaFlag::Retransmission;
                             }
@@ -453,7 +453,7 @@ namespace dmludp{
                                 off = index * send_buffer_size + 48;
                                 meta_left -= send_buffer_size;
                                 packet_count_important++;
-                                std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
+                                // std::cout<<debugcount<<", off_front_important: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                                 if (index == importantIndex) {
                                     meta_status_important = MetaFlag::Retransmission;
                                 }
@@ -507,7 +507,7 @@ namespace dmludp{
                         if (meta_left < 0) {
                             meta_left = 0;
                         }
-                        std::cout<<debugcount<<", off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
+                        // std::cout<<debugcount<<", off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                         if (off == lastpacketOffset_unimportant) {
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
