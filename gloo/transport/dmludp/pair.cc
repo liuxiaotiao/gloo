@@ -518,7 +518,7 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  // std::cout<<"readComplete:"<<opcode<<std::endl;
+  std::cout<<"readComplete:"<<opcode<<std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -726,8 +726,8 @@ bool Pair::protocal2read(){
             
             if (i == 1){
               if (rnbytes == 0){
-                // std::cout<<dmludp_connection->receive_connection_difference<<", ";
-                // ip_print(dmludp_connection->peeraddr);
+                std::cout<<dmludp_connection->receive_connection_difference<<", ";
+                ip_print(dmludp_connection->peeraddr);
                 readComplete(rbuf);
 
                 dmludp_connection->update_receive_difference();
@@ -774,8 +774,8 @@ bool Pair::protocal2read(){
 
             const auto rnbytes = prepareRead(rx_, rbuf, riov);
             if (rnbytes == 0){
-              // std::cout<<dmludp_connection->receive_connection_difference<<", ";
-              // ip_print(dmludp_connection->peeraddr);       
+              std::cout<<dmludp_connection->receive_connection_difference<<", ";
+              ip_print(dmludp_connection->peeraddr);       
               readComplete(rbuf);
 
               dmludp_connection->update_receive_difference();
@@ -802,7 +802,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
+    dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
     // std::cout<<"read complete"<<std::endl;
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
