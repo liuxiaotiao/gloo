@@ -876,6 +876,7 @@ bool Pair::protocal2send(){
       // }
       bool connection_written;
       if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+        // std::cout<<"protocal2send 1"<<std::endl;
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
       } else {
