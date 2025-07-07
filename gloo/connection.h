@@ -1863,7 +1863,7 @@ public:
         handshake = std::chrono::high_resolution_clock::now();
     }
     
-    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, dmludp::Span<const uint64_t> bitmapSpan, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
+    bool get_data(struct iovec* iovecs, int iovecs_len, int type_, dmludp::Span<const uint64_t> bitmapSpan = {}, const std::vector<std::vector<uint8_t>> &priotity_list = {}){
         bool completed = true;
 
         if (sendbufferqueue.full()){

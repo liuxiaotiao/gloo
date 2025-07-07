@@ -187,13 +187,13 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   fd_ = socket->release();
 
   // Register with loop for socket readability.
-  // device_->registerDescriptor(fd_, EPOLLIN, this);
-  device_->registerDescriptor(fd_, EPOLLIN,
-    [weak_self = weak_from_this()](int fd, int events) {
-        if (auto self = weak_self.lock()) {
-            self->onReadEvent(fd, events);
-        }
-    });
+  device_->registerDescriptor(fd_, EPOLLIN, this);
+  // device_->registerDescriptor(fd_, EPOLLIN,
+  //   [weak_self = weak_from_this()](int fd, int events) {
+  //       if (auto self = weak_self.lock()) {
+  //           self->onReadEvent(fd, events);
+  //       }
+  //   });
 
   // We're done: update state and wake up waiting threads.
   changeState(CONNECTED);
@@ -891,9 +891,9 @@ bool Pair::protocal2send(){
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
       bool connection_written;
-      if (op == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+      if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-        connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+        connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
       } else {
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
       }
@@ -1160,9 +1160,9 @@ void Pair::sendAsyncMode(Op& op) {
           // auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
           // bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
           bool connection_written;
-          if (op == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+          if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
             auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-            connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+            connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
           } else {
             connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
           }
@@ -1211,9 +1211,9 @@ void Pair::sendAsyncMode(Op& op) {
         // }
         // bool connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
         bool connection_written;
-        if (op == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+        if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
           auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
-          connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
+          connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
         } else {
           connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode);
         }
