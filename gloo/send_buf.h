@@ -204,6 +204,8 @@ namespace dmludp{
 
         ssize_t unimportantIndex = -1;
 
+        size_t debugcount = std::numeric_limits<size_t>::max();
+
         SendBuf(size_t packet_len): 
         send_buffer_size(packet_len){};
 
@@ -236,6 +238,7 @@ namespace dmludp{
             //     }
             //     std::cout<<std::endl;
             // }
+            ++debugcount;
             
             std::cout<<"add_Meta: iovecs_len: " << iovecs_len << ", bitmapview.size(): " << bitmapview.size() 
                 << ", start_index: " << start_index << ", end_index: " << end_index << std::endl;
@@ -488,7 +491,7 @@ namespace dmludp{
                         if (meta_left < 0) {
                             meta_left = 0;
                         }
-                        std::cout<<"off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
+                        std::cout<<debugcount<<", off_front_unimportant: off:"<<off<<", meta_left:"<<meta_left<<", index:"<<index<<std::endl;
                         if (off == lastpacketOffset_unimportant) {
                             meta_status_unimportant = MetaFlag::Retransmission_unimportance;
                         }
@@ -762,9 +765,9 @@ namespace dmludp{
         }
 
         void ack_check(){
-            std::cout << "ack_count:" << ack_count_important << ", "<<packet_count_important<< ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq_important.size() <<
+            std::cout << debugcount <<", ack_count:" << ack_count_important << ", "<<packet_count_important<< ", " << bits_set.size() << ", " << bits_set.count() <<", "<< rcq_important.size() <<
             ", " << static_cast<uint32_t>(meta_status_unimportant) << ", "<< packet_count_important << ", "<< static_cast<uint32_t>(meta_status_important) <<
-            ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important
+            ", " << lastpacketOffset_important << ", " << lastpacketOffset_unimportant << ", " << initlosscount_important << ", " << meta_ptr_len + meta_ptr2_len 
             << std::endl;
         }
 
@@ -833,7 +836,7 @@ namespace dmludp{
 
         bool emit_unimportance(struct iovec& out, ssize_t& out_len, uint64_t& out_off, uint16_t & blocks, PktStatus & status_ /* Contain completeness */){
             bool stop = false;
-            std::cout << "emit_unimportance1: meta_status_unimportant: " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
+            std::cout << debugcount<<", emit_unimportance1: meta_status_unimportant: " << static_cast<uint32_t>(meta_status_unimportant) << std::endl;
             if (meta_status_unimportant == MetaFlag::Ack_complete_unimportance || meta_status_unimportant == MetaFlag::Complete_unimportance) {
                 out_len = -1;
                 stop = true;
@@ -842,7 +845,7 @@ namespace dmludp{
             
             out_len = 0;
             auto tmp_off = off_front_unimportant(status_);
-            std::cout << "emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << std::endl;
+            std::cout << debugcount<<", emit_unimportance2: tmp_off: " << tmp_off << ", status_: " << static_cast<uint32_t>(status_) << std::endl;
 
             if (tmp_off == -1){
                 out_len = -1;
