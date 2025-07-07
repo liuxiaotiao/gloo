@@ -259,7 +259,7 @@ public:
 
     void add_or_replace_by_tag(std::vector<T>&& v, size_t segmentBytes, size_t tag) {
        std::cout<<"add_or_replace_by_tag: tag: " << tag << std::endl;
-      for (auto e : groups_[0]){
+      for (auto e : v){
         std::cout << e << " ";
       }
       std::cout<<std::endl;
@@ -371,7 +371,7 @@ public:
 
     dmludp::Span<const uint64_t> partialSpan(size_t beginOffset, size_t bytes) const {
       std::cout << " partialSpan "<<std::endl;
-      if (groups_.empty()) {
+      if (!groups_.empty()) {
         for (auto e : groups_[0]){
           std::cout << e << " ";
         }
