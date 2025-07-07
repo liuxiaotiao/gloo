@@ -364,16 +364,24 @@ namespace dmludp {
             if (isFull()) {
                 throw std::overflow_error("TSCircularQueue is full(enqueue)");
             }
-            buffer[tail].{
-                key1, // startpkt
-                ts1, // endpkt
-                key2, // startts
-                ts2, // endts
-                lastreliable, // reliablepkt
-                lastunreliable, // unreliablepkt
-                false, // reliable_loss
-                false  // unreliable_loss
-            }
+            buffer[tail].startpkt = key1;
+            buffer[tail].startts = ts1;
+            buffer[tail].endpkt = key2;
+            buffer[tail].endts = ts2;
+            buffer[tail].reliablepkt = lastreliable;
+            buffer[tail].unreliablepkt = lastunreliable;
+            buffer[tail].reliable_loss = false;
+            buffer[tail].unreliable_loss = false;
+            // buffer[tail].{
+            //     key1, // startpkt
+            //     ts1, // endpkt
+            //     key2, // startts
+            //     ts2, // endts
+            //     lastreliable, // reliablepkt
+            //     lastunreliable, // unreliablepkt
+            //     false, // reliable_loss
+            //     false  // unreliable_loss
+            // }
             tail = (tail + 1) % capacity;
             ++count;
         }
