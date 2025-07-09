@@ -226,10 +226,12 @@ void ring(
   }
   
   // Allocate scratch space to hold two chunks
-  std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
+  // std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]);
+  std::unique_ptr<uint8_t[]> tmpAllocation(new uint8_t[segmentBytes * 2]());
   std::unique_ptr<transport::UnboundBuffer> tmpBuffer =
       context->createUnboundBuffer(tmpAllocation.get(), segmentBytes * 2);
   transport::UnboundBuffer* tmp = tmpBuffer.get();
+
 
   // Use dynamic lookup for chunk offset in the temporary buffer.
   // With two operations in flight we need two offsets.

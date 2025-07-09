@@ -1840,11 +1840,6 @@ public:
                     } 
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 }
-
-                if (++bit_index == 8) {
-                    bit_index = 0;
-                    ++byte_index;
-                }
             });
         }
         
@@ -1985,17 +1980,17 @@ public:
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        ip_print(peeraddr);
-        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        // ip_print(peeraddr);
+        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
-        std::cout<<"send condition:" <<std::endl;
+        // std::cout<<"send condition:" <<std::endl;
         
-        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-            auto difference_ = sendbufferqueue.data_[index].get_difference();
-            std::cout << difference_ << " " ;
-            sendbufferqueue.data_[index].metabuf.ack_check();
-        }
+        // for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+        //     int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+        //     auto difference_ = sendbufferqueue.data_[index].get_difference();
+        //     std::cout << difference_ << " " ;
+        //     sendbufferqueue.data_[index].metabuf.ack_check();
+        // }
 
     }
 
