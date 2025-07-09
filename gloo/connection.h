@@ -1980,18 +1980,6 @@ public:
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        // ip_print(peeraddr);
-        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
-        
-        // std::cout<<"send condition:" <<std::endl;
-        
-        // for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-        //     int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-        //     auto difference_ = sendbufferqueue.data_[index].get_difference();
-        //     std::cout << difference_ << " " ;
-        //     sendbufferqueue.data_[index].metabuf.ack_check();
-        // }
-
     }
 
     /*Update receive difference to process next block data*/
@@ -2389,7 +2377,6 @@ public:
                 receive_slot[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
-                        // std::cout<<"2 copy:"<<pkt_offset<<std::endl;
                         recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }else{
