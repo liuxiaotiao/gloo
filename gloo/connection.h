@@ -155,17 +155,12 @@ class MetaInfo{
 
         uint64_t difference_flag = LIMIT_UINT64_T;
 
-        size_t range_len;
-
-        size_t block_type = std::numeric_limits<size_t>::max();
-
         /* true is complete, false is not complete*/
         bool send_status = false;
 
         MetaInfo(size_t difference_flag_ = std::numeric_limits<Difference_len>::max()): 
         MetaDifference(difference_flag_),
-        metabuf(MAX_SEND_UDP_PAYLOAD_SIZE),
-        range_len(0){};
+        metabuf(MAX_SEND_UDP_PAYLOAD_SIZE){};
 
         ~MetaInfo(){};
 
@@ -177,7 +172,7 @@ class MetaInfo{
             return difference_flag;
         }
 
-        void set_buffer(struct iovec* iovecs, int iovecs_len, size_t type_, const Difference_len difference_, 
+        void set_buffer(struct iovec* iovecs, int iovecs_len, const Difference_len difference_, 
             Span<const uint64_t> priotity_list = {}, uint64_t startbit = 0, uint64_t endbit = 0){
             if (difference_flag != LIMIT_UINT64_T){
                 std::cerr << "MetaInfo set_buffer error(difference_flag(" << (int)difference_flag << "), (" << (int)difference_ << "))" << std::endl;
@@ -192,11 +187,6 @@ class MetaInfo{
                 metabuf.add_Meta(difference_, iovecs, iovecs_len, priotity_list, startbit, endbit);
             } else {
                 metabuf.add_Meta(difference_, iovecs, iovecs_len);
-            }
-            range_len = 0;
-            block_type = type_;
-            for (auto i = 0; i < iovecs_len; i++){
-                range_len += (iovecs[i].iov_len + MAX_SEND_UDP_PAYLOAD_SIZE - 1) / MAX_SEND_UDP_PAYLOAD_SIZE;
             }
         }
 
@@ -214,9 +204,7 @@ class MetaInfo{
 
         void clear(){
             metabuf.clear();
-            block_type = std::numeric_limits<size_t>::max();
             difference_flag = LIMIT_UINT64_T;
-            range_len = 0;
             send_status = false;
         }
 
@@ -224,8 +212,6 @@ class MetaInfo{
             std::cout << "{";
             std::cout << "\"class\": \"MetaInfo\", ";
             std::cout << "\"MetaDifference\": \"" << (int)MetaDifference << "\", ";
-            std::cout << "\"block size\": " << range_len << ", ";
-            std::cout << "\"block_type\": " << block_type << ", ";
             std::cout << "\"address\": ";
             if (contain_){
                 metabuf.to_json();
@@ -889,7 +875,7 @@ public:
 
     bool insertzero(Difference_len difference_, Slot_len position_){
         auto index_ = difference_ % get_capacity();
-        inrangecheck(index_, __func__);
+        // inrangecheck(index_, __func__);
         return data_[index_].set_start(position_);
     }
 
@@ -1118,8 +1104,6 @@ public:
 
     const uint8_t handshake_header[sizeof(Header) - 5] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header) - 5] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
     Difference_len send_connection_difference;
@@ -1130,8 +1114,6 @@ public:
     WILL BE DROPPEP 
     */
     Difference_len receive_connection_difference;
-
-    Difference_len receive_connection_difference_registration;
 
     Difference_len receive_connection_difference_acknowlege;
 
@@ -1214,7 +1196,6 @@ public:
     dmludp_error_sent(0),
     send_connection_difference(0),
     receive_connection_difference(0),
-    receive_connection_difference_registration(LIMIT_UINT32_T),
     receive_connection_difference_acknowlege(LIMIT_UINT32_T),
     current_loop_min(0),
     current_loop_max(0),
@@ -1392,22 +1373,6 @@ public:
         return send_flag_;
     }
 
-    bool recv_slice3(size_t index_){
-        bool send_flag_ = false;
-        auto pkt_ty = receive_message[index_].get_packet_type();
-        if (pkt_ty == Type::ACK){
-            process_acknowledge(index_);
-        }
-
-        if (pkt_ty == Type::Application) {
-            process_application2(index_);
-            send_packet_type = Type::ACK;
-            send_flag_ = true;
-        }
-
-        return send_flag_;
-    }
-
     void process_elicit_packet(size_t index){
         auto& msg = receive_message[index];
         Packet_num_len pkt_num = msg.get_packet_number();
@@ -1442,95 +1407,13 @@ public:
             _Exit(0);
         }
 
+        receivevector[byte_index] |= (1 << bit_index);  
+
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             recvCQ.insert_control_message(pkt_difference, pkt_importance_blocks);
         }
     };
-
-    void process_application2(size_t index_){
-        // auto &msg = receive_message[index_];
-        // Packet_num_len pkt_num = msg.get_packet_number();
-        // Offset_len pkt_offset = msg.get_packet_offset();
-        // Difference_len pkt_difference = msg.get_packet_difference();
-        // auto pkt_len = msg.get_packet_length();
-        
-        // auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
-        
-        // if (pkt_num < current_loop_min){
-        //     receive_slot[index_] = 0;
-        //     return;
-        // }
-
-        // // if (pkt_len == 4) {
-        // //     std::cout<<"receive from:";
-        // //     ip_print(peeraddr);
-        // //     log_print(msg.iov[1].iov_base, 4);
-        // // }
-
-        // bool valid_pkt = pkt_difference >= receive_connection_difference;
-        // std::optional<size_t> expectedsize;
-        // if (valid_pkt){
-        //     if (pkt_offset == 0){
-        //         recvCQ.indexcheck(pkt_difference);
-        //         if(!recvCQ.insertzero(pkt_difference, index_)){
-        //             receive_slot[index_] = 0;
-        //         }else{
-        //             receive_slot[index_] = 1;
-        //             struct preamble {
-        //                 size_t nbytes = 0;
-        //                 size_t opcode = 0;
-        //                 size_t slot = 0;
-        //                 size_t offset = 0;
-        //                 size_t length = 0;
-        //                 size_t roffset = 0;
-        //             };
-        //             auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //             if ((preamble_header->opcode & ~1) == 0){
-        //                 expectedsize = sizeof(preamble) + preamble_header->length;
-        //             }else{
-        //                 expectedsize = sizeof(preamble);
-        //             }
-        //         }
-        //     }else{
-        //         receive_slot[index_] = 1;
-        //     }
-        // }else{
-        //     receive_slot[index_] = 0;
-        // }
-
-        // if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
-        //     max_received = pkt_num;
-        //     send_num = pkt_num;
-        // }  
-   
-        // size_t pos = pkt_num - current_loop_min;
-  
-        // if(pos > 8000){
-        //     pos = 0;
-        // }
-        // size_t byte_index = pos / 8;
-        // size_t bit_index = pos % 8;
-
-        // if (byte_index > receivevector.size()){
-        //     std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
-        //     <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
-        //     _Exit(0);
-        // }
-
-        // if (valid_pkt){
-        //     receivevector[byte_index] |= (1 << bit_index);  
-        //     bool exist = false;
-        //     recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
-        //     if (exist){
-        //         receive_slot[index_] = 0;
-        //     }
-
-        //     if (expectedsize){
-        //         recvCQ.setRead(pkt_difference, *expectedsize);
-        //     }
-        // }
-    }
 
 
     /*Max received index*/
@@ -1571,9 +1454,8 @@ public:
     };
 
     /*
-    TODO（3/2）:
     1. skip pakcet older than this round minimum packet -> DONE
-    2. add new flag to shrink receive message queue.
+    2. add new flag to shrink receive message queue. -> New map structure solve
     */
     void process_application_packet(size_t index, bool important, bool unreliableInfo){
         auto& msg = receive_message[index];
@@ -1589,40 +1471,10 @@ public:
             return;
         }
 
-        // ip_print(peeraddr);
-        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
         std::optional<int> expectedsize;
-        /*Mark packet as to be processed*/
-        receive_slot[index] = 1;
-        // if (pkt_difference >= receive_connection_difference){
-        //     recvCQ.indexcheck(pkt_difference);
-        //     if (pkt_offset == 0){
-        //         if (recvCQ.differencecheck(pkt_difference)){
-        //             if(!recvCQ.insertzero(pkt_difference, index)){
-        //                 receive_slot[index] = 0;
-        //             }else{
-        //                 struct preamble {
-        //                     size_t nbytes = 0;
-        //                     size_t opcode = 0;
-        //                     size_t slot = 0;
-        //                     size_t offset = 0;
-        //                     size_t length = 0;
-        //                     size_t roffset = 0;
-        //                 };
-        //                 auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //                 if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
-        //                     expectedsize = sizeof(preamble) + preamble_header->length;
-        //                 }else{
-        //                     expectedsize = sizeof(preamble);
-        //                 }
-        //             }
-        //         }else{
-        //             receive_slot[index] = 0;
-        //         }
-        //     }
-        // }else{
-        //     receive_slot[index] = 0;
-        // }
+        /* Mark packet as to be processed */
+        // receive_slot[index] = 1;
+       
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             if (pkt_offset == 0){
@@ -1643,7 +1495,10 @@ public:
                     }else{
                         expectedsize = sizeof(preamble);
                     }
+                    receive_slot[index] = 1;
                 }
+            } else {
+                receive_slot[index] = 1;
             }
         }else{
             receive_slot[index] = 0;
@@ -1671,6 +1526,7 @@ public:
             <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
             _Exit(0);
         }
+
 
         if (pkt_difference >= receive_connection_difference){
             receivevector[byte_index] |= (1 << bit_index);  
@@ -1701,7 +1557,7 @@ public:
 
         auto i = 0;
 
-        for ( ; i < recvCQ.size(); i++) 
+        for (; i < recvCQ.size(); i++) 
         {
             if (recvCQ.at(i).get_difference() == (receive_connection_difference + i))
             {
@@ -2330,10 +2186,6 @@ public:
     }
 
 
-    bool registration_check(){
-        return receive_connection_difference == receive_connection_difference_registration;
-    }
-
     void process_application_copy(){
         Offset_len pkt_offset;
         Packet_len pkt_len;
@@ -2350,7 +2202,6 @@ public:
                 copycount += 48;
                 receive_slot[index] = 0;
                 receive_record.reset();
-                receive_connection_difference_registration = receive_connection_difference;
                 return;
             }
         }

@@ -240,9 +240,9 @@ namespace dmludp{
            
             debugcount = difference;
 
-            bitMapVector.clear();
-            bitMapVector.resize(bitmapview.size());
-            memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
+            // bitMapVector.clear();
+            // bitMapVector.resize(bitmapview.size());
+            // memcpy(bitMapVector.data(), bitmapview.data(), bitmapview.size() * sizeof(uint64_t));
    
 
             /* Store buffer info: pointer + length */
@@ -279,7 +279,7 @@ namespace dmludp{
 
             loss_unimportance = false;
 
-            importance_bitmap.reset_span(Span<uint64_t>(bitMapVector.data(), bitMapVector.size()), start_index, end_index);
+            importance_bitmap.reset_span(Span<uint64_t>(bitmapview);
 
             if (iovecs_len != 1) {
                 /*

@@ -17,7 +17,6 @@ enum CongestionControlAlgorithm {
 
 };
 
-
 class Recovery{
     public:
 
