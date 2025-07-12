@@ -608,7 +608,7 @@ class metarecebuf{
             }
             status_ = 4;
         
-            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
+            bool complete_ = /*unimportant_packets_status.has_value() &&*/ expected_important_packets == important_packet_count;
 
             if (received == total || complete_){
                 status_ = 5;
@@ -636,7 +636,7 @@ class metarecebuf{
                 return false;
             }
         
-            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
+            bool complete_ = /*unimportant_packets_status.has_value() &&*/ expected_important_packets == important_packet_count;
 
             if (received == total || complete_){
                 complete_flag = true;
@@ -1953,17 +1953,17 @@ public:
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        ip_print(peeraddr);
-        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        // ip_print(peeraddr);
+        // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
-        std::cout<<"send condition:" <<std::endl;
-        // auto sendbufferqueue_start_index = sendbufferqueue.start();
-        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
-            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-            auto difference_ = sendbufferqueue.data_[index].get_difference();
-            std::cout << difference_ << " " ;
-            sendbufferqueue.data_[index].metabuf.ack_check();
-        }
+        // std::cout<<"send condition:" <<std::endl;
+        // // auto sendbufferqueue_start_index = sendbufferqueue.start();
+        // for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+        //     int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+        //     auto difference_ = sendbufferqueue.data_[index].get_difference();
+        //     std::cout << difference_ << " " ;
+        //     sendbufferqueue.data_[index].metabuf.ack_check();
+        // }
 
     }
 

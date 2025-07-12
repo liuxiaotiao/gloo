@@ -779,7 +779,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
+    // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
