@@ -1779,7 +1779,7 @@ public:
         std::cout << "Process ACK: first_pn: " << first_pn << ", end_pn: " << end_pn << ", max_acknowleged: " << max_acknowleged << std::endl;
 
         /* Lost part */
-        if (max_acknowleged + 1 != first_pn){
+        if (max_acknowleged + 1 < first_pn){
             // std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
             connection_map.forEachSlotAutoRangePartial(max_acknowleged + 1, first_pn, [&](uint64_t pkt, const auto& slot, const bool& delay){
                if (slot.pkt_ty == Type::Application) {
