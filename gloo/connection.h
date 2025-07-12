@@ -2261,6 +2261,7 @@ public:
     /*Prepare send packets*/
     std::pair<ssize_t, ssize_t> send_packet(){
         if (get_dmludp_error()){
+            send_packet_type = Type::Application;
             return std::make_pair(start_index, end_index);
         }
 
