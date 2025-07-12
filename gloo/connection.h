@@ -2443,6 +2443,7 @@ public:
 
     void set_error2(size_t err){
         dmludp_error = err;
+        std::count << "set_error2: " << dmludp_error << ", err:"<<err<< std::endl;
     }
 
     void set_error(size_t err, size_t application_sent){
