@@ -889,7 +889,7 @@ bool Pair::protocal2send(){
     if(sent == 0){
       std::cout<<"sent == 0 "<<std::endl;
       ip_print(dmludp_connection->peeraddr);
-      std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+      std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<std::endl;
       
       std::cout<<"send condition:" <<std::endl;
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
