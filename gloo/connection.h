@@ -1594,7 +1594,7 @@ public:
             return;
         }
 
-      std::optional<int> expectedsize;
+        std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
         if (pkt_difference >= receive_connection_difference){
@@ -2138,6 +2138,7 @@ public:
                     }
                     auto s_flag = sendbufferqueue.emit_important(i, send_message[sent].iov[1], out_len, out_off, out_blocks, out_status);
                     
+                    std::cout<<"emit_important: i=" << i << ", out_len=" << out_len << ", out_off=" << out_off
                     if (out_len == -1) {
                         break;
                     }
@@ -2147,14 +2148,14 @@ public:
                     isElicit = out_off == ELICIT_OFFSET;
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
                     } else {
                         if (out_status == 1) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
-                            connection_map.push(out_off, pkg_difference, Type::Application2);
+                            connection_map.push(out_off, pkg_difference, Type::Application2, pn);
                         } else {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
-                            connection_map.push(out_off, pkg_difference, Type::Application);
+                            connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
                     }
         
@@ -2189,17 +2190,17 @@ public:
                     auto pn = pkt_num_spaces.updatepktnum();
                     if (out_off == ELICIT_OFFSET) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck,pn);
                     } else {
                         if (pkt_status == PktStatus::Unimportant_reliable) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable,pn);
                         } else if (pkt_status == PktStatus::Unimportant_unreliable) {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable2);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable2);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable2,pn);
                         } else {
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable3);
-                            connection_map.push(out_off, pkg_difference, Type::Unreliable3);
+                            connection_map.push(out_off, pkg_difference, Type::Unreliable3,pn);
                         }
                     }
 

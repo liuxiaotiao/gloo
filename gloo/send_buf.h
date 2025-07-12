@@ -364,15 +364,6 @@ namespace dmludp{
 
         ssize_t off_front_important(){
             ssize_t off = -1;
-
-            /*Special unimportance no loss, both importanct and umimportance complete.*/
-            if (off == -1 && meta_status_important == MetaFlag::Complete 
-            && meta_status_unimportant == MetaFlag::Complete_unimportance){
-                if (!rcq_important.empty()) {
-                    off = rcq_important.pop_front();
-                    return -2;
-                }   
-            }
             
             if (importance_bitmap.empty()) {
                 if(meta_status_important == MetaFlag::Initial){
