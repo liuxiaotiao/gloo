@@ -1594,35 +1594,6 @@ public:
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
-        // if (pkt_difference >= receive_connection_difference){
-        //     recvCQ.indexcheck(pkt_difference);
-        //     if (pkt_offset == 0){
-        //         if (recvCQ.differencecheck(pkt_difference)){
-        //             if(!recvCQ.insertzero(pkt_difference, index)){
-        //                 receive_slot[index] = 0;
-        //             }else{
-        //                 struct preamble {
-        //                     size_t nbytes = 0;
-        //                     size_t opcode = 0;
-        //                     size_t slot = 0;
-        //                     size_t offset = 0;
-        //                     size_t length = 0;
-        //                     size_t roffset = 0;
-        //                 };
-        //                 auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //                 if (preamble_header->opcode == 1 || preamble_header->opcode == 0){
-        //                     expectedsize = sizeof(preamble) + preamble_header->length;
-        //                 }else{
-        //                     expectedsize = sizeof(preamble);
-        //                 }
-        //             }
-        //         }else{
-        //             receive_slot[index] = 0;
-        //         }
-        //     }
-        // }else{
-        //     receive_slot[index] = 0;
-        // }
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             if (pkt_offset == 0){
@@ -1978,6 +1949,18 @@ public:
             low_recovery.check_point();
             low_recovery.congestion_event(receivets);
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
+
+        ip_print(peeraddr);
+        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        
+        std::cout<<"send condition:" <<std::endl;
+        // auto sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+            auto difference_ = sendbufferqueue.data_[index].get_difference();
+            std::cout << difference_ << " " ;
+            sendbufferqueue.data_[index].metabuf.ack_check();
         }
 
     }
