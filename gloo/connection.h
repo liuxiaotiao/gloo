@@ -1630,7 +1630,7 @@ public:
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
-            std::cout<<"1 max_received updated to "<<max_received<<",  pkt_num:"<<pkt_num<<std::endl;
+            // std::cout<<"1 max_received updated to "<<max_received<<",  pkt_num:"<<pkt_num<<std::endl;
             /* bit map substitude byte map*/
             send_num = pkt_num;
         }  
