@@ -2281,7 +2281,10 @@ public:
         if(send_packet_type == 0){
             return;
         }
-        set_error2(err_);
+        if (send_packet_type == Type::Application){
+            set_error2(err_);
+        }
+        
         if (err_ != 0){
             if (send_packet_type == Type::Application){
                 end_ts = std::chrono::high_resolution_clock::now();
