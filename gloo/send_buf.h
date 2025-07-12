@@ -351,7 +351,7 @@ namespace dmludp{
             } else {
                 /* Just control message */
                 lastpacketOffset_important = 0;
-
+                packet_count_important = 1; /* Only one packet */
                 /* Unimportant part setting */
                 lastpacketOffset_unimportant = std::numeric_limits<uint64_t>::max();
                 rcq_unimportant.clear();
