@@ -657,7 +657,7 @@ namespace dmludp {
                 return false; 
             }
             if (packet_number != (head_packet_number_ + size() - 1)) {
-                std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<< std::endl;
+                std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()<< std::endl;
                 return false;  
             }
 
