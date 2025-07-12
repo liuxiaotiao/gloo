@@ -2171,7 +2171,7 @@ public:
                     auto pn = pkt_num_spaces.updatepktnum();
 
                     isElicit = out_off == ELICIT_OFFSET;
-                    ip_print(peeraddr);
+                    // ip_print(peeraddr);
                     if (isElicit) {
                         // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
@@ -2217,7 +2217,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
-                    ip_print(peeraddr);
+                    // ip_print(peeraddr);
                     if (out_off == ELICIT_OFFSET) {
                         // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
 
