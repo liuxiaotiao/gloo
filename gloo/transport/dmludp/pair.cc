@@ -888,11 +888,11 @@ bool Pair::protocal2send(){
 
     if(sent == 0){
       std::cout<<"sent == 0 "<<std::endl;
-      ip_print(peeraddr);
+      ip_print(dmludp_connection->peeraddr);
       std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
       
       std::cout<<"send condition:" <<std::endl;
-      // auto sendbufferqueue_start_index = sendbufferqueue.start();
+      auto sendbufferqueue_start_index = sendbufferqueue.start();
       for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
           int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
           auto difference_ = sendbufferqueue.data_[index].get_difference();
