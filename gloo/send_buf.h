@@ -10,7 +10,6 @@
 #include <iostream>   
 #include <string>     
 #include <algorithm> 
-// #pragma message("DEBUG: included span in FILENAME")
 #include <immintrin.h>
 #include "tool.h"
 #include "allreduce.h"
@@ -390,6 +389,10 @@ namespace dmludp{
                         }
                         packet_count_important++;
                         meta_pos++;
+                        if (packet_count_important > bits_set.size()){
+                            std::cout<< debugcount <<"packet_count_important > bits_set.size()"<< std::endl;
+                            _Exit(0);
+                        }   
                         if (meta_left <= 0){
                             meta_left = 0;
                             meta_status_important = MetaFlag::Retransmission;
