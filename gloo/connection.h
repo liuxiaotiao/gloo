@@ -1776,6 +1776,8 @@ public:
         bool loss_important = false;
         bool loss_unimportant = false;
 
+        std::cout << "Process ACK: first_pn: " << first_pn << ", end_pn: " << end_pn << ", max_acknowleged: " << max_acknowleged << std::endl;
+
         /* Lost part */
         if (max_acknowleged + 1 != first_pn){
             // std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
