@@ -779,7 +779,7 @@ bool Pair::protocal2read(){
         }
       }
     }
-    // dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
+    dmludp_connection->recvCQ.receive_log(dmludp_connection->peeraddr);
     {
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       auto sendbufferqueue_count = dmludp_connection->sendbufferqueue.get_count();
@@ -887,6 +887,18 @@ bool Pair::protocal2send(){
     }
 
     if(sent == 0){
+      std::cout<<"sent == 0 "<<std::endl;
+      ip_print(peeraddr);
+      std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+      
+      std::cout<<"send condition:" <<std::endl;
+      // auto sendbufferqueue_start_index = sendbufferqueue.start();
+      for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+          int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+          auto difference_ = sendbufferqueue.data_[index].get_difference();
+          std::cout << difference_ << " " ;
+          sendbufferqueue.data_[index].metabuf.ack_check();
+      }
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
       if (!tx_.empty()){
