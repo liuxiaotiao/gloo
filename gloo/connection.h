@@ -1422,6 +1422,7 @@ public:
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
+            std::cout<<"2 max_received updated to "<<max_received<<", pkt_num:"<<pkt_num<<std::endl;
             /* bit map substitude byte map*/
             send_num = pkt_num;
         }  
@@ -1625,6 +1626,7 @@ public:
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
+            std::cout<<"1 max_received updated to "<<max_received<<",  pkt_num:"<<pkt_num<<std::endl;
             /* bit map substitude byte map*/
             send_num = pkt_num;
         }  
@@ -1725,11 +1727,6 @@ public:
         if (recovery.cwnd_enough() && sendbufferqueue.ready()) return true;
         return false;
     }
-
-    /*Update received difference record*/
-    // void update_receive_parameter(){
-    //     current_loop_min = current_loop_max + 1;
-    // }
 
      /*Check send or received data for function*/
     void log_print_fun(const char* func_name, void* src_, size_t len_) {
