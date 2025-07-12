@@ -1690,7 +1690,12 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        // std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<std::endl;
+        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
+
+        if (current_loop_min > send_num){
+            std::cerr << "Error: current_loop_min is greater than send_num. (current_loop_min: " << current_loop_min << ", send_num: " << send_num << ")" << std::endl;
+            _Exit(0);
+        }
 
         size_t info_len = (max_received - current_loop_min + 1 + 7) / 8;
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
@@ -1763,6 +1768,11 @@ public:
         auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
         size_t byte_index = 0;
         size_t bit_index = 0;
+
+        if (first_pn > end_pn || first_pn < 0 || end_pn < 0) {
+            std::cerr << "Error: Invalid packet number range. first_pn: " << first_pn << ", end_pn: " << end_pn << std::endl;
+            _Exit(0);
+        }
 
         
         auto sendbufferqueue_start_index = sendbufferqueue.start();
