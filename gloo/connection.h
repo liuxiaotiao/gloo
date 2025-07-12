@@ -1701,6 +1701,7 @@ public:
         std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
 
         if (current_loop_min > send_num){
+            ip_print(peeraddr);
             std::cerr << "Error: current_loop_min is greater than send_num. (current_loop_min: " << current_loop_min << ", send_num: " << send_num << "), max_received:" << max_received << std::endl;
             _Exit(0);
         }
