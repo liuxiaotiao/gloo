@@ -1591,8 +1591,8 @@ public:
             return;
         }
 
-        // ip_print(peeraddr);
-        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
+        ip_print(peeraddr);
+        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
         std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
@@ -2100,7 +2100,6 @@ public:
         Offset_len out_off = 0;
 
         size_t i = 0;
-        ssize_t tramssioning_index = -1;
 
         size_t cwnd_limit_important = recovery.cwnd_available();
         size_t cwnd_limit_unimportant = low_recovery.cwnd_available();
