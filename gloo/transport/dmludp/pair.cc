@@ -899,6 +899,7 @@ bool Pair::protocal2send(){
           std::cout << difference_ << " " ;
           dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
       }
+      std::cout<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
       if (!tx_.empty()){
