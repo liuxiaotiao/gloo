@@ -879,6 +879,7 @@ bool Pair::protocal2send(){
         if (errno == EAGAIN){
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+            std::cout<<"sendmsg EAGAIN"<<std::endl;
             return true;
         }
         break;
