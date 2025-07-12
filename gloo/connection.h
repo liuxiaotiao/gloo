@@ -1769,8 +1769,7 @@ public:
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
         auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
-        size_t byte_index = 0;
-        size_t bit_index = 0;
+        
 
         if (first_pn > end_pn || first_pn < 0 || end_pn < 0) {
             std::cerr << "Error: Invalid packet number range. first_pn: " << first_pn << ", end_pn: " << end_pn << std::endl;
@@ -1837,18 +1836,20 @@ public:
             });
         }
         
-
+        size_t byte_index = 0;
+        size_t bit_index = 0;
        
         /* ACK contain info */
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
+                size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
+                std::cout<<"3 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<", pkt_difference:"<<pkt_difference<<std::endl;
+
                 if (++bit_index == 8) {
                     bit_index = 0;
                     ++byte_index;
                 }
-                size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"3 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<", pkt_difference:"<<pkt_difference<<std::endl;
-
+              
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
                         loss_important = true;
@@ -2311,7 +2312,7 @@ public:
     void update_boundary(){
         for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
-        std::cout<<"Update boundary, current_loop_min:"<<current_loop_min<<", max_received:"<<max_received<<std::endl;
+        // std::cout<<"Update boundary, current_loop_min:"<<current_loop_min<<", max_received:"<<max_received<<std::endl;
     }
 
     size_t get_slot(){
