@@ -888,12 +888,6 @@ bool Pair::protocal2send(){
       accumulated++;
     }
 
-    if (sent != 0) {
-      std::cout << "sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
-        << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num()
-        << std::endl;
-    }
-
     if(sent == 0){
       std::cout<<"sent == 0 "<<std::endl;
       ip_print(dmludp_connection->peeraddr);
@@ -929,6 +923,10 @@ bool Pair::protocal2send(){
       
       return true;
     }else{
+      std::cout << "sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
+        << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
+        << ", send_packet_type: " << dmludp_connection->send_packet_type << 
+        << std::endl;
       dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
