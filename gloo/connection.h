@@ -1586,14 +1586,15 @@ public:
         
         auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
 
+        ip_print(peeraddr);
+        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len <<", current_loop_min:"<<current_loop_min<<std::endl;
+        
         if (pkt_num < current_loop_min){
             receive_slot[index] = 0;
             return;
         }
 
-        ip_print(peeraddr);
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len<<std::endl;
-        std::optional<int> expectedsize;
+      std::optional<int> expectedsize;
         /*Mark packet as to be processed*/
         receive_slot[index] = 1;
         if (pkt_difference >= receive_connection_difference){
