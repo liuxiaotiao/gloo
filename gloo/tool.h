@@ -191,7 +191,7 @@ namespace dmludp {
                                 std::pair<uint64_t, std::chrono::system_clock::time_point>>;
         using TimeStamp = std::chrono::system_clock::time_point;
         std::vector<DataType> buffer; 
-        std::vecotr<uint8_t> loss_status; // 0: not loss, 1: loss
+        std::vector<uint8_t> loss_status; // 0: not loss, 1: loss
         size_t head;                  
         size_t tail;                 
         size_t capacity;              
@@ -235,7 +235,7 @@ namespace dmludp {
             }
             for (auto i = 0; i < size(); i++) {
                 const auto& item = at(i);
-                if (item.second.first == last && item.second.second - item.first.second >= 30) {
+                if (item.second.first == last && (item.second.first - item.first.first) >= 30) {
                     return true;
                 }
             }
