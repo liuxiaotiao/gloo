@@ -1635,6 +1635,7 @@ public:
         if(pos > 8000){
             std::memset(receivevector.data(), 0, receivevector.size());
             current_loop_min = pkt_num;
+            std::cout<<"Resetting current_loop_min to "<<current_loop_min<<", pos:"<<pos<<std::endl;
             pos = 0;
         }
         size_t byte_index = pos / 8;
@@ -1694,7 +1695,7 @@ public:
         std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
 
         if (current_loop_min > send_num){
-            std::cerr << "Error: current_loop_min is greater than send_num. (current_loop_min: " << current_loop_min << ", send_num: " << send_num << ")" << std::endl;
+            std::cerr << "Error: current_loop_min is greater than send_num. (current_loop_min: " << current_loop_min << ", send_num: " << send_num << "), max_received:" << max_received << std::endl;
             _Exit(0);
         }
 
@@ -1726,9 +1727,9 @@ public:
     }
 
     /*Update received difference record*/
-    void update_receive_parameter(){
-        current_loop_min = current_loop_max + 1;
-    }
+    // void update_receive_parameter(){
+    //     current_loop_min = current_loop_max + 1;
+    // }
 
      /*Check send or received data for function*/
     void log_print_fun(const char* func_name, void* src_, size_t len_) {
@@ -2279,6 +2280,7 @@ public:
     void update_boundary(){
         for (auto& v : receivevector) v = 0;
         current_loop_min = max_received + 1;
+        std::cout<<"Update boundary, current_loop_min:"<<current_loop_min<<", max_received:"<<max_received<<std::endl;
     }
 
     size_t get_slot(){
