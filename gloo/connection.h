@@ -2138,7 +2138,7 @@ public:
                     }
                     auto s_flag = sendbufferqueue.emit_important(i, send_message[sent].iov[1], out_len, out_off, out_blocks, out_status);
                     
-                    std::cout<<"emit_important: i=" << i << ", out_len=" << out_len << ", out_off=" << out_off
+                    
                     if (out_len == -1) {
                         break;
                     }
