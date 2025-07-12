@@ -877,9 +877,12 @@ bool Pair::protocal2send(){
         }
 
         if (errno == EAGAIN){
+            std::cout << "[sendmsg EAGAIN]sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
+            << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
+            << ", send_packet_type: " << dmludp_connection->send_packet_type 
+            << std::endl;
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
-            std::cout<<"sendmsg EAGAIN"<<std::endl;
             return true;
         }
         break;
