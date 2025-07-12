@@ -387,10 +387,10 @@ namespace dmludp{
                             size_t pktlen = std::min(remain, MAX_SEND_UDP_PAYLOAD_SIZE);
                             meta_left -= send_buffer_size;
                         }
-                        packet_count_important++;
+                        // packet_count_important++;
                         meta_pos++;
                         if (packet_count_important > bits_set.size()){
-                            std::cout<< debugcount <<"packet_count_important("<<packet_count_important <<") > bits_set.size("<<bits_set.size()<<")"<< std::endl;
+                            std::cout<< debugcount <<"1 packet_count_important("<<packet_count_important <<") > bits_set.size("<<bits_set.size()<<")"<< std::endl;
                             _Exit(0);
                         }   
                         if (meta_left <= 0){
@@ -429,6 +429,10 @@ namespace dmludp{
                             off = meta_pos * send_buffer_size;
                             meta_left -= 48;
                             packet_count_important++;
+                            if (packet_count_important > bits_set.size()){
+                                std::cout<< debugcount <<"2 packet_count_important("<<packet_count_important <<") > bits_set.size("<<bits_set.size()<<")"<< std::endl;
+                                _Exit(0);
+                            } 
                             
                             if (importantIndex == -1) {
                                 meta_status_important = MetaFlag::Retransmission;
