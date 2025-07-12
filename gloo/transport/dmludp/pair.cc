@@ -865,7 +865,6 @@ bool Pair::protocal2send(){
     }
     auto sent = 0;
     auto start_time = std::chrono::system_clock::now();
-    std::cout<<std::endl;
 
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
