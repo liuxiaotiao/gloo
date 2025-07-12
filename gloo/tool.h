@@ -229,7 +229,7 @@ namespace dmludp {
             return buffer[head];
         }
 
-        bool checklast(uint64_t first, uint64_t last) const {
+        bool checklast(uint64_t first, uint64_t last) {
             if (isEmpty()) {
                 return false;
             }
