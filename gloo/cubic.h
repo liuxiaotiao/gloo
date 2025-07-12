@@ -7,6 +7,10 @@ namespace dmludp{
 
 const size_t MAX_CWND = 3000 * 1440;
 
+const size_t MIN_CWND = 512 * 1440; // Default max datagram size used in congestion control.
+
+const size_t ROLLBACK_THRESHOLD = 150 * 1440; // 80% of the max cwnd
+
 const size_t SpinMAX = 5;
 // Congestion Control
 //  initial cwnd = min (10*MSS, max (2*MSS, 14600)) 
@@ -234,6 +238,11 @@ class Recovery{
         }else {
             losscount = 1;
         }
+
+        if (congestion_window < ROLLBACK_THRESHOLD) {
+            congestion_window = MIN_CWND;
+        }
+
         if(congestion_window < W_max){
             W_max = congestion_window * (1.0 + BETA) / 2.0;
         }else{

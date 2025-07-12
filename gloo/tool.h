@@ -191,6 +191,7 @@ namespace dmludp {
                                 std::pair<uint64_t, std::chrono::system_clock::time_point>>;
         using TimeStamp = std::chrono::system_clock::time_point;
         std::vector<DataType> buffer; 
+        std::vecotr<uint8_t> loss_status; // 0: not loss, 1: loss
         size_t head;                  
         size_t tail;                 
         size_t capacity;              
@@ -198,7 +199,7 @@ namespace dmludp {
 
     public:
         explicit TSCircularQueue(size_t capacity = 1024)
-            : buffer(capacity), head(0), tail(0), capacity(capacity), count(0) {}
+            : buffer(capacity), loss_status(capacity), head(0), tail(0), capacity(capacity), count(0) {}
 
         ~TSCircularQueue(){}
 
@@ -226,6 +227,21 @@ namespace dmludp {
                 throw std::underflow_error("TSCircularQueue is empty(front)");
             }
             return buffer[head];
+        }
+
+        bool checklast(uint64_t first, uint64_t last) const {
+            if (isEmpty()) {
+                return false;
+            }
+            for (auto i = 0; i < size(); i++) {
+                const auto& item = at(i);
+                if (item.second.first == last && item.second.second - item.first.second >= 30) {
+                    return true;
+                }
+            }
+            
+            return false;
+
         }
 
         bool isEmpty() const {
@@ -650,7 +666,7 @@ namespace dmludp {
         3. unimportant packet retransmission
         */
 
-        bool push(uint64_t offset_, Difference_len difference_,  Type ty_, uint64_t packet_number) {
+        bool push(uint64_t offset_, Difference_len difference_,  Type ty_, uint64_t packet_number, uint8_t channel_ = 0) {
             size_t next_tail = (tail_ + 1) % capacity_;
             if (next_tail == head_) {
                 std::cout<<"PacketMapRingBuffer full"<<std::endl;
@@ -661,6 +677,7 @@ namespace dmludp {
             buffer_[tail_].offset = offset_;
             buffer_[tail_].difference = difference_;
             buffer_[tail_].pkt_ty = ty_;
+            buffer_[tail_].channel = channel_;
             tail_ = next_tail;
             // std::cout << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()
             //     << ", "<<head_<<", "<<tail_<< std::endl;
@@ -832,7 +849,8 @@ namespace dmludp {
             uint64_t offset; /* Control message: offset = std::numeric_limits<uint64_t>::max() - 1 */
             uint32_t difference;
             Type pkt_ty; /* Elicit or Application */
-            uint8_t pad[24];
+            uint8_t channel;
+            uint8_t pad[18];
         };
 
         size_t capacity_;

@@ -1758,12 +1758,6 @@ public:
         auto receivets = std::chrono::high_resolution_clock::now();
         auto first_pn = *reinterpret_cast<const uint64_t*>(msg.iov[1].iov_base);
 
-        if (first_pn >= (max_acknowleged + 1)){
-            auto ackts = tsInfo.removeBeforeValue(first_pn);
-            if (ackts.has_value()){
-                update_rtt(*ackts, receivets, receivets);
-            }
-        }
         sendbufferqueue.completecheck(pkt_difference);
 
         auto end_pn = pkt_num;
@@ -1818,14 +1812,14 @@ public:
                         loss_unimportant = true;
                     } 
                     // std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
-                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                 } else if(slot.pkt_ty == Type::Unreliable2) {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
                     // std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;                    
-                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
+                    sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                 } else {
                     ++total_unimportant;
                     if (!loss_unimportant) {
@@ -1895,14 +1889,14 @@ public:
                                 loss_unimportant = true;
                             } 
                             // std::cout <<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value,  false);
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                         } else if(slot.pkt_ty == Type::Unreliable2) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
                             // std::cout <<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
-                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
+                            sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                         } else {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
@@ -1940,14 +1934,14 @@ public:
                             loss_unimportant = true;
                         } 
                         // std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
-                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
+                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                     } else if(slot.pkt_ty == Type::Unreliable2) {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
                         // std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
-                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
+                        sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, true, false);
                     } else {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
@@ -1966,6 +1960,15 @@ public:
             }
         });
 
+        auto loss = false;
+        if (first_pn >= (max_acknowleged + 1)){
+            loss = tsInfo.checklast(first_pn, end_pn);
+            auto ackts = tsInfo.removeBeforeValue(first_pn);
+            if (ackts.has_value()){
+                update_rtt(*ackts, receivets, receivets);
+            }
+        }
+
         if (max_acknowleged == LIMIT_UINT64_T){
             max_acknowleged = end_pn;
         }else{
@@ -1974,7 +1977,7 @@ public:
             }
         }
 
-        if (!loss_important) {
+        if (!loss_important || !loss) {
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
             recovery.check_point();
@@ -1982,7 +1985,7 @@ public:
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        if (!loss_unimportant) {
+        if (!loss_unimportant || !loss) {
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
             low_recovery.check_point();
@@ -2141,6 +2144,7 @@ public:
 
         size_t sent_important = 0;      
         size_t sent_cwnd_important = 0; 
+        size_t sent_cwnd_important2 = 0;
 
         size_t sent_unimportant = 0;      
         size_t sent_cwnd_unimportant = 0; 
@@ -2175,16 +2179,16 @@ public:
                     if (isElicit) {
                         // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
-                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn, 1);
                     } else {
                         if (out_status == 1) {
                             // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application2)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
-                            connection_map.push(out_off, pkg_difference, Type::Application2, pn);
+                            connection_map.push(out_off, pkg_difference, Type::Application2, pn, 1);
                         } else {
                         //    std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
-                            connection_map.push(out_off, pkg_difference, Type::Application,pn);
+                            connection_map.push(out_off, pkg_difference, Type::Application,pn, 1);
                         }
                     }
         
@@ -2198,6 +2202,75 @@ public:
                 }
             }
             
+            if (sent_cwnd_important >= sent_limit_important || sent >= send_message.size()){
+                break;
+            }
+        }
+
+        sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
+            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+            auto pkg_difference = sendbufferqueue.get_difference(i);
+
+            /* Important */
+            if (sent_cwnd_important2 < cwnd_limit_unimportant){
+                Block_len out_blocks = std::numeric_limits<Block_len>::max();
+                Status_len out_status = 0;
+                while (true){
+                    // size_t send_status = sendbufferqueue.get_status(i);
+                    bool isElicit = false;
+                    if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                        std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
+                        _Exit(0);
+                    }
+                    auto s_flag = sendbufferqueue.emit_important(i, send_message[sent].iov[1], out_len, out_off, out_blocks, out_status);
+                    
+                    
+                    if (out_len == -1) {
+                        break;
+                    }
+                    
+                    auto pn = pkt_num_spaces.updatepktnum();
+
+                    isElicit = out_off == ELICIT_OFFSET;
+                    if (isElicit) {
+                        send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
+                        connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
+                    } else {
+                        if (out_status == 1) {
+                            send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
+                            connection_map.push(out_off, pkg_difference, Type::Application2, pn);
+                        } else {
+                            send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
+                            connection_map.push(out_off, pkg_difference, Type::Application,pn);
+                        }
+                    }
+        
+                    low_recovery.on_packet_sent(out_len);
+
+                    sent++;
+                    sent_cwnd_important2 += out_len;
+                    if (sent_cwnd_important2 >= cwnd_limit_unimportant || sent >= send_message.size()){
+                        break;
+                    }           
+                }
+            }
+            
+            if (sent_cwnd_important2 >= cwnd_limit_unimportant || sent >= send_message.size()){
+                break;
+            }
+        }
+
+        if (cwnd_limit_unimportant < sent_cwnd_important2){
+            cwnd_limit_unimportant = 0;
+        } else {
+            cwnd_limit_unimportant -= sent_cwnd_important2;
+        }  
+
+        sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
+            i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+            auto pkg_difference = sendbufferqueue.get_difference(i);    
 
             /* Unimportant */
             if (sent_cwnd_unimportant < sent_limit_unimportant) {
@@ -2250,10 +2323,11 @@ public:
                 }
             }
             
-            if ((sent_cwnd_important >= sent_limit_important && sent_cwnd_unimportant >= sent_limit_unimportant) || sent >= send_message.size()){
+            if (sent_cwnd_unimportant >= sent_limit_unimportant || sent >= send_message.size()){
                 break;
             }
         }
+
 
         return sent;
     }
