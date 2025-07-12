@@ -2446,14 +2446,14 @@ public:
         std::count << "set_error2: " << dmludp_error << ", err:"<<err<< std::endl;
     }
 
-    void set_error(size_t err, size_t application_sent){
-        dmludp_error = err;
-	    if (application_sent != 0){
-            dmludp_error_sent += application_sent;
-        }else{
-            dmludp_error_sent = 0;
-        }
-    }
+    // void set_error(size_t err, size_t application_sent){
+    //     dmludp_error = err;
+	//     if (application_sent != 0){
+    //         dmludp_error_sent += application_sent;
+    //     }else{
+    //         dmludp_error_sent = 0;
+    //     }
+    // }
 
     bool transmission_complete(){
         if (sendbufferqueue.iscomplete(sendbufferqueue.start())){
