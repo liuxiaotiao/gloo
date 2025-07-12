@@ -340,10 +340,10 @@ class SCircularQueue {
         void pkt2ack_important(Difference_len difference_, Offset_len offset_, Packet_num_len pkt, 
             bool value_, bool unreliabelStatus_){
             auto index = difference_ % get_capacity();
-            if (offset_ == 0){
-                std::cout << "pkt2ack_important: difference_(" << (int)difference_ << "), offset_(" << offset_ 
-                          << "), value_(" << value_  <<")"<< std::endl;
-            }
+            // if (offset_ == 0){
+            //     std::cout << "pkt2ack_important: difference_(" << (int)difference_ << "), offset_(" << offset_ 
+            //               << "), value_(" << value_  <<")"<< std::endl;
+            // }
             data_[index].metabuf.acknowledege_and_drop(offset_, value_, unreliabelStatus_);
         }
 
@@ -1426,7 +1426,7 @@ public:
 
         if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
             max_received = pkt_num;
-            std::cout<<"2 max_received updated to "<<max_received<<", pkt_num:"<<pkt_num<<std::endl;
+            // std::cout<<"2 max_received updated to "<<max_received<<", pkt_num:"<<pkt_num<<std::endl;
             /* bit map substitude byte map*/
             send_num = pkt_num;
         }  
@@ -1698,7 +1698,7 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
+        // std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
 
         if (current_loop_min > send_num){
             ip_print(peeraddr);
