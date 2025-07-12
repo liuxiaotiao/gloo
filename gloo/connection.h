@@ -1587,8 +1587,8 @@ public:
         
         auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
 
-        ip_print(peeraddr);
-        std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len <<", current_loop_min:"<<current_loop_min<<std::endl;
+        // ip_print(peeraddr);
+        // std::cout<<"Received:"<<pkt_difference<<", "<<pkt_num<<", "<<pkt_offset<<", "<<pkt_importance_blocks<<", "<<static_cast<uint32_t>(msg.get_packet_type())<<", "<<msg.iov[0].iov_len <<", current_loop_min:"<<current_loop_min<<std::endl;
         
         if (pkt_num < current_loop_min){
             receive_slot[index] = 0;
@@ -1796,32 +1796,38 @@ public:
                     if (!loss_important) {
                         loss_important = true;
                     } 
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::Application2)  {
                     ++total_important;
                     if (!loss_important) {
                         loss_important = true;
                     } 
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::ElicitAck) {
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::Unreliable) {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else if(slot.pkt_ty == Type::Unreliable2) {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;                    
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
+                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 }
             });
@@ -1837,6 +1843,7 @@ public:
                     ++byte_index;
                 }
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
+                std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
 
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
@@ -1863,32 +1870,39 @@ public:
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
+                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                         } else if(slot.pkt_ty == Type::Application2)  {
                             ++total_important;
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
+                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else if(slot.pkt_ty == Type::ElicitAck) {
+                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else if(slot.pkt_ty == Type::Unreliable) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
+                            std::cout <<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value,  false);
                         } else if(slot.pkt_ty == Type::Unreliable2) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
+                            std::cout <<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                         } else {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
+                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true);
                         }
                     }
@@ -1902,32 +1916,38 @@ public:
                         if (!ack_value && !loss_important) {
                             loss_important = true;
                         } 
+                        std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                     } else if(slot.pkt_ty == Type::Application2)  {
                         ++total_important;
                         if (!ack_value && !loss_important) {
                             loss_important = true;
                         } 
+                        std::cout <<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
                     } else if(slot.pkt_ty == Type::ElicitAck) {
+                        std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
                     } else if(slot.pkt_ty == Type::Unreliable) {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
+                        std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                     } else if(slot.pkt_ty == Type::Unreliable2) {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
+                        std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                     } else {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
+                        std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value);
                     }
 
@@ -2052,25 +2072,26 @@ public:
         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.pkt_ty == Type::Application) {
                 ++total_important;
-        
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Application2)  {
                 ++total_important;
-     
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::ElicitAck) {
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Unreliable) {
                 ++total_unimportant;
-      
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else if(slot.pkt_ty == Type::Unreliable2) {
                 ++total_unimportant;
-         
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else {
                 ++total_unimportant;
-           
+                std::cout<<"[Timeout] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             }
         });
@@ -2146,13 +2167,16 @@ public:
                     isElicit = out_off == ELICIT_OFFSET;
                     ip_print(peeraddr);
                     if (isElicit) {
+                        std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
                     } else {
                         if (out_status == 1) {
+                            std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application2)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
                             connection_map.push(out_off, pkg_difference, Type::Application2, pn);
                         } else {
+o                           std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
                             connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
@@ -2189,16 +2213,22 @@ public:
                     auto pn = pkt_num_spaces.updatepktnum();
                     ip_print(peeraddr);
                     if (out_off == ELICIT_OFFSET) {
+                        std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
+
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck,pn);
                     } else {
                         if (pkt_status == PktStatus::Unimportant_reliable) {
+                            std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable,pn);
                         } else if (pkt_status == PktStatus::Unimportant_unreliable) {
+                            std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable2);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable2,pn);
                         } else {
+                            std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable3)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
+
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable3);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable3,pn);
                         }
