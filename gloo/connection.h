@@ -2146,6 +2146,7 @@ public:
                     auto pn = pkt_num_spaces.updatepktnum();
 
                     isElicit = out_off == ELICIT_OFFSET;
+                    ip_print(peeraddr);
                     if (isElicit) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
@@ -2188,6 +2189,7 @@ public:
                     }
                     
                     auto pn = pkt_num_spaces.updatepktnum();
+                    ip_print(peeraddr);
                     if (out_off == ELICIT_OFFSET) {
                         send_message[sent].setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck,pn);
