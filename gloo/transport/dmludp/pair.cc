@@ -894,10 +894,10 @@ bool Pair::protocal2send(){
       std::cout<<"send condition:" <<std::endl;
       auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
       for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
-          int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
-          auto difference_ = sendbufferqueue.data_[index].get_difference();
+          int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
+          auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
           std::cout << difference_ << " " ;
-          sendbufferqueue.data_[index].metabuf.ack_check();
+          dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
       }
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
