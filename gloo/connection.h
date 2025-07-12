@@ -2176,7 +2176,7 @@ public:
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
                             connection_map.push(out_off, pkg_difference, Type::Application2, pn);
                         } else {
-o                           std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
+                           std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
                             send_message[sent].setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
                             connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
