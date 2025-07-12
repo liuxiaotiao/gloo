@@ -1847,7 +1847,7 @@ public:
                     ++byte_index;
                 }
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                std::cout<<"3 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<", pkt_difference:"<<pkt_difference<<std::endl;
 
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
