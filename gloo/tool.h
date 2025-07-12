@@ -662,11 +662,9 @@ namespace dmludp {
             buffer_[tail_].difference = difference_;
             buffer_[tail_].pkt_ty = ty_;
             tail_ = next_tail;
-            if (packet_number != (head_packet_number_ + size() - 1)) {
-                std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()
-                << ", "<<head_<<", "<<tail_<< std::endl;
-                return false;  
-            }
+            std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()
+            << ", "<<head_<<", "<<tail_<< std::endl;
+    
             return true;
         }
 
