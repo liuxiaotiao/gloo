@@ -865,6 +865,8 @@ bool Pair::protocal2send(){
     }
     auto sent = 0;
     auto start_time = std::chrono::system_clock::now();
+    std::cout<<std::endl;
+
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
     
@@ -899,7 +901,6 @@ bool Pair::protocal2send(){
           std::cout << difference_ << " " ;
           dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
       }
-      std::cout<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
 
       if (!tx_.empty()){
