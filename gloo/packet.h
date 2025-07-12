@@ -100,9 +100,7 @@ using Block_len = uint16_t;
             offset(off), 
             difference(difference),
             pkt_length(len),
-            // pkt_importance(importance),
             pkt_important_block(blocks) {};
-            // pkt_status(status) {};
 
         ~Header() {};
 
@@ -149,7 +147,6 @@ using Block_len = uint16_t;
             put_u16(out, pkt_length, off); // packet length
 
             off += sizeof(Packet_len);
-            // put_u8(out, pkt_importance, off);
 
             // off += sizeof(Importance_len);
             put_u16(out, pkt_important_block, off);
