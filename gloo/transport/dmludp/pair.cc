@@ -892,8 +892,8 @@ bool Pair::protocal2send(){
       std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
       
       std::cout<<"send condition:" <<std::endl;
-      auto sendbufferqueue_start_index = sendbufferqueue.start();
-      for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+      auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
+      for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
           int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
           auto difference_ = sendbufferqueue.data_[index].get_difference();
           std::cout << difference_ << " " ;
