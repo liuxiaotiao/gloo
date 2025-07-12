@@ -570,10 +570,9 @@ namespace dmludp{
                 return;
             }
 
-            if (in_offset == 0 && is_drop) {
-                std::cout<<"1 acknowledge_and_drop in_offset == 0, is_drop:"<<is_drop<<std::endl;
-
-            }
+            // if (in_offset == 0 && is_drop) {
+            //     std::cout<<"1 acknowledge_and_drop in_offset == 0, is_drop:"<<is_drop<<std::endl;
+            // }
 
             if (is_drop){
                 auto index = 0;
@@ -582,9 +581,9 @@ namespace dmludp{
                 }else{
                     index = 0;
                 }
-                if (in_offset == 0){
-                    std::cout<<"2 acknowledge_and_drop in_offset == 0, index:"<<index<<", bits_set["<<index<<"]:"<<bits_set[0]<<std::endl;
-                }
+                // if (in_offset == 0){
+                //     std::cout<<"2 acknowledge_and_drop in_offset == 0, index:"<<index<<", bits_set["<<index<<"]:"<<bits_set[0]<<std::endl;
+                // }
                 if (bits_set[index] == 0){
                     bits_set.set(index);
                     ack_count_important++;
