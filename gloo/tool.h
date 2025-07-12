@@ -635,7 +635,7 @@ namespace dmludp {
 
     class PacketMapRingBuffer {
     public:
-        explicit PacketMapRingBuffer(size_t capacity, uint64_t start_packet_number = 0)
+        explicit PacketMapRingBuffer(size_t capacity = MAP_CONST, uint64_t start_packet_number = 0)
             : capacity_(capacity),
             buffer_(capacity),
             head_(0),
@@ -657,7 +657,8 @@ namespace dmludp {
                 return false; 
             }
             if (packet_number != (head_packet_number_ + size() - 1)) {
-                std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()<< std::endl;
+                std::cerr << "Packet number " << packet_number << ", head packet number " << head_packet_number_ << ", "<<size()<<", "<<buffer_.size()
+                << ", "<<head_<<", "<<tail_<< std::endl;
                 return false;  
             }
 
