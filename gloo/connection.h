@@ -1960,7 +1960,7 @@ public:
             }
         });
 
-        auto loss = false;
+        auto realloss = false;
         if (first_pn >= (max_acknowleged + 1)){
             loss = tsInfo.checklast(first_pn, end_pn);
             auto ackts = tsInfo.removeBeforeValue(first_pn);
@@ -1977,7 +1977,7 @@ public:
             }
         }
 
-        if (!loss_important || !loss) {
+        if (!loss_important || !realloss) {
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
             recovery.check_point();
@@ -1985,7 +1985,7 @@ public:
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        if (!loss_unimportant || !loss) {
+        if (!loss_unimportant || !realloss) {
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
             low_recovery.check_point();
