@@ -1442,6 +1442,8 @@ public:
             _Exit(0);
         }
 
+        receivevector[byte_index] |= (1 << bit_index);  
+
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             recvCQ.insert_control_message(pkt_difference, pkt_importance_blocks);
@@ -1643,8 +1645,8 @@ public:
             _Exit(0);
         }
 
+        receivevector[byte_index] |= (1 << bit_index);  
         if (pkt_difference >= receive_connection_difference){
-            receivevector[byte_index] |= (1 << bit_index);  
             // std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
