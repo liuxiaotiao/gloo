@@ -892,7 +892,7 @@ bool Pair::protocal2send(){
     }
 
     if(sent == 0){
-      std::cout<<"sent == 0 "<<std::endl;
+      std::cout<<"sent == 0, err:"<<errno<<std::endl;
       ip_print(dmludp_connection->peeraddr);
       std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<std::endl;
       
