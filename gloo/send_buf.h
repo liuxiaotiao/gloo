@@ -390,7 +390,7 @@ namespace dmludp{
                         packet_count_important++;
                         meta_pos++;
                         if (packet_count_important > bits_set.size()){
-                            std::cout<< debugcount <<"packet_count_important > bits_set.size()"<< std::endl;
+                            std::cout<< debugcount <<"packet_count_important("<<packet_count_important <<") > bits_set.size("<<bits_set.size()<<")"<< std::endl;
                             _Exit(0);
                         }   
                         if (meta_left <= 0){
