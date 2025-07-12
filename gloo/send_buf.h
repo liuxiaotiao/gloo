@@ -575,7 +575,10 @@ namespace dmludp{
                 if (in_offset >= 48){
                     index = (in_offset - 48) / send_buffer_size + 1;
                 }else{
-                    index = in_offset / send_buffer_size;
+                    index = 0;
+                }
+                if (in_offset == 0){
+                    std::cout<<"acknowledge_and_drop in_offset == 0, index:"<<index<<", bits_set["<<index<<"]:"<<bits_set[0]<<std::endl;
                 }
                 if (bits_set[index] == 0){
                     bits_set.set(index);

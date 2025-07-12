@@ -1796,38 +1796,38 @@ public:
                     if (!loss_important) {
                         loss_important = true;
                     } 
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::Application2)  {
                     ++total_important;
                     if (!loss_important) {
                         loss_important = true;
                     } 
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::ElicitAck) {
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::Unreliable) {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else if(slot.pkt_ty == Type::Unreliable2) {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;                    
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;                    
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else {
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
-                    std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
+                    std::cout<<"1 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", loss" << std::endl;
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 }
             });
@@ -1843,7 +1843,7 @@ public:
                     ++byte_index;
                 }
                 size_t ack_value = (ack_src[byte_index] >> bit_index) & 1;
-                std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
 
                 if (slot.pkt_ty == Type::Application || slot.pkt_ty == Type::Application2) {
                     if (!ack_value && !loss_important) {
@@ -1870,39 +1870,39 @@ public:
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
-                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                         } else if(slot.pkt_ty == Type::Application2)  {
                             ++total_important;
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
-                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Application2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
 
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else if(slot.pkt_ty == Type::ElicitAck) {
-                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else if(slot.pkt_ty == Type::Unreliable) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            std::cout <<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout <<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value,  false);
                         } else if(slot.pkt_ty == Type::Unreliable2) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            std::cout <<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout <<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                         } else {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
-                            std::cout<<"[ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
+                            std::cout<<"2 [ACK] pkt:"<< pkt <<", ty:"<<static_cast<uint32_t>(slot.pkt_ty)<< ", slot.difference: " << slot.difference << ", slot.offset: " << slot.offset <<", ack_value: "<<ack_value<<std::endl;
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, true);
                         }
                     }
