@@ -230,7 +230,7 @@ class Recovery{
         }
     }
 
-    void congestion_event(const std::chrono::high_resolution_clock::time_point& now, bool timeout_ = false){ {
+    void congestion_event(const std::chrono::high_resolution_clock::time_point& now, bool timeout_ = false){ 
         if (++losscount == 3){
             return;
         }else {
