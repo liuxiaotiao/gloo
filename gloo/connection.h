@@ -1442,6 +1442,7 @@ public:
             _Exit(0);
         }
 
+        receivevector[byte_index] |= (1 << bit_index);
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             recvCQ.insert_control_message(pkt_difference, pkt_importance_blocks);
@@ -1672,8 +1673,8 @@ public:
             _Exit(0);
         }
 
+        receivevector[byte_index] |= (1 << bit_index);
         if (pkt_difference >= receive_connection_difference){
-            receivevector[byte_index] |= (1 << bit_index);  
             // std::cout<<", "<<byte_index<<", "<<bit_index<<std::endl;
             bool exist = false;
             recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
@@ -1978,6 +1979,17 @@ public:
             low_recovery.check_point();
             low_recovery.congestion_event(receivets);
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        }
+          ip_print(peeraddr);
+        std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
+        
+        std::cout<<"send condition:" <<std::endl;
+        // auto sendbufferqueue_start_index = sendbufferqueue.start();
+        for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++){
+            int index = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
+            auto difference_ = sendbufferqueue.data_[index].get_difference();
+            std::cout << difference_ << " " ;
+            sendbufferqueue.data_[index].metabuf.ack_check();
         }
 
     }
