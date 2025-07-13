@@ -7,6 +7,8 @@ namespace dmludp{
 
 const size_t MAX_CWND = 3000 * 1440;
 
+const size_t MIN_CWND = 512 * 1440;
+
 const size_t SpinMAX = 5;
 // Congestion Control
 //  initial cwnd = min (10*MSS, max (2*MSS, 14600)) 
@@ -228,7 +230,7 @@ class Recovery{
         }
     }
 
-    void congestion_event(const std::chrono::high_resolution_clock::time_point& now) {
+    void congestion_event(const std::chrono::high_resolution_clock::time_point& now, bool timeout_ = false){ {
         if (++losscount == 3){
             return;
         }else {
@@ -244,11 +246,16 @@ class Recovery{
         ssthresh = std::max(ssthresh, (double)INI_WIN);
         
         congestion_window = ssthresh;
-        if(W_max < congestion_window){
+        if (timeout_ == true){
             K = 0;
-        }else{
-            cubic_k(now);
+        }else {
+            if(W_max < congestion_window){
+                K = 0;
+            }else{
+                cubic_k(now);
+            }
         }
+        
         cwnd_inc = cwnd_inc * BETA;
         W_est = congestion_window;
         alpha_aimd = ALPHA_AIMD;
@@ -358,13 +365,6 @@ class Recovery{
         congestion_window = INI_WIN;
     };
 
-    // void update_app_limited(bool v) {
-    //     app_limit = v;
-    // };
-
-    // bool app_limited(){
-    //     return app_limit;
-    // };
 
 };
 
