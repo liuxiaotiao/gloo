@@ -891,19 +891,19 @@ bool Pair::protocal2send(){
 
       dmludp_connection->send_packet_complete(0, 0, start_time);
 
-      std::cout<<"sent == 0, err:"<<errno<<std::endl;
-      // dmludp_connection->send_packet_complete(EAGAIN, , start_time);
-      ip_print(dmludp_connection->peeraddr);
-      std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<std::endl;
+      // std::cout<<"sent == 0, err:"<<errno<<std::endl;
+      // // dmludp_connection->send_packet_complete(EAGAIN, , start_time);
+      // ip_print(dmludp_connection->peeraddr);
+      // std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<std::endl;
       
-      std::cout<<"send condition:" <<std::endl;
-      auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
-      for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
-          int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-          auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
-          std::cout << difference_ << " " ;
-          dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
-      }
+      // std::cout<<"send condition:" <<std::endl;
+      // auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
+      // for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
+      //     int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
+      //     auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
+      //     std::cout << difference_ << " " ;
+      //     dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
+      // }
 
       if (!tx_.empty()){
         struct itimerspec new_value;
@@ -925,10 +925,10 @@ bool Pair::protocal2send(){
       
       return true;
     }else{
-      std::cout << "sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
-      << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
-      << ", send_packet_type: " << dmludp_connection->send_packet_type 
-      << std::endl;
+      // std::cout << "sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
+      // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
+      // << ", send_packet_type: " << dmludp_connection->send_packet_type 
+      // << std::endl;
       // dmludp_connection->send_packet_complete(0, packet_.second, start_time);
       if (sent == (packet_.second - packet_.first + 1)){
         dmludp_connection->send_packet_complete(0, sent, start_time);
