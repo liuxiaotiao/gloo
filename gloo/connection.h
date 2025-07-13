@@ -1970,7 +1970,7 @@ public:
         }
         
         // bool realloss = total_important > 30;
-        realloss = true;
+        bool realloss = true;
         if (!loss_important && realloss) {
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
