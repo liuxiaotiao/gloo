@@ -1807,12 +1807,20 @@ public:
         bool loss_important = false;
         bool loss_unimportant = false;
 
+        bool loss_flag = false;
+        size_t total_received = 0;
+        size_t total_packet = 0;
+
         /* Lost part */
         if (max_acknowleged + 1 != first_pn){
             // std::cout << "Error: ACK packet number mismatch. Expected: " << max_acknowleged + 1 << std::endl;
             connection_map.forEachSlotAutoRangePartial(max_acknowleged + 1, first_pn, [&](uint64_t pkt, const auto& slot, const bool& delay){
                if (slot.pkt_ty == Type::Application) {
                     ++total_important;
+                    ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                     if (!loss_important) {
                         loss_important = true;
                     } 
@@ -1822,22 +1830,38 @@ public:
                     if (!loss_important) {
                         loss_important = true;
                     } 
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::ElicitAck) {
                     sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
                 } else if(slot.pkt_ty == Type::Unreliable) {
                     ++total_unimportant;
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else if(slot.pkt_ty == Type::Unreliable2) {
                     ++total_unimportant;
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                     if (!loss_unimportant) {
                         loss_unimportant = true;
                     } 
                     sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
                 } else {
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                     ++total_unimportant;
                     if (!loss_unimportant) {
                         loss_unimportant = true;
@@ -1864,11 +1888,19 @@ public:
                         loss_important = true;
                     } 
                     ++total_important;
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                 } else if (slot.pkt_ty == Type::Unreliable || slot.pkt_ty == Type::Unreliable2 || slot.pkt_ty == Type::Unreliable3) {
                     if (!ack_value && !loss_unimportant) {
                         loss_unimportant = true;
                     } 
                     ++total_unimportant;
+                     ++total_packet;
+                    if (!loss_flag) {
+                        loss_flag = true;
+                    }
                 } else {
 
                 }
@@ -1884,12 +1916,20 @@ public:
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
+                             ++total_packet;
+                            if (!loss_flag) {
+                                loss_flag = true;
+                            }
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                         } else if(slot.pkt_ty == Type::Application2)  {
                             ++total_important;
                             if (!ack_value && !loss_important) {
                                 loss_important = true;
                             } 
+                             ++total_packet;
+                            if (!loss_flag) {
+                                loss_flag = true;
+                            }
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
                         } else if(slot.pkt_ty == Type::ElicitAck) {
                             sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, true); 
@@ -1898,14 +1938,26 @@ public:
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
+                            ++total_packet;
+                            if (!loss_flag) {
+                                loss_flag = true;
+                            }
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value,  false);
                         } else if(slot.pkt_ty == Type::Unreliable2) {
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
                             } 
+                            ++total_packet;
+                            if (!loss_flag) {
+                                loss_flag = true;
+                            }
                             sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                         } else {
+                            ++total_packet;
+                            if (!loss_flag) {
+                                loss_flag = true;
+                            }
                             ++total_unimportant;
                             if (!ack_value && !loss_unimportant) {
                                 loss_unimportant = true;
@@ -1923,12 +1975,20 @@ public:
                         if (!ack_value && !loss_important) {
                             loss_important = true;
                         } 
+                        ++total_packet;
+                        if (!loss_flag) {
+                            loss_flag = true;
+                        }
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, false); 
                     } else if(slot.pkt_ty == Type::Application2)  {
                         ++total_important;
                         if (!ack_value && !loss_important) {
                             loss_important = true;
                         } 
+                        ++total_packet;
+                        if (!loss_flag) {
+                            loss_flag = true;
+                        }
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
                     } else if(slot.pkt_ty == Type::ElicitAck) {
                         sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, (bool)ack_value, (bool)ack_value); 
@@ -1937,14 +1997,26 @@ public:
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
+                        ++total_packet;
+                        if (!loss_flag) {
+                            loss_flag = true;
+                        }
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                     } else if(slot.pkt_ty == Type::Unreliable2) {
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
                         } 
+                        ++total_packet;
+                        if (!loss_flag) {
+                            loss_flag = true;
+                        }
                         sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, (bool)ack_value, false);
                     } else {
+                        ++total_packet;
+                        if (!loss_flag) {
+                            loss_flag = true;
+                        }
                         ++total_unimportant;
                         if (!ack_value && !loss_unimportant) {
                             loss_unimportant = true;
@@ -1970,23 +2042,33 @@ public:
         }
         
         // bool realloss = total_important > 30;
+
         bool realloss = true;
-        if (!loss_important && realloss) {
-            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        if (!loss_flag && realloss) {
+            recovery.on_packet_ack(total_packet, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
             recovery.check_point();
             recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_packet, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        // realloss = total_unimportant > 30;
-        if (!loss_unimportant && realloss) {
-            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        } else {
-            low_recovery.check_point();
-            low_recovery.congestion_event(receivets);
-            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        }
+        // bool realloss = true;
+        // if (!loss_important && realloss) {
+        //     recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // } else {
+        //     recovery.check_point();
+        //     recovery.congestion_event(receivets);
+        //     recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // }
+
+        // // realloss = total_unimportant > 30;
+        // if (!loss_unimportant && realloss) {
+        //     low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // } else {
+        //     low_recovery.check_point();
+        //     low_recovery.congestion_event(receivets);
+        //     low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // }
         // ip_print(peeraddr);
         // std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
@@ -2072,28 +2154,29 @@ public:
         auto max_sent_pn = pkt_num_spaces.getpktnum();
         size_t total_important = 0;
         size_t total_unimportant = 0;
+        size_t total_packet = 0;
         connection_map.forEachSlotAutoRangePartial(pn, (max_sent_pn + 1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.pkt_ty == Type::Application) {
                 ++total_important;
-        
+                ++total_packet;
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Application2)  {
                 ++total_important;
-     
+                ++total_packet;
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::ElicitAck) {
                 sendbufferqueue.pkt2ack_important(slot.difference, slot.offset, pkt, false, false); 
             } else if(slot.pkt_ty == Type::Unreliable) {
                 ++total_unimportant;
-      
+                ++total_packet; 
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else if(slot.pkt_ty == Type::Unreliable2) {
                 ++total_unimportant;
-         
+                ++total_packet; 
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             } else {
                 ++total_unimportant;
-           
+                ++total_packet; 
                 sendbufferqueue.pkt2ack_unimportant(slot.difference, slot.offset, pkt, false, false);
             }
         });
@@ -2103,18 +2186,24 @@ public:
 
         bool realloss = (max_sent_pn - pn + 1) > 30;
 
-        if (total_important != 0) {
+        // if (total_important != 0) {
+        //     auto receivets = std::chrono::high_resolution_clock::now();
+        //     recovery.check_point();
+        //     recovery.congestion_event(receivets);
+        //     recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // }
+
+        // if (total_unimportant != 0){
+        //     auto receivets = std::chrono::high_resolution_clock::now();
+        //     low_recovery.check_point();
+        //     low_recovery.congestion_event(receivets);
+        //     low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+        // }
+        if (total_packet != 0) {
             auto receivets = std::chrono::high_resolution_clock::now();
             recovery.check_point();
             recovery.congestion_event(receivets);
-            recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
-        }
-
-        if (total_unimportant != 0){
-            auto receivets = std::chrono::high_resolution_clock::now();
-            low_recovery.check_point();
-            low_recovery.congestion_event(receivets);
-            low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
+            recovery.on_packet_ack(total_packet, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
     }
 
@@ -2143,6 +2232,8 @@ public:
 
         size_t sent_unimportant = 0;      
         size_t sent_cwnd_unimportant = 0; 
+
+        size_t sent_cwnd = 0;
 
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
@@ -2185,8 +2276,8 @@ public:
                     recovery.on_packet_sent(out_len);
 
                     sent++;
-                    sent_cwnd_important += out_len;
-                    if (sent_cwnd_important >= sent_limit_important || sent >= send_message.size()){
+                    sent_cwnd += out_len;
+                    if (sent_cwnd >= sent_limit_important || sent >= send_message.size()){
                         break;
                     }           
                 }
@@ -2227,17 +2318,17 @@ public:
                         }
                     }
 
-                    low_recovery.on_packet_sent(out_len);
+                    recovery.on_packet_sent(out_len);
 
                     sent++;
-                    sent_cwnd_unimportant += out_len;
-                    if (sent_cwnd_unimportant >= sent_limit_unimportant || sent >= send_message.size()){
+                    sent_cwnd += out_len;
+                    if (sent_cwnd >= sent_limit_important || sent >= send_message.size()){
                         break;
                     }           
                 }
             }
             
-            if ((sent_cwnd_important >= sent_limit_important && sent_cwnd_unimportant >= sent_limit_unimportant) || sent >= send_message.size()){
+            if ((sent_cwnd >= sent_limit_important ) || sent >= send_message.size()){
                 break;
             }
         }
