@@ -1789,8 +1789,11 @@ public:
         bool loss = false;
         size_t total_send = end_pn - first_pn + 1;
         auto ack_src = reinterpret_cast<const uint8_t*>(msg.iov[1].iov_base) + sizeof(uint64_t);
-        size_t byte_index = 0;
-        size_t bit_index = 0;
+          if (first_pn > end_pn || first_pn < 0 || end_pn < 0) {
+            std::cerr << "Error: Invalid packet number range. first_pn: " << first_pn << ", end_pn: " << end_pn << std::endl;
+            _Exit(0);
+        }
+       
 
         
         auto sendbufferqueue_start_index = sendbufferqueue.start();
@@ -1845,7 +1848,8 @@ public:
         }
         
 
-       
+        size_t byte_index = 0;
+        size_t bit_index = 0;
         /* ACK contain info */
         connection_map.forEachSlotAutoRangePartial(first_pn, (end_pn+1), [&](uint64_t pkt, const auto& slot, const bool& delay){
             if (slot.difference < pkt_difference){
@@ -1980,7 +1984,7 @@ public:
             low_recovery.congestion_event(receivets);
             low_recovery.on_packet_ack(total_unimportant, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
-          ip_print(peeraddr);
+        ip_print(peeraddr);
         std::cout<<recovery.cwnd_available()<<", "<<low_recovery.cwnd_available()<<", "<<total_important<<", "<<total_unimportant<<std::endl;
         
         std::cout<<"send condition:" <<std::endl;
@@ -2239,6 +2243,7 @@ public:
     /*Prepare send packets*/
     std::pair<ssize_t, ssize_t> send_packet(){
         if (get_dmludp_error()){
+            send_packet_type = Type::Application;
             return std::make_pair(start_index, end_index);
         }
 
@@ -2257,7 +2262,13 @@ public:
         if(send_packet_type == 0){
             return;
         }
-        set_error2(err_);
+        if (send_packet_type == Type::Application){
+            set_error2(err_);
+        }
+
+        if (err_ != 0 && sent == 0){
+            return;
+        }
         if (err_ != 0){
             if (send_packet_type == Type::Application){
                 end_ts = std::chrono::high_resolution_clock::now();

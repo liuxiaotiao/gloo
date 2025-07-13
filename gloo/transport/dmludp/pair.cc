@@ -888,6 +888,9 @@ bool Pair::protocal2send(){
 
     if(sent == 0){
       device_->registerDescriptor(fd_, EPOLLIN, this);
+
+      dmludp_connection->send_packet_complete(0, 0, start_time);
+
       std::cout<<"sent == 0, err:"<<errno<<std::endl;
       // dmludp_connection->send_packet_complete(EAGAIN, , start_time);
       ip_print(dmludp_connection->peeraddr);
@@ -926,7 +929,12 @@ bool Pair::protocal2send(){
       << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
       << ", send_packet_type: " << dmludp_connection->send_packet_type 
       << std::endl;
-      dmludp_connection->send_packet_complete(0, packet_.second, start_time);
+      // dmludp_connection->send_packet_complete(0, packet_.second, start_time);
+      if (sent == (packet_.second - packet_.first + 1)){
+        dmludp_connection->send_packet_complete(0, sent, start_time);
+      } else {
+        dmludp_connection->send_packet_complete(errno, sent, start_time);
+      }
     }
   }
 
