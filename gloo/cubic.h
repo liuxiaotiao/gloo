@@ -246,15 +246,15 @@ class Recovery{
         ssthresh = std::max(ssthresh, (double)INI_WIN);
         
         congestion_window = ssthresh;
-        if (timeout_ == true){
-            K = 0;
-        }else {
+        // if (timeout_ == true){
+        //     K = 0;
+        // }else {
             if(W_max < congestion_window){
                 K = 0;
             }else{
                 cubic_k(now);
             }
-        }
+        // }
         
         cwnd_inc = cwnd_inc * BETA;
         W_est = congestion_window;
