@@ -1969,8 +1969,7 @@ public:
             }
         }
         
-        // bool realloss = total_important > 30;
-        bool realloss = true;
+        bool realloss = total_important > 30;
         if (!loss_important && realloss) {
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         } else {
@@ -2103,14 +2102,14 @@ public:
 
         bool realloss = (max_sent_pn - pn + 1) > 30;
 
-        if (total_important != 0) {
+        if (total_important != 0 && realloss) {
             auto receivets = std::chrono::high_resolution_clock::now();
             recovery.check_point();
             recovery.congestion_event(receivets);
             recovery.on_packet_ack(total_important, receivets, std::chrono::duration_cast<std::chrono::seconds>(minrtt));
         }
 
-        if (total_unimportant != 0){
+        if (total_unimportant != 0 && realloss){
             auto receivets = std::chrono::high_resolution_clock::now();
             low_recovery.check_point();
             low_recovery.congestion_event(receivets);
