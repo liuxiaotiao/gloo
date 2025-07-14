@@ -888,6 +888,7 @@ bool Pair::protocal2send(){
         }
         break;
       }
+      dmludp_connection->updateMAC(dmludp_connection->send_message[i].message_header.get_pkt_num());
       sent++;
       accumulated++;
     }

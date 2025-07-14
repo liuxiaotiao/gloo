@@ -1195,6 +1195,8 @@ public:
 
     std::vector<uint64_t> bitmap_vector;
 
+    uint64_t max_send_pkt = LIMIT_UINT64_T;
+
     Connection(sockaddr_storage local, sockaddr_storage peer, bool server):    
     is_server(server),
     handshake_completed(false),
@@ -2262,8 +2264,21 @@ public:
     std::pair<ssize_t, ssize_t> send_packet(){
         // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
         if (get_dmludp_error()){
-            send_packet_type = Type::Application;
-            return std::make_pair(start_index, end_index);
+            auto firstpn = send_message[start_index].get_packet_number();
+            auto endpn =  send_message[end_index].get_packet_number();
+            if (max_send_pkt >= endpn) {
+                set_error2(0);
+                end_index = -1;
+                start_index = 0;
+            } else {
+                if (max_send_pkt >= firstpn){
+                    auto distance = max_send_pkt - firstpn;
+                    start_index += distance;
+                }
+                send_packet_type = Type::Application;
+                return std::make_pair(start_index, end_index);
+            }   
+            
         }
 
         if (end_index == -1){
@@ -2276,52 +2291,37 @@ public:
         return std::make_pair(start_index, end_index);
     }
 
-    void settype(){
-        send_packet_type = Type::Application;
+    void updateMAC(uint64_t pkt_){
+        if (max_send_pkt == LIMIT_UINT64_T || max_send_pkt < pkt_){
+            max_send_pkt = pkt_;
+        } else {
+            std::cout<<"updateMAC error, max_send_pkt:"<<max_send_pkt<<", pkt_:"<<pkt_<<std::endl;
+            _Exit(0);
+        }
     }
 
     /*Use to clear send parameter*/
     void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}){
-        std::cout<<"err_:"<<err_<<", sent:"<<sent<<", start_index:"<<start_index<<", end_index:"<<end_index<<", "<<send_message[start_index].message_header.get_pkt_num()
-        <<", " <<send_message[end_index].message_header.get_pkt_num() <<std::endl;
         if(send_packet_type == 0){
             return;
         }
-
-
         if (send_packet_type == Type::Application){
             set_error2(err_);
-            if (sent == 0){
-                send_packet_type = 0;
-                return;
-            }else {
-                if (sent == (end_index + 1 - start_index)) {
-                    start_index = 0;
-                    end_index = -1;
-                } else {
-                    start_index = start_index + sent;
-                }
-                end_ts = std::chrono::high_resolution_clock::now();
-                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-            }
         }
-
-
 
         if (err_ != 0 && sent == 0){
             return;
         }
-
-
+        
         if (err_ != 0){
             if (send_packet_type == Type::Application){
-                // end_ts = std::chrono::high_resolution_clock::now();
-                // if (start_index < 0){
-                //     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
-                //     _Exit(0);
-                // }
-                // tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-                // start_index = start_index + sent;
+                end_ts = std::chrono::high_resolution_clock::now();
+                if (start_index < 0){
+                    std::cout<<"send_packet_complete start_index < 0" <<std::endl;
+                    _Exit(0);
+                }
+                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
+                start_index = start_index + sent;
             }
             return;
         }
@@ -2329,9 +2329,9 @@ public:
         if(send_packet_type == Type::ACK){
             process_application_copy();
         }else if(send_packet_type == Type::Application){
-            // end_index = -1;
-            // set_handshake();
-            // tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
+            end_index = -1;
+            set_handshake();
+            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
         }else if(send_packet_type == Type::ElicitAck){
 
         }else if(send_packet_type == Type::Stop){
