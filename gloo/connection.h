@@ -2292,8 +2292,13 @@ public:
     }
 
     void updateMAC(uint64_t pkt_){
-        if (max_send_pkt == LIMIT_UINT64_T || max_send_pkt < pkt_){
+        if (max_send_pkt == LIMIT_UINT64_T){
             max_send_pkt = pkt_;
+            return;
+        } 
+        if(max_send_pkt < pkt_){
+            max_send_pkt = pkt_;
+            return;
         } else {
             std::cout<<"updateMAC error, max_send_pkt:"<<max_send_pkt<<", pkt_:"<<pkt_<<std::endl;
             _Exit(0);
