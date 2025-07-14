@@ -881,7 +881,8 @@ bool Pair::protocal2send(){
             // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
             // << ", send_packet_type: " << dmludp_connection->send_packet_type 
             // << std::endl;
-            dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
+            // dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
+            dmludp_connection->sendbuffer(sent);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
             return true;
         }
@@ -892,6 +893,7 @@ bool Pair::protocal2send(){
     }
 
     if(sent == 0){
+      dmludp_connection->sendbuffer(sent);
       // std::cout<<"sent == 0, err:"<<errno<<std::endl;
       // // dmludp_connection->send_packet_complete(EAGAIN, , start_time);
       // ip_print(dmludp_connection->peeraddr);
@@ -906,7 +908,7 @@ bool Pair::protocal2send(){
       //     dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
       // }
       device_->registerDescriptor(fd_, EPOLLIN, this);
-      dmludp_connection->send_packet_complete(0, 0, start_time);
+      // dmludp_connection->send_packet_complete(0, 0, start_time);
 
       if (!tx_.empty()){
         struct itimerspec new_value;
@@ -932,11 +934,12 @@ bool Pair::protocal2send(){
       // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
       // << ", send_packet_type: " << dmludp_connection->send_packet_type 
       // << std::endl;
-      if (sent == (packet_.second - packet_.first + 1)){
-        dmludp_connection->send_packet_complete(0, sent, start_time);
-      } else {
-        dmludp_connection->send_packet_complete(errno, sent, start_time);
-      }
+      dmludp_connection->sendbuffer(sent);
+      // if (sent == (packet_.second - packet_.first + 1)){
+      //   dmludp_connection->send_packet_complete(0, sent, start_time);
+      // } else {
+      //   dmludp_connection->send_packet_complete(errno, sent, start_time);
+      // }
       // dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
