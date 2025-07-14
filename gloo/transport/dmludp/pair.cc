@@ -891,6 +891,7 @@ bool Pair::protocal2send(){
       sent++;
       accumulated++;
     }
+    std::cout<<"MAX:"<<dmludp_connection->max_send_pkt<<std::endl;
 
     if(sent == 0){
       // std::cout<<"sent == 0, err:"<<errno<<std::endl;
