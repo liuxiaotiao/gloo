@@ -2276,7 +2276,7 @@ public:
         return std::make_pair(start_index, end_index);
     }
 
-    void sendbuffer(size_t sent_) {
+    void sendbuffer(size_t sent_, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}) {
         if (sent_ == 0) {
             if (end_index  == start_index) {
                 set_error2(0);
