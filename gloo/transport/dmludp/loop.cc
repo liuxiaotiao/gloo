@@ -128,6 +128,10 @@ void Loop::registerDescriptor(int fd, int events, Handler* h) {
   if (rv == -1 && errno == EEXIST) {
     rv = epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
   }
+
+  if (rv == -1){
+    std::cerr << "epoll_ctl MOD failed: errno=" << errno << " (" << strerror(errno) << "), fd=" << fd << std::endl;
+  }
     // std::cout<<"[Debug] 2 registerDescriptor fd:"<<fd<<std::endl;
   GLOO_ENFORCE_NE(rv, -1, "epoll_ctl: ", strerror(errno));
 }
