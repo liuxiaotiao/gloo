@@ -1705,6 +1705,7 @@ public:
         if (current_loop_min > send_num){
             ip_print(peeraddr);
             std::cerr << "Error: current_loop_min is greater than send_num. (current_loop_min: " << current_loop_min << ", send_num: " << send_num << "), max_received:" << max_received << std::endl;
+            return 0;
             _Exit(0);
         }
 
@@ -2272,7 +2273,7 @@ public:
                 start_index = 0;
             } else {
                 if (max_send_pkt >= firstpn){
-                    auto distance = max_send_pkt - firstpn;
+                    auto distance = max_send_pkt - firstpn + 1;
                     start_index += distance;
                 }
                 send_packet_type = Type::Application;

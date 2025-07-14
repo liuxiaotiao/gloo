@@ -671,8 +671,11 @@ bool Pair::protocal2read(){
 
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
+    auto connection_result = 0;
     if (flag4send){
-      auto connection_result = dmludp_connection->send_data2();
+      connection_result = dmludp_connection->send_data2();
+    }
+    if (flag4send && connection_result != 0){
       auto sent_result = sendmsg(fd_, &dmludp_connection->acknowldge_msghdr, 0);
       if (sent_result > -1){
         dmludp_connection->update_boundary();
@@ -891,7 +894,7 @@ bool Pair::protocal2send(){
       sent++;
       accumulated++;
     }
-    std::cout<<"MAX:"<<dmludp_connection->max_send_pkt<<std::endl;
+    // std::cout<<"MAX:"<<dmludp_connection->max_send_pkt<<std::endl;
 
     if(sent == 0){
       // std::cout<<"sent == 0, err:"<<errno<<std::endl;
