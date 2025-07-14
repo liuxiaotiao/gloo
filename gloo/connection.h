@@ -2276,29 +2276,8 @@ public:
         return std::make_pair(start_index, end_index);
     }
 
-    void sendbuffer(size_t sent_, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}) {
-        if (sent_ == 0) {
-            if (end_index  == start_index) {
-                set_error2(0);
-            } else {
-                set_error2(1);
-            }
-            send_packet_type = 0;
-            return;
-        }
-        if (sent_ != (end_index + 1 - start_index)) {
-            set_error2(1);
-            start_index = start_index + sent_;
-            set_handshake();
-            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-        }else {
-            end_index = -1;
-            set_error2(0);
-            set_handshake();
-            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-        }
-        send_packet_type = 0;
-        return;
+    void settype(){
+        send_packet_type = Type::Application;
     }
 
     /*Use to clear send parameter*/
@@ -2307,33 +2286,34 @@ public:
             return;
         }
 
-        // if (send_packet_type == Type::Application){
-        //     set_error2(err_);
-        // }
 
-        // if (err_ != 0 && sent == 0){
-        //     return;
-        // }
+        if (send_packet_type == Type::Application){
+            set_error2(err_);
+        }
+
+        if (err_ != 0 && sent == 0){
+            return;
+        }
         
-        // if (err_ != 0){
-        //     if (send_packet_type == Type::Application){
-        //         end_ts = std::chrono::high_resolution_clock::now();
-        //         if (start_index < 0){
-        //             std::cout<<"send_packet_complete start_index < 0" <<std::endl;
-        //             _Exit(0);
-        //         }
-        //         tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-        //         start_index = start_index + sent;
-        //     }
-        //     return;
-        // }
+        if (err_ != 0){
+            if (send_packet_type == Type::Application){
+                end_ts = std::chrono::high_resolution_clock::now();
+                if (start_index < 0){
+                    std::cout<<"send_packet_complete start_index < 0" <<std::endl;
+                    _Exit(0);
+                }
+                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
+                start_index = start_index + sent;
+            }
+            return;
+        }
         
         if(send_packet_type == Type::ACK){
             process_application_copy();
         }else if(send_packet_type == Type::Application){
-            // end_index = -1;
-            // set_handshake();
-            // tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
+            end_index = -1;
+            set_handshake();
+            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
         }else if(send_packet_type == Type::ElicitAck){
 
         }else if(send_packet_type == Type::Stop){
