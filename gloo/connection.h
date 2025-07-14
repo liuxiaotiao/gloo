@@ -2282,6 +2282,7 @@ public:
 
     /*Use to clear send parameter*/
     void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}){
+        std::cout<<"err_:"<<err_<<", sent:"<<sent<<", start_index:"<<start_index<<", end_index:"<<end_index<<std::endl;
         if(send_packet_type == 0){
             return;
         }
@@ -2291,10 +2292,13 @@ public:
             set_error2(err_);
         }
 
+
+
         if (err_ != 0 && sent == 0){
             return;
         }
-        
+
+
         if (err_ != 0){
             if (send_packet_type == Type::Application){
                 end_ts = std::chrono::high_resolution_clock::now();
