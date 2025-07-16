@@ -1870,7 +1870,6 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
 
         if (current_loop_min > send_num){
             ip_print(peeraddr);
@@ -1895,9 +1894,11 @@ public:
         acknowldge_msghdr.msg_iov = &acknowldge_iov[0];
         acknowldge_msghdr.msg_iovlen = 3;
 
+        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
+
 
         send_packet_type = ty;
-        return sizeof(Header) - 5 + hdr->pkt_length;
+        return sizeof(Header) - 7 + hdr->pkt_length;
     }
     
 
