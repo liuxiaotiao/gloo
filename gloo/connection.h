@@ -2269,6 +2269,7 @@ public:
         if (get_dmludp_error()){
             auto firstpn = send_message[start_index].get_packet_number();
             auto endpn =  send_message[end_index].get_packet_number();
+            std::cout << "Debug: send_packet, start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
             if (max_send_pkt >= endpn) {
                 set_error2(0);
                 end_index = -1;
