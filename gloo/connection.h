@@ -2307,7 +2307,7 @@ public:
     }
 
     /*Use to clear send parameter*/
-    void send_packet_complete(size_t err_ = 0, size_t sent = 0, const std::chrono::high_resolution_clock::time_point& start_ts = std::chrono::high_resolution_clock::time_point{}){
+    void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
         if(send_packet_type == 0){
             return;
         }

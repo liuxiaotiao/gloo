@@ -867,7 +867,7 @@ bool Pair::protocal2send(){
       break;
     }
     auto sent = 0;
-    auto start_time = std::chrono::system_clock::now();
+    
 
     auto packet_ = dmludp_connection->send_packet();
     auto i = packet_.first;
@@ -884,6 +884,7 @@ bool Pair::protocal2send(){
             // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
             // << ", send_packet_type: " << dmludp_connection->send_packet_type 
             // << std::endl;
+            auto start_time = std::chrono::system_clock::now();
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
             return true;
@@ -910,6 +911,7 @@ bool Pair::protocal2send(){
       //     std::cout << difference_ << " " ;
       //     dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
       // }
+      auto start_time = std::chrono::system_clock::now();
       device_->registerDescriptor(fd_, EPOLLIN, this);
       dmludp_connection->send_packet_complete(0, 0, start_time);
 
@@ -933,16 +935,12 @@ bool Pair::protocal2send(){
       
       return true;
     }else{
-      // std::cout << "sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
-      // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
-      // << ", send_packet_type: " << dmludp_connection->send_packet_type 
-      // << std::endl;
+      auto start_time = std::chrono::system_clock::now();
       if (sent == (packet_.second - packet_.first + 1)){
         dmludp_connection->send_packet_complete(0, sent, start_time);
       } else {
         dmludp_connection->send_packet_complete(errno, sent, start_time);
       }
-      // dmludp_connection->send_packet_complete(0, packet_.second, start_time);
     }
   }
 
