@@ -2350,7 +2350,7 @@ public:
 
     void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
         ip_print(peeraddr);
-        std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << ", end_index:" << end_index << std::endl;
+        std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << ", end_index:" << end_index <<", "<<send_packet_type<< std::endl;
         if(send_packet_type == 0){ 
             return;
         }
