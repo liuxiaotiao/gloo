@@ -539,8 +539,8 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
-  ip_print(dmludp_connection->peeraddr);
-  std::cout << "readComplete: opcode: " << static_cast<int>(opcode) << std::endl;
+  // ip_print(dmludp_connection->peeraddr);
+  // std::cout << "readComplete: opcode: " << static_cast<int>(opcode) << std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
@@ -676,7 +676,7 @@ bool Pair::protocal2read(){
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); ){
       auto receive_batch = dmludp_connection->get_receive_batch(receive_number);
       auto retval = recvmmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, receive_batch, 0, nullptr);
-      std::cout<<"receive_number: "<<receive_number<<", retval: "<<retval<<std::endl;
+      // std::cout<<"receive_number: "<<receive_number<<", retval: "<<retval<<std::endl;
       if (retval == -1){
         if (errno == EAGAIN) {
             break;
@@ -698,9 +698,9 @@ bool Pair::protocal2read(){
       break;
     }
 
-    std::cout<<"received: "<<received<<", receive_check: "<<receive_check<<std::endl;
+    // std::cout<<"received: "<<received<<", receive_check: "<<receive_check<<std::endl;
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
-    std::cout<<"2 received: "<<received<<", receive_check: "<<receive_check<<std::endl;
+    // std::cout<<"2 received: "<<received<<", receive_check: "<<receive_check<<std::endl;
     auto connection_result = 0;
     if (flag4send){
       connection_result = dmludp_connection->send_data2();
