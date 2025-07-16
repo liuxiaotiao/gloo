@@ -46,8 +46,8 @@ namespace {
 // This reflects an approximation of /proc/sys/net/core/{r,w}mem_max.
 // It is hard coded because making buffers larger than this would not
 // have much impact. Also see socket(7).
-constexpr size_t kMaxSendBufferSize = 32 * 1024 * 1024;
-constexpr size_t kMaxRecvBufferSize = 32 * 1024 * 1024;
+constexpr size_t kMaxSendBufferSize = 128 * 1024 * 1024;
+constexpr size_t kMaxRecvBufferSize = 128 * 1024 * 1024;
 
 } // namespace
 
