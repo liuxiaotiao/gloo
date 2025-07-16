@@ -672,7 +672,6 @@ bool Pair::protocal2read(){
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); ){
-      
       auto receive_batch = dmludp_connection->get_receive_batch(receive_number);
       auto retval = recvmmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, receive_batch, 0, nullptr);
       std::cout<<"receive_number: "<<receive_number<<", retval: "<<retval<<std::endl;
@@ -696,9 +695,7 @@ bool Pair::protocal2read(){
       break;
     }
 
-    
-
-
+    std::cout<<"received: "<<received<<", receive_check: "<<receive_check<<std::endl;
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
     auto connection_result = 0;
     if (flag4send){
