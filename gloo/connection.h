@@ -1249,7 +1249,7 @@ public:
         }
     };
 
-    ~Connection(){
+    __attribute__((noinline)) ~Connection(){
         std::cout<<"Connection is destroied"<<std::endl;
     };
 
