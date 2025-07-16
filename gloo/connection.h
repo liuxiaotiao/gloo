@@ -2210,6 +2210,9 @@ public:
                 }
             }
             
+            if (send_message.full()) {
+                break;
+            }
 
             /* Unimportant */
             if (sent_cwnd_unimportant < sent_limit_unimportant) {
