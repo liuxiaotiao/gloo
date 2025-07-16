@@ -1,4 +1,3 @@
 Jul 7 3:00PM 2025
 Base: v6.0.1.1
-Modification
-1. Speed up + fix VMA false error
+OSU HPC sendmsg/recvmsg stable version
