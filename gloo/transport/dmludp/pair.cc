@@ -675,6 +675,7 @@ bool Pair::protocal2read(){
       
       auto receive_batch = dmludp_connection->get_receive_batch(receive_number);
       auto retval = recvmmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, receive_batch, 0, nullptr);
+      std::cout<<"receive_number: "<<receive_number<<", retval: "<<retval<<std::endl;
       if (retval == -1){
         if (errno == EAGAIN) {
             break;
