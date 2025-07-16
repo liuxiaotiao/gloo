@@ -2667,7 +2667,7 @@ public:
                 auto& msg = receive_message[index]; 
                 pkt_offset = msg.get_packet_offset();
                 pkt_difference = msg.get_packet_difference();
-                recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
+                recvCQ.copy(pkt_difference, pkt_offset, msg.msg_hdr.iov[1].iov_base, 48);
                 copycount += 48;
                 receive_slot[index] = 0;
                 receive_record.reset();
@@ -2698,10 +2698,10 @@ public:
                 receive_slot[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
-                        recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
+                        recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.msg_hdr.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }else{
-                        recvCQ.copy(receive_connection_difference, (pkt_offset), msg.iov[1].iov_base, pkt_len);
+                        recvCQ.copy(receive_connection_difference, (pkt_offset), msg.msg_hdr.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }
 
