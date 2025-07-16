@@ -1514,6 +1514,7 @@ public:
         bool send_flag_ = false;
         // auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
+            std::cout<<"i: "<<i<<", receive_slot[i]:"<<receive_slot[i]<<", receive_upper_bound:"<<receive_upper_bound<<std::endl;
             if (receive_slot[i] == 1)
             {
                 continue;
