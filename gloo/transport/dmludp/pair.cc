@@ -881,6 +881,7 @@ bool Pair::protocal2send(){
 
         if (errno == EAGAIN){
             auto start_time = std::chrono::high_resolution_clock::now();
+            std::cout<<"1 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
             return true;
@@ -894,6 +895,7 @@ bool Pair::protocal2send(){
 
     if(sent == 0){
       auto start_time = std::chrono::high_resolution_clock::now();
+      std::cout<<"2 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       dmludp_connection->send_packet_complete(0, 0, start_time);
 
