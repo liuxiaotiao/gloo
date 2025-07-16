@@ -20,9 +20,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <optional>
+#include <linux/udp.h>     // for UDP_SEGMENT
+#include <linux/socket.h>  // for SOL_UDP
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
-#include <linux/socket.h> 
 #include "allreduce.h"
+
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
+
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 // #pragma message("DEBUG: included span in FILENAME")
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
@@ -146,11 +155,11 @@ class Message{
         return message_header.get_important_blocks();
     }
 
-    msghdr* getMessageHeader() {
+    mmsghdr* getMessageHeader() {
         return &message_body;
     }
     
-}
+};
 
 // class Message{
 //     public:
@@ -241,7 +250,7 @@ class Message{
 // };
 
 class RCMessage {
-    private:
+    public:
         struct mmsghdr message_body;
 
         iovec iov[2];
@@ -252,7 +261,6 @@ class RCMessage {
         RCMessage(){
             memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
             memset(&message_body, 0, sizeof(message_body));
-            set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
 
             iov[0].iov_base = static_cast<void*>(&message_header);
             iov[0].iov_len = sizeof(Header) - 7; 
@@ -296,7 +304,7 @@ class RCMessage {
             return message_header.get_important_blocks();
         }
 
-        msghdr* getMessageHeader() {
+        mmsghdr* getMessageHeader() {
             return &message_body;
         }   
 
@@ -2335,16 +2343,16 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_important(i, msg.msg_hdr.iov[1], out_len, out_off, out_blocks, out_status);
+                    auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.msg_hdr.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.msg_hdr.iov[2].iov_len = 0;
+                        msg.iov[2].iov_len = 0;
                     }
 
                     send_message.push_back();
@@ -2396,16 +2404,16 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.msg_hdr.iov[1], out_len, out_off, out_blocks, pkt_status);
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.msg_hdr.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.msg_hdr.iov[2].iov_len = 0;
+                        msg.iov[2].iov_len = 0;
                     }
 
                     send_message.push_back();
@@ -2667,7 +2675,7 @@ public:
                 auto& msg = receive_message[index]; 
                 pkt_offset = msg.get_packet_offset();
                 pkt_difference = msg.get_packet_difference();
-                recvCQ.copy(pkt_difference, pkt_offset, msg.msg_hdr.iov[1].iov_base, 48);
+                recvCQ.copy(pkt_difference, pkt_offset, msg.iov[1].iov_base, 48);
                 copycount += 48;
                 receive_slot[index] = 0;
                 receive_record.reset();
@@ -2698,10 +2706,10 @@ public:
                 receive_slot[index] = 0;
                 if (!recvCQ.copyed_check(pkt_difference, pkt_offset)){
                     if (pkt_offset >= 48){
-                        recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.msg_hdr.iov[1].iov_base, pkt_len);
+                        recvCQ.copy(receive_connection_difference, (pkt_offset - 48), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }else{
-                        recvCQ.copy(receive_connection_difference, (pkt_offset), msg.msg_hdr.iov[1].iov_base, pkt_len);
+                        recvCQ.copy(receive_connection_difference, (pkt_offset), msg.iov[1].iov_base, pkt_len);
                         copycount += pkt_len;
                     }
 
