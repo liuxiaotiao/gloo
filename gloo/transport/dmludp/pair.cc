@@ -686,6 +686,7 @@ bool Pair::protocal2read(){
       receive_number += retval;
       received += retval;
       receive_check = receive_number;
+      receive_number = dmludp_connection->next_available(receive_number - 1);
       if(received == 1300){
         break;
       }
