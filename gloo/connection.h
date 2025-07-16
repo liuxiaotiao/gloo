@@ -1777,6 +1777,7 @@ public:
         if (pkt_difference >= receive_connection_difference){
             recvCQ.indexcheck(pkt_difference);
             if (pkt_offset == 0){
+                std::cout<<"Processing packet with difference: "<< pkt_difference <<", pkt_offset:"<< pkt_offset <<", pkt_length:"<< pkt_length <<std::endl;
                 if(!recvCQ.insertzero(pkt_difference, index)){
                     receive_slot[index] = 0;
                 }else{
