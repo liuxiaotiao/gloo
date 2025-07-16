@@ -35,7 +35,7 @@
 #include "gloo/allreduce.h"
 
 #define FD_INVALID (-1)
-#define MAX_PACKETS 100
+// #define MAX_PACKETS 100
 
 namespace gloo {
 namespace transport {
@@ -845,7 +845,7 @@ bool Pair::protocal2send(){
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
       bool connection_written;
-      if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+      if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 8640) {
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
       } else {
@@ -1128,7 +1128,7 @@ void Pair::sendAsyncMode(Op& op) {
           const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
   
            bool connection_written;
-          if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+          if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 8640) {
             auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
             connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
           } else {
@@ -1171,7 +1171,7 @@ void Pair::sendAsyncMode(Op& op) {
         }
         const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
         bool connection_written;
-        if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+        if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 8640) {
           auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
           connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
         } else {
