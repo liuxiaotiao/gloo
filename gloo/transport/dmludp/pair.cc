@@ -926,7 +926,7 @@ bool Pair::protocal2send(){
 
       dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop(retval);
-      std::cout <<"retval: " << retval << ", sent: " << dmludp_connection->send_message.size() << std::endl;
+      std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size() << std::endl;
       sent += retval;
       accumulated += retval;
       if (retval < batch) {
