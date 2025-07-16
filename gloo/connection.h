@@ -1869,7 +1869,7 @@ public:
         
         /*status lastest received difference*/
         hdr->difference = receive_connection_difference + i;
-        // std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
+        std::cout<<"send_acknowledge:"<<current_loop_min<<", "<<send_num<<", "<<hdr->difference<<", "<<hdr->pkt_length<<std::endl;
 
         if (current_loop_min > send_num){
             ip_print(peeraddr);
