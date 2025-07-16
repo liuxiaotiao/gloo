@@ -1249,7 +1249,9 @@ public:
         }
     };
 
-    ~Connection(){};
+    ~Connection(){
+        std::cout<<"Connection is destroied"<<std::endl;
+    };
 
     void loss_reset(){
         first_loss = false;

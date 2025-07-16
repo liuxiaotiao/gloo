@@ -880,10 +880,6 @@ bool Pair::protocal2send(){
         }
 
         if (errno == EAGAIN){
-            // std::cout << "[sendmsg EAGAIN]sent: " << sent << ", first pkt:"<<dmludp_connection->send_message[packet_.first].message_header.get_pkt_num()
-            // << ", last pkt:"<<dmludp_connection->send_message[packet_.second].message_header.get_pkt_num() << ", errno: " << errno
-            // << ", send_packet_type: " << dmludp_connection->send_packet_type 
-            // << std::endl;
             auto start_time = std::chrono::high_resolution_clock::now();
             dmludp_connection->send_packet_complete(EAGAIN, i, start_time);
             device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
@@ -895,22 +891,8 @@ bool Pair::protocal2send(){
       sent++;
       accumulated++;
     }
-    // std::cout<<"MAX:"<<dmludp_connection->max_send_pkt<<std::endl;
 
     if(sent == 0){
-      // std::cout<<"sent == 0, err:"<<errno<<std::endl;
-      // // dmludp_connection->send_packet_complete(EAGAIN, , start_time);
-      // ip_print(dmludp_connection->peeraddr);
-      // std::cout<<dmludp_connection->recovery.cwnd_available()<<", "<<dmludp_connection->low_recovery.cwnd_available()<<std::endl;
-      
-      // std::cout<<"send condition:" <<std::endl;
-      // auto sendbufferqueue_start_index = dmludp_connection->sendbufferqueue.start();
-      // for (auto idx = 0; idx < dmludp_connection->sendbufferqueue.get_count(); idx++){
-      //     int index = (sendbufferqueue_start_index + idx) % dmludp_connection->sendbufferqueue.get_capacity();
-      //     auto difference_ = dmludp_connection->sendbufferqueue.data_[index].get_difference();
-      //     std::cout << difference_ << " " ;
-      //     dmludp_connection->sendbufferqueue.data_[index].metabuf.ack_check();
-      // }
       auto start_time = std::chrono::high_resolution_clock::now();
       device_->registerDescriptor(fd_, EPOLLIN, this);
       dmludp_connection->send_packet_complete(0, 0, start_time);
