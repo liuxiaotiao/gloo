@@ -61,28 +61,203 @@ constexpr auto RTO_MAX = std::chrono::microseconds(800);
 
 class Message{
     public:
-        struct msghdr message_body;
+        struct mmsghdr message_body;
+
+        iovec iov[3];
+
+        Header message_header;
+
+        uint8_t padding[MAX_SEND_UDP_PAYLOAD_SIZE];
+
+        char control_buf[CMSG_SPACE(sizeof(uint16_t))];
+    
+    Message(){
+        memset(padding, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
+        memset(&message_body, 0, sizeof(message_body));
+        memset(control_buf, 0, sizeof(control_buf));
+
+        iov[0].iov_base = static_cast<void*>(&message_header);
+        iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
+
+        iov[1] = {nullptr, 0};
+
+        iov[2].iov_base = static_cast<void*>(padding);
+        iov[2].iov_len = 0;  
+
+        message_body.msg_hdr.msg_iov = iov;
+        message_body.msg_hdr.msg_iovlen = 3; // Fixed to 3 iovecs
+
+        message_body.msg_hdr.msg_control = control_buf;
+        message_body.msg_hdr.msg_controllen = sizeof(control_buf);
+
+        struct cmsghdr* cmsg = (struct cmsghdr*)control_buf;
+        cmsg->cmsg_level = SOL_UDP;
+        cmsg->cmsg_type = UDP_SEGMENT;
+        cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
+        *((uint16_t*)CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header) - 7; // Set GSO size
+    }
+
+    ~Message(){};
+
+    void setMessageBody(void* buffer, size_t length) {
+        iov[1].iov_base = buffer;
+        iov[1].iov_len = length;
+    }
+
+    void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
+        Packet_len length, 
+        Block_len blocks_, 
+        Type ty_) {
+        message_header.ty = ty_;
+        message_header.pkt_num = pn;
+        message_header.offset = offset;
+        message_header.difference = difference;
+        message_header.pkt_length = (Packet_num_len)length;
+        message_header.pkt_important_block = blocks_;
+    }
+
+    void set_padding(size_t len) {
+        if (len <= sizeof(padding)) {
+            iov[2].iov_len = len;
+        }
+    } 
+
+    Packet_num_len get_packet_number(){
+        return message_header.get_pkt_num();
+    }
+
+    uint8_t get_packet_type(){
+        return message_header.get_ty();
+    }
+
+    Offset_len get_packet_offset(){
+        return message_header.get_offset();
+    }
+
+    Difference_len get_packet_difference(){
+        return message_header.get_difference();
+    }
+
+    uint16_t get_packet_length(){
+        return message_header.get_pkt_length();
+    }
+
+    Block_len get_blocks(){
+        return message_header.get_important_blocks();
+    }
+
+    msghdr* getMessageHeader() {
+        return &message_body;
+    }
+    
+}
+
+// class Message{
+//     public:
+//         struct msghdr message_body;
+
+//         iovec iov[2];
+
+//         Header message_header;
+
+//         Message(){
+//             iov[0].iov_base = static_cast<void*>(&message_header);
+//             iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
+
+//             iov[1] = {nullptr, 0};
+
+//             memset(&message_body, 0, sizeof(msghdr));
+//             message_body.msg_iov = iov;
+//             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
+//         } 
+
+//         ~Message(){};
+
+//         void setMessageBody(void* buffer, size_t length) {
+//             iov[1].iov_base = buffer;
+//             iov[1].iov_len = length;
+//         }
+
+//         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
+//             Packet_len length, 
+//             Block_len blocks_, 
+//             Type ty_) {
+//             message_header.ty = ty_;
+//             message_header.pkt_num = pn;
+//             message_header.offset = offset;
+//             message_header.difference = difference;
+//             message_header.pkt_length = (Packet_num_len)length;
+//             message_header.pkt_important_block = blocks_;
+//         }
+
+//         Packet_num_len get_packet_number(){
+//             return message_header.get_pkt_num();
+//         }
+
+//         uint8_t get_packet_type(){
+//             return message_header.get_ty();
+//         }
+
+//         Offset_len get_packet_offset(){
+//             return message_header.get_offset();
+//         }
+
+//         Difference_len get_packet_difference(){
+//             return message_header.get_difference();
+//         }
+
+//         uint16_t get_packet_length(){
+//             return message_header.get_pkt_length();
+//         }
+
+//         Block_len get_blocks(){
+//             return message_header.get_important_blocks();
+//         }
+
+//         msghdr* getMessageHeader() {
+//             return &message_body;
+//         }
+// };
+
+// class RCMessage : public Message {
+//     private:
+//         // bool use_status = true;
+//         char control[CMSG_SPACE(sizeof(timespec) * 3)];
+//         uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
+//     public:
+//         RCMessage(){
+//             message_body.msg_control = control;
+//             message_body.msg_controllen = sizeof(control);
+//             memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
+//             set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
+//         }
+            
+//         void set_receive_message(void *ptr, size_t ptr_len){
+//             iov[1].iov_base = ptr;
+//             iov[1].iov_len = ptr_len;
+//         }
+
+//         ~RCMessage(){};
+// };
+
+class RCMessage {
+    private:
+        struct mmsghdr message_body;
 
         iovec iov[2];
 
         Header message_header;
+        uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
+    public:
+        RCMessage(){
+            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
+            memset(&message_body, 0, sizeof(message_body));
+            set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
 
-        Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
-
-            iov[1] = {nullptr, 0};
-
-            memset(&message_body, 0, sizeof(msghdr));
-            message_body.msg_iov = iov;
-            message_body.msg_iovlen = 2; // Fixed to 2 iovecs
-        } 
-
-        ~Message(){};
-
-        void setMessageBody(void* buffer, size_t length) {
-            iov[1].iov_base = buffer;
-            iov[1].iov_len = length;
+            iov[0].iov_len = sizeof(Header) - 7; 
+            iov[1].iov_base = rx_buffer;
+            iov[1].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
         }
 
         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
@@ -123,29 +298,12 @@ class Message{
 
         msghdr* getMessageHeader() {
             return &message_body;
-        }
-};
+        }   
 
-class RCMessage : public Message {
-    private:
-        // bool use_status = true;
-        char control[CMSG_SPACE(sizeof(timespec) * 3)];
-        uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
-    public:
-        RCMessage(){
-            message_body.msg_control = control;
-            message_body.msg_controllen = sizeof(control);
-            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
-            set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
-        }
-            
-        void set_receive_message(void *ptr, size_t ptr_len){
-            iov[1].iov_base = ptr;
-            iov[1].iov_len = ptr_len;
-        }
 
         ~RCMessage(){};
 };
+
 
 class MetaInfo{
     public:
@@ -169,9 +327,9 @@ class MetaInfo{
 
         ~MetaInfo(){};
 
-        bool no_overlap(const std::pair<Packet_num_len, Packet_num_len>& p1, const std::pair<Packet_num_len, Packet_num_len>& p2) {
-            return p1.second < p2.first || p2.second < p1.first;
-        }
+        // bool no_overlap(const std::pair<Packet_num_len, Packet_num_len>& p1, const std::pair<Packet_num_len, Packet_num_len>& p2) {
+        //     return p1.second < p2.first || p2.second < p1.first;
+        // }
 
         Difference_len get_difference(){
             return difference_flag;
@@ -1345,7 +1503,7 @@ public:
     /*Process control message and application packet*/
     bool recv_slice2(size_t rx_count, size_t receive_max_index, struct timespec ts = {0, 0}){
         receive_upper_bound = rx_count;
-        receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
+        // receive_upper_limit = std::max(receive_upper_limit, receive_max_index + 1);
         bool send_flag_ = false;
         // auto startts = std::chrono::high_resolution_clock::now();
         for (auto i = 0 ; i <= receive_max_index; i++){
@@ -1547,9 +1705,9 @@ public:
 
 
     /*Max received index*/
-    size_t boundary(){
-        return receive_upper_limit;
-    }
+    // size_t boundary(){
+    //     return receive_upper_limit;
+    // }
 
     /*Only send acknowledge packet*/
     size_t send_data2(){
@@ -2177,11 +2335,18 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
+                    auto s_flag = sendbufferqueue.emit_important(i, msg.msg_hdr.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
+
+                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
+                        msg.msg_hdr.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                    } else {
+                        msg.msg_hdr.iov[2].iov_len = 0;
+                    }
+
                     send_message.push_back();
                     
                     auto pn = pkt_num_spaces.updatepktnum();
@@ -2231,11 +2396,18 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.msg_hdr.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
                     }
+
+                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
+                        msg.msg_hdr.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                    } else {
+                        msg.msg_hdr.iov[2].iov_len = 0;
+                    }
+
                     send_message.push_back();
                     
                     auto pn = pkt_num_spaces.updatepktnum();
@@ -2438,6 +2610,16 @@ public:
 
     size_t get_end(){
         return receive_message.size();
+    }
+
+    size_t get_receive_batch(size_t index){
+        auto i = 1;
+        for ( ; i < BATCH_SIZE; i++){
+            if (receive_slot[index + i] == 0){
+                break;
+            }
+        }
+        return i;
     }
 
 

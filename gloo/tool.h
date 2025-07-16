@@ -18,6 +18,8 @@ namespace dmludp {
     // The default max_datagram_size used in congestion control.
     inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 8640;
 
+    inline constexpr size_t BATCH_SIZE = 32;
+
     inline constexpr size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
     inline constexpr size_t RX_CONST = 8192;
@@ -992,13 +994,37 @@ namespace dmludp {
             next_pos_valid_ = false;
         }
 
-        void pop() {
+        void pop(size_t count = 1) {
             if (empty()) {
                 std::cerr << "FifoQueue underflow, cannot pop from empty queue" << std::endl;
                 _Exit(0);
             }
-            head_ = (head_ + 1) % capacity_;
-            --count_;
+
+            if (count > count_) {
+                std::cerr << "FifoQueue underflow, trying to pop more than available: "
+                        << count << " > " << count_ << std::endl;
+                _Exit(1);  
+            }
+
+            head_ = (head_ + count) % capacity_;
+            count_ -= count;
+
+            // head_ = (head_ + 1) % capacity_;
+            // --count_;
+            if (count_ == 0) {
+                head_ = tail_ = 0;  // Reset head and tail if queue is empty
+            }
+        }
+
+        size_t get_next_batch() {
+            if (empty()) {
+                return {nullptr, 0};
+            }
+            size_t available = size();
+
+            size_t till_end = capacity - head_;
+            size_t batch_size = std::min({available, BATCH_SIZE, till_end});
+            return batch_size;
         }
 
         T& front() {

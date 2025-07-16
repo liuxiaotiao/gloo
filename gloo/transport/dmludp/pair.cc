@@ -171,8 +171,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   fd_ = socket->release();
 
   size_t size = kMaxSendBufferSize;
-  // size_t size = kMaxSendBufferSize;
-
+  /*set send buffer size*/  
   int rv;
   size_t optval = size;
   socklen_t optlen = sizeof(optval);
@@ -183,6 +182,11 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   sendBufferSize_ = optval;
   printf("SO_SNDBUF: %d bytes\n", optval);
 
+  /* */
+  int gso_size = MAX_SEND_UDP_PAYLOAD_SIZE;
+  if (setsockopt(fd, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size)) < 0) {
+      perror("UDP_SEGMENT not supported");
+  }
 
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -661,8 +665,10 @@ bool Pair::protocal2read(){
 
   while(true){
     received = 0;
-    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
-      auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
+    for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); ){
+      
+      auto receive_batch = dmludp_connection->get_receive_batch(receive_number);
+      auto retval = recvmmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, receive_batch, 0, nullptr);
       if (retval == -1){
         if (errno == EAGAIN) {
             break;
@@ -671,8 +677,8 @@ bool Pair::protocal2read(){
             continue;
         }
       }
-    
-      received++;
+      receive_number += retval;
+      received += retval;
       receive_check = receive_number;
       if(received == 1300){
         break;
@@ -682,6 +688,8 @@ bool Pair::protocal2read(){
     if (received <= 0){
       break;
     }
+
+    
 
 
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
@@ -892,10 +900,12 @@ bool Pair::protocal2send(){
     
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
-      auto retval = sendmsg(fd_, &msg.message_body, 0);
-      if(retval == -1){
+      size_t batch = dmludp_connection->send_message.get_next_batch();
+      auto retval = sendmmsg(fd_, &msg.message_body,batch, 0);
+
+      if (retval == -1){
         if (errno == EINTR){
-            continue;
+          continue;
         }
 
         if (errno == EAGAIN){
@@ -905,11 +915,18 @@ bool Pair::protocal2send(){
           return true;
         }
         break;
-      }
+      } 
+
       dmludp_connection->updateMAC(msg.get_packet_number());
-      dmludp_connection->send_message.pop();
-      sent++;
-      accumulated++;
+      dmludp_connection->send_message.pop(retval);
+      sent += retval;
+      accumulated += retval;
+      if (retval < batch) {
+        auto start_time = std::chrono::high_resolution_clock::now();
+        dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
+        device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+        return true;
+      }
     }
 
     if(sent == 0){
