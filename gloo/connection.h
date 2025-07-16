@@ -2269,12 +2269,10 @@ public:
         if (get_dmludp_error()){
             auto firstpn = send_message[start_index].get_packet_number();
             auto endpn =  send_message[end_index].get_packet_number();
-            std::cout << "Debug: send_packet, start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
+            std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
          
             send_packet_type = Type::Application;
             return std::make_pair(start_index, end_index);
-
-            
         }
 
         if (end_index == -1){
