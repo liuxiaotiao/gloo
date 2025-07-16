@@ -539,6 +539,8 @@ bool Pair::read() {
 
 void Pair::readComplete(NonOwningPtr<UnboundBuffer> &buf) {
   const auto opcode = this->rx_.getOpcode();
+  ip_print(dmludp_connection->peeraddr);
+  std::cout << "readComplete: opcode: " << static_cast<int>(opcode) << std::endl;
   switch (opcode) {
     case Op::SEND_BUFFER:
       // Done sending data to pinned buffer; trigger completion.
