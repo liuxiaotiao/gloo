@@ -170,6 +170,20 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   // this class works directly with file descriptor directly.
   fd_ = socket->release();
 
+  size_t size = kMaxSendBufferSize;
+  // size_t size = kMaxSendBufferSize;
+
+  int rv;
+  size_t optval = size;
+  socklen_t optlen = sizeof(optval);
+  rv = setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, &optval, optlen);
+  GLOO_ENFORCE_NE(rv, -1);
+  rv = getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, &optval, &optlen);
+  GLOO_ENFORCE_NE(rv, -1);
+  sendBufferSize_ = optval;
+  printf("SO_SNDBUF: %d bytes\n", optval);
+
+
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);
 
@@ -1185,9 +1199,9 @@ void Pair::send(Op& op) {
 
   // Try to size the send buffer such that the write below completes
   // synchronously and we don't need to finish the write later.
-  // size_t size = std::min(op.preamble.nbytes, kMaxSendBufferSize);
-  size_t size = kMaxSendBufferSize;
-  // if (sendBufferSize_ < size) {
+  size_t size = std::min(op.preamble.nbytes, kMaxSendBufferSize);
+  // size_t size = kMaxSendBufferSize;
+  if (sendBufferSize_ < size) {
     int rv;
     size_t optval = size;
     socklen_t optlen = sizeof(optval);
@@ -1197,7 +1211,7 @@ void Pair::send(Op& op) {
     GLOO_ENFORCE_NE(rv, -1);
     sendBufferSize_ = optval;
     printf("SO_SNDBUF: %d bytes\n", optval);
-  // }
+  }
 
   // Write to socket
   if (sync_) {
