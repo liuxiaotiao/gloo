@@ -20,7 +20,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <optional>
-#include <linux/udp.h>     // for UDP_SEGMENT
 #include <linux/socket.h>  // for SOL_UDP
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
 #include "allreduce.h"

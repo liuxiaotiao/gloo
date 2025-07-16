@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <linux/udp.h>
 #include <linux/socket.h>  // for SOL_UDP
 #include <stdlib.h>
 #include "gloo/common/error.h"
