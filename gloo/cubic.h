@@ -82,9 +82,9 @@ class Recovery{
 
     const size_t AVOID_SSTHREAD = PACKET_SIZE * 3000;
 
-    const double BETA = 0.7;
+    const double BETA = 0.8;
 
-    const double C = 0.4;
+    const double C = 0.5;
 
     const double ROLLBACK_THRESHOLD_PERCENT = 0.8;
 
