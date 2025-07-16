@@ -867,13 +867,18 @@ bool Pair::protocal2send(){
       break;
     }
     auto sent = 0;
-    
 
-    auto packet_ = dmludp_connection->send_packet();
-    auto i = packet_.first;
+    auto packets = dmludp_connection->send_packet();
+    if (packets == 0){
+      device_->registerDescriptor(fd_, EPOLLIN, this);
+      break;
+    }
+
+    auto first_packet = dmludp_connection->send_message.front().message_header.get_packet_number();
     
-    for ( ;i <= packet_.second; i++){
-      auto retval = sendmsg(fd_, &dmludp_connection->send_message[i].message_body, 0);
+    for ( ;!dmludp_connection->send_message.empty();){
+      auto& msg =dmludp_connection->send_message.front();
+      auto retval = sendmsg(fd_, &msg.message_body, 0);
       if(retval == -1){
         if (errno == EINTR){
             continue;
@@ -881,24 +886,24 @@ bool Pair::protocal2send(){
 
         if (errno == EAGAIN){
           auto start_time = std::chrono::high_resolution_clock::now();
-          std::cout<<"1 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
-          dmludp_connection->send_packet_complete(errno, i, start_time);
+          dmludp_connection->send_packet_complete(first_packet, errno, sent, start_time);
           device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
           return true;
         }
         break;
       }
-      dmludp_connection->updateMAC(dmludp_connection->send_message[i].message_header.get_pkt_num());
+      dmludp_connection->updateMAC(msg.message_header.get_pkt_num());
+      dmludp_connection->send_message.pop_front();
       sent++;
       accumulated++;
     }
 
     if(sent == 0){
       auto start_time = std::chrono::high_resolution_clock::now();
-      ip_print(dmludp_connection->peeraddr);
-      std::cout<<"2 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
+      // ip_print(dmludp_connection->peeraddr);
+      // std::cout<<"2 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
-      dmludp_connection->send_packet_complete(errno, 0, start_time);
+      dmludp_connection->send_packet_complete(first_packet, errno, 0, start_time);
 
       if (!tx_.empty()){
         struct itimerspec new_value;
@@ -921,10 +926,11 @@ bool Pair::protocal2send(){
       return true;
     }else{
       auto start_time = std::chrono::high_resolution_clock::now();
-      if (sent == (packet_.second - packet_.first + 1)){
-        dmludp_connection->send_packet_complete(0, sent, start_time);
-      } else {
-        dmludp_connection->send_packet_complete(errno, sent, start_time);
+      if (dmludp_connection->send_message.empty()){
+        dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
+      }else{
+        /*almost impossible*/
+        dmludp_connection->send_packet_complete(first_packet, errno, sent, start_time);
       }
     }
   }

@@ -1154,7 +1154,8 @@ public:
     std::chrono::high_resolution_clock::time_point end_ts;
     
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
-    std::vector<Message> send_message;
+    // std::vector<Message> send_message;
+    FifoQueue<Message> send_message;
 
     std::vector<RCMessage> receive_message;
     
@@ -1231,13 +1232,14 @@ public:
     receivevector(MAX_ACK_UDP_PAYLOAD_SIZE, 0),
     receive_slot(RX_CONST, 0),
     connection_map(MAP_CONST),
+    send_message(ONCE_LIMIT),
     first_loss(false)
     {
         memset(&acknowldge_msghdr, 0, sizeof(acknowldge_msghdr));
         acknowldge_msghdr.msg_iov = nullptr;
         acknowldge_msghdr.msg_iovlen = 0;
 
-        send_message.resize(ONCE_LIMIT);
+        // send_message.resize(ONCE_LIMIT);
 
         receive_message.resize(RX_CONST);
 
@@ -2166,12 +2168,13 @@ public:
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
                     }
-                    auto s_flag = sendbufferqueue.emit_important(i, send_message[sent].iov[1], out_len, out_off, out_blocks, out_status);
-                    
+                    auto& msg = send_message.next_pos();
+                    auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
+                    send_message.push_back();
                     
                     auto pn = pkt_num_spaces.updatepktnum();
 
@@ -2214,12 +2217,13 @@ public:
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
                     }
-
+                    auto& msg = send_message.next_pos();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, send_message[sent].iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
                     }
+                    send_message.push_back();
                     
                     auto pn = pkt_num_spaces.updatepktnum();
                     // ip_print(peeraddr);
@@ -2264,26 +2268,38 @@ public:
     }
 
     /*Prepare send packets*/
-    std::pair<ssize_t, ssize_t> send_packet(){
-        // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
-        if (get_dmludp_error()){
-            auto firstpn = send_message[start_index].get_packet_number();
-            auto endpn =  send_message[end_index].get_packet_number();
-            ip_print(peeraddr);
-            std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
+    // std::pair<ssize_t, ssize_t> send_packet(){
+    //     // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
+    //     if (get_dmludp_error()){
+    //         auto firstpn = send_message[start_index].get_packet_number();
+    //         auto endpn =  send_message[end_index].get_packet_number();
+    //         ip_print(peeraddr);
+    //         std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
          
-            send_packet_type = Type::Application;
-            return std::make_pair(start_index, end_index);
-        }
+    //         send_packet_type = Type::Application;
+    //         return std::make_pair(start_index, end_index);
+    //     }
 
-        if (end_index == -1){
-            end_index = prepareData() - 1;
-            if(end_index != -1){
-                start_index = 0;
-            }
+    //     if (end_index == -1){
+    //         end_index = prepareData() - 1;
+    //         if(end_index != -1){
+    //             start_index = 0;
+    //         }
+    //         send_packet_type = Type::Application;
+    //     }
+    //     return std::make_pair(start_index, end_index);
+    // }
+
+    size_t send_packet(){
+        // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
+        auto packets = prepareData();
+        if (send_message.empty()){
+            send_packet_type = 0;
+            return 0;
+        }else {
             send_packet_type = Type::Application;
+            return send_message.size();
         }
-        return std::make_pair(start_index, end_index);
     }
 
     void updateMAC(uint64_t pkt_){
@@ -2348,28 +2364,26 @@ public:
     // }
 
 
-    void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
+    void send_packet_complete(uint64_t startpkt, size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
         ip_print(peeraddr);
-        std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << ", end_index:" << end_index <<", "<<send_packet_type<< std::endl;
+        std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent <<", "<<send_packet_type<< std::endl;
         if(send_packet_type == 0){ 
             return;
         }
 
-        set_error2(err_);
-        
-        if (err_ != 0){
-            if (send_packet_type == Type::Application){
-                ip_print(peeraddr);
-                std::cout << "2 Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index <<", end_index:"<<end_index<< std::endl;
+        /* send_message is not empyt, means send not complete*/
+        if (!send_message.empty()) {
+            set_error2(1);
+            if (sent == 0){
+                send_packet_type == 0
+                return;
+            } else {
                 end_ts = std::chrono::high_resolution_clock::now();
-                if (start_index < 0){
-                    std::cout<<"send_packet_complete start_index < 0" <<std::endl;
-                    _Exit(0);
-                }
-                tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-                start_index = start_index + sent;
-            }
-            return;
+                tsInfo.updateQueue(startpkt, start_ts, send_message.front().message_header.get_packet_number() - 1, end_ts);
+                return;
+            }    
+        } else {
+            set_error2(0);
         }
         
         if(send_packet_type == Type::ACK){
@@ -2377,7 +2391,7 @@ public:
         }else if(send_packet_type == Type::Application){
             end_index = -1;
             set_handshake();
-            tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
+            tsInfo.updateQueue(startpkt, start_ts, pkt_num_spaces.getpktnum(), end_ts);
         }else if(send_packet_type == Type::ElicitAck){
 
         }else if(send_packet_type == Type::Stop){

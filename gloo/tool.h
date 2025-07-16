@@ -965,4 +965,89 @@ namespace dmludp {
         int64_t last_found_one_ = -1;
         int64_t last_found_zero_ = -1;
     };
+
+
+    template <typename T>
+    class FifoQueue {
+    public:
+        explicit FifoQueue(size_t capacity)
+            : buffer_(capacity), capacity_(capacity), head_(0), tail_(0), count_(0), next_pos_valid_(false) {}
+
+        T& next_pos() {
+            if (count_ == capacity_) {
+                throw std::runtime_error("FifoQueue overflow");
+            }
+            next_pos_valid_ = true;
+            return buffer_[tail_];
+        }
+
+        void push_back() {
+            if (!next_pos_valid_) {
+                throw std::runtime_error("Must call next_pos() before push_back()");
+            }
+            tail_ = (tail_ + 1) % capacity_;
+            ++count_;
+            next_pos_valid_ = false;
+        }
+
+        void pop() {
+            if (empty()) {
+                throw std::runtime_error("FifoQueue underflow");
+            }
+            head_ = (head_ + 1) % capacity_;
+            --count_;
+        }
+
+        T& front() {
+            if (empty()) {
+                throw std::runtime_error("Queue is empty");
+            }
+            return buffer_[head_];
+        }
+
+        const T& front() const {
+            if (empty()) {
+                throw std::runtime_error("Queue is empty");
+            }
+            return buffer_[head_];
+        }
+
+        T& back() {
+            if (empty()) {
+                throw std::runtime_error("Queue is empty");
+            }
+            size_t last = (tail_ + capacity_ - 1) % capacity_;
+
+            return buffer_[last];
+        }
+
+        const T& back() const {
+            if (empty()) {
+                throw std::runtime_error("Queue is empty");
+            }
+            size_t last = (tail_ + capacity_ - 1) % capacity_;
+
+            return buffer_[last];
+        }
+
+        bool empty() const {
+            return count_ == 0;
+        }
+
+        size_t size() const {
+            return count_;
+        }
+
+        size_t capacity() const {
+            return capacity_;
+        }
+
+    private:
+        std::vector<T> buffer_;
+        size_t capacity_;
+        size_t head_;
+        size_t tail_;
+        size_t count_;
+        bool next_pos_valid_;
+    };
 }
