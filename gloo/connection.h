@@ -265,6 +265,8 @@ class RCMessage {
             iov[0].iov_len = sizeof(Header) - 7; 
             iov[1].iov_base = rx_buffer;
             iov[1].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
+            message_body.msg_hdr.msg_iov = iov;
+            message_body.msg_hdr.msg_iovlen = 2; // Fixed to 3 iovecs
         }
 
         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
