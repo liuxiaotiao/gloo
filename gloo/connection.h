@@ -2218,7 +2218,7 @@ public:
                         _Exit(0);
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_unimportant(i, send_message[sent].iov[1], out_len, out_off, out_blocks, pkt_status);
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
@@ -2364,34 +2364,34 @@ public:
     // }
 
 
-    void send_packet_complete(uint64_t startpkt, size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
+    void send_packet_complete(uint64_t startpkt = 0, size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
         ip_print(peeraddr);
         std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent <<", "<<send_packet_type<< std::endl;
         if(send_packet_type == 0){ 
             return;
         }
-
-        /* send_message is not empyt, means send not complete*/
-        if (!send_message.empty()) {
-            set_error2(1);
-            if (sent == 0){
-                send_packet_type == 0;
-                return;
-            } else {
-                end_ts = std::chrono::high_resolution_clock::now();
-                tsInfo.updateQueue(startpkt, start_ts, send_message.front().get_packet_number() - 1, end_ts);
-                return;
-            }    
-        } else {
-            set_error2(0);
-        }
         
         if(send_packet_type == Type::ACK){
             process_application_copy();
         }else if(send_packet_type == Type::Application){
-            end_index = -1;
-            set_handshake();
-            tsInfo.updateQueue(startpkt, start_ts, pkt_num_spaces.getpktnum(), end_ts);
+             /* send_message is not empty, means send not complete*/
+            if (!send_message.empty()) {
+                set_error2(1);
+                if (sent == 0){
+                    send_packet_type == 0;
+                    return;
+                } else {
+                    end_ts = std::chrono::high_resolution_clock::now();
+                    tsInfo.updateQueue(startpkt, start_ts, send_message.front().get_packet_number() - 1, end_ts);
+                    send_packet_type == 0;
+                    return;
+                }    
+            } else {
+                set_error2(0);
+                end_index = -1;
+                set_handshake();
+                tsInfo.updateQueue(startpkt, start_ts, pkt_num_spaces.getpktnum(), end_ts);
+            }
         }else if(send_packet_type == Type::ElicitAck){
 
         }else if(send_packet_type == Type::Stop){
