@@ -103,6 +103,7 @@ void Socket::sendTimeout(std::chrono::milliseconds timeout) {
 
 void Socket::bind(const sockaddr_storage& ss) {
   // if (ss.ss_family == AF_INET) {
+    std::cout<<"bind:"<<ss.ss_family<<std::endl;
     const struct sockaddr_in* sa = (const struct sockaddr_in*)&ss;
     bind((const struct sockaddr*)sa, sizeof(*sa));
     return;
