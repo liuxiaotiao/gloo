@@ -1187,7 +1187,7 @@ void Pair::send(Op& op) {
   // synchronously and we don't need to finish the write later.
   // size_t size = std::min(op.preamble.nbytes, kMaxSendBufferSize);
   size_t size = kMaxSendBufferSize;
-  if (sendBufferSize_ < size) {
+  // if (sendBufferSize_ < size) {
     int rv;
     size_t optval = size;
     socklen_t optlen = sizeof(optval);
@@ -1197,7 +1197,7 @@ void Pair::send(Op& op) {
     GLOO_ENFORCE_NE(rv, -1);
     sendBufferSize_ = optval;
     printf("SO_SNDBUF: %d bytes\n", optval);
-  }
+  // }
 
   // Write to socket
   if (sync_) {
