@@ -906,7 +906,9 @@ bool Pair::protocal2send(){
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
-      auto retval = sendmmsg(fd_, &msg.message_body,batch, 0);
+      ip_print(dmludp_connection->peeraddr);
+      std::cout<<", batch: "<<batch<<std::endl;
+      auto retval = sendmmsg(fd_, &msg.message_body, batch, 0);
 
       if (retval == -1){
         if (errno == EINTR){
