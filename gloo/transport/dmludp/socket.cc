@@ -30,14 +30,14 @@ namespace dmludp {
 
 std::shared_ptr<Socket> Socket::createForFamily(sa_family_t ai_family) {
   auto rv = socket(ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-  int flags = SOF_TIMESTAMPING_RX_SOFTWARE |
-              SOF_TIMESTAMPING_SOFTWARE |
-              SOF_TIMESTAMPING_CLOCK_MONOTONIC;
+  // int flags = SOF_TIMESTAMPING_RX_SOFTWARE |
+  //             SOF_TIMESTAMPING_SOFTWARE |
+  //             SOF_TIMESTAMPING_CLOCK_MONOTONIC;
 
-  if (setsockopt(rv, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags)) < 0) {
-      perror("setsockopt SO_TIMESTAMPING");
-      return std::shared_ptr<Socket>();
-  }
+  // if (setsockopt(rv, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags)) < 0) {
+  //     perror("setsockopt SO_TIMESTAMPING");
+  //     return std::shared_ptr<Socket>();
+  // }
   // std::cout<<"createForFamily:"<<rv<<std::endl;
   GLOO_ENFORCE_NE(rv, -1, "socket: ", strerror(errno));
   return std::make_shared<Socket>(rv);
