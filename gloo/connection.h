@@ -2172,6 +2172,10 @@ public:
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
                     }
+
+                    if (send_message.full()) {
+                        break;
+                    }
                     auto& msg = send_message.next_pos();
                     auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
@@ -2210,9 +2214,7 @@ public:
                 }
             }
             
-            if (send_message.full()) {
-                break;
-            }
+            
 
             /* Unimportant */
             if (sent_cwnd_unimportant < sent_limit_unimportant) {
@@ -2223,6 +2225,10 @@ public:
                     if (i < 0 || i > sendbufferqueue.get_capacity()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
+                    }
+
+                    if (send_message.full()) {
+                        break;
                     }
                     auto& msg = send_message.next_pos();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
