@@ -1018,7 +1018,7 @@ namespace dmludp {
 
         size_t get_next_batch() {
             if (empty()) {
-                return {nullptr, 0};
+                return 0;
             }
             size_t available = size();
 
