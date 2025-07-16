@@ -926,9 +926,9 @@ bool Pair::protocal2send(){
 
       dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop(retval);
-      std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size() << std::endl;
       sent += retval;
       accumulated += retval;
+      std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size() << std::endl;
       if (retval < batch) {
         auto start_time = std::chrono::high_resolution_clock::now();
         dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
