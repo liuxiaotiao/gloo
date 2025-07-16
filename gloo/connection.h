@@ -2152,6 +2152,10 @@ public:
         size_t sent_unimportant = 0;      
         size_t sent_cwnd_unimportant = 0; 
 
+        if (send_message.full()) {
+            return 0;
+        }
+
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
@@ -2164,7 +2168,7 @@ public:
                 while (true){
                     // size_t send_status = sendbufferqueue.get_status(i);
                     bool isElicit = false;
-                    if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                    if (i < 0 || i > sendbufferqueue.get_capacity()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
                     }
@@ -2213,7 +2217,7 @@ public:
                 Block_len out_blocks = std::numeric_limits<Block_len>::max();
                 PktStatus pkt_status;
                 while (true){
-                    if (i < 0 || i > sendbufferqueue.get_capacity() || sent > send_message.size()){
+                    if (i < 0 || i > sendbufferqueue.get_capacity()){
                         std::cout<<"i:"<<i<<", sent:"<<sent<<std::endl;
                         _Exit(0);
                     }
