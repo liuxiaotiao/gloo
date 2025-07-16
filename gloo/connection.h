@@ -2296,7 +2296,7 @@ public:
             return;
         } else {
             ip_print(peeraddr);
-            std::cout<<"updateMAC error, max_send_pkt:"<<max_send_pkt<<", pkt_:"<<pkt_<<std::endl;
+            std::cout<<"updateMAC error:"<<get_dmludp_error()<<", max_send_pkt:"<<max_send_pkt<<", pkt_:"<<pkt_<<std::endl;
             _Exit(0);
         }
     }
