@@ -2200,7 +2200,7 @@ public:
 
                     sent++;
                     sent_cwnd_important += out_len;
-                    if (sent_cwnd_important >= sent_limit_important || sent >= send_message.size()){
+                    if (sent_cwnd_important >= sent_limit_important || send_message.full()){
                         break;
                     }           
                 }
@@ -2253,7 +2253,7 @@ public:
 
                     sent++;
                     sent_cwnd_unimportant += out_len;
-                    if (sent_cwnd_unimportant >= sent_limit_unimportant || sent >= send_message.size()){
+                    if (sent_cwnd_unimportant >= sent_limit_unimportant || send_message.full()){
                         break;
                     }           
                 }
