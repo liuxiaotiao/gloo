@@ -36,7 +36,13 @@
 
 #define FD_INVALID (-1)
 // #define MAX_PACKETS 100
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
 
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 namespace gloo {
 namespace transport {
 namespace dmludp {
