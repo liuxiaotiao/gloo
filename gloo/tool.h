@@ -206,7 +206,8 @@ namespace dmludp {
 
         void enqueue(const DataType& value) {
             if (isFull()) {
-                throw std::overflow_error("TSCircularQueue is full(enqueue)");
+                std::cerr << "TSCircularQueue is full(enqueue)" << std::endl;
+                _Exit(0);
             }
             buffer[tail] = value;
             tail = (tail + 1) % capacity;
@@ -215,7 +216,8 @@ namespace dmludp {
 
         DataType dequeue() {
             if (isEmpty()) {
-                throw std::underflow_error("TSCircularQueue is empty(deque)");
+                std::cerr << "TSCircularQueue is empty(deque)" << std::endl;
+                _Exit(0);
             }
             DataType value = buffer[head];
             head = (head + 1) % capacity;
@@ -225,7 +227,8 @@ namespace dmludp {
 
         DataType front() const {
             if (isEmpty()) {
-                throw std::underflow_error("TSCircularQueue is empty(front)");
+                std::cerr << "TSCircularQueue is empty(front)" << std::endl;
+                _Exit(0);
             }
             return buffer[head];
         }
