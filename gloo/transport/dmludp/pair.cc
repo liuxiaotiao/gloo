@@ -874,7 +874,7 @@ bool Pair::protocal2send(){
       break;
     }
 
-    auto first_packet = dmludp_connection->send_message.front().message_header.get_packet_number();
+    auto first_packet = dmludp_connection->send_message.front().get_packet_number();
     
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
@@ -892,8 +892,8 @@ bool Pair::protocal2send(){
         }
         break;
       }
-      dmludp_connection->updateMAC(msg.message_header.get_pkt_num());
-      dmludp_connection->send_message.pop_front();
+      dmludp_connection->updateMAC(msg.get_pkt_num());
+      dmludp_connection->send_message.pop();
       sent++;
       accumulated++;
     }
