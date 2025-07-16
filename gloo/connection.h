@@ -2269,6 +2269,7 @@ public:
         if (get_dmludp_error()){
             auto firstpn = send_message[start_index].get_packet_number();
             auto endpn =  send_message[end_index].get_packet_number();
+            ip_print(peeraddr);
             std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
          
             send_packet_type = Type::Application;
@@ -2294,6 +2295,7 @@ public:
             max_send_pkt = pkt_;
             return;
         } else {
+            ip_print(peeraddr);
             std::cout<<"updateMAC error, max_send_pkt:"<<max_send_pkt<<", pkt_:"<<pkt_<<std::endl;
             _Exit(0);
         }
@@ -2347,6 +2349,7 @@ public:
 
 
     void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
+        ip_print(peeraddr);
         std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << ", end_index:" << end_index << std::endl;
         if(send_packet_type == 0){ 
             return;
@@ -2356,6 +2359,7 @@ public:
         
         if (err_ != 0){
             if (send_packet_type == Type::Application){
+                ip_print(peeraddr);
                 std::cout << "2 Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index <<", end_index:"<<end_index<< std::endl;
                 end_ts = std::chrono::high_resolution_clock::now();
                 if (start_index < 0){
