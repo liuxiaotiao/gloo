@@ -975,7 +975,8 @@ namespace dmludp {
 
         T& next_pos() {
             if (count_ == capacity_) {
-                throw std::runtime_error("FifoQueue overflow");
+                std::cerr << "FifoQueue overflow, capacity: " << capacity_ << std::endl;
+                _Exit(0);
             }
             next_pos_valid_ = true;
             return buffer_[tail_];
@@ -983,7 +984,8 @@ namespace dmludp {
 
         void push_back() {
             if (!next_pos_valid_) {
-                throw std::runtime_error("Must call next_pos() before push_back()");
+                std::cerr << "FifoQueue push_back called without next_pos()" << std::endl;
+                _Exit(0);
             }
             tail_ = (tail_ + 1) % capacity_;
             ++count_;
@@ -992,7 +994,8 @@ namespace dmludp {
 
         void pop() {
             if (empty()) {
-                throw std::runtime_error("FifoQueue underflow");
+                std::cerr << "FifoQueue underflow, cannot pop from empty queue" << std::endl;
+                _Exit(0);
             }
             head_ = (head_ + 1) % capacity_;
             --count_;
@@ -1000,21 +1003,24 @@ namespace dmludp {
 
         T& front() {
             if (empty()) {
-                throw std::runtime_error("Queue is empty");
+                std::cerr << "Queue is empty, cannot access front" << std::endl;
+                _Exit(0);
             }
             return buffer_[head_];
         }
 
         const T& front() const {
             if (empty()) {
-                throw std::runtime_error("Queue is empty");
+                std::cerr << "Queue is empty, cannot access front" << std::endl;
+                _Exit(0);
             }
             return buffer_[head_];
         }
 
         T& back() {
             if (empty()) {
-                throw std::runtime_error("Queue is empty");
+                std::cerr << "Queue is empty, cannot access back" << std::endl;
+                _Exit(0);
             }
             size_t last = (tail_ + capacity_ - 1) % capacity_;
 
@@ -1023,7 +1029,8 @@ namespace dmludp {
 
         const T& back() const {
             if (empty()) {
-                throw std::runtime_error("Queue is empty");
+                std::cerr << "Queue is empty, cannot access back" << std::endl;
+                _Exit(0);
             }
             size_t last = (tail_ + capacity_ - 1) % capacity_;
 
