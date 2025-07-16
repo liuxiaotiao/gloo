@@ -352,7 +352,7 @@ public:
       for (auto i = 0; i < segmentBytesvec.size(); i++){
         if(beginOffset % segmentBytesvec[i] == 0) {
           bitmapID = beginOffset / segmentBytesvec[i];
-          block_per_SuperBlock = (segmentBytesvec[i] + MAX_SEND_UDP_PAYLOAD_SIZE * 64 - 1) / (MAX_SEND_UDP_PAYLOAD_SIZE * 64);
+          block_per_SuperBlock = (segmentBytesvec[i] + dmludp::MAX_SEND_UDP_PAYLOAD_SIZE * 64 - 1) / (dmludp::MAX_SEND_UDP_PAYLOAD_SIZE * 64);
           index = i;
           break;
         }
