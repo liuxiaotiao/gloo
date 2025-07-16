@@ -895,6 +895,7 @@ bool Pair::protocal2send(){
 
     if(sent == 0){
       auto start_time = std::chrono::high_resolution_clock::now();
+      ip_print(dmludp_connection->peeraddr);
       std::cout<<"2 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
       dmludp_connection->send_packet_complete(0, 0, start_time);
