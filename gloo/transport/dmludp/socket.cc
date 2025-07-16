@@ -102,18 +102,18 @@ void Socket::sendTimeout(std::chrono::milliseconds timeout) {
 }
 
 void Socket::bind(const sockaddr_storage& ss) {
-  // if (ss.ss_family == AF_INET) {
+  if (ss.ss_family == AF_INET) {
     std::cout<<"bind:"<<ss.ss_family<<std::endl;
     const struct sockaddr_in* sa = (const struct sockaddr_in*)&ss;
     bind((const struct sockaddr*)sa, sizeof(*sa));
     return;
-  // }
-  // if (ss.ss_family == AF_INET6) {
-  //   const struct sockaddr_in6* sa = (const struct sockaddr_in6*)&ss;
-  //   bind((const struct sockaddr*)sa, sizeof(*sa));
-  //   return;
-  // }
-  // GLOO_ENFORCE(false, "Unknown address family: ", ss.ss_family);
+  }
+  if (ss.ss_family == AF_INET6) {
+    const struct sockaddr_in6* sa = (const struct sockaddr_in6*)&ss;
+    bind((const struct sockaddr*)sa, sizeof(*sa));
+    return;
+  }
+  GLOO_ENFORCE(false, "Unknown address family: ", ss.ss_family);
 }
 
 void Socket::bind(const struct sockaddr* addr, socklen_t addrlen) {
