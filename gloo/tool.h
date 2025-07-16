@@ -1022,7 +1022,7 @@ namespace dmludp {
             }
             size_t available = size();
 
-            size_t till_end = capacity - head_;
+            size_t till_end = capacity_ - head_;
             size_t batch_size = std::min({available, BATCH_SIZE, till_end});
             return batch_size;
         }
