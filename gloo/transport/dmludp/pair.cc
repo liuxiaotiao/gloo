@@ -907,7 +907,7 @@ bool Pair::protocal2send(){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
       ip_print(dmludp_connection->peeraddr);
-      std::cout<<", batch: "<<batch<<std::endl;
+      std::cout<<"batch: "<<batch<<std::endl;
       auto retval = sendmmsg(fd_, &msg.message_body, batch, 0);
 
       if (retval == -1){
@@ -926,6 +926,7 @@ bool Pair::protocal2send(){
 
       dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop(retval);
+      std::cout <<"retval: " << retval << ", sent: " << dmludp_connection->send_message.size() << std::endl;
       sent += retval;
       accumulated += retval;
       if (retval < batch) {
