@@ -892,7 +892,7 @@ bool Pair::protocal2send(){
         }
         break;
       }
-      dmludp_connection->updateMAC(msg.get_pkt_num());
+      dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop();
       sent++;
       accumulated++;
