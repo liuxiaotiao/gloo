@@ -46,8 +46,8 @@ namespace {
 // This reflects an approximation of /proc/sys/net/core/{r,w}mem_max.
 // It is hard coded because making buffers larger than this would not
 // have much impact. Also see socket(7).
-constexpr size_t kMaxSendBufferSize = 128 * 1024 * 1024;
-constexpr size_t kMaxRecvBufferSize = 128 * 1024 * 1024;
+constexpr size_t kMaxSendBufferSize = 32 * 1024 * 1024;
+constexpr size_t kMaxRecvBufferSize = 32 * 1024 * 1024;
 
 } // namespace
 
@@ -1185,7 +1185,8 @@ void Pair::send(Op& op) {
 
   // Try to size the send buffer such that the write below completes
   // synchronously and we don't need to finish the write later.
-  size_t size = std::min(op.preamble.nbytes, kMaxSendBufferSize);
+  // size_t size = std::min(op.preamble.nbytes, kMaxSendBufferSize);
+  size_t size = kMaxSendBufferSize;
   if (sendBufferSize_ < size) {
     int rv;
     size_t optval = size;
@@ -1195,6 +1196,7 @@ void Pair::send(Op& op) {
     rv = getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, &optval, &optlen);
     GLOO_ENFORCE_NE(rv, -1);
     sendBufferSize_ = optval;
+    printf("SO_SNDBUF: %d bytes\n", optval);
   }
 
   // Write to socket
