@@ -16,7 +16,7 @@ namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
 
     // The default max_datagram_size used in congestion control.
-    inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 8640;
+    inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
 
     inline constexpr size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 

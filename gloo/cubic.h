@@ -5,7 +5,7 @@
 #include "tool.h"
 namespace dmludp{
 
-const size_t MAX_CWND = 500 * MAX_SEND_UDP_PAYLOAD_SIZE;
+const size_t MAX_CWND = 3000 * MAX_SEND_UDP_PAYLOAD_SIZE;
 
 const size_t SpinMAX = 5;
 // Congestion Control
