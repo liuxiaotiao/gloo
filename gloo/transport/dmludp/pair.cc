@@ -697,6 +697,7 @@ bool Pair::protocal2read(){
 
     std::cout<<"received: "<<received<<", receive_check: "<<receive_check<<std::endl;
     auto flag4send = dmludp_connection->recv_slice2(received, receive_check);
+    std::cout<<"2 received: "<<received<<", receive_check: "<<receive_check<<std::endl;
     auto connection_result = 0;
     if (flag4send){
       connection_result = dmludp_connection->send_data2();
