@@ -2315,6 +2315,7 @@ public:
         if(send_packet_type == 0){ 
             return;
         }
+
         if (send_packet_type == Type::Application){
             set_error2(err_);
         }
@@ -2325,6 +2326,7 @@ public:
         
         if (err_ != 0){
             if (send_packet_type == Type::Application){
+                std::cout << "2 Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << std::endl;
                 end_ts = std::chrono::high_resolution_clock::now();
                 if (start_index < 0){
                     std::cout<<"send_packet_complete start_index < 0" <<std::endl;
