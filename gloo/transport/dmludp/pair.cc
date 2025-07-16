@@ -898,7 +898,7 @@ bool Pair::protocal2send(){
       ip_print(dmludp_connection->peeraddr);
       std::cout<<"2 sendmsg failed, errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<packet_.first<<", packet.second: "<<packet_.second<<std::endl;
       device_->registerDescriptor(fd_, EPOLLIN, this);
-      dmludp_connection->send_packet_complete(0, 0, start_time);
+      dmludp_connection->send_packet_complete(errno, 0, start_time);
 
       if (!tx_.empty()){
         struct itimerspec new_value;
