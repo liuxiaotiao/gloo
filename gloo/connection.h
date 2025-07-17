@@ -101,7 +101,11 @@ class Message{
         message_body.msg_hdr.msg_name = nullptr;
         message_body.msg_hdr.msg_namelen = 0;
 
-        struct cmsghdr* cmsg = CMSG_FIRSTHDR(&control_buf);
+        struct msghdr temp_msg = {};
+        temp_msg.msg_control = control_buf;
+        temp_msg.msg_controllen = sizeof(control_buf);
+
+        struct cmsghdr* cmsg = CMSG_FIRSTHDR(&temp_msg); 
         cmsg->cmsg_level = SOL_UDP;
         cmsg->cmsg_type = UDP_SEGMENT;
         cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
