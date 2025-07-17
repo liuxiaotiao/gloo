@@ -913,7 +913,7 @@ bool Pair::protocal2send(){
 
       ip_print(dmludp_connection->peeraddr);
 
-      auto retval = sendmmsg(fd_, &msg.message_body, batch, 0);
+      auto retval = sendmmsg(fd_, msg.getMessage(), batch, 0);
 
       if (retval == -1){
         if (errno == EINTR){

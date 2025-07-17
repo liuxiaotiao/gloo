@@ -171,7 +171,7 @@ class Message{
         return message_header.get_important_blocks();
     }
 
-    mmsghdr* getMessageHeader() {
+    mmsghdr* getMessage() {
         return &message_body;
     }
     
