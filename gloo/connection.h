@@ -226,7 +226,7 @@ class MessageFIFO{
                     cmsg->cmsg_level = SOL_UDP;
                     cmsg->cmsg_type = UDP_SEGMENT;
                     cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
-                    *((uint16_t *) CMSG_DATA(cm)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
+                    *((uint16_t *) CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
 
 
                     iovecs[i * 3].iov_base = static_cast<void*>(&message_header[i]);
