@@ -910,7 +910,7 @@ bool Pair::protocal2send(){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
 
-      auto retval = sendmmsg(fd_, msg.front(), batch, 0);
+      auto retval = sendmmsg(fd_, msg, batch, 0);
     
       if (retval == -1){
         if (errno == EINTR){
