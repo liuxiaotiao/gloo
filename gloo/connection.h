@@ -100,13 +100,14 @@ class Message{
 
     ~Message(){};
 
-    // void Message::reset() {
-    //     message_body.msg_len = 0;
-    //     message_body.msg_hdr.msg_flags = 0;
-    //     message_body.msg_hdr.msg_control = nullptr;
-    //     message_body.msg_hdr.msg_controllen = 0;
-    //     message_body.msg_hdr.msg_iovlen = 1;
-    // }
+    void Message::reset() {
+        message_body.msg_len                = 0;             
+        message_body.msg_hdr.msg_flags      = 0;
+        message_body.msg_hdr.msg_control    = nullptr;       
+        message_body.msg_hdr.msg_controllen = 0;
+        iov[1].iov_len = 0;
+        iov[2].iov_len = 0;
+    }
 
     void setMessageBody(void* buffer, size_t length) {
         iov[1].iov_base = buffer;
@@ -128,6 +129,9 @@ class Message{
     void set_padding(size_t len) {
         if (len <= sizeof(padding)) {
             iov[2].iov_len = len;
+            message_body.msg_hdr.msg_iovlen = 3;
+        } else {
+            message_body.msg_hdr.msg_iovlen = 2;
         }
     } 
 
@@ -2247,6 +2251,7 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
+                    msg.reset();
                     auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
@@ -2310,6 +2315,7 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
+                    msg.reset();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
