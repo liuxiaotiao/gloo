@@ -101,24 +101,15 @@ class Message{
 
     ~Message(){};
 
-    // void Message::reset() {
-    //     message_body.msg_len                = 0;             
-    //     message_body.msg_hdr.msg_flags      = 0;
-    //     message_body.msg_hdr.msg_control    = nullptr;       
-    //     message_body.msg_hdr.msg_controllen = 0;
-    //     iov[1].iov_len = 0;
-    //     iov[2].iov_len = 0;
-    // }
-
     void setMessageBody(void* buffer, size_t length) {
         iov[1].iov_base = buffer;
         iov[1].iov_len = length;
     }
 
     void reset() {
-        message_body.msg_len                = 0;             // 清上轮 send 写回
+        message_body.msg_len                = 0;             
         message_body.msg_hdr.msg_flags      = 0;
-        message_body.msg_hdr.msg_control    = nullptr;       // socket 级 GSO -> NULL
+        message_body.msg_hdr.msg_control    = nullptr;       
         message_body.msg_hdr.msg_controllen = 0;
         message_body.msg_hdr.msg_iov = iov;
         message_body.msg_hdr.msg_iovlen = 0;
