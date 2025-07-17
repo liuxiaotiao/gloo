@@ -987,6 +987,10 @@ namespace dmludp {
             return buffer_[tail_];
         }
 
+        T& at(size_t) const{
+            return buffer_[(head_ + size_t) % capacity_];
+        }
+
         void push_back() {
             if (!next_pos_valid_) {
                 std::cerr << "FifoQueue push_back called without next_pos()" << std::endl;
