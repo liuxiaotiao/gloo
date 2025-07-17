@@ -924,6 +924,10 @@ bool Pair::protocal2send(){
           device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
           return true;
         }
+
+        if (errno == 17){
+          _Exit(0);
+        }
         break;
       } 
 
