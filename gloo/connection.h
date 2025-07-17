@@ -321,6 +321,14 @@ class MessageFIFO{
             return message_body[head_];
         }
 
+        uint64_t front_packet_number() const {
+            if (empty()) {
+                std::cerr << "Queue is empty, cannot access front packet number" << std::endl;
+                _Exit(0);
+            }
+            return message_body[head_].msg_hdr.msg_iov[0].iov_base->get_pkt_num();
+        }
+
         const struct mmsghdr& front() const {
             if (empty()) {
                 std::cerr << "Queue is empty, cannot access front" << std::endl;
@@ -2619,7 +2627,7 @@ public:
                     return;
                 } else {
                     end_ts = std::chrono::high_resolution_clock::now();
-                    tsInfo.updateQueue(startpkt, start_ts, send_message.front().get_packet_number() - 1, end_ts);
+                    tsInfo.updateQueue(startpkt, start_ts, send_message.front_packet_number() - 1, end_ts);
                     send_packet_type == 0;
                     return;
                 }    

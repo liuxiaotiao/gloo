@@ -904,13 +904,13 @@ bool Pair::protocal2send(){
       break;
     }
 
-    auto first_packet = dmludp_connection->send_message.front().get_packet_number();
+    auto first_packet = dmludp_connection->send_message.front_packet_number();
     
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
 
-      auto retval = sendmmsg(fd_, msg.getMessage(), batch, 0);
+      auto retval = sendmmsg(fd_, msg.front(), batch, 0);
     
       if (retval == -1){
         if (errno == EINTR){
@@ -926,9 +926,7 @@ bool Pair::protocal2send(){
  
         break;
       } 
-
-      
-
+      /**/
       dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop(retval);
       sent += retval;
