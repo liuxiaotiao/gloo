@@ -186,7 +186,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   rv = getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, &optval, &optlen);
   GLOO_ENFORCE_NE(rv, -1);
   sendBufferSize_ = optval;
-  printf("SO_SNDBUF: %d bytes\n", optval);
+  printf("SO_SNDBUF: %ld bytes\n", optval);
 
   /* */
   int gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header) - 7;
