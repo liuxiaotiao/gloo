@@ -938,9 +938,9 @@ bool Pair::protocal2send(){
       accumulated += retval;
       std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size()<<", errno:"<<errno<< std::endl;
 
-      if (errno == 17){
-        _Exit(0);
-      }
+      // if (errno == 17){
+      //   _Exit(0);
+      // }
       if (retval < batch) {
         auto start_time = std::chrono::high_resolution_clock::now();
         dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
