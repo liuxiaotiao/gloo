@@ -911,7 +911,7 @@ bool Pair::protocal2send(){
       size_t batch = dmludp_connection->send_message.get_next_batch();
       for (auto i = 0; i < batch; ++i) {
         auto & packet = dmludp_connection->send_message.at(i);
-        printf("[Batch] iovlen=%lu controllen=%lu\n",  packet.msg_hdr.msg_iovlen, packet.msg_hdr.msg_controllen);
+        printf("[Batch] iovlen=%lu controllen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage->msg_hdr.msg_controllen);
       }
 
       ip_print(dmludp_connection->peeraddr);
