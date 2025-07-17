@@ -938,7 +938,7 @@ bool Pair::protocal2send(){
       accumulated += retval;
       std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size()<<", errno:"<<errno<< std::endl;
 
-      if (retval != 1){
+      if (errno == 17){
         _Exit(0);
       }
       if (retval < batch) {
