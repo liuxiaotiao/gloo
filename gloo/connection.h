@@ -85,7 +85,7 @@ class Message{
         memset(control_buf, 0, sizeof(control_buf));
 
         iov[0].iov_base = static_cast<void*>(&message_header);
-        iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
+        iov[0].iov_len = sizeof(Header); /* Don't send padding part */
 
         iov[1] = {nullptr, 0};
 
@@ -105,7 +105,7 @@ class Message{
         cmsg->cmsg_level = SOL_UDP;
         cmsg->cmsg_type = UDP_SEGMENT;
         cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
-        *((uint16_t*)CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header) - 7; // Set GSO size
+        *((uint16_t*)CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header); // Set GSO size
     }
 
     ~Message(){};
@@ -265,7 +265,7 @@ class RCMessage {
             memset(&message_body, 0, sizeof(message_body));
 
             iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header) - 7; 
+            iov[0].iov_len = sizeof(Header); 
             iov[1].iov_base = rx_buffer;
             iov[1].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
             message_body.msg_hdr.msg_iov = iov;
@@ -1293,9 +1293,9 @@ public:
         return std::make_shared<Connection>(local, peer, true);
     };
 
-    const uint8_t handshake_header[sizeof(Header) - 5] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header) - 5] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t fin_header[sizeof(Header)] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1891,7 +1891,7 @@ public:
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
-        acknowldge_iov[0].iov_len = sizeof(Header) - 7;
+        acknowldge_iov[0].iov_len = sizeof(Header);
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
@@ -1907,7 +1907,7 @@ public:
 
 
         send_packet_type = ty;
-        return sizeof(Header) - 7 + hdr->pkt_length;
+        return sizeof(Header) + hdr->pkt_length;
     }
     
 

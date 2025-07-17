@@ -84,7 +84,7 @@ using Block_len = uint16_t;
 
         // Status_len pkt_status;
 
-        uint8_t pad[7];
+        // uint8_t pad[7];
 
         Header(
             Type first = Type::Application, 
