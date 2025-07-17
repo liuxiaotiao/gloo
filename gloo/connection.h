@@ -178,6 +178,8 @@ class MessageFIFO{
 
         std::vector<std::vector<uint8_t>> padding;
 
+        std::vector<std::vector<char>> control_buffers;
+
         size_t capacity_;
         size_t head_;
         size_t tail_;
@@ -208,6 +210,7 @@ class MessageFIFO{
             iovecs(3 * capacity), 
             message_header(capacity), 
             padding(capacity, std::vector<uint8_t>(MAX_SEND_UDP_PAYLOAD_SIZE)),
+            control_buffers(capacity, std::vector<char>(CMSG_SPACE(sizeof(uint16_t)))) 
             // padding(MAX_SEND_UDP_PAYLOAD_SIZE * capacity),
             capacity_(capacity), 
             head_(0), 
@@ -219,8 +222,17 @@ class MessageFIFO{
                     message_body[i].msg_hdr.msg_iovlen = 3;
                     message_body[i].msg_hdr.msg_name = nullptr;
                     message_body[i].msg_hdr.msg_namelen = 0;
-                    message_body[i].msg_hdr.msg_control = nullptr;
-                    message_body[i].msg_hdr.msg_controllen = 0;
+                    // message_body[i].msg_hdr.msg_control = nullptr;
+                    // message_body[i].msg_hdr.msg_controllen = 0;
+
+                    message_body[i].msg_hdr.msg_control = control_buffers[i].data();
+                    message_body[i].msg_hdr.msg_controllen = control_buffers[i].size();
+
+                    struct cmsghdr* cmsg = CMSG_FIRSTHDR(&message_body[i].msg_hdr);
+                    cmsg->cmsg_level = SOL_UDP;
+                    cmsg->cmsg_type = UDP_SEGMENT;
+                    cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
+                    *((uint16_t*)CMSG_DATA(cmsg)) = GSO_SIZE;
 
                     iovecs[i * 3].iov_base = static_cast<void*>(&message_header[i]);
                     iovecs[i * 3].iov_len = sizeof(Header);
