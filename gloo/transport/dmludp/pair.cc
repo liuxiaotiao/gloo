@@ -927,7 +927,7 @@ bool Pair::protocal2send(){
         break;
       } 
       /**/
-      dmludp_connection->updateMAC(msg.get_packet_number() + retval - 1);
+      dmludp_connection->updateMAC(dmludp_connection->send_message.get_packet_number() + retval - 1);
       dmludp_connection->send_message.pop(retval);
       sent += retval;
       accumulated += retval;
