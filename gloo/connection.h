@@ -365,7 +365,7 @@ class MessageFIFO{
             return count_ == capacity_;
         }
       
-}
+};
 
 // class Message{
 //     public:
@@ -2454,7 +2454,7 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_slot();
+                    auto msg = send_message.next_slot();
                     auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
@@ -2515,7 +2515,7 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_slot();
+                    auto msg = send_message.next_slot();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
@@ -2552,9 +2552,9 @@ public:
 
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.iov[2] = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.iov[2] = 0;
+                        msg.iov[2].iov_len = 0;
                     }
 
                     low_recovery.on_packet_sent(out_len);
