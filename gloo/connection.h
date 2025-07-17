@@ -76,8 +76,6 @@ class Message{
         Header message_header;
 
         uint8_t padding[MAX_SEND_UDP_PAYLOAD_SIZE];
-
-        char control_buf[CMSG_SPACE(sizeof(uint16_t))];
     
     Message(){
         memset(padding, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
@@ -95,25 +93,21 @@ class Message{
         message_body.msg_hdr.msg_iov = iov;
         message_body.msg_hdr.msg_iovlen = 3; // Fixed to 3 iovecs
 
-        message_body.msg_hdr.msg_control = control_buf;
-        message_body.msg_hdr.msg_controllen = sizeof(control_buf);
-
         message_body.msg_hdr.msg_name = nullptr;
         message_body.msg_hdr.msg_namelen = 0;
-
-        struct msghdr temp_msg = {};
-        temp_msg.msg_control = control_buf;
-        temp_msg.msg_controllen = sizeof(control_buf);
-
-        struct cmsghdr* cmsg = CMSG_FIRSTHDR(&temp_msg); 
-        cmsg->cmsg_level = SOL_UDP;
-        cmsg->cmsg_type = UDP_SEGMENT;
-        cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
-        uint16_t* gso_size = reinterpret_cast<uint16_t*>(CMSG_DATA(cmsg));
-        *gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header); 
+        message_body.msg_hdr.msg_control = nullptr;
+        message_body.msg_hdr.msg_controllen = 0;
     }
 
     ~Message(){};
+
+    // void Message::reset() {
+    //     message_body.msg_len = 0;
+    //     message_body.msg_hdr.msg_flags = 0;
+    //     message_body.msg_hdr.msg_control = nullptr;
+    //     message_body.msg_hdr.msg_controllen = 0;
+    //     message_body.msg_hdr.msg_iovlen = 1;
+    // }
 
     void setMessageBody(void* buffer, size_t length) {
         iov[1].iov_base = buffer;
@@ -2363,6 +2357,8 @@ public:
                     if (out_len == -1) {
                         break;
                     }
+
+                    std::cout<<""
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
                         msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
