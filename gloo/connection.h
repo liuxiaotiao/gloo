@@ -80,7 +80,6 @@ class Message{
     Message(){
         memset(padding, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
         memset(&message_body, 0, sizeof(message_body));
-        memset(control_buf, 0, sizeof(control_buf));
 
         iov[0].iov_base = static_cast<void*>(&message_header);
         iov[0].iov_len = sizeof(Header); /* Don't send padding part */
@@ -1575,22 +1574,6 @@ public:
         return send_flag_;
     }
 
-    bool recv_slice3(size_t index_){
-        bool send_flag_ = false;
-        auto pkt_ty = receive_message[index_].get_packet_type();
-        if (pkt_ty == Type::ACK){
-            process_acknowledge(index_);
-        }
-
-        if (pkt_ty == Type::Application) {
-            process_application2(index_);
-            send_packet_type = Type::ACK;
-            send_flag_ = true;
-        }
-
-        return send_flag_;
-    }
-
     void process_elicit_packet(size_t index){
         auto& msg = receive_message[index];
         Packet_num_len pkt_num = msg.get_packet_number();
@@ -1634,95 +1617,7 @@ public:
         }
     };
 
-    void process_application2(size_t index_){
-        // auto &msg = receive_message[index_];
-        // Packet_num_len pkt_num = msg.get_packet_number();
-        // Offset_len pkt_offset = msg.get_packet_offset();
-        // Difference_len pkt_difference = msg.get_packet_difference();
-        // auto pkt_len = msg.get_packet_length();
-        
-        // auto pkt_importance_blocks = msg.get_blocks(); /* Limit16_t: not complete statics, otherwise complete statics*/
-        
-        // if (pkt_num < current_loop_min){
-        //     receive_slot[index_] = 0;
-        //     return;
-        // }
 
-        // // if (pkt_len == 4) {
-        // //     std::cout<<"receive from:";
-        // //     ip_print(peeraddr);
-        // //     log_print(msg.iov[1].iov_base, 4);
-        // // }
-
-        // bool valid_pkt = pkt_difference >= receive_connection_difference;
-        // std::optional<size_t> expectedsize;
-        // if (valid_pkt){
-        //     if (pkt_offset == 0){
-        //         recvCQ.indexcheck(pkt_difference);
-        //         if(!recvCQ.insertzero(pkt_difference, index_)){
-        //             receive_slot[index_] = 0;
-        //         }else{
-        //             receive_slot[index_] = 1;
-        //             struct preamble {
-        //                 size_t nbytes = 0;
-        //                 size_t opcode = 0;
-        //                 size_t slot = 0;
-        //                 size_t offset = 0;
-        //                 size_t length = 0;
-        //                 size_t roffset = 0;
-        //             };
-        //             auto* preamble_header = reinterpret_cast<const preamble*>(msg.iov[1].iov_base);
-        //             if ((preamble_header->opcode & ~1) == 0){
-        //                 expectedsize = sizeof(preamble) + preamble_header->length;
-        //             }else{
-        //                 expectedsize = sizeof(preamble);
-        //             }
-        //         }
-        //     }else{
-        //         receive_slot[index_] = 1;
-        //     }
-        // }else{
-        //     receive_slot[index_] = 0;
-        // }
-
-        // if (max_received == std::numeric_limits<size_t>::max() || pkt_num > max_received){
-        //     max_received = pkt_num;
-        //     send_num = pkt_num;
-        // }  
-   
-        // size_t pos = pkt_num - current_loop_min;
-  
-        // if(pos > 8000){
-        //     pos = 0;
-        // }
-        // size_t byte_index = pos / 8;
-        // size_t bit_index = pos % 8;
-
-        // if (byte_index > receivevector.size()){
-        //     std::cerr << "Error: Bit position out of range. (byte_index:"<< byte_index <<", "<< receivevector.size() 
-        //     <<", "<<max_received<<", "<< current_loop_min <<")" << std::endl;
-        //     _Exit(0);
-        // }
-
-        // if (valid_pkt){
-        //     receivevector[byte_index] |= (1 << bit_index);  
-        //     bool exist = false;
-        //     recvCQ.insert(pkt_difference, pkt_offset, pkt_length, index, exist, important, pkt_importance_blocks, unreliableInfo); 
-        //     if (exist){
-        //         receive_slot[index_] = 0;
-        //     }
-
-        //     if (expectedsize){
-        //         recvCQ.setRead(pkt_difference, *expectedsize);
-        //     }
-        // }
-    }
-
-
-    /*Max received index*/
-    // size_t boundary(){
-    //     return receive_upper_limit;
-    // }
 
     /*Only send acknowledge packet*/
     size_t send_data2(){
@@ -2358,8 +2253,6 @@ public:
                         break;
                     }
 
-                    std::cout<<""
-
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
                         msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
                         // msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
@@ -2473,29 +2366,6 @@ public:
         return sent;
     }
 
-    /*Prepare send packets*/
-    // std::pair<ssize_t, ssize_t> send_packet(){
-    //     // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
-    //     if (get_dmludp_error()){
-    //         auto firstpn = send_message[start_index].get_packet_number();
-    //         auto endpn =  send_message[end_index].get_packet_number();
-    //         ip_print(peeraddr);
-    //         std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
-         
-    //         send_packet_type = Type::Application;
-    //         return std::make_pair(start_index, end_index);
-    //     }
-
-    //     if (end_index == -1){
-    //         end_index = prepareData() - 1;
-    //         if(end_index != -1){
-    //             start_index = 0;
-    //         }
-    //         send_packet_type = Type::Application;
-    //     }
-    //     return std::make_pair(start_index, end_index);
-    // }
-
     size_t send_packet(){
         // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
         auto packets = prepareData();
@@ -2522,52 +2392,6 @@ public:
             _Exit(0);
         }
     }
-
-    /*Use to clear send parameter*/
-    // void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
-    //     std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << std::endl;
-    //     if(send_packet_type == 0){ 
-    //         return;
-    //     }
-
-    //     if (send_packet_type == Type::Application){
-    //         set_error2(err_);
-    //     }
-
-    //     if (err_ != 0 && sent == 0){
-    //         return;
-    //     }
-        
-    //     if (err_ != 0){
-    //         if (send_packet_type == Type::Application){
-    //             std::cout << "2 Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << std::endl;
-    //             end_ts = std::chrono::high_resolution_clock::now();
-    //             if (start_index < 0){
-    //                 std::cout<<"send_packet_complete start_index < 0" <<std::endl;
-    //                 _Exit(0);
-    //             }
-    //             tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-    //             start_index = start_index + sent;
-    //         }
-    //         return;
-    //     }
-        
-    //     if(send_packet_type == Type::ACK){
-    //         process_application_copy();
-    //     }else if(send_packet_type == Type::Application){
-    //         end_index = -1;
-    //         set_handshake();
-    //         tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-    //     }else if(send_packet_type == Type::ElicitAck){
-
-    //     }else if(send_packet_type == Type::Stop){
-
-    //     }else if(send_packet_type == Type::Fin){
-
-    //     }
-
-    //     send_packet_type = 0;
-    // }
 
 
     void send_packet_complete(uint64_t startpkt = 0, size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
