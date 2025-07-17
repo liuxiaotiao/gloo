@@ -101,11 +101,12 @@ class Message{
         message_body.msg_hdr.msg_name = nullptr;
         message_body.msg_hdr.msg_namelen = 0;
 
-        struct cmsghdr* cmsg = (struct cmsghdr*)control_buf;
+        struct cmsghdr* cmsg = CMSG_FIRSTHDR(&control_buf);
         cmsg->cmsg_level = SOL_UDP;
         cmsg->cmsg_type = UDP_SEGMENT;
         cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
-        *((uint16_t*)CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header); // Set GSO size
+        uint16_t* gso_size = reinterpret_cast<uint16_t*>(CMSG_DATA(cmsg));
+        *gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header); 
     }
 
     ~Message(){};
