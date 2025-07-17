@@ -68,9 +68,10 @@ constexpr auto RTO_MIN = std::chrono::microseconds(200);
 constexpr auto RTO_MAX = std::chrono::microseconds(800);
 
 class Message{
-    public:
+    private:
         struct mmsghdr message_body;
 
+    public:
         iovec iov[3];
 
         Header message_header;
@@ -120,6 +121,7 @@ class Message{
         message_body.msg_hdr.msg_control    = nullptr;       // socket 级 GSO -> NULL
         message_body.msg_hdr.msg_controllen = 0;
         message_body.msg_hdr.msg_iov = iov;
+        message_body.msg_hdr.msg_iovlen = 0;
         iov[1].iov_len = 0;
         iov[2].iov_len = 0;
     }
@@ -2211,7 +2213,7 @@ public:
         }
     }
 
-     ssize_t prepareData() {
+    ssize_t prepareData() {
         Type ty = Type::Application;
         ssize_t out_len = 0; 
         Offset_len out_off = 0;
@@ -2297,11 +2299,6 @@ public:
                         msg.set_padding(0);
                     }
 
-                     if (msg.message_body.msg_hdr.msg_iovlen > 3){
-                        std::cout<<"msg.msg_iovlen:"<< msg.message_body.msg_hdr.msg_iovlen<<std::endl;
-                        _Exit(0);
-                    }
-        
                     recovery.on_packet_sent(out_len);
 
                     sent++;
@@ -2369,11 +2366,6 @@ public:
                         msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
                     } else {
                         msg.set_padding(0);
-                    }
-
-                    if (msg.message_body.msg_hdr.msg_iovlen > 3){
-                        std::cout<<"msg.msg_iovlen:"<< msg.message_body.msg_hdr.msg_iovlen<<std::endl;
-                        _Exit(0);
                     }
                     
 
