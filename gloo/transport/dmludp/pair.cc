@@ -189,7 +189,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   printf("SO_SNDBUF: %ld bytes\n", optval);
 
   /* */
-  int gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header) - 7;
+  int gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
   if (setsockopt(fd_, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size)) < 0) {
       perror("UDP_SEGMENT not supported");
   }
