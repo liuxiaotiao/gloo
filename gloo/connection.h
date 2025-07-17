@@ -210,7 +210,7 @@ class MessageFIFO{
             iovecs(3 * capacity), 
             message_header(capacity), 
             padding(capacity, std::vector<uint8_t>(MAX_SEND_UDP_PAYLOAD_SIZE)),
-            control_buffers(capacity, std::vector<char>(CMSG_SPACE(sizeof(uint16_t)))) 
+            control_buffers(capacity, std::vector<char>(CMSG_SPACE(sizeof(uint16_t)))),
             // padding(MAX_SEND_UDP_PAYLOAD_SIZE * capacity),
             capacity_(capacity), 
             head_(0), 
