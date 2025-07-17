@@ -186,9 +186,21 @@ class MessageFIFO{
 
         struct MessageSlot {
             mmsghdr& msg;
-            iovec* iov;       // 指向3个iovec
-            Header& header;   // 方便直接修改
-            std::vector<uint8_t>& padding; // 如果需要动态改padding，也可以暴露
+            iovec* iov;       
+            Header& header;   
+            std::vector<uint8_t>& padding; 
+
+            void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
+                Packet_len length, 
+                Block_len blocks_, 
+                Type ty_) {
+                header.ty = ty_;
+                header.pkt_num = pn;
+                header.offset = offset;
+                header.difference = difference;
+                header.pkt_length = (Packet_num_len)length;
+                header.pkt_important_block = blocks_;
+            }
         };
     public:
         explicit MessageFIFO(size_t capacity)
@@ -2472,9 +2484,9 @@ public:
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.iov[2] = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.iov[2] = 0;
+                        msg.iov[2].iov_len = 0;
                     }
 
                     recovery.on_packet_sent(out_len);
