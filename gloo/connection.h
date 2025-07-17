@@ -326,7 +326,7 @@ class MessageFIFO{
                 std::cerr << "Queue is empty, cannot access front packet number" << std::endl;
                 _Exit(0);
             }
-            return message_header[head_]get_pkt_num();
+            return message_header[head_].get_pkt_num();
         }
 
         const struct mmsghdr& front() const {
