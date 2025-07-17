@@ -98,6 +98,9 @@ class Message{
         message_body.msg_hdr.msg_control = control_buf;
         message_body.msg_hdr.msg_controllen = sizeof(control_buf);
 
+        message_body.msg_hdr.msg_name = nullptr;
+        message_body.msg_hdr.msg_namelen = 0;
+
         struct cmsghdr* cmsg = (struct cmsghdr*)control_buf;
         cmsg->cmsg_level = SOL_UDP;
         cmsg->cmsg_type = UDP_SEGMENT;
@@ -267,6 +270,9 @@ class RCMessage {
             iov[1].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
             message_body.msg_hdr.msg_iov = iov;
             message_body.msg_hdr.msg_iovlen = 2; // Fixed to 3 iovecs
+
+            message_body.msg_hdr.msg_name = nullptr;
+            message_body.msg_hdr.msg_namelen = 0;
         }
 
         void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
