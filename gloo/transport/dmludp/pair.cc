@@ -910,7 +910,7 @@ bool Pair::protocal2send(){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
       ip_print(dmludp_connection->peeraddr);
-      std::cout<<"batch: "<<batch<<std::endl;
+      
       auto retval = sendmmsg(fd_, &msg.message_body, batch, 0);
 
       if (retval == -1){
@@ -931,7 +931,7 @@ bool Pair::protocal2send(){
       dmludp_connection->send_message.pop(retval);
       sent += retval;
       accumulated += retval;
-      std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size() << std::endl;
+      std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size()<<", errno:"<<errno<< std::endl;
       if (retval < batch) {
         auto start_time = std::chrono::high_resolution_clock::now();
         dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
