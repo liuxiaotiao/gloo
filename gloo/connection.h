@@ -313,12 +313,12 @@ class MessageFIFO{
             return batch_size;
         }
 
-        struct mmsghdr& front() {
+        struct mmsghdr* front() {
             if (empty()) {
                 std::cerr << "Queue is empty, cannot access front" << std::endl;
                 _Exit(0);
             }
-            return message_body[head_];
+            return &message_body[head_];
         }
 
         uint64_t front_packet_number(){
@@ -329,12 +329,12 @@ class MessageFIFO{
             return message_header[head_].get_pkt_num();
         }
 
-        const struct mmsghdr& front() const {
+        const struct mmsghdr* front() const {
             if (empty()) {
                 std::cerr << "Queue is empty, cannot access front" << std::endl;
                 _Exit(0);
             }
-            return message_body[head_];
+            return &message_body[head_];
         }
 
         struct mmsghdr& back() {
