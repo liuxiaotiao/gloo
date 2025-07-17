@@ -918,6 +918,11 @@ bool Pair::protocal2send(){
 
       auto retval = sendmmsg(fd_, msg.getMessage(), batch, 0);
 
+      for (auto i = 0; i < batch; ++i) {
+        auto & packet = dmludp_connection->send_message.at(i);
+        printf("[Batch] iovlen=%lu controllen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_iovlen);
+      }
+
       if (retval == -1){
         if (errno == EINTR){
           continue;
