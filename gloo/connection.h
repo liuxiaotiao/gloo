@@ -2360,9 +2360,11 @@ public:
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
+                        // msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.iov[2].iov_len = 0;
+                        msg.set_padding(0);
+                        // msg.iov[2].iov_len = 0;
                     }
 
                     send_message.push_back();
@@ -2421,9 +2423,9 @@ public:
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
+                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
                     } else {
-                        msg.iov[2].iov_len = 0;
+                        msg.set_padding(0);
                     }
 
                     send_message.push_back();
