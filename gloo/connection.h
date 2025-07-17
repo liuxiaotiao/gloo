@@ -2358,7 +2358,7 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
+                    auto s_flag = sendbufferqueue.emit_important(i, &msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
@@ -2421,7 +2421,7 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, &msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
