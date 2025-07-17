@@ -18,7 +18,7 @@ namespace dmludp {
     // The default max_datagram_size used in congestion control.
     inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 8640;
 
-    inline constexpr size_t BATCH_SIZE = 8;
+    inline constexpr size_t BATCH_SIZE = 7;
 
     inline constexpr size_t MAX_ACK_UDP_PAYLOAD_SIZE = 1400;
 
