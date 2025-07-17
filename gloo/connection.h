@@ -321,7 +321,7 @@ class MessageFIFO{
             return message_body[head_];
         }
 
-        uint64_t front_packet_number() const {
+        uint64_t front_packet_number(){
             if (empty()) {
                 std::cerr << "Queue is empty, cannot access front packet number" << std::endl;
                 _Exit(0);
