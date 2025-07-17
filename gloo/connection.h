@@ -2296,6 +2296,11 @@ public:
                     } else {
                         msg.set_padding(0);
                     }
+
+                     if (msg.message_body.msg_hdr.msg_iovlen > 3){
+                        std::cout<<"msg.msg_iovlen:"<< msg.message_body.msg_hdr.msg_iovlen<<std::endl;
+                        _Exit(0);
+                    }
         
                     recovery.on_packet_sent(out_len);
 
@@ -2366,6 +2371,11 @@ public:
                         msg.set_padding(0);
                     }
 
+                    if (msg.message_body.msg_hdr.msg_iovlen > 3){
+                        std::cout<<"msg.msg_iovlen:"<< msg.message_body.msg_hdr.msg_iovlen<<std::endl;
+                        _Exit(0);
+                    }
+                    
 
 
                     low_recovery.on_packet_sent(out_len);
