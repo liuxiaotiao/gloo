@@ -924,18 +924,21 @@ bool Pair::protocal2send(){
           device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
           return true;
         }
-
-        if (errno == 17){
-          _Exit(0);
-        }
+ 
         break;
       } 
+
+      
 
       dmludp_connection->updateMAC(msg.get_packet_number());
       dmludp_connection->send_message.pop(retval);
       sent += retval;
       accumulated += retval;
       std::cout <<"retval: " << retval << ", sent: " << sent << ", "<< dmludp_connection->send_message.size()<<", errno:"<<errno<< std::endl;
+
+       if (errno == 17){
+          _Exit(0);
+        }
       if (retval < batch) {
         auto start_time = std::chrono::high_resolution_clock::now();
         dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
