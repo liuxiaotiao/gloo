@@ -127,12 +127,9 @@ class Message{
     }
 
     void set_padding(size_t len) {
-        if (len <= sizeof(padding)) {
+        if (len != 0) {
             iov[2].iov_len = len;
-            message_body.msg_hdr.msg_iovlen = 3;
-        } else {
-            message_body.msg_hdr.msg_iovlen = 2;
-        }
+        } 
     } 
 
     Packet_num_len get_packet_number(){
@@ -2580,15 +2577,6 @@ public:
         dmludp_error = err;
         // std::cout << "set_error2: " << dmludp_error << ", err:"<<err<< std::endl;
     }
-
-    // void set_error(size_t err, size_t application_sent){
-    //     dmludp_error = err;
-	//     if (application_sent != 0){
-    //         dmludp_error_sent += application_sent;
-    //     }else{
-    //         dmludp_error_sent = 0;
-    //     }
-    // }
 
     bool transmission_complete(){
         if (sendbufferqueue.iscomplete(sendbufferqueue.start())){
