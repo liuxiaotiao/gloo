@@ -114,6 +114,16 @@ class Message{
         iov[1].iov_len = length;
     }
 
+    void reset() {
+        message_body.msg_len                = 0;             // 清上轮 send 写回
+        message_body.msg_hdr.msg_flags      = 0;
+        message_body.msg_hdr.msg_control    = nullptr;       // socket 级 GSO -> NULL
+        message_body.msg_hdr.msg_controllen = 0;
+        message_body.msg_hdr.msg_iov = iov;
+        iov[1].iov_len = 0;
+        iov[2].iov_len = 0;
+    }
+
     void setMessageHeader(Packet_num_len pn, Offset_len offset, Difference_len difference, 
         Packet_len length, 
         Block_len blocks_, 
@@ -2251,19 +2261,13 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
+                    msg.reset();
                     auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
-
-                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
-                        // msg.iov[2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
-                    } else {
-                        msg.set_padding(0);
-                        // msg.iov[2].iov_len = 0;
-                    }
+                  
 
                     send_message.push_back();
                     
@@ -2285,6 +2289,12 @@ public:
                             msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
                             connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
+                    }
+
+                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
+                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
+                    } else {
+                        msg.set_padding(0);
                     }
         
                     recovery.on_packet_sent(out_len);
@@ -2314,17 +2324,14 @@ public:
                         break;
                     }
                     auto& msg = send_message.next_pos();
+                    msg.reset();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
                     }
 
-                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
-                    } else {
-                        msg.set_padding(0);
-                    }
+                    
 
                     send_message.push_back();
                     
@@ -2351,6 +2358,15 @@ public:
                             connection_map.push(out_off, pkg_difference, Type::Unreliable3,pn);
                         }
                     }
+
+
+                    if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
+                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
+                    } else {
+                        msg.set_padding(0);
+                    }
+
+
 
                     low_recovery.on_packet_sent(out_len);
 
