@@ -218,27 +218,27 @@ class MessageFIFO{
             count_(0), 
             next_pos_valid_(false) {
                 for (size_t i = 0; i < capacity_; ++i) {
-                    message_body[i].msg_hdr.msg_iov = &iovecs[i * 3];
-                    message_body[i].msg_hdr.msg_iovlen = 3;
-                    message_body[i].msg_hdr.msg_name = nullptr;
-                    message_body[i].msg_hdr.msg_namelen = 0;
-                    // message_body[i].msg_hdr.msg_control = nullptr;
-                    // message_body[i].msg_hdr.msg_controllen = 0;
-
                     message_body[i].msg_hdr.msg_control = control_buffers[i].data();
-                    message_body[i].msg_hdr.msg_controllen = control_buffers[i].size();
+                    message_body[i].msg_hdr.msg_controllen = CMSG_SPACE(sizeof(uint16_t));
+
 
                     struct cmsghdr* cmsg = CMSG_FIRSTHDR(&message_body[i].msg_hdr);
                     cmsg->cmsg_level = SOL_UDP;
                     cmsg->cmsg_type = UDP_SEGMENT;
                     cmsg->cmsg_len = CMSG_LEN(sizeof(uint16_t));
-                    *((uint16_t*)CMSG_DATA(cmsg)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
+                    *((uint16_t *) CMSG_DATA(cm)) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
+
 
                     iovecs[i * 3].iov_base = static_cast<void*>(&message_header[i]);
                     iovecs[i * 3].iov_len = sizeof(Header);
                     iovecs[i * 3 + 1] = {nullptr, 0};
                     iovecs[i * 3 + 2].iov_base = padding[i].data();
                     iovecs[i * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
+
+                    message_body[i].msg_hdr.msg_iov = &iovecs[i * 3];
+                    message_body[i].msg_hdr.msg_iovlen = 3;
+                    message_body[i].msg_hdr.msg_name = nullptr;
+                    message_body[i].msg_hdr.msg_namelen = 0;
                 }
             }
 
