@@ -911,16 +911,17 @@ bool Pair::protocal2send(){
       size_t batch = dmludp_connection->send_message.get_next_batch();
       for (auto i = 0; i < batch; ++i) {
         auto & packet = dmludp_connection->send_message.at(i);
-        printf("[Batch] iovlen=%lu controllen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_iovlen);
+        printf("[Batch] iovlen=%lu controllen=%lu msg_iovlen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_controllen, packet.getMessage()->msg_hdr.msg_iovlen);
       }
 
-      ip_print(dmludp_connection->peeraddr);
+      
 
       auto retval = sendmmsg(fd_, msg.getMessage(), batch, 0);
-
+      ip_print(dmludp_connection->peeraddr);
+      std::cout<<std::endl;
       for (auto i = 0; i < batch; ++i) {
         auto & packet = dmludp_connection->send_message.at(i);
-        printf("[Batch] iovlen=%lu controllen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_iovlen);
+        printf("[Batch] iovlen=%lu controllen=%lu msg_iovlen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_controllen, packet.getMessage()->msg_hdr.msg_iovlen);
       }
 
       if (retval == -1){
