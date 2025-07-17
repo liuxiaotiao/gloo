@@ -991,9 +991,9 @@ namespace dmludp {
             return buffer_[(head_ + index) % capacity_];
         }
 
-        const T& at(size_t index){
-            return buffer_[(head_ + index) % capacity_];
-        }
+        // const T& at(size_t index){
+        //     return buffer_[(head_ + index) % capacity_];
+        // }
 
         void push_back() {
             if (!next_pos_valid_) {
