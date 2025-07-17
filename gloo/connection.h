@@ -168,6 +168,193 @@ class Message{
     
 };
 
+class MessageFIFO{
+    private:
+        std::vector<mmsghdr> message_body;
+
+        std::vector<iovec> iovecs;
+
+        std::vector<Header> message_header;
+
+        std::vector<std::vector<uint8_t>> padding;
+
+        size_t capacity_;
+        size_t head_;
+        size_t tail_;
+        size_t count_;
+        bool next_pos_valid_;
+
+        struct MessageSlot {
+            mmsghdr& msg;
+            iovec* iov;       // 指向3个iovec
+            Header& header;   // 方便直接修改
+            std::vector<uint8_t>& padding; // 如果需要动态改padding，也可以暴露
+        };
+    public:
+        explicit MessageFIFO(size_t capacity)
+            : message_body(capacity), 
+            iovecs(3 * capacity), 
+            message_header(capacity), 
+            padding(capacity, std::vector<uint8_t>(MAX_SEND_UDP_PAYLOAD_SIZE)),
+            // padding(MAX_SEND_UDP_PAYLOAD_SIZE * capacity),
+            capacity_(capacity), 
+            head_(0), 
+            tail_(0), 
+            count_(0), 
+            next_pos_valid_(false) {
+                for (size_t i = 0; i < capacity_; ++i) {
+                    message_body[i].msg_hdr.msg_iov = &iovecs[i * 3];
+                    message_body[i].msg_hdr.msg_iovlen = 3;
+                    message_body[i].msg_hdr.msg_name = nullptr;
+                    message_body[i].msg_hdr.msg_namelen = 0;
+                    message_body[i].msg_hdr.msg_control = nullptr;
+                    message_body[i].msg_hdr.msg_controllen = 0;
+
+                    iovecs[i * 3].iov_base = static_cast<void*>(&message_header[i]);
+                    iovecs[i * 3].iov_len = sizeof(Header);
+                    iovecs[i * 3 + 1] = {nullptr, 0};
+                    iovecs[i * 3 + 2].iov_base = padding[i].data();
+                    iovecs[i * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
+                }
+            }
+
+        struct mmsghdr& next_pos() {
+            if (count_ == capacity_) {
+                std::cerr << "FifoQueue overflow, capacity: " << capacity_ << std::endl;
+                _Exit(0);
+            }
+            next_pos_valid_ = true;
+            return message_body[tail_];
+        }
+
+        MessageSlot slot_at(size_t index) {
+            size_t idx = (head_ + index) % capacity_;
+            return MessageSlot{
+                message_body[idx],
+                &iovecs[idx * 3],
+                message_header[idx],
+                padding[idx]
+            };
+        }
+
+        MessageSlot next_slot() {
+            if (count_ == capacity_) {
+                std::cerr << "FifoQueue overflow, capacity: " << capacity_ << std::endl;
+                _Exit(0);
+            }
+            next_pos_valid_ = true;
+            size_t idx = tail_;
+            return MessageSlot{
+                message_body[idx],
+                &iovecs[idx * 3],
+                message_header[idx],
+                padding[idx]
+            };
+        }
+
+        struct mmsghdr& at(size_t index){
+            if (index >= count_) {
+                std::cerr << "FifoQueue at() out of range: " << index << " >= " << count_ << std::endl;
+                _Exit(0);
+            }
+            return message_body[(head_ + index) % capacity_];
+        }
+
+        void push_back() {
+            if (!next_pos_valid_) {
+                std::cerr << "FifoQueue push_back called without next_pos()" << std::endl;
+                _Exit(0);
+            }
+            tail_ = (tail_ + 1) % capacity_;
+            ++count_;
+            next_pos_valid_ = false;
+        }
+
+        void pop(size_t count = 1) {
+            if (empty()) {
+                std::cerr << "FifoQueue underflow, cannot pop from empty queue" << std::endl;
+                _Exit(0);
+            }
+
+            if (count > count_) {
+                std::cerr << "FifoQueue underflow, trying to pop more than available: "
+                        << count << " > " << count_ << std::endl;
+                _Exit(1);  
+            }
+
+            head_ = (head_ + count) % capacity_;
+            count_ -= count;
+
+            if (count_ == 0) {
+                head_ = tail_ = 0;  // Reset head and tail if queue is empty
+            }
+        }
+
+        size_t get_next_batch() {
+            if (empty()) {
+                return 0;
+            }
+            size_t available = size();
+            std::cout << "get_next_batch: " << head_ <<", " << tail_<< std::endl;
+            size_t till_end = capacity_ - head_;
+            size_t batch_size = std::min({available, BATCH_SIZE, till_end});
+            return batch_size;
+        }
+
+        struct mmsghdr& front() {
+            if (empty()) {
+                std::cerr << "Queue is empty, cannot access front" << std::endl;
+                _Exit(0);
+            }
+            return message_body[head_];
+        }
+
+        const struct mmsghdr& front() const {
+            if (empty()) {
+                std::cerr << "Queue is empty, cannot access front" << std::endl;
+                _Exit(0);
+            }
+            return message_body[head_];
+        }
+
+        struct mmsghdr& back() {
+            if (empty()) {
+                std::cerr << "Queue is empty, cannot access back" << std::endl;
+                _Exit(0);
+            }
+            size_t last = (tail_ + capacity_ - 1) % capacity_;
+
+            return message_body[last];
+        }
+
+        const struct mmsghdr& back() const {
+            if (empty()) {
+                std::cerr << "Queue is empty, cannot access back" << std::endl;
+                _Exit(0);
+            }
+            size_t last = (tail_ + capacity_ - 1) % capacity_;
+
+            return message_body[last];
+        }
+
+        bool empty() const {
+            return count_ == 0;
+        }
+
+        size_t size() const {
+            return count_;
+        }
+
+        size_t capacity() const {
+            return capacity_;
+        }
+
+        bool full() const {
+            return count_ == capacity_;
+        }
+      
+}
+
 // class Message{
 //     public:
 //         struct msghdr message_body;
@@ -1333,7 +1520,9 @@ public:
     
     /* Replace the conbination of send_msg, send_iov and send_header to reduce packet genaratio cost*/
     // std::vector<Message> send_message;
-    FifoQueue<Message> send_message;
+    // FifoQueue<Message> send_message;
+
+    MessageFIFO send_message;
 
     std::vector<RCMessage> receive_message;
     
@@ -2253,14 +2442,12 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_pos();
-                    msg.reset();
+                    auto& msg = send_message.next_slot();
                     auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
-                  
 
                     send_message.push_back();
                     
@@ -2285,9 +2472,9 @@ public:
                     }
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
+                        msg.iov[2] = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.set_padding(0);
+                        msg.iov[2] = 0;
                     }
 
                     recovery.on_packet_sent(out_len);
@@ -2316,8 +2503,7 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_pos();
-                    msg.reset();
+                    auto& msg = send_message.next_slot();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
@@ -2354,12 +2540,10 @@ public:
 
 
                     if (out_len < MAX_SEND_UDP_PAYLOAD_SIZE) {
-                        msg.set_padding(MAX_SEND_UDP_PAYLOAD_SIZE - out_len);
+                        msg.iov[2] = MAX_SEND_UDP_PAYLOAD_SIZE - out_len;
                     } else {
-                        msg.set_padding(0);
+                        msg.iov[2] = 0;
                     }
-                    
-
 
                     low_recovery.on_packet_sent(out_len);
 

@@ -909,21 +909,9 @@ bool Pair::protocal2send(){
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
-      for (auto i = 0; i < batch; ++i) {
-        auto & packet = dmludp_connection->send_message.at(i);
-        printf("[Batch] iovlen=%lu controllen=%lu msg_iovlen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_controllen, packet.getMessage()->msg_hdr.msg_iovlen);
-      }
-
-      
 
       auto retval = sendmmsg(fd_, msg.getMessage(), batch, 0);
-      ip_print(dmludp_connection->peeraddr);
-      std::cout<<std::endl;
-      for (auto i = 0; i < batch; ++i) {
-        auto & packet = dmludp_connection->send_message.at(i);
-        printf("[Batch] iovlen=%lu controllen=%lu msg_iovlen=%lu\n",  packet.getMessage()->msg_hdr.msg_iovlen, packet.getMessage()->msg_hdr.msg_controllen, packet.getMessage()->msg_hdr.msg_iovlen);
-      }
-
+    
       if (retval == -1){
         if (errno == EINTR){
           continue;
