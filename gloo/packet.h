@@ -78,13 +78,9 @@ using Block_len = uint16_t;
         // The data length of the application packet
         Packet_len pkt_length;
  
-        // Importance_len pkt_importance;
 
         Block_len pkt_important_block;
 
-        // Status_len pkt_status;
-
-        uint8_t pad[7];
 
         Header(
             Type first = Type::Application, 

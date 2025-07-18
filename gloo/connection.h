@@ -295,7 +295,7 @@ class Message{
 
         Message(){
             iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
+            iov[0].iov_len = sizeof(Header); /* Don't send padding part */
 
             iov[1] = {nullptr, 0};
 
@@ -1346,9 +1346,9 @@ public:
         return std::make_shared<Connection>(local, peer, true);
     };
 
-    const uint8_t handshake_header[sizeof(Header) - 5] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header) - 5] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t fin_header[sizeof(Header)] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1580,6 +1580,7 @@ public:
                 continue;
             }
             auto pkt_ty = receive_message[i].get_packet_type();
+            std::cout<<"receive message type:"<<static_cast<int>(pkt_ty)<<", index:"<<i<<std::endl;
      
             if (pkt_ty == Type::ACK){
                 process_acknowledge(i);
@@ -1943,7 +1944,7 @@ public:
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
-        acknowldge_iov[0].iov_len = sizeof(Header) - 7;
+        acknowldge_iov[0].iov_len = sizeof(Header);
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
@@ -1957,7 +1958,7 @@ public:
 
 
         send_packet_type = ty;
-        return sizeof(Header) - 5 + hdr->pkt_length;
+        return sizeof(Header) + hdr->pkt_length;
     }
     
 
