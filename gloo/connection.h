@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <vector>
 #include <algorithm>
+#include <optional>
 #include <chrono>
 #include <set>
 #include <sys/uio.h>
@@ -20,10 +21,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <optional>
-#include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
-#include <linux/socket.h> 
+#include <linux/socket.h>  // for SOL_UDP
 #include "allreduce.h"
-// #pragma message("DEBUG: included span in FILENAME")
+
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
+
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
 #define BENCH_END(name) \
@@ -63,22 +70,158 @@ class Message{
     public:
         struct msghdr message_body;
 
+        std::vector<iovec> iov;
+
+        std::vector<Header> message_header;
+
+        std::vector<std::vector<uint8_t>> paddings;
+
+        char control_buf[CMSG_SPACE(sizeof(uint16_t))];
+
+        size_t index = 0;
+
+        Message(): iov(BATCH_SIZE * 3), message_header(BATCH_SIZE), paddings(BATCH_SIZE, std::vector<uint8_t>(MAX_SEND_UDP_PAYLOAD_SIZE)) {
+            memset(&message_body, 0, sizeof(msghdr));
+            memset(control_buf, 0, sizeof(control_buf));
+
+            // GSO cmsg
+            message_body.msg_control = control_buf;
+            message_body.msg_controllen = sizeof(control_buf);
+
+            struct cmsghdr* cmsg = CMSG_FIRSTHDR(&message_body);
+            cmsg->cmsg_level = SOL_UDP;
+            cmsg->cmsg_type  = UDP_SEGMENT;
+            cmsg->cmsg_len   = CMSG_LEN(sizeof(uint16_t));
+            *(uint16_t*)CMSG_DATA(cmsg) = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header); // Set the GSO size
+
+            for (size_t i = 0; i < BATCH_SIZE; ++i) {
+                iov[i * 3].iov_base = static_cast<void*>(&message_header[i]);
+                iov[i * 3].iov_len = sizeof(Header);
+                iov[i * 3 + 1] = {nullptr, 0};
+                iov[i * 3 + 2].iov_base = padding[i].data();
+                iov[i * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
+            }
+            
+            message_body.msg_iov = iov;
+            message_body.msg_iovlen = 3 * BATCH_SIZE; // Fixed to 2 iovecs
+        } 
+
+        ~Message(){};
+
+        void setMessageBody(void* buffer, size_t length) {
+            iov[1].iov_base = buffer;
+            iov[1].iov_len = length;
+        }
+
+        void setMessageHeader(
+            Packet_num_len pn, 
+            Offset_len offset, 
+            Difference_len difference, 
+            Packet_len length, 
+            Block_len blocks_, 
+            Type ty_) {
+            message_header[index].ty = ty_;
+            message_header[index].pkt_num = pn;
+            message_header[index].offset = offset;
+            message_header[index].difference = difference;
+            message_header[index].pkt_length = (Packet_num_len)length;
+            message_header[index].pkt_important_block = blocks_;
+        }
+
+        void clear(){
+            index = 0;
+        }
+
+        std::optional<size_t> get_next(){
+            if (index < BATCH_SIZE){
+                return index;
+            } else {
+                return std::nullopt;
+            }
+        }
+
+        iovec& get_iovec(){
+            if (index >= BATCH_SIZE){
+                std::cerr << "Message get_iovec error: index out of range" << std::endl;
+                _Exit(0);
+            }
+            return iov[index * 3 + 1];
+        }
+
+
+        void update(size_t len){
+            if (index >= BATCH_SIZE){
+                std::cerr << "Message update error: index out of range" << std::endl;
+                _Exit(0);
+            }
+            if (len > MAX_SEND_UDP_PAYLOAD_SIZE){
+                std::cerr << "Message update error: len(" << len << ") > MAX_SEND_UDP_PAYLOAD_SIZE(" << MAX_SEND_UDP_PAYLOAD_SIZE << ")" << std::endl;
+                _Exit(0);
+            }
+
+            if (len != MAX_SEND_UDP_PAYLOAD_SIZE){
+                iov[index * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE - len;
+            } else {
+                iov[index * 3 + 2].iov_len = 0;
+            }
+            message_body.msg_iovlen = index * 3 + 3;
+            index++;
+        }
+
+        Packet_num_len get_packet_number(){
+            return message_header[0].get_pkt_num();
+        }
+
+        uint8_t get_packet_type(){
+            return message_header[0].get_ty();
+        }
+
+        Offset_len get_packet_offset(){
+            return message_header[0].get_offset();
+        }
+
+        Difference_len get_packet_difference(){
+            return message_header[0].get_difference();
+        }
+
+        uint16_t get_packet_length(){
+            return message_header[0].get_pkt_length();
+        }
+
+        Block_len get_blocks(){
+            return message_header[0].get_important_blocks();
+        }
+
+        msghdr* getMessageHeader() {
+            return &message_body;
+        }
+};
+
+class RCMessage{
+    public:
+        struct msghdr message_body;
+
         iovec iov[2];
 
         Header message_header;
 
-        Message(){
-            iov[0].iov_base = static_cast<void*>(&message_header);
-            iov[0].iov_len = sizeof(Header) - 7; /* Don't send padding part */
+        uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
 
-            iov[1] = {nullptr, 0};
+        RCMessage(){
+            iov[0].iov_base = static_cast<void*>(&message_header);
+            iov[0].iov_len = sizeof(Header); /* Don't send padding part */
+
+            iov[1].iov_base = ptr;
+            iov[1].iov_len = ptr_len;
 
             memset(&message_body, 0, sizeof(msghdr));
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
+
+            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
         } 
 
-        ~Message(){};
+        ~RCMessage(){};
 
         void setMessageBody(void* buffer, size_t length) {
             iov[1].iov_base = buffer;
@@ -124,27 +267,6 @@ class Message{
         msghdr* getMessageHeader() {
             return &message_body;
         }
-};
-
-class RCMessage : public Message {
-    private:
-        // bool use_status = true;
-        char control[CMSG_SPACE(sizeof(timespec) * 3)];
-        uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
-    public:
-        RCMessage(){
-            message_body.msg_control = control;
-            message_body.msg_controllen = sizeof(control);
-            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
-            set_receive_message(rx_buffer, MAX_SEND_UDP_PAYLOAD_SIZE);
-        }
-            
-        void set_receive_message(void *ptr, size_t ptr_len){
-            iov[1].iov_base = ptr;
-            iov[1].iov_len = ptr_len;
-        }
-
-        ~RCMessage(){};
 };
 
 class MetaInfo{
@@ -1120,9 +1242,9 @@ public:
         return std::make_shared<Connection>(local, peer, true);
     };
 
-    const uint8_t handshake_header[sizeof(Header) - 5] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t handshake_header[sizeof(Header)] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    const uint8_t fin_header[sizeof(Header) - 5] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const uint8_t fin_header[sizeof(Header)] = {7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // when get new data flow, send_connection_difference++
     // WILL BE DROPPED
@@ -1717,7 +1839,7 @@ public:
         hdr->pkt_length = info_len + sizeof(Packet_num_len);
 
         acknowldge_iov[0].iov_base = acknowldge_header.data();
-        acknowldge_iov[0].iov_len = sizeof(Header) - 7;
+        acknowldge_iov[0].iov_len = sizeof(Header);
 
         ACKrange = current_loop_min;
         acknowldge_iov[1].iov_base = &ACKrange;
@@ -1731,7 +1853,7 @@ public:
 
 
         send_packet_type = ty;
-        return sizeof(Header) - 5 + hdr->pkt_length;
+        return sizeof(Header) + hdr->pkt_length;
     }
     
 
@@ -2156,6 +2278,8 @@ public:
             return 0;
         }
 
+        size_t sent_count = 0;
+        Message &msg;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
@@ -2176,13 +2300,19 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_important(i, msg.iov[1], out_len, out_off, out_blocks, out_status);
+
+                    if (sent_count % BATCH_SIZE = 0) {
+                        msg = send_message.next_pos();
+                    }
+
+                    auto msgiov = msg.get_iovec();
+                    auto s_flag = sendbufferqueue.emit_important(i, msgiov, out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
                         break;
                     }
-                    send_message.push_back();
+
+                   
                     
                     auto pn = pkt_num_spaces.updatepktnum();
 
@@ -2203,6 +2333,12 @@ public:
                             connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
                     }
+
+                    if (sent_count % BATCH_SIZE == BATCH_SIZE - 1) {
+                        send_message.push_back();
+                    }
+                    msg.update(out_len);
+                    sent_count++;
         
                     recovery.on_packet_sent(out_len);
 
@@ -2230,13 +2366,17 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    auto& msg = send_message.next_pos();
-                    auto s_flag = sendbufferqueue.emit_unimportant(i, msg.iov[1], out_len, out_off, out_blocks, pkt_status);
+                    if (sent_count % BATCH_SIZE = 0) {
+                        msg = send_message.next_pos();
+                    }
+                    // auto& msg = send_message.next_pos();
+                    auto msgiov = msg.get_iovec();
+                    auto s_flag = sendbufferqueue.emit_unimportant(i, msgiov, out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
                         break;
                     }
-                    send_message.push_back();
+                    
                     
                     auto pn = pkt_num_spaces.updatepktnum();
                     // ip_print(peeraddr);
@@ -2262,6 +2402,13 @@ public:
                         }
                     }
 
+                    // send_message.push_back();
+                    if (sent_count % BATCH_SIZE == BATCH_SIZE - 1) {
+                        send_message.push_back();
+                    }
+                    msg.update(out_len);
+                    sent_count++;
+
                     low_recovery.on_packet_sent(out_len);
 
                     sent++;
@@ -2279,29 +2426,6 @@ public:
 
         return sent;
     }
-
-    /*Prepare send packets*/
-    // std::pair<ssize_t, ssize_t> send_packet(){
-    //     // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
-    //     if (get_dmludp_error()){
-    //         auto firstpn = send_message[start_index].get_packet_number();
-    //         auto endpn =  send_message[end_index].get_packet_number();
-    //         ip_print(peeraddr);
-    //         std::cout << "Debug: send_packet, errno:" <<get_dmludp_error() <<", start_index:" << start_index << ", end_index:" << end_index << ", firstpn:" << firstpn << ", endpn:" << endpn << std::endl;
-         
-    //         send_packet_type = Type::Application;
-    //         return std::make_pair(start_index, end_index);
-    //     }
-
-    //     if (end_index == -1){
-    //         end_index = prepareData() - 1;
-    //         if(end_index != -1){
-    //             start_index = 0;
-    //         }
-    //         send_packet_type = Type::Application;
-    //     }
-    //     return std::make_pair(start_index, end_index);
-    // }
 
     size_t send_packet(){
         // std::cout<<"get_dmludp_error:"<< get_dmludp_error() << std::endl;
@@ -2329,53 +2453,6 @@ public:
             _Exit(0);
         }
     }
-
-    /*Use to clear send parameter*/
-    // void send_packet_complete(size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
-    //     std::cout << "Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << std::endl;
-    //     if(send_packet_type == 0){ 
-    //         return;
-    //     }
-
-    //     if (send_packet_type == Type::Application){
-    //         set_error2(err_);
-    //     }
-
-    //     if (err_ != 0 && sent == 0){
-    //         return;
-    //     }
-        
-    //     if (err_ != 0){
-    //         if (send_packet_type == Type::Application){
-    //             std::cout << "2 Debug: send_packet_complete, err_:" << err_ << ", sent:" << sent << ", start_index:" << start_index << std::endl;
-    //             end_ts = std::chrono::high_resolution_clock::now();
-    //             if (start_index < 0){
-    //                 std::cout<<"send_packet_complete start_index < 0" <<std::endl;
-    //                 _Exit(0);
-    //             }
-    //             tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-    //             start_index = start_index + sent;
-    //         }
-    //         return;
-    //     }
-        
-    //     if(send_packet_type == Type::ACK){
-    //         process_application_copy();
-    //     }else if(send_packet_type == Type::Application){
-    //         end_index = -1;
-    //         set_handshake();
-    //         tsInfo.updateQueue(send_message[start_index].get_packet_number(), start_ts, pkt_num_spaces.getpktnum(), end_ts);
-    //     }else if(send_packet_type == Type::ElicitAck){
-
-    //     }else if(send_packet_type == Type::Stop){
-
-    //     }else if(send_packet_type == Type::Fin){
-
-    //     }
-
-    //     send_packet_type = 0;
-    // }
-
 
     void send_packet_complete(uint64_t startpkt = 0, size_t err_ = 0, size_t sent = 0, std::chrono::high_resolution_clock::time_point start_ts = std::chrono::high_resolution_clock::time_point{}){
         if(send_packet_type == 0){ 

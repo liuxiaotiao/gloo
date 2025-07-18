@@ -25,7 +25,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <linux/udp.h>
+#include <linux/socket.h>  // for SOL_UDP
 #include <stdlib.h>
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
@@ -35,8 +35,13 @@
 #include "gloo/allreduce.h"
 
 #define FD_INVALID (-1)
-// #define MAX_PACKETS 100
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
 
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 namespace gloo {
 namespace transport {
 namespace dmludp {
@@ -182,6 +187,12 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   GLOO_ENFORCE_NE(rv, -1);
   sendBufferSize_ = optval;
   printf("SO_SNDBUF: %d bytes\n", optval);
+
+  int gso_size = MAX_SEND_UDP_PAYLOAD_SIZE + sizeof(Header);
+  if (setsockopt(fd_, SOL_UDP, UDP_SEGMENT, &gso_size, sizeof(gso_size)) < 0) {
+      perror("UDP_SEGMENT not supported");
+  }
+
 
 
   // Register with loop for socket readability.

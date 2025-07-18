@@ -82,10 +82,6 @@ using Block_len = uint16_t;
 
         Block_len pkt_important_block;
 
-        // Status_len pkt_status;
-
-        uint8_t pad[7];
-
         Header(
             Type first = Type::Application, 
             Packet_num_len pktnum = 0, 
