@@ -900,7 +900,6 @@ bool Pair::protocal2send(){
     }
 
     auto first_packet = dmludp_connection->send_message.front_packet_number();
-    std::cout << "send buffer: " << dmludp_connection->send_message.size()  << std::endl;
     for ( ;!dmludp_connection->send_message.empty();){
       auto msg =dmludp_connection->send_message.front();
       size_t batch = dmludp_connection->send_message.get_next_batch();
