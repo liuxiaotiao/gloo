@@ -2424,7 +2424,7 @@ public:
                 break;
             }
         }
-        if (sent != 0 && sent_count % BATCH_SIZE != BATCH_SIZE - 1){
+        if (sent_count % BATCH_SIZE != 0){
             send_message.push_back();
         }
 
