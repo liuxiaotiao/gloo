@@ -217,7 +217,6 @@ class MessageFIFO{
                 return 0;
             }
             size_t available = size();
-            // std::cout << "get_next_batch: " << head_ <<", " << tail_<< std::endl;
             size_t till_end = capacity_ - head_;
             size_t batch_size = std::min({available, BATCH_SIZE, till_end});
             return batch_size;
