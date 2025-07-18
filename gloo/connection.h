@@ -20,10 +20,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <optional>
+#include <linux/socket.h>  // for SOL_UDP
 #include <linux/net_tstamp.h>  // SOF_TIMESTAMPING_* 宏定义
-#include <linux/socket.h> 
 #include "allreduce.h"
-// #pragma message("DEBUG: included span in FILENAME")
+
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
+
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
 #define BENCH_END(name) \
