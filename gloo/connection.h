@@ -2303,7 +2303,7 @@ public:
                     }
 
                     if (sent_count % BATCH_SIZE == 0) {
-                        msg = send_message.next_pos();
+                        msg = &send_message.next_pos();
                     }
 
                     auto msgiov = msg->get_iovec();
@@ -2368,7 +2368,7 @@ public:
                         break;
                     }
                     if (sent_count % BATCH_SIZE == 0) {
-                        msg = send_message.next_pos();
+                        msg = &send_message.next_pos();
                     }
                     // auto& msg = send_message.next_pos();
                     auto msgiov = msg->get_iovec();
