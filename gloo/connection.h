@@ -2371,7 +2371,7 @@ public:
                         msg = &send_message.next_pos();
                     }
                     // auto& msg = send_message.next_pos();
-                    auto msgiov = msg->get_iovec();
+                    auto& msgiov = msg->get_iovec();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msgiov, out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
