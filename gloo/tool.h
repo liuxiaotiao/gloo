@@ -981,6 +981,7 @@ namespace dmludp {
                 _Exit(0);
             }
             next_pos_valid_ = true;
+            buffer_[tail_].clear();
             return buffer_[tail_];
         }
 

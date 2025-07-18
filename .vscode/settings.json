@@ -75,6 +75,7 @@
         "memory": "cpp",
         "complex": "cpp",
         "regex": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "__assert": "cpp"
     }
 }

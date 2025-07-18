@@ -98,11 +98,11 @@ class Message{
                 iov[i * 3].iov_base = static_cast<void*>(&message_header[i]);
                 iov[i * 3].iov_len = sizeof(Header);
                 iov[i * 3 + 1] = {nullptr, 0};
-                iov[i * 3 + 2].iov_base = padding[i].data();
+                iov[i * 3 + 2].iov_base = paddings[i].data();
                 iov[i * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
             }
             
-            message_body.msg_iov = iov;
+            message_body.msg_iov = &iov;
             message_body.msg_iovlen = 3 * BATCH_SIZE; // Fixed to 2 iovecs
         } 
 
@@ -208,17 +208,18 @@ class RCMessage{
         uint8_t rx_buffer[MAX_SEND_UDP_PAYLOAD_SIZE];
 
         RCMessage(){
+            memset(&message_body, 0, sizeof(msghdr));
+            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
             iov[0].iov_base = static_cast<void*>(&message_header);
             iov[0].iov_len = sizeof(Header); /* Don't send padding part */
 
-            iov[1].iov_base = ptr;
-            iov[1].iov_len = ptr_len;
+            iov[1].iov_base = rx_buffer;
+            iov[1].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
 
-            memset(&message_body, 0, sizeof(msghdr));
+            
             message_body.msg_iov = iov;
             message_body.msg_iovlen = 2; // Fixed to 2 iovecs
 
-            memset(rx_buffer, 0, MAX_SEND_UDP_PAYLOAD_SIZE);
         } 
 
         ~RCMessage(){};
@@ -2301,7 +2302,7 @@ public:
                         break;
                     }
 
-                    if (sent_count % BATCH_SIZE = 0) {
+                    if (sent_count % BATCH_SIZE == 0) {
                         msg = send_message.next_pos();
                     }
 
@@ -2366,7 +2367,7 @@ public:
                     if (send_message.full()) {
                         break;
                     }
-                    if (sent_count % BATCH_SIZE = 0) {
+                    if (sent_count % BATCH_SIZE == 0) {
                         msg = send_message.next_pos();
                     }
                     // auto& msg = send_message.next_pos();
