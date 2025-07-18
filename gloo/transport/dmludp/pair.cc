@@ -904,6 +904,7 @@ bool Pair::protocal2send(){
     for ( ;!dmludp_connection->send_message.empty();){
       auto& msg =dmludp_connection->send_message.front();
       auto retval = sendmsg(fd_, &msg.message_body, 0);
+      std::cout<<"sendmsg retval: "<<retval<<", errno: "<<errno<<", sent: "<<sent<<", packet.first: "<<msg.get_packet_number()<<", packet.second: "<<msg.get_packet_size()<<std::endl;
       if(retval == -1){
         if (errno == EINTR){
             continue;
