@@ -888,11 +888,14 @@ bool Pair::protocal2send(){
       break;
     }
 
-    auto first_packet = dmludp_connection->send_message.front().get_packet_number();
+    auto first_packet = dmludp_connection->send_message.front_packet_number();
     
     for ( ;!dmludp_connection->send_message.empty();){
-      auto& msg =dmludp_connection->send_message.front();
-      auto retval = sendmsg(fd_, &msg.message_body, 0);
+      auto msg =dmludp_connection->send_message.front();
+      size_t batch = dmludp_connection->send_message.get_next_batch();
+
+      auto retval = sendmmsg(fd_, msg, batch, 0);
+
       if(retval == -1){
         if (errno == EINTR){
             continue;
@@ -906,10 +909,17 @@ bool Pair::protocal2send(){
         }
         break;
       }
-      dmludp_connection->updateMAC(msg.get_packet_number());
-      dmludp_connection->send_message.pop();
+      dmludp_connection->updateMAC(dmludp_connection->send_message.front_packet_number() + retval - 1);
+      dmludp_connection->send_message.pop(retval);
       sent++;
       accumulated++;
+
+      if (retval < batch) {
+        auto start_time = std::chrono::high_resolution_clock::now();
+        dmludp_connection->send_packet_complete(first_packet, 0, sent, start_time);
+        device_->registerDescriptor(fd_, EPOLLOUT | EPOLLIN, this);
+        return true;
+      }
     }
 
     if(sent == 0){
