@@ -2622,7 +2622,7 @@ public:
                     return;
                 } else {
                     end_ts = std::chrono::high_resolution_clock::now();
-                    tsInfo.updateQueue(startpkt, start_ts, send_message.front().get_packet_number() - 1, end_ts);
+                    tsInfo.updateQueue(startpkt, start_ts, send_message.front_packet_number() - 1, end_ts);
                     send_packet_type == 0;
                     return;
                 }    

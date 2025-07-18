@@ -25,7 +25,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <linux/udp.h>
+#include <linux/socket.h>  // for SOL_UDP
 #include <stdlib.h>
 #include "gloo/common/error.h"
 #include "gloo/common/logging.h"
@@ -35,8 +35,13 @@
 #include "gloo/allreduce.h"
 
 #define FD_INVALID (-1)
-// #define MAX_PACKETS 100
+#ifndef SOL_UDP
+#define SOL_UDP 17
+#endif
 
+#ifndef UDP_SEGMENT
+#define UDP_SEGMENT 103
+#endif
 namespace gloo {
 namespace transport {
 namespace dmludp {
