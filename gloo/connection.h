@@ -217,7 +217,7 @@ class MessageFIFO{
                 return 0;
             }
             size_t available = size();
-            std::cout << "get_next_batch: " << head_ <<", " << tail_<< std::endl;
+            // std::cout << "get_next_batch: " << head_ <<", " << tail_<< std::endl;
             size_t till_end = capacity_ - head_;
             size_t batch_size = std::min({available, BATCH_SIZE, till_end});
             return batch_size;
@@ -1580,7 +1580,7 @@ public:
                 continue;
             }
             auto pkt_ty = receive_message[i].get_packet_type();
-            std::cout<<"receive message type:"<<static_cast<int>(pkt_ty)<<", index:"<<i<<std::endl;
+            // std::cout<<"receive message type:"<<static_cast<int>(pkt_ty)<<", index:"<<i<<std::endl;
      
             if (pkt_ty == Type::ACK){
                 process_acknowledge(i);
