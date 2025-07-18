@@ -102,8 +102,8 @@ class Message{
                 iov[i * 3 + 2].iov_len = MAX_SEND_UDP_PAYLOAD_SIZE;
             }
             
-            message_body.msg_iov = &iov;
-            message_body.msg_iovlen = 3 * BATCH_SIZE; // Fixed to 2 iovecs
+            message_body.msg_iov = iov.data();;
+            message_body.msg_iovlen = iov.size(); // Fixed to 2 iovecs
         } 
 
         ~Message(){};
@@ -2280,7 +2280,7 @@ public:
         }
 
         size_t sent_count = 0;
-        Message &msg;
+        Message* msg = nullptr;
         auto sendbufferqueue_start_index = sendbufferqueue.start();
         for (auto idx = 0; idx < sendbufferqueue.get_count(); idx++) {
             i = (sendbufferqueue_start_index + idx) % sendbufferqueue.get_capacity();
@@ -2306,7 +2306,7 @@ public:
                         msg = send_message.next_pos();
                     }
 
-                    auto msgiov = msg.get_iovec();
+                    auto msgiov = msg->get_iovec();
                     auto s_flag = sendbufferqueue.emit_important(i, msgiov, out_len, out_off, out_blocks, out_status);
                     
                     if (out_len == -1) {
@@ -2321,16 +2321,16 @@ public:
                     // ip_print(peeraddr);
                     if (isElicit) {
                         // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
-                        msg.setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
+                        msg->setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck, pn);
                     } else {
                         if (out_status == 1) {
                             // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application2)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
-                            msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
+                            msg->setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application2);
                             connection_map.push(out_off, pkg_difference, Type::Application2, pn);
                         } else {
                         //    std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Application)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
-                            msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
+                            msg->setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Application);
                             connection_map.push(out_off, pkg_difference, Type::Application,pn);
                         }
                     }
@@ -2338,7 +2338,7 @@ public:
                     if (sent_count % BATCH_SIZE == BATCH_SIZE - 1) {
                         send_message.push_back();
                     }
-                    msg.update(out_len);
+                    msg->update(out_len);
                     sent_count++;
         
                     recovery.on_packet_sent(out_len);
@@ -2371,7 +2371,7 @@ public:
                         msg = send_message.next_pos();
                     }
                     // auto& msg = send_message.next_pos();
-                    auto msgiov = msg.get_iovec();
+                    auto msgiov = msg->get_iovec();
                     auto s_flag = sendbufferqueue.emit_unimportant(i, msgiov, out_len, out_off, out_blocks, pkt_status);
                     
                     if (out_len == -1) {
@@ -2384,21 +2384,21 @@ public:
                     if (out_off == ELICIT_OFFSET) {
                         // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::ElicitAck)<<", pkg_difference:"<<pkg_difference<<", off:"<<ELICIT_OFFSET<<", "<<std::endl;
 
-                        msg.setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
+                        msg->setMessageHeader(pn, ELICIT_OFFSET, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::ElicitAck);
                         connection_map.push(ELICIT_OFFSET, pkg_difference, Type::ElicitAck,pn);
                     } else {
                         if (pkt_status == PktStatus::Unimportant_reliable) {
                             // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
-                            msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable);
+                            msg->setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable,pn);
                         } else if (pkt_status == PktStatus::Unimportant_unreliable) {
                             // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable2)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
-                            msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable2);
+                            msg->setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable2);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable2,pn);
                         } else {
                             // std::cout<<"pn:"<<pn<<", ty:"<<static_cast<uint32_t>(Type::Unreliable3)<<", pkg_difference:"<<pkg_difference<<", off:"<<out_off<<", "<<std::endl;
 
-                            msg.setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable3);
+                            msg->setMessageHeader(pn, out_off, pkg_difference, (Packet_num_len)out_len, out_blocks, Type::Unreliable3);
                             connection_map.push(out_off, pkg_difference, Type::Unreliable3,pn);
                         }
                     }
@@ -2407,7 +2407,7 @@ public:
                     if (sent_count % BATCH_SIZE == BATCH_SIZE - 1) {
                         send_message.push_back();
                     }
-                    msg.update(out_len);
+                    msg->update(out_len);
                     sent_count++;
 
                     low_recovery.on_packet_sent(out_len);
