@@ -322,7 +322,7 @@ void ring(
         memcpy(
             static_cast<uint8_t*>(tmp->ptr) + segmentOffset[i & 0x1],
             static_cast<const uint8_t*>(out[0]->ptr) + cur.recvOffset,
-            cur.recvLength)
+            cur.recvLength);
         // std::cout<<i<<", 2 allreduce:"<<tmp->size<<", "<<out[0]->size<<", "<<segmentOffset[i & 0x1]<<", "<<cur.recvLength<<", "<<cur.recvOffset
         // <<", "<<cur.sendLength<<", "<<cur.sendOffset<<std::endl;
         tmp->recv(recvRank, slot, segmentOffset[i & 0x1], cur.recvLength);
