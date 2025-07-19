@@ -122,7 +122,7 @@ void allreduce(const detail::AllreduceOptionsImpl& opts, std::vector<uint64_t> t
   // Initialize local reduction and broadcast functions.
   // Note that these are a no-op if only a single output is specified
   // and is used as both input and output.
-  std::cout<<"reduceInputs:"<< in.size()<<", out:"<<out.size()<<std::endl;
+  // std::cout<<"reduceInputs:"<< in.size()<<", out:"<<out.size()<<std::endl;
   const auto reduceInputs =
       genLocalReduceFunction(in, out, opts.elementSize, opts.reduce);
   const auto broadcastOutputs = genLocalBroadcastFunction(out);
