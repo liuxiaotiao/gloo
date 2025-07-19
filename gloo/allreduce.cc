@@ -296,7 +296,7 @@ void ring(
       auto prev = computeReduceScatterOffsets(i - 2);
       if (prev.recvLength > 0) {
         // Prepare out[0]->ptr to hold the local reduction
-        std::cout<<"allreduce:"<<tmp->size<<", "<<out[0]->size<<std::endl;
+        std::cout<<"1 allreduce:"<<tmp->size<<", "<<out[0]->size<<std::endl;
         reduceInputs(prev.recvOffset, prev.recvLength);
         // Wait for segment from neighbor.
         tmp->waitRecv(opts.timeout);
@@ -319,6 +319,7 @@ void ring(
       // Compute send and receive offsets and lengths for this iteration.
       auto cur = computeReduceScatterOffsets(i);
       if (cur.recvLength > 0) {
+        std::cout<<"2 allreduce:"<<tmp->size<<", "<<out[0]->size<<std::endl;
         tmp->recv(recvRank, slot, segmentOffset[i & 0x1], cur.recvLength);
       }
       if (cur.sendLength > 0) {
