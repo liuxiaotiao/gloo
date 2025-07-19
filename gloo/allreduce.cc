@@ -296,7 +296,7 @@ void ring(
       auto prev = computeReduceScatterOffsets(i - 2);
       if (prev.recvLength > 0) {
         // Prepare out[0]->ptr to hold the local reduction
-        std::cout<<"allreduce"<<std::endl;
+        std::cout<<"allreduce:"<<tmp->size()<<", "<<out[0]->size()<<std::endl;
         reduceInputs(prev.recvOffset, prev.recvLength);
         // Wait for segment from neighbor.
         tmp->waitRecv(opts.timeout);
