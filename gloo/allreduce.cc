@@ -319,7 +319,8 @@ void ring(
       // Compute send and receive offsets and lengths for this iteration.
       auto cur = computeReduceScatterOffsets(i);
       if (cur.recvLength > 0) {
-        std::cout<<"2 allreduce:"<<tmp->size<<", "<<out[0]->size<<", "<<segmentOffset[i & 0x1]<<std::endl;
+        std::cout<<"2 allreduce:"<<tmp->size<<", "<<out[0]->size<<", "<<segmentOffset[i & 0x1]<<", "<<cur.recvLength<<", "<<cur.recvOffset
+        <<", "<<cur.sendLength<<", "<<cur.sendOffset<<std::endl;
         tmp->recv(recvRank, slot, segmentOffset[i & 0x1], cur.recvLength);
       }
       if (cur.sendLength > 0) {
