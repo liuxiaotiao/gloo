@@ -735,7 +735,7 @@ class metarecebuf{
             }
             status_ = 4;
         
-            bool complete_ = /*unimportant_packets_status.has_value() &&*/ expected_important_packets == important_packet_count;
+            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
             if (received == total || complete_){
                 status_ = 5;
@@ -763,7 +763,7 @@ class metarecebuf{
                 return false;
             }
         
-            bool complete_ = /*unimportant_packets_status.has_value() &&*/ expected_important_packets == important_packet_count;
+            bool complete_ = unimportant_packets_status.has_value() && expected_important_packets == important_packet_count;
 
             if (received == total || complete_){
                 complete_flag = true;
