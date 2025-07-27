@@ -35,8 +35,6 @@
 #include "gloo/allreduce.h"
 #include <mellanox/vma_extra.h>
 
-#define LOSS_RATE 10  // 10%
-
 #define FD_INVALID (-1)
 #define MAX_PACKETS 100
 

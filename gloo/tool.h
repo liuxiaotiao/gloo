@@ -15,7 +15,7 @@ namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
 
     inline constexpr size_t LOSS_BASIS = 10000;     // 用 10000 表示 0.01% 的精度
-    inline constexpr size_t LOSS_THRESHOLD = 1; 
+    inline constexpr size_t LOSS_THRESHOLD = 100; 
 
     // The default max_datagram_size used in congestion control.
     inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
