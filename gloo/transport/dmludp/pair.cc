@@ -174,13 +174,12 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   vma_api_t* api = vma_get_api();
   if (!api) {
     fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
-    close(sock);
+    close(fd_);
     exit(EXIT_FAILURE);
   }
 
-  api->register_recv_callback(fd_, dmludp::rx_callback, NULL);
-  printf("Listening on UDP port %d with simulated %.5f%% packet loss using recvmsg()\n",
-          PORT, 100.0 * dmldup::LOSS_THRESHOLD / dmludp::LOSS_BASIS);
+  api->register_recv_callback(fd_, rx_callback, NULL);
+
 
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);

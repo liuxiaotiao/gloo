@@ -24,8 +24,6 @@
 #include <linux/socket.h> 
 #include "allreduce.h"
 
-#define LOSS_BASIS 10000     // 用 10000 表示 0.01% 的精度
-#define LOSS_THRESHOLD 1  
 // #pragma message("DEBUG: included span in FILENAME")
 
 #define BENCH_START(name) auto __##name##_start = std::chrono::high_resolution_clock::now()
