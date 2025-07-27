@@ -171,15 +171,6 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   // this class works directly with file descriptor directly.
   fd_ = socket->release();
 
-  vma_api_t* api = vma_get_api();
-  if (!api) {
-    fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
-    ::close(fd_);
-    exit(EXIT_FAILURE);
-  }
-
-  api->register_recv_callback(fd_, rx_callback, NULL);
-
 
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);
@@ -852,8 +843,20 @@ bool Pair::protocal2send(){
         }
       }
       const auto nbytes = prepareWrite(op, buf, iov.data(), ioc);
+
       bool connection_written;
       if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
+        if (dmludp_connection->lossflag){
+          vma_api_t* api = vma_get_api();
+          if (!api) {
+            fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
+            ::close(fd_);
+            exit(EXIT_FAILURE);
+          }
+
+          api->register_recv_callback(fd_, rx_callback, NULL);
+          dmludp_connection->lossflag = false;
+        }
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
         connection_written = dmludp_connection->get_data(iov.data(), ioc, opcode, bitmapSpan);
       } else {

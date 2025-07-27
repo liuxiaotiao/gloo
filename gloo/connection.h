@@ -1142,6 +1142,8 @@ public:
 
     size_t send_status_flag;
 
+    bool lossflag = true;
+
     /*
     ts_record is used to calculate approximate send ts for each packet.
     Approximate ts ~= (2nd ts - 1st ts)/(2nd pkt - 1st pkt + 1)
