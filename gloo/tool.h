@@ -10,6 +10,7 @@
 #include <immintrin.h>
 #include <cassert>
 #include <mellanox/vma_extra.h>
+#include <mellanox/vma/vma_extra.h>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
