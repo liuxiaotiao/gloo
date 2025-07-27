@@ -174,7 +174,7 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   vma_api_t* api = vma_get_api();
   if (!api) {
     fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
-    close(fd_);
+    ::close(fd_);
     exit(EXIT_FAILURE);
   }
 
