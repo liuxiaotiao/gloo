@@ -33,6 +33,9 @@
 #include "gloo/transport/dmludp/context.h"
 #include "gloo/transport/dmludp/unbound_buffer.h"
 #include "gloo/allreduce.h"
+#include <mellanox/vma_extra.h>
+
+#define LOSS_RATE 10  // 10%
 
 #define FD_INVALID (-1)
 #define MAX_PACKETS 100
@@ -169,6 +172,17 @@ void Pair::connectCallback(std::shared_ptr<Socket> socket, Error error) {
   // Take over ownership of the socket's file descriptor. The code in
   // this class works directly with file descriptor directly.
   fd_ = socket->release();
+
+  vma_api_t* api = vma_get_api();
+  if (!api) {
+    fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
+    close(sock);
+    exit(EXIT_FAILURE);
+  }
+
+  api->register_recv_callback(fd_, dmludp::rx_callback, NULL);
+  printf("Listening on UDP port %d with simulated %.5f%% packet loss using recvmsg()\n",
+          PORT, 100.0 * dmldup::LOSS_THRESHOLD / dmludp::LOSS_BASIS);
 
   // Register with loop for socket readability.
   device_->registerDescriptor(fd_, EPOLLIN, this);

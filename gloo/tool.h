@@ -7,13 +7,15 @@
 #include <arpa/inet.h>
 #include <omp.h>
 #include <thread>
-// #include <span>
-// #include <execution>
 #include <immintrin.h>
 #include <cassert>
+#include <mellanox/vma_extra.h>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
+
+    inline constexpr size_t LOSS_BASIS = 10000;     // 用 10000 表示 0.01% 的精度
+    inline constexpr size_t LOSS_THRESHOLD = 1; 
 
     // The default max_datagram_size used in congestion control.
     inline constexpr size_t MAX_SEND_UDP_PAYLOAD_SIZE = 1440;
@@ -62,6 +64,20 @@ namespace dmludp {
     is_newer(T a, T b) {
         using SignedT = typename std::make_signed<T>::type;
         return static_cast<SignedT>(a - b) > 0;
+    }
+
+    static vma_recv_callback_retval_t rx_callback(int fd,
+        size_t iov_sz,
+        struct iovec iov[],
+        struct vma_info_t* info,
+        void* context)
+    {
+        int randv = rand() % LOSS_BASIS;
+        if (randv < LOSS_THRESHOLD) {
+            printf("[VMA] Packet dropped (%.5f%%)\n", 100.0 * LOSS_THRESHOLD / LOSS_BASIS);
+            return VMA_RECV_CB_RET_PKT_DROP;
+        }
+        return VMA_RECV_CB_RET_PKT_PASS;
     }
 
 
