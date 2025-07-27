@@ -2308,6 +2308,9 @@ public:
         }
     }
 
+    void keep_index(size_t current_index){
+    }
+
     size_t get_start(){
         return next_available(std::numeric_limits<size_t>::max());
     }

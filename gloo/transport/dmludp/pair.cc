@@ -34,6 +34,7 @@
 #include "gloo/transport/dmludp/unbound_buffer.h"
 #include "gloo/allreduce.h"
 #include <mellanox/vma_extra.h>
+#include <random>
 
 #define FD_INVALID (-1)
 #define MAX_PACKETS 100
@@ -646,10 +647,17 @@ bool Pair::protocal2read(){
 
   ssize_t received = 0;
   size_t receive_check = 0;
+  size_t last_index = 0;
 
   while(true){
     received = 0;
     for (auto receive_number= dmludp_connection->get_start(); receive_number < dmludp_connection->get_end(); receive_number = dmludp_connection->next_available(receive_number)){
+      std::random_device rd;  
+      std::mt19937 gen(rd()); 
+      std::uniform_int_distribution<> dist(0, 10000); 
+
+      int random_number = dist(gen);
+
       auto retval = recvmsg(fd_, &dmludp_connection->receive_message[receive_number].message_body, 0);
       if (retval == -1){
         if (errno == EAGAIN) {
@@ -659,9 +667,17 @@ bool Pair::protocal2read(){
             continue;
         }
       }
+
+      if (random_number == 1 && received != 0) {
+        receive_number = last_index;
+        continue;
+      }
     
       received++;
       receive_check = receive_number;
+
+      last_index = receive_number;
+
       if(received == 1300){
         break;
       }
@@ -847,14 +863,14 @@ bool Pair::protocal2send(){
       bool connection_written;
       if (opcode == Op::SEND_UNBOUND_BUFFER && nbytes < 2 * 1024 * 1024 && nbytes > 1440) {
         if (dmludp_connection->lossflag){
-          vma_api_t* api = vma_get_api();
-          if (!api) {
-            fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
-            ::close(fd_);
-            exit(EXIT_FAILURE);
-          }
+          // vma_api_t* api = vma_get_api();
+          // if (!api) {
+          //   fprintf(stderr, "VMA not loaded or Extra API not available. Exiting.\n");
+          //   ::close(fd_);
+          //   exit(EXIT_FAILURE);
+          // }
 
-          api->register_recv_callback(fd_, rx_callback, NULL);
+          // api->register_recv_callback(fd_, rx_callback, NULL);
           dmludp_connection->lossflag = false;
         }
         auto bitmapSpan = gloo::get_global_span(op.offset, op.nbytes);
