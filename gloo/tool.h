@@ -10,7 +10,6 @@
 #include <immintrin.h>
 #include <cassert>
 #include <mellanox/vma_extra.h>
-#include <mellanox/vma/vma_extra.h>
 #include "packet.h"
 namespace dmludp {
     inline constexpr size_t HEADER_LENGTH = sizeof(Header);
@@ -76,9 +75,9 @@ namespace dmludp {
         int randv = rand() % LOSS_BASIS;
         if (randv < LOSS_THRESHOLD) {
             printf("[VMA] Packet dropped (%.5f%%)\n", 100.0 * LOSS_THRESHOLD / LOSS_BASIS);
-            return VMA_RECV_CB_RET_PKT_DROP;
+            return VMA_PACKET_DROP;
         }
-        return VMA_RECV_CB_RET_PKT_PASS;
+        return VMA_PACKET_RECV;
     }
 
 
